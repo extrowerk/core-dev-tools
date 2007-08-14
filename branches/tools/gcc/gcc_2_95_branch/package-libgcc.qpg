@@ -1,0 +1,9 @@
+<QPG:Generation>
+   <QPG:Owner file="owner.qpg"/>
+   <!-- host/target specific files (files-libgcc.qpg is auto-generated) -->
+   <QPG:Merge file="nto-x86-o-ntoarm/files-libgcc.qpg"/>
+   <QPG:Merge file="nto-x86-o-ntomips/files-libgcc.qpg"/>
+   <QPG:Merge file="nto-x86-o-ntoppc/files-libgcc.qpg"/>
+   <QPG:Merge file="nto-x86-o-ntosh/files-libgcc.qpg"/>
+   <QPG:Merge file="nto-x86-o-ntox86/files-libgcc.qpg"/>
+</QPG:Generation>
