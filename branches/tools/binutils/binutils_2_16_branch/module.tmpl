@@ -1,0 +1,321 @@
+<?xml version="1.0"?>
+<module name="binutils">
+
+	<type>Element</type>
+
+	<classification>Runtime</classification>
+
+	<supports>
+		<availability ref="toolshosts"/>
+	</supports>
+
+	<targets>
+		<availability ref="ostargets"/>
+	</targets>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+
+
+<GroupOwner>tools</GroupOwner>
+	<contents>
+		<package isHost="true">
+		<component id="size" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> size </location>
+			<link os="nto" src="ntomulti-size-2.16" dst="/usr/bin/size"/>
+			<link os="nto" src="ntomulti-size-2.16" dst="/usr/bin/ntomulti-size"/>
+			<link os="linux" src="ntomulti-size-2.16" dst="/usr/bin/ntomulti-size"/>
+			<link os="solaris" src="ntomulti-size-2.16" dst="/usr/bin/ntomulti-size"/>
+			<link os="win32" src="ntomulti-size-2.16.exe" dst="/usr/bin/ntomulti-size.exe"/>
+		</component>
+
+		<component id="size" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> size </location>
+			<link os="nto" src="nto{tcpu}-size-2.16" dst="/usr/bin/nto{tcpu}-size"/>
+			<link os="linux" src="nto{tcpu}-size-2.16" dst="/usr/bin/nto{tcpu}-size"/>
+			<link os="solaris" src="nto{tcpu}-size-2.16" dst="/usr/bin/nto{tcpu}-size"/>
+			<link os="win32" src="nto{tcpu}-size-2.16.exe" dst="/usr/bin/nto{tcpu}-size.exe"/>
+		</component>
+
+		<component id="size" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> size </location>
+			<link os="nto" src="ntox86-size-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-size"/>
+		</component>
+
+		<component id="objdump" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> objdump </location>
+			<link os="nto" src="ntomulti-objdump-2.16" dst="/usr/bin/objdump"/>
+			<link os="nto" src="ntomulti-objdump-2.16" dst="/usr/bin/ntomulti-objdump"/>
+			<link os="linux" src="ntomulti-objdump-2.16" dst="/usr/bin/ntomulti-objdump"/>
+			<link os="solaris" src="ntomulti-objdump-2.16" dst="/usr/bin/ntomulti-objdump"/>
+			<link os="win32" src="ntomulti-objdump-2.16.exe" dst="/usr/bin/ntomulti-objdump.exe"/>
+		</component>
+
+		<component id="objdump" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> objdump </location>
+			<link os="nto" src="nto{tcpu}-objdump-2.16" dst="/usr/bin/nto{tcpu}-objdump"/>
+			<link os="linux" src="nto{tcpu}-objdump-2.16" dst="/usr/bin/nto{tcpu}-objdump"/>
+			<link os="solaris" src="nto{tcpu}-objdump-2.16" dst="/usr/bin/nto{tcpu}-objdump"/>
+			<link os="win32" src="nto{tcpu}-objdump-2.16.exe" dst="/usr/bin/nto{tcpu}-objdump.exe"/>
+		</component>
+
+		<component id="objdump" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> objdump </location>
+			<link os="nto" src="ntox86-objdump-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objdump"/>
+		</component>
+
+		<component id="ar" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> ar </location>
+			<link os="nto" src="ntomulti-ar-2.16" dst="/usr/bin/ar"/>
+			<link os="nto" src="ntomulti-ar-2.16" dst="/usr/bin/ntomulti-ar"/>
+			<link os="linux" src="ntomulti-ar-2.16" dst="/usr/bin/ntomulti-ar"/>
+			<link os="solaris" src="ntomulti-ar-2.16" dst="/usr/bin/ntomulti-ar"/>
+			<link os="win32" src="ntomulti-ar-2.16.exe" dst="/usr/bin/ntomulti-ar.exe"/>
+		</component>
+
+		<component id="ar" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> ar </location>
+			<link os="nto" src="nto{tcpu}-ar-2.16" dst="/usr/bin/nto{tcpu}-ar"/>
+			<link os="linux" src="nto{tcpu}-ar-2.16" dst="/usr/bin/nto{tcpu}-ar"/>
+			<link os="solaris" src="nto{tcpu}-ar-2.16" dst="/usr/bin/nto{tcpu}-ar"/>
+			<link os="win32" src="nto{tcpu}-ar-2.16.exe" dst="/usr/bin/nto{tcpu}-ar.exe"/>
+		</component>
+
+		<component id="ar" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> ar </location>
+			<link os="nto" src="ntox86-ar-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ar"/>
+		</component>
+
+		<component id="ranlib" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> ranlib </location>
+			<link os="nto" src="ntomulti-ranlib-2.16" dst="/usr/bin/ranlib"/>
+			<link os="nto" src="ntomulti-ranlib-2.16" dst="/usr/bin/ntomulti-ranlib"/>
+			<link os="linux" src="ntomulti-ranlib-2.16" dst="/usr/bin/ntomulti-ranlib"/>
+			<link os="solaris" src="ntomulti-ranlib-2.16" dst="/usr/bin/ntomulti-ranlib"/>
+			<link os="win32" src="ntomulti-ranlib-2.16.exe" dst="/usr/bin/ntomulti-ranlib.exe"/>
+		</component>
+
+		<component id="ranlib" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> ranlib </location>
+			<link os="nto" src="nto{tcpu}-ranlib-2.16" dst="/usr/bin/nto{tcpu}-ranlib"/>
+			<link os="linux" src="nto{tcpu}-ranlib-2.16" dst="/usr/bin/nto{tcpu}-ranlib"/>
+			<link os="solaris" src="nto{tcpu}-ranlib-2.16" dst="/usr/bin/nto{tcpu}-ranlib"/>
+			<link os="win32" src="nto{tcpu}-ranlib-2.16.exe" dst="/usr/bin/nto{tcpu}-ranlib.exe"/>
+		</component>
+
+		<component id="ranlib" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> ranlib </location>
+			<link os="nto" src="ntox86-ranlib-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ranlib"/>
+		</component>
+
+		<component id="strings" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> strings </location>
+			<link os="nto" src="ntomulti-strings-2.16" dst="/usr/bin/strings"/>
+			<link os="nto" src="ntomulti-strings-2.16" dst="/usr/bin/ntomulti-strings"/>
+			<link os="linux" src="ntomulti-strings-2.16" dst="/usr/bin/ntomulti-strings"/>
+			<link os="solaris" src="ntomulti-strings-2.16" dst="/usr/bin/ntomulti-strings"/>
+			<link os="win32" src="ntomulti-strings-2.16.exe" dst="/usr/bin/ntomulti-strings.exe"/>
+		</component>
+
+		<component id="strings" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> strings </location>
+			<link os="nto" src="nto{tcpu}-strings-2.16" dst="/usr/bin/nto{tcpu}-strings"/>
+			<link os="linux" src="nto{tcpu}-strings-2.16" dst="/usr/bin/nto{tcpu}-strings"/>
+			<link os="solaris" src="nto{tcpu}-strings-2.16" dst="/usr/bin/nto{tcpu}-strings"/>
+			<link os="win32" src="nto{tcpu}-strings-2.16.exe" dst="/usr/bin/nto{tcpu}-strings.exe"/>
+		</component>
+
+		<component id="strings" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> strings </location>
+			<link os="nto" src="ntox86-strings-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strings"/>
+		</component>
+
+		<component id="objcopy" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> objcopy </location>
+			<link os="nto" src="ntomulti-objcopy-2.16" dst="/usr/bin/objcopy"/>
+			<link os="nto" src="ntomulti-objcopy-2.16" dst="/usr/bin/ntomulti-objcopy"/>
+			<link os="linux" src="ntomulti-objcopy-2.16" dst="/usr/bin/ntomulti-objcopy"/>
+			<link os="solaris" src="ntomulti-objcopy-2.16" dst="/usr/bin/ntomulti-objcopy"/>
+			<link os="win32" src="ntomulti-objcopy-2.16.exe" dst="/usr/bin/ntomulti-objcopy.exe"/>
+		</component>
+
+		<component id="objcopy" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> objcopy </location>
+			<link os="nto" src="nto{tcpu}-objcopy-2.16" dst="/usr/bin/nto{tcpu}-objcopy"/>
+			<link os="linux" src="nto{tcpu}-objcopy-2.16" dst="/usr/bin/nto{tcpu}-objcopy"/>
+			<link os="solaris" src="nto{tcpu}-objcopy-2.16" dst="/usr/bin/nto{tcpu}-objcopy"/>
+			<link os="win32" src="nto{tcpu}-objcopy-2.16.exe" dst="/usr/bin/nto{tcpu}-objcopy.exe"/>
+		</component>
+
+		<component id="objcopy" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> objcopy </location>
+			<link os="nto" src="ntox86-objcopy-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objcopy"/>
+		</component>
+
+		<component id="strip" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> strip-new </location>
+			<link os="nto" src="ntomulti-strip-2.16" dst="/usr/bin/strip"/>
+			<link os="nto" src="ntomulti-strip-2.16" dst="/usr/bin/ntomulti-strip"/>
+			<link os="linux" src="ntomulti-strip-2.16" dst="/usr/bin/ntomulti-strip"/>
+			<link os="solaris" src="ntomulti-strip-2.16" dst="/usr/bin/ntomulti-strip"/>
+			<link os="win32" src="ntomulti-strip-2.16.exe" dst="/usr/bin/ntomulti-strip.exe"/>
+		</component>
+
+		<component id="strip" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> strip-new </location>
+			<link os="nto" src="nto{tcpu}-strip-2.16" dst="/usr/bin/nto{tcpu}-strip"/>
+			<link os="linux" src="nto{tcpu}-strip-2.16" dst="/usr/bin/nto{tcpu}-strip"/>
+			<link os="solaris" src="nto{tcpu}-strip-2.16" dst="/usr/bin/nto{tcpu}-strip"/>
+			<link os="win32" src="nto{tcpu}-strip-2.16.exe" dst="/usr/bin/nto{tcpu}-strip.exe"/>
+		</component>
+
+		<component id="strip" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> strip-new </location>
+			<link os="nto" src="ntox86-strip-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strip"/>
+		</component>
+
+		<component id="addr2line" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> addr2line </location>
+			<link os="nto" src="ntomulti-addr2line-2.16" dst="/usr/bin/addr2line"/>
+			<link os="nto" src="ntomulti-addr2line-2.16" dst="/usr/bin/ntomulti-addr2line"/>
+			<link os="linux" src="ntomulti-addr2line-2.16" dst="/usr/bin/ntomulti-addr2line"/>
+			<link os="solaris" src="ntomulti-addr2line-2.16" dst="/usr/bin/ntomulti-addr2line"/>
+			<link os="win32" src="ntomulti-addr2line-2.16.exe" dst="/usr/bin/ntomulti-addr2line.exe"/>
+		</component>
+
+		<component id="addr2line" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> addr2line </location>
+			<link os="nto" src="nto{tcpu}-addr2line-2.16" dst="/usr/bin/nto{tcpu}-addr2line"/>
+			<link os="linux" src="nto{tcpu}-addr2line-2.16" dst="/usr/bin/nto{tcpu}-addr2line"/>
+			<link os="solaris" src="nto{tcpu}-addr2line-2.16" dst="/usr/bin/nto{tcpu}-addr2line"/>
+			<link os="win32" src="nto{tcpu}-addr2line-2.16.exe" dst="/usr/bin/nto{tcpu}-addr2line.exe"/>
+		</component>
+
+		<component id="addr2line" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> addr2line </location>
+			<link os="nto" src="ntox86-addr2line-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-addr2line"/>
+		</component>
+
+		<component id="nm" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> nm-new </location>
+			<link os="nto" src="ntomulti-nm-2.16" dst="/usr/bin/nm"/>
+			<link os="nto" src="ntomulti-nm-2.16" dst="/usr/bin/ntomulti-nm"/>
+			<link os="linux" src="ntomulti-nm-2.16" dst="/usr/bin/ntomulti-nm"/>
+			<link os="solaris" src="ntomulti-nm-2.16" dst="/usr/bin/ntomulti-nm"/>
+			<link os="win32" src="ntomulti-nm-2.16.exe" dst="/usr/bin/ntomulti-nm.exe"/>
+		</component>
+
+		<component id="nm" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> nm-new </location>
+			<link os="nto" src="nto{tcpu}-nm-2.16" dst="/usr/bin/nto{tcpu}-nm"/>
+			<link os="linux" src="nto{tcpu}-nm-2.16" dst="/usr/bin/nto{tcpu}-nm"/>
+			<link os="solaris" src="nto{tcpu}-nm-2.16" dst="/usr/bin/nto{tcpu}-nm"/>
+			<link os="win32" src="nto{tcpu}-nm-2.16.exe" dst="/usr/bin/nto{tcpu}-nm.exe"/>
+		</component>
+
+		<component id="nm" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> nm-new </location>
+			<link os="nto" src="ntox86-nm-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-nm"/>
+		</component>
+
+		<component id="readelf" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> readelf </location>
+			<link os="nto" src="ntomulti-readelf-2.16" dst="/usr/bin/readelf"/>
+			<link os="nto" src="ntomulti-readelf-2.16" dst="/usr/bin/ntomulti-readelf"/>
+			<link os="linux" src="ntomulti-readelf-2.16" dst="/usr/bin/ntomulti-readelf"/>
+			<link os="solaris" src="ntomulti-readelf-2.16" dst="/usr/bin/ntomulti-readelf"/>
+			<link os="win32" src="ntomulti-readelf-2.16.exe" dst="/usr/bin/ntomulti-readelf.exe"/>
+		</component>
+
+		<component id="readelf" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> readelf </location>
+			<link os="nto" src="nto{tcpu}-readelf-2.16" dst="/usr/bin/nto{tcpu}-readelf"/>
+			<link os="linux" src="nto{tcpu}-readelf-2.16" dst="/usr/bin/nto{tcpu}-readelf"/>
+			<link os="solaris" src="nto{tcpu}-readelf-2.16" dst="/usr/bin/nto{tcpu}-readelf"/>
+			<link os="win32" src="nto{tcpu}-readelf-2.16.exe" dst="/usr/bin/nto{tcpu}-readelf.exe"/>
+		</component>
+
+		<component id="readelf" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> readelf </location>
+			<link os="nto" src="ntox86-readelf-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-readelf"/>
+		</component>
+
+		<component id="cxxfilt" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true"> cxxfilt </location>
+			<link os="nto" src="ntomulti-cxxfilt-2.16" dst="/usr/bin/cxxfilt"/>
+			<link os="nto" src="ntomulti-cxxfilt-2.16" dst="/usr/bin/ntomulti-cxxfilt"/>
+			<link os="linux" src="ntomulti-cxxfilt-2.16" dst="/usr/bin/ntomulti-cxxfilt"/>
+			<link os="solaris" src="ntomulti-cxxfilt-2.16" dst="/usr/bin/ntomulti-cxxfilt"/>
+			<link os="win32" src="ntomulti-cxxfilt-2.16.exe" dst="/usr/bin/ntomulti-cxxfilt.exe"/>
+		</component>
+
+		<component id="cxxfilt" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/binutils" runtime="true"> cxxfilt </location>
+			<link os="nto" src="nto{tcpu}-cxxfilt-2.16" dst="/usr/bin/nto{tcpu}-cxxfilt"/>
+			<link os="linux" src="nto{tcpu}-cxxfilt-2.16" dst="/usr/bin/nto{tcpu}-cxxfilt"/>
+			<link os="solaris" src="nto{tcpu}-cxxfilt-2.16" dst="/usr/bin/nto{tcpu}-cxxfilt"/>
+			<link os="win32" src="nto{tcpu}-cxxfilt-2.16.exe" dst="/usr/bin/nto{tcpu}-cxxfilt.exe"/>
+		</component>
+
+		<component id="cxxfilt" generated="true">
+			<location basedir="nto-x86-o-ntox86/binutils" runtime="true"> cxxfilt </location>
+			<link os="nto" src="ntox86-cxxfilt-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-cxxfilt"/>
+		</component>
+
+		<component id="gprof" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/gprof" runtime="true"> gprof </location>
+			<link os="nto" src="ntomulti-gprof-2.16" dst="/usr/bin/gprof"/>
+			<link os="nto" src="ntomulti-gprof-2.16" dst="/usr/bin/ntomulti-gprof"/>
+			<link os="linux" src="ntomulti-gprof-2.16" dst="/usr/bin/ntomulti-gprof"/>
+			<link os="solaris" src="ntomulti-gprof-2.16" dst="/usr/bin/ntomulti-gprof"/>
+			<link os="win32" src="ntomulti-gprof-2.16.exe" dst="/usr/bin/ntomulti-gprof.exe"/>
+		</component>
+
+		<component id="gprof" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gprof" runtime="true"> gprof </location>
+			<link os="nto" src="nto{tcpu}-gprof-2.16" dst="/usr/bin/nto{tcpu}-gprof"/>
+			<link os="linux" src="nto{tcpu}-gprof-2.16" dst="/usr/bin/nto{tcpu}-gprof"/>
+			<link os="solaris" src="nto{tcpu}-gprof-2.16" dst="/usr/bin/nto{tcpu}-gprof"/>
+			<link os="win32" src="nto{tcpu}-gprof-2.16.exe" dst="/usr/bin/nto{tcpu}-gprof.exe"/>
+		</component>
+
+		<component id="gprof" generated="true">
+			<location basedir="nto-x86-o-ntox86/gprof" runtime="true"> gprof </location>
+			<link os="nto" src="ntox86-gprof-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-gprof"/>
+		</component>
+
+		<component id="ld" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/ld" runtime="true"> ld-new </location>
+			<link os="nto" src="nto{tcpu}-ld-2.16" dst="/usr/bin/nto{tcpu}-ld"/>
+			<link os="linux" src="nto{tcpu}-ld-2.16" dst="/usr/bin/nto{tcpu}-ld"/>
+			<link os="solaris" src="nto{tcpu}-ld-2.16" dst="/usr/bin/nto{tcpu}-ld"/>
+			<link os="win32" src="nto{tcpu}-ld-2.16.exe" dst="/usr/bin/nto{tcpu}-ld.exe"/>
+		</component>
+
+		<component id="ld" generated="true">
+			<location basedir="nto-x86-o-ntox86/ld" runtime="true"> ld-new </location>
+			<link os="nto" src="ntox86-ld-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ld"/>
+			<link os="nto" src="ntox86-ld-2.16" dst="/usr/bin/ld"/>
+		</component>
+
+		<component id="as" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gas" runtime="true"> as-new </location>
+			<link os="nto" src="nto{tcpu}-as-2.16" dst="/usr/bin/nto{tcpu}-as"/>
+			<link os="linux" src="nto{tcpu}-as-2.16" dst="/usr/bin/nto{tcpu}-as"/>
+			<link os="solaris" src="nto{tcpu}-as-2.16" dst="/usr/bin/nto{tcpu}-as"/>
+			<link os="win32" src="nto{tcpu}-as-2.16.exe" dst="/usr/bin/nto{tcpu}-as.exe"/>
+		</component>
+
+		<component id="as" generated="true">
+			<location basedir="nto-x86-o-ntox86/gas" runtime="true"> as-new </location>
+			<link os="nto" src="ntox86-as-2.16" dst="/usr/bin/i386-pc-nto-qnx6.3.0-as"/>
+			<link os="nto" src="ntox86-as-2.16" dst="/usr/bin/as"/>
+		</component>
+
+		</package>
+
+	</contents>
+
+</module>
+

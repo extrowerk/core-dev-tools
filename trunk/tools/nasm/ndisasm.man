@@ -1,0 +1,1 @@
+-man ndisasm.1

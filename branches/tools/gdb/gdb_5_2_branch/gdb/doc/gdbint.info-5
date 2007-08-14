@@ -1,0 +1,1200 @@
+This is gdbint.info, produced by makeinfo version 4.1 from
+./gdbint.texinfo.
+
+INFO-DIR-SECTION Programming & development tools.
+START-INFO-DIR-ENTRY
+* Gdb-Internals: (gdbint).	The GNU debugger's internals.
+END-INFO-DIR-ENTRY
+
+   This file documents the internals of the GNU debugger GDB.
+Copyright 1990,1991,1992,1993,1994,1996,1998,1999,2000,2001,2002
+Free Software Foundation, Inc.  Contributed by Cygnus Solutions.
+Written by John Gilmore.  Second Edition by Stan Shebs.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+   (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+modify this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+File: gdbint.info,  Node: Releasing GDB,  Next: Testsuite,  Prev: Porting GDB,  Up: Top
+
+Releasing GDB
+*************
+
+Obsolete any code
+=================
+
+   Before anything else, poke the other developers (and around the
+source code) to see if there is anything that can be removed from GDB
+(an old target, an unused file).
+
+   Obsolete code is identified by adding an `OBSOLETE' prefix to every
+line.  Doing this means that it is easy to identify obsolete code when
+grepping through the sources.
+
+   The process has a number of steps and is intentionally slow -- this
+is to mainly ensure that people have had a reasonable chance to respond.
+Remember, everything on the internet takes a week.
+
+   * announce the change on GDB mailing list <gdb@sources.redhat.com>
+
+   * wait a week or so
+
+   * announce the change on GDB Announcement mailing list
+     <gdb-announce@sources.redhat.com>
+
+   * wait a week or so
+
+   * go through and edit all relevant files and lines (e.g., in
+     `configure.tgt') so that they are prefixed with the word
+     `OBSOLETE'.
+
+   _Maintainer note: Removing old code, while regrettable, is a good
+thing.  Firstly it helps the developers by removing code that is either
+no longer relevant or simply wrong.  Secondly since it removes any
+history associated with the file (effectively clearing the slate) the
+developer has a much freer hand when it comes to fixing broken files._
+
+Before the branch
+=================
+
+   The most important objective at this stage is to find and fix simple
+changes that become a pain to track once the branch is created.  For
+instance, configuration problems that stop GDB from even building.  If
+you can't get the problem fixed, document it in the `gdb/PROBLEMS' file.
+
+Organize and announce the schedule.
+-----------------------------------
+
+   The following is a possible schedule.  It is based on the
+rule-of-thumb that everything on the Internet takes a week.  You may
+want to even increase those times further since an analysis of the
+actual data strongly suggests that the below is far to aggressive.
+
+   * announce it
+
+   * wait a week
+
+   * announce branch date
+
+   * wait a week
+
+   * Cut the branch
+
+   * wait a week
+
+   * start enjoying all the fun
+
+   As an aside, the branch tag name is probably regrettable vis:
+     gdb_N_M-YYYY-MM-DD-{branch,branchpoint}
+
+Refresh any imported files.
+---------------------------
+
+   A number of files are taken from external repositories.  They
+include:
+
+   * `texinfo/texinfo.tex'
+
+   * `config.guess' et. al.
+
+   and should be refreshed.
+
+Prompt for `gdb/NEWS'
+---------------------
+
+   People always forget.  Send a post reminding them but also if you
+know something interesting happened add it your self.
+
+Review `gdb/README'
+-------------------
+
+   Grab one of the nightly snapshots and then walk through the
+`gdb/README' looking for anything that can be improved.
+
+Check the ARI
+-------------
+
+   ARI is an `awk' script (Awk Regression Indicator?) that checks for a
+number of errors and coding conventions.  The checks include things like
+using `malloc' instead of `xmalloc' and file naming problems.  There
+shouldn't be any regressions.
+
+Cut the branch
+==============
+
+The dirty work
+--------------
+
+   I think something like the below was used:
+
+     $  d=`date -u +%Y-%m-%d`
+     $  echo $d
+     2002-01-24
+     $  cvs -f -d /cvs/src rtag -D $d-gmt \
+     gdb_5_1-$d-branchpoint insight+dejagnu
+     $  cvs -f -d /cvs/src rtag -b -r gdb_V_V-$d-branchpoint \
+     gdb_5_1-$d-branch insight+dejagnu
+     $
+
+   * the `-D YYYY-MM-DD-gmt' forces the branch to an exact date/time.
+
+   * the trunk is first taged so that the branch point can easily be
+     found
+
+   * Insight (which includes GDB) and dejagnu are tagged at the same
+     time
+
+Post the branch info
+--------------------
+
+Update the web and news pages
+-----------------------------
+
+Tweak cron to track the new branch
+----------------------------------
+
+Stabilize the branch
+====================
+
+   Something goes here.
+
+Create a Release
+================
+
+   This procedure can be followed when creating beta and final final
+releases.  With a beta many of the steps can be skipped.
+
+Establish a few defaults.
+-------------------------
+
+     $  b=gdb_5_1-2001-07-29-branch
+     $  v=5.1.1
+     $  t=/sourceware/snapshot-tmp/gdbadmin-tmp
+     $  echo $t/$b/$v
+     $  mkdir -p $t/$b/$v
+     $  cd $t/$b/$v
+     $  pwd
+     /sourceware/snapshot-tmp/gdbadmin-tmp/gdb_5_1-2001-07-29-branch/5.1.1
+     $  which autoconf
+     /home/gdbadmin/bin/autoconf
+     $
+
+   NB: Check the autoconf version carefully.  You want to be using the
+version taken from the binutils snapshot directory.  It is most likely
+that your system's installed version (`/usr/bin'?) is probably correct.
+
+Check out the relevant modules:
+-------------------------------
+
+     $  for m in gdb insight dejagnu
+     do
+     ( mkdir -p $m && cd $m && cvs -q -f -d /cvs/src co -P -r $b $m )
+     done
+     $
+
+   NB: The reading of `.cvsrc' is disabled (`-f') so that there isn't
+any confusion between what is written here and what your local CVS
+really does.
+
+Update relevant files.
+----------------------
+
+`gdb/NEWS'
+..........
+
+   Major releases get their comments added as part of the mainline.
+Minor releases should probably mention any significant bugs that were
+fixed.
+
+   Don't forget to update the ChangeLog.
+
+     $  emacs gdb/src/gdb/NEWS
+     ...
+     c-x 4 a
+     ...
+     c-x c-s c-x c-c
+     $  cp gdb/src/gdb/NEWS insight/src/gdb/NEWS
+     $  cp gdb/src/gdb/ChangeLog insight/src/gdb/ChangeLog
+
+`gdb/README'
+............
+
+   You'll need to update: the version, the update date, and who did it.
+
+     $  emacs gdb/src/gdb/README
+     ...
+     c-x 4 a
+     ...
+     c-x c-s c-x c-c
+     $  cp gdb/src/gdb/README insight/src/gdb/README
+     $  cp gdb/src/gdb/ChangeLog insight/src/gdb/ChangeLog
+
+   _Maintainer note: Hopefully the README file was reviewed before the
+initial branch was cut so just a simple substitute is needed to get it
+updated._
+
+   _Maintainer note: Other projects generate `README' and `INSTALL'
+from the core documentation.  This might be worth pursuing._
+
+`gdb/version.in'
+................
+
+     $  echo $v > gdb/src/gdb/version.in
+     $  emacs gdb/src/gdb/version.in
+     ...
+     c-x 4 a
+     ...
+     c-x c-s c-x c-c
+     $  cp gdb/src/gdb/version.in insight/src/gdb/version.in
+     $  cp gdb/src/gdb/ChangeLog insight/src/gdb/ChangeLog
+
+`dejagnu/src/dejagnu/configure.in'
+..................................
+
+   Dejagnu is more complicated.  The version number is a parameter to
+AM_INIT_AUTOMAKE.  Tweak it to read something like GDB-5.1.1.
+
+   Re-generate configure.
+
+   Add a ChangeLog.
+
+Do the dirty work
+-----------------
+
+   This is identical to the process used when creating the daily
+snapshot.
+
+     $  for m in gdb insight dejagnu
+     do
+     ( cd $m/src && gmake -f Makefile.in $m.tar.bz2 )
+     done
+
+Check the source files
+----------------------
+
+   You're looking for files that have mysteriously disappeared as the
+`distclean' has the habit of deleting files it shouldn't.  Watch out
+for the `version.in' update `cronjob'.
+
+     $  ( cd gdb/src && cvs -f -q -n update )
+     M djunpack.bat
+     ? proto-toplev
+     ? gdb-5.1.1.tar.bz2
+     M gdb/ChangeLog
+     M gdb/NEWS
+     M gdb/README
+     M gdb/version.in
+     ? gdb/p-exp.tab.c
+     ? gdb/doc/gdb.info-11
+     ? gdb/doc/gdb.info-12
+     ? gdb/doc/gdb.info-13
+     ? gdb/doc/gdb.info-14
+     ? gdb/doc/gdb.info-15
+     ? gdb/doc/gdbint.info-4
+     ? gdb/doc/gdbint.info-5
+     $
+
+   _Don't worry about the `gdb.info-??' or `gdb/p-exp.tab.c'.  They
+were generated (and yes `gdb.info-1' was also generated only something
+strange with CVS means that they didn't get supressed).  Fixing it
+would be nice though._
+
+Re-pack the release with `gzip'
+-------------------------------
+
+     $  cp */*/*.bz2 .
+     $  bunzip2 -k -v *.bz2
+     $  gzip -9 -v *.tar
+
+   NB: A pipe such as `bunzip2 < xxx.bz2 | gzip -9 > xxx.gz' shouldn't
+be used since, in that mode, gzip doesn't know the file name information
+and consequently can't include it.  This is also why the release process
+runs `tar' and `bzip2' as separate passes.
+
+   _Maintainer note: The release process could be changed to create
+`.tar' rather than `.tar.bz2' files._
+
+Check the release
+=================
+
+   Grab the `gdb.tar.bz2', copy it to your local machine and then try a
+simple build using it.
+
+   If this is a pre-release just copy the `.bz2' files to the snapshot
+directory and skip the remaining steps.
+
+   If it is a final release, also make it available under a bogus name
+so that others can download and check it.
+
+   _Maintainer note: This adds an extra day to the release process but
+is very much worth it.  Other developers are given the oportunity to
+check that things like your `NEWS' entries are correct or that other
+changes actually work._
+
+Release the tar ball
+====================
+
+   This is where, unfortunatly, the notes just get vague.
+
+Install on sware
+----------------
+
+     $  cp *.bz2 *.gz ~ftp/pub/gdb/releases
+
+Create and update the web pages.
+--------------------------------
+
+   Try the following:
+
+   * create the directory `htdocs/VERSION' (e.g., `htdocs/5.1.1'
+
+   * copy `index.html' and `ANNOUNCE' from the previous release into
+     the `htdocs/VERSION' directory and edit for content.  Things like
+     the MD5 sums, `ls -l' output, the version number and so on will
+     need updating.  Add NEWS entries to the `ANNOUNCE'.  This ensures
+     that the previous announcement is kept somewhere handy.
+
+   * copy the `NEWS' from the distro into the `htdocs/VERSION'
+     directory, trim down to just the most recent news items
+
+   * Add a short (identical) announcement to both `htdocs/index.html'
+     and `htdocs/news/index.html'
+
+   * edit the script `htdocs/index.sh' to link in the new release
+     number.  Run it across all `index.html' files vis `./index.sh
+     index.html */index.html'.
+
+   * grep the `htdocs' tree for references to the previous release
+     version (`htdocs/download/index.html')
+
+   _Maintainer note: This step is too fragile -- it is too easy to mis
+one of the entries and forget to update it._
+
+Generate online docs
+--------------------
+
+   You need to find the magic command that is used to generate the
+online docs from the `.tar.bz2'.  The best way is to look in the output
+from one of the nightly cronjobs and then just edit accordingly.
+Something like:
+
+     $  ~/ss/update-web-docs \
+      ~ftp/pub/gdb/releases/gdb-5.1.1.tar.bz2 \
+      $PWD/www \
+      /www/sourceware/htdocs/gdb/5.1.1/onlinedocs \
+      gdb
+
+Something about `ANNOUNCEMENT'
+------------------------------
+
+   Send the `ANNOUNCEMENT' file you created above to:
+
+   * GDB Announcement mailing list <gdb-announce@sources.redhat.com>
+
+   * The gnu announce list (but delay it a day or so to let things get
+     out).
+
+Install it on GNU
+-----------------
+
+   At the time of writing, the GNU machine was `gnudist.gnu.org' in
+`~ftp/gnu/gdb' (I think, I'm still waiting for it to copy into my home
+directory).
+
+Cleanup
+=======
+
+Commit outstanding changes
+--------------------------
+
+   In particular you'll need to commit the changes to:
+
+   * `gdb/ChangeLog'
+
+   * `gdb/version.in'
+
+   * `gdb/NEWS'
+
+   * `gdb/README'
+
+Tag the release
+---------------
+
+   Something like:
+
+     $  d=`date -u +%Y-%m-%d`
+     $  echo $d
+     2002-01-24
+     $  ( cd insight/src/gdb && cvs -f -q update )
+     $  ( cd insight/src && cvs -f -q tag gdb_5_1_1-$d-release )
+
+   Insight is used since that contains more of the release than GDB (yes
+dejagnu doesn't get tagged but I think we can live with that.).
+
+Restart `gdb/version.in'
+------------------------
+
+   If `gdb/version.in' does not contain an ISO date such as
+`2002-01-24' then the daily `cronjob' won't update it.  Having
+committed all the release changes it can be set to
+`5.1.0_0000-00-00-cvs' which will restart things (yes the `_' is
+important - it affects the snapshot process).
+
+   Don't forget the `ChangeLog'.
+
+Merge into trunk
+----------------
+
+   The files committed to the branch may also need changes merged into
+the trunk.
+
+Post release
+============
+
+   Remove any `OBSOLETE' code.
+
+
+File: gdbint.info,  Node: Testsuite,  Next: Hints,  Prev: Releasing GDB,  Up: Top
+
+Testsuite
+*********
+
+   The testsuite is an important component of the GDB package.  While
+it is always worthwhile to encourage user testing, in practice this is
+rarely sufficient; users typically use only a small subset of the
+available commands, and it has proven all too common for a change to
+cause a significant regression that went unnoticed for some time.
+
+   The GDB testsuite uses the DejaGNU testing framework.  DejaGNU is
+built using `Tcl' and `expect'.  The tests themselves are calls to
+various `Tcl' procs; the framework runs all the procs and summarizes
+the passes and fails.
+
+Using the Testsuite
+===================
+
+   To run the testsuite, simply go to the GDB object directory (or to
+the testsuite's objdir) and type `make check'.  This just sets up some
+environment variables and invokes DejaGNU's `runtest' script.  While
+the testsuite is running, you'll get mentions of which test file is in
+use, and a mention of any unexpected passes or fails.  When the
+testsuite is finished, you'll get a summary that looks like this:
+
+                     === gdb Summary ===
+     
+     # of expected passes            6016
+     # of unexpected failures        58
+     # of unexpected successes       5
+     # of expected failures          183
+     # of unresolved testcases       3
+     # of untested testcases         5
+
+   The ideal test run consists of expected passes only; however, reality
+conspires to keep us from this ideal.  Unexpected failures indicate
+real problems, whether in GDB or in the testsuite.  Expected failures
+are still failures, but ones which have been decided are too hard to
+deal with at the time; for instance, a test case might work everywhere
+except on AIX, and there is no prospect of the AIX case being fixed in
+the near future.  Expected failures should not be added lightly, since
+you may be masking serious bugs in GDB.  Unexpected successes are
+expected fails that are passing for some reason, while unresolved and
+untested cases often indicate some minor catastrophe, such as the
+compiler being unable to deal with a test program.
+
+   When making any significant change to GDB, you should run the
+testsuite before and after the change, to confirm that there are no
+regressions.  Note that truly complete testing would require that you
+run the testsuite with all supported configurations and a variety of
+compilers; however this is more than really necessary.  In many cases
+testing with a single configuration is sufficient.  Other useful
+options are to test one big-endian (Sparc) and one little-endian (x86)
+host, a cross config with a builtin simulator (powerpc-eabi, mips-elf),
+or a 64-bit host (Alpha).
+
+   If you add new functionality to GDB, please consider adding tests
+for it as well; this way future GDB hackers can detect and fix their
+changes that break the functionality you added.  Similarly, if you fix
+a bug that was not previously reported as a test failure, please add a
+test case for it.  Some cases are extremely difficult to test, such as
+code that handles host OS failures or bugs in particular versions of
+compilers, and it's OK not to try to write tests for all of those.
+
+Testsuite Organization
+======================
+
+   The testsuite is entirely contained in `gdb/testsuite'.  While the
+testsuite includes some makefiles and configury, these are very minimal,
+and used for little besides cleaning up, since the tests themselves
+handle the compilation of the programs that GDB will run.  The file
+`testsuite/lib/gdb.exp' contains common utility procs useful for all
+GDB tests, while the directory `testsuite/config' contains
+configuration-specific files, typically used for special-purpose
+definitions of procs like `gdb_load' and `gdb_start'.
+
+   The tests themselves are to be found in `testsuite/gdb.*' and
+subdirectories of those.  The names of the test files must always end
+with `.exp'.  DejaGNU collects the test files by wildcarding in the
+test directories, so both subdirectories and individual files get
+chosen and run in alphabetical order.
+
+   The following table lists the main types of subdirectories and what
+they are for.  Since DejaGNU finds test files no matter where they are
+located, and since each test file sets up its own compilation and
+execution environment, this organization is simply for convenience and
+intelligibility.
+
+`gdb.base'
+     This is the base testsuite.  The tests in it should apply to all
+     configurations of GDB (but generic native-only tests may live
+     here).  The test programs should be in the subset of C that is
+     valid K&R, ANSI/ISO, and C++ (`#ifdef's are allowed if necessary,
+     for instance for prototypes).
+
+`gdb.LANG'
+     Language-specific tests for any language LANG besides C.  Examples
+     are `gdb.c++' and `gdb.java'.
+
+`gdb.PLATFORM'
+     Non-portable tests.  The tests are specific to a specific
+     configuration (host or target), such as HP-UX or eCos.  Example is
+     `gdb.hp', for HP-UX.
+
+`gdb.COMPILER'
+     Tests specific to a particular compiler.  As of this writing (June
+     1999), there aren't currently any groups of tests in this category
+     that couldn't just as sensibly be made platform-specific, but one
+     could imagine a `gdb.gcc', for tests of GDB's handling of GCC
+     extensions.
+
+`gdb.SUBSYSTEM'
+     Tests that exercise a specific GDB subsystem in more depth.  For
+     instance, `gdb.disasm' exercises various disassemblers, while
+     `gdb.stabs' tests pathways through the stabs symbol reader.
+
+Writing Tests
+=============
+
+   In many areas, the GDB tests are already quite comprehensive; you
+should be able to copy existing tests to handle new cases.
+
+   You should try to use `gdb_test' whenever possible, since it
+includes cases to handle all the unexpected errors that might happen.
+However, it doesn't cost anything to add new test procedures; for
+instance, `gdb.base/exprs.exp' defines a `test_expr' that calls
+`gdb_test' multiple times.
+
+   Only use `send_gdb' and `gdb_expect' when absolutely necessary, such
+as when GDB has several valid responses to a command.
+
+   The source language programs do _not_ need to be in a consistent
+style.  Since GDB is used to debug programs written in many different
+styles, it's worth having a mix of styles in the testsuite; for
+instance, some GDB bugs involving the display of source lines would
+never manifest themselves if the programs used GNU coding style
+uniformly.
+
+
+File: gdbint.info,  Node: Hints,  Next: GNU Free Documentation License,  Prev: Testsuite,  Up: Top
+
+Hints
+*****
+
+   Check the `README' file, it often has useful information that does
+not appear anywhere else in the directory.
+
+* Menu:
+
+* Getting Started::		Getting started working on GDB
+* Debugging GDB::		Debugging GDB with itself
+
+
+File: gdbint.info,  Node: Getting Started,  Up: Hints
+
+Getting Started
+===============
+
+   GDB is a large and complicated program, and if you first starting to
+work on it, it can be hard to know where to start.  Fortunately, if you
+know how to go about it, there are ways to figure out what is going on.
+
+   This manual, the GDB Internals manual, has information which applies
+generally to many parts of GDB.
+
+   Information about particular functions or data structures are
+located in comments with those functions or data structures.  If you
+run across a function or a global variable which does not have a
+comment correctly explaining what is does, this can be thought of as a
+bug in GDB; feel free to submit a bug report, with a suggested comment
+if you can figure out what the comment should say.  If you find a
+comment which is actually wrong, be especially sure to report that.
+
+   Comments explaining the function of macros defined in host, target,
+or native dependent files can be in several places.  Sometimes they are
+repeated every place the macro is defined.  Sometimes they are where the
+macro is used.  Sometimes there is a header file which supplies a
+default definition of the macro, and the comment is there.  This manual
+also documents all the available macros.
+
+   Start with the header files.  Once you have some idea of how GDB's
+internal symbol tables are stored (see `symtab.h', `gdbtypes.h'), you
+will find it much easier to understand the code which uses and creates
+those symbol tables.
+
+   You may wish to process the information you are getting somehow, to
+enhance your understanding of it.  Summarize it, translate it to another
+language, add some (perhaps trivial or non-useful) feature to GDB, use
+the code to predict what a test case would do and write the test case
+and verify your prediction, etc.  If you are reading code and your eyes
+are starting to glaze over, this is a sign you need to use a more active
+approach.
+
+   Once you have a part of GDB to start with, you can find more
+specifically the part you are looking for by stepping through each
+function with the `next' command.  Do not use `step' or you will
+quickly get distracted; when the function you are stepping through
+calls another function try only to get a big-picture understanding
+(perhaps using the comment at the beginning of the function being
+called) of what it does.  This way you can identify which of the
+functions being called by the function you are stepping through is the
+one which you are interested in.  You may need to examine the data
+structures generated at each stage, with reference to the comments in
+the header files explaining what the data structures are supposed to
+look like.
+
+   Of course, this same technique can be used if you are just reading
+the code, rather than actually stepping through it.  The same general
+principle applies--when the code you are looking at calls something
+else, just try to understand generally what the code being called does,
+rather than worrying about all its details.
+
+   A good place to start when tracking down some particular area is with
+a command which invokes that feature.  Suppose you want to know how
+single-stepping works.  As a GDB user, you know that the `step' command
+invokes single-stepping.  The command is invoked via command tables
+(see `command.h'); by convention the function which actually performs
+the command is formed by taking the name of the command and adding
+`_command', or in the case of an `info' subcommand, `_info'.  For
+example, the `step' command invokes the `step_command' function and the
+`info display' command invokes `display_info'.  When this convention is
+not followed, you might have to use `grep' or `M-x tags-search' in
+emacs, or run GDB on itself and set a breakpoint in `execute_command'.
+
+   If all of the above fail, it may be appropriate to ask for
+information on `bug-gdb'.  But _never_ post a generic question like "I
+was wondering if anyone could give me some tips about understanding
+GDB"--if we had some magic secret we would put it in this manual.
+Suggestions for improving the manual are always welcome, of course.
+
+
+File: gdbint.info,  Node: Debugging GDB,  Up: Hints
+
+Debugging GDB with itself
+=========================
+
+   If GDB is limping on your machine, this is the preferred way to get
+it fully functional.  Be warned that in some ancient Unix systems, like
+Ultrix 4.2, a program can't be running in one process while it is being
+debugged in another.  Rather than typing the command `./gdb ./gdb',
+which works on Suns and such, you can copy `gdb' to `gdb2' and then
+type `./gdb ./gdb2'.
+
+   When you run GDB in the GDB source directory, it will read a
+`.gdbinit' file that sets up some simple things to make debugging gdb
+easier.  The `info' command, when executed without a subcommand in a
+GDB being debugged by gdb, will pop you back up to the top level gdb.
+See `.gdbinit' for details.
+
+   If you use emacs, you will probably want to do a `make TAGS' after
+you configure your distribution; this will put the machine dependent
+routines for your local machine where they will be accessed first by
+`M-.'
+
+   Also, make sure that you've either compiled GDB with your local cc,
+or have run `fixincludes' if you are compiling with gcc.
+
+Submitting Patches
+==================
+
+   Thanks for thinking of offering your changes back to the community of
+GDB users.  In general we like to get well designed enhancements.
+Thanks also for checking in advance about the best way to transfer the
+changes.
+
+   The GDB maintainers will only install "cleanly designed" patches.
+This manual summarizes what we believe to be clean design for GDB.
+
+   If the maintainers don't have time to put the patch in when it
+arrives, or if there is any question about a patch, it goes into a
+large queue with everyone else's patches and bug reports.
+
+   The legal issue is that to incorporate substantial changes requires a
+copyright assignment from you and/or your employer, granting ownership
+of the changes to the Free Software Foundation.  You can get the
+standard documents for doing this by sending mail to `gnu@gnu.org' and
+asking for it.  We recommend that people write in "All programs owned
+by the Free Software Foundation" as "NAME OF PROGRAM", so that changes
+in many programs (not just GDB, but GAS, Emacs, GCC, etc) can be
+contributed with only one piece of legalese pushed through the
+bureaucracy and filed with the FSF.  We can't start merging changes
+until this paperwork is received by the FSF (their rules, which we
+follow since we maintain it for them).
+
+   Technically, the easiest way to receive changes is to receive each
+feature as a small context diff or unidiff, suitable for `patch'.  Each
+message sent to me should include the changes to C code and header
+files for a single feature, plus `ChangeLog' entries for each directory
+where files were modified, and diffs for any changes needed to the
+manuals (`gdb/doc/gdb.texinfo' or `gdb/doc/gdbint.texinfo').  If there
+are a lot of changes for a single feature, they can be split down into
+multiple messages.
+
+   In this way, if we read and like the feature, we can add it to the
+sources with a single patch command, do some testing, and check it in.
+If you leave out the `ChangeLog', we have to write one.  If you leave
+out the doc, we have to puzzle out what needs documenting.  Etc., etc.
+
+   The reason to send each change in a separate message is that we will
+not install some of the changes.  They'll be returned to you with
+questions or comments.  If we're doing our job correctly, the message
+back to you will say what you have to fix in order to make the change
+acceptable.  The reason to have separate messages for separate features
+is so that the acceptable changes can be installed while one or more
+changes are being reworked.  If multiple features are sent in a single
+message, we tend to not put in the effort to sort out the acceptable
+changes from the unacceptable, so none of the features get installed
+until all are acceptable.
+
+   If this sounds painful or authoritarian, well, it is.  But we get a
+lot of bug reports and a lot of patches, and many of them don't get
+installed because we don't have the time to finish the job that the bug
+reporter or the contributor could have done.  Patches that arrive
+complete, working, and well designed, tend to get installed on the day
+they arrive.  The others go into a queue and get installed as time
+permits, which, since the maintainers have many demands to meet, may not
+be for quite some time.
+
+   Please send patches directly to the GDB maintainers
+<gdb-patches@sources.redhat.com>.
+
+Obsolete Conditionals
+=====================
+
+   Fragments of old code in GDB sometimes reference or set the following
+configuration macros.  They should not be used by new code, and old uses
+should be removed as those parts of the debugger are otherwise touched.
+
+`STACK_END_ADDR'
+     This macro used to define where the end of the stack appeared, for
+     use in interpreting core file formats that don't record this
+     address in the core file itself.  This information is now
+     configured in BFD, and GDB gets the info portably from there.  The
+     values in GDB's configuration files should be moved into BFD
+     configuration files (if needed there), and deleted from all of
+     GDB's config files.
+
+     Any `FOO-xdep.c' file that references STACK_END_ADDR is so old
+     that it has never been converted to use BFD.  Now that's old!
+
+`PYRAMID_CONTROL_FRAME_DEBUGGING'
+     pyr-xdep.c
+
+`PYRAMID_CORE'
+     pyr-xdep.c
+
+`PYRAMID_PTRACE'
+     pyr-xdep.c
+
+`REG_STACK_SEGMENT'
+     exec.c
+
+
+File: gdbint.info,  Node: GNU Free Documentation License,  Next: Index,  Prev: Hints,  Up: Top
+
+GNU Free Documentation License
+******************************
+
+                        Version 1.1, March 2000
+     Copyright (C) 2000  Free Software Foundation, Inc.
+     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+
+
+  0. PREAMBLE
+
+     The purpose of this License is to make a manual, textbook, or other
+     written document "free" in the sense of freedom: to assure everyone
+     the effective freedom to copy and redistribute it, with or without
+     modifying it, either commercially or noncommercially.  Secondarily,
+     this License preserves for the author and publisher a way to get
+     credit for their work, while not being considered responsible for
+     modifications made by others.
+
+     This License is a kind of "copyleft", which means that derivative
+     works of the document must themselves be free in the same sense.
+     It complements the GNU General Public License, which is a copyleft
+     license designed for free software.
+
+     We have designed this License in order to use it for manuals for
+     free software, because free software needs free documentation: a
+     free program should come with manuals providing the same freedoms
+     that the software does.  But this License is not limited to
+     software manuals; it can be used for any textual work, regardless
+     of subject matter or whether it is published as a printed book.
+     We recommend this License principally for works whose purpose is
+     instruction or reference.
+
+
+  1. APPLICABILITY AND DEFINITIONS
+
+     This License applies to any manual or other work that contains a
+     notice placed by the copyright holder saying it can be distributed
+     under the terms of this License.  The "Document", below, refers to
+     any such manual or work.  Any member of the public is a licensee,
+     and is addressed as "you."
+
+     A "Modified Version" of the Document means any work containing the
+     Document or a portion of it, either copied verbatim, or with
+     modifications and/or translated into another language.
+
+     A "Secondary Section" is a named appendix or a front-matter
+     section of the Document that deals exclusively with the
+     relationship of the publishers or authors of the Document to the
+     Document's overall subject (or to related matters) and contains
+     nothing that could fall directly within that overall subject.
+     (For example, if the Document is in part a textbook of
+     mathematics, a Secondary Section may not explain any mathematics.)
+     The relationship could be a matter of historical connection with
+     the subject or with related matters, or of legal, commercial,
+     philosophical, ethical or political position regarding them.
+
+     The "Invariant Sections" are certain Secondary Sections whose
+     titles are designated, as being those of Invariant Sections, in
+     the notice that says that the Document is released under this
+     License.
+
+     The "Cover Texts" are certain short passages of text that are
+     listed, as Front-Cover Texts or Back-Cover Texts, in the notice
+     that says that the Document is released under this License.
+
+     A "Transparent" copy of the Document means a machine-readable copy,
+     represented in a format whose specification is available to the
+     general public, whose contents can be viewed and edited directly
+     and straightforwardly with generic text editors or (for images
+     composed of pixels) generic paint programs or (for drawings) some
+     widely available drawing editor, and that is suitable for input to
+     text formatters or for automatic translation to a variety of
+     formats suitable for input to text formatters.  A copy made in an
+     otherwise Transparent file format whose markup has been designed
+     to thwart or discourage subsequent modification by readers is not
+     Transparent.  A copy that is not "Transparent" is called "Opaque."
+
+     Examples of suitable formats for Transparent copies include plain
+     ASCII without markup, Texinfo input format, LaTeX input format,
+     SGML or XML using a publicly available DTD, and
+     standard-conforming simple HTML designed for human modification.
+     Opaque formats include PostScript, PDF, proprietary formats that
+     can be read and edited only by proprietary word processors, SGML
+     or XML for which the DTD and/or processing tools are not generally
+     available, and the machine-generated HTML produced by some word
+     processors for output purposes only.
+
+     The "Title Page" means, for a printed book, the title page itself,
+     plus such following pages as are needed to hold, legibly, the
+     material this License requires to appear in the title page.  For
+     works in formats which do not have any title page as such, "Title
+     Page" means the text near the most prominent appearance of the
+     work's title, preceding the beginning of the body of the text.
+
+
+  2. VERBATIM COPYING
+
+     You may copy and distribute the Document in any medium, either
+     commercially or noncommercially, provided that this License, the
+     copyright notices, and the license notice saying this License
+     applies to the Document are reproduced in all copies, and that you
+     add no other conditions whatsoever to those of this License.  You
+     may not use technical measures to obstruct or control the reading
+     or further copying of the copies you make or distribute.  However,
+     you may accept compensation in exchange for copies.  If you
+     distribute a large enough number of copies you must also follow
+     the conditions in section 3.
+
+     You may also lend copies, under the same conditions stated above,
+     and you may publicly display copies.
+
+
+  3. COPYING IN QUANTITY
+
+     If you publish printed copies of the Document numbering more than
+     100, and the Document's license notice requires Cover Texts, you
+     must enclose the copies in covers that carry, clearly and legibly,
+     all these Cover Texts: Front-Cover Texts on the front cover, and
+     Back-Cover Texts on the back cover.  Both covers must also clearly
+     and legibly identify you as the publisher of these copies.  The
+     front cover must present the full title with all words of the
+     title equally prominent and visible.  You may add other material
+     on the covers in addition.  Copying with changes limited to the
+     covers, as long as they preserve the title of the Document and
+     satisfy these conditions, can be treated as verbatim copying in
+     other respects.
+
+     If the required texts for either cover are too voluminous to fit
+     legibly, you should put the first ones listed (as many as fit
+     reasonably) on the actual cover, and continue the rest onto
+     adjacent pages.
+
+     If you publish or distribute Opaque copies of the Document
+     numbering more than 100, you must either include a
+     machine-readable Transparent copy along with each Opaque copy, or
+     state in or with each Opaque copy a publicly-accessible
+     computer-network location containing a complete Transparent copy
+     of the Document, free of added material, which the general
+     network-using public has access to download anonymously at no
+     charge using public-standard network protocols.  If you use the
+     latter option, you must take reasonably prudent steps, when you
+     begin distribution of Opaque copies in quantity, to ensure that
+     this Transparent copy will remain thus accessible at the stated
+     location until at least one year after the last time you
+     distribute an Opaque copy (directly or through your agents or
+     retailers) of that edition to the public.
+
+     It is requested, but not required, that you contact the authors of
+     the Document well before redistributing any large number of
+     copies, to give them a chance to provide you with an updated
+     version of the Document.
+
+
+  4. MODIFICATIONS
+
+     You may copy and distribute a Modified Version of the Document
+     under the conditions of sections 2 and 3 above, provided that you
+     release the Modified Version under precisely this License, with
+     the Modified Version filling the role of the Document, thus
+     licensing distribution and modification of the Modified Version to
+     whoever possesses a copy of it.  In addition, you must do these
+     things in the Modified Version:
+
+     A. Use in the Title Page (and on the covers, if any) a title
+     distinct    from that of the Document, and from those of previous
+     versions    (which should, if there were any, be listed in the
+     History section    of the Document).  You may use the same title
+     as a previous version    if the original publisher of that version
+     gives permission.
+     B. List on the Title Page, as authors, one or more persons or
+     entities    responsible for authorship of the modifications in the
+     Modified    Version, together with at least five of the principal
+     authors of the    Document (all of its principal authors, if it
+     has less than five).
+     C. State on the Title page the name of the publisher of the
+     Modified Version, as the publisher.
+     D. Preserve all the copyright notices of the Document.
+     E. Add an appropriate copyright notice for your modifications
+     adjacent to the other copyright notices.
+     F. Include, immediately after the copyright notices, a license
+     notice    giving the public permission to use the Modified Version
+     under the    terms of this License, in the form shown in the
+     Addendum below.
+     G. Preserve in that license notice the full lists of Invariant
+     Sections    and required Cover Texts given in the Document's
+     license notice.
+     H. Include an unaltered copy of this License.
+     I. Preserve the section entitled "History", and its title, and add
+     to    it an item stating at least the title, year, new authors, and
+       publisher of the Modified Version as given on the Title Page.
+     If    there is no section entitled "History" in the Document,
+     create one    stating the title, year, authors, and publisher of
+     the Document as    given on its Title Page, then add an item
+     describing the Modified    Version as stated in the previous
+     sentence.
+     J. Preserve the network location, if any, given in the Document for
+       public access to a Transparent copy of the Document, and
+     likewise    the network locations given in the Document for
+     previous versions    it was based on.  These may be placed in the
+     "History" section.     You may omit a network location for a work
+     that was published at    least four years before the Document
+     itself, or if the original    publisher of the version it refers
+     to gives permission.
+     K. In any section entitled "Acknowledgements" or "Dedications",
+     preserve the section's title, and preserve in the section all the
+      substance and tone of each of the contributor acknowledgements
+     and/or dedications given therein.
+     L. Preserve all the Invariant Sections of the Document,
+     unaltered in their text and in their titles.  Section numbers
+     or the equivalent are not considered part of the section titles.
+     M. Delete any section entitled "Endorsements."  Such a section
+     may not be included in the Modified Version.
+     N. Do not retitle any existing section as "Endorsements"    or to
+     conflict in title with any Invariant Section.
+
+     If the Modified Version includes new front-matter sections or
+     appendices that qualify as Secondary Sections and contain no
+     material copied from the Document, you may at your option
+     designate some or all of these sections as invariant.  To do this,
+     add their titles to the list of Invariant Sections in the Modified
+     Version's license notice.  These titles must be distinct from any
+     other section titles.
+
+     You may add a section entitled "Endorsements", provided it contains
+     nothing but endorsements of your Modified Version by various
+     parties-for example, statements of peer review or that the text has
+     been approved by an organization as the authoritative definition
+     of a standard.
+
+     You may add a passage of up to five words as a Front-Cover Text,
+     and a passage of up to 25 words as a Back-Cover Text, to the end
+     of the list of Cover Texts in the Modified Version.  Only one
+     passage of Front-Cover Text and one of Back-Cover Text may be
+     added by (or through arrangements made by) any one entity.  If the
+     Document already includes a cover text for the same cover,
+     previously added by you or by arrangement made by the same entity
+     you are acting on behalf of, you may not add another; but you may
+     replace the old one, on explicit permission from the previous
+     publisher that added the old one.
+
+     The author(s) and publisher(s) of the Document do not by this
+     License give permission to use their names for publicity for or to
+     assert or imply endorsement of any Modified Version.
+
+
+  5. COMBINING DOCUMENTS
+
+     You may combine the Document with other documents released under
+     this License, under the terms defined in section 4 above for
+     modified versions, provided that you include in the combination
+     all of the Invariant Sections of all of the original documents,
+     unmodified, and list them all as Invariant Sections of your
+     combined work in its license notice.
+
+     The combined work need only contain one copy of this License, and
+     multiple identical Invariant Sections may be replaced with a single
+     copy.  If there are multiple Invariant Sections with the same name
+     but different contents, make the title of each such section unique
+     by adding at the end of it, in parentheses, the name of the
+     original author or publisher of that section if known, or else a
+     unique number.  Make the same adjustment to the section titles in
+     the list of Invariant Sections in the license notice of the
+     combined work.
+
+     In the combination, you must combine any sections entitled
+     "History" in the various original documents, forming one section
+     entitled "History"; likewise combine any sections entitled
+     "Acknowledgements", and any sections entitled "Dedications."  You
+     must delete all sections entitled "Endorsements."
+
+
+  6. COLLECTIONS OF DOCUMENTS
+
+     You may make a collection consisting of the Document and other
+     documents released under this License, and replace the individual
+     copies of this License in the various documents with a single copy
+     that is included in the collection, provided that you follow the
+     rules of this License for verbatim copying of each of the
+     documents in all other respects.
+
+     You may extract a single document from such a collection, and
+     distribute it individually under this License, provided you insert
+     a copy of this License into the extracted document, and follow
+     this License in all other respects regarding verbatim copying of
+     that document.
+
+
+  7. AGGREGATION WITH INDEPENDENT WORKS
+
+     A compilation of the Document or its derivatives with other
+     separate and independent documents or works, in or on a volume of
+     a storage or distribution medium, does not as a whole count as a
+     Modified Version of the Document, provided no compilation
+     copyright is claimed for the compilation.  Such a compilation is
+     called an "aggregate", and this License does not apply to the
+     other self-contained works thus compiled with the Document, on
+     account of their being thus compiled, if they are not themselves
+     derivative works of the Document.
+
+     If the Cover Text requirement of section 3 is applicable to these
+     copies of the Document, then if the Document is less than one
+     quarter of the entire aggregate, the Document's Cover Texts may be
+     placed on covers that surround only the Document within the
+     aggregate.  Otherwise they must appear on covers around the whole
+     aggregate.
+
+
+  8. TRANSLATION
+
+     Translation is considered a kind of modification, so you may
+     distribute translations of the Document under the terms of section
+     4.  Replacing Invariant Sections with translations requires special
+     permission from their copyright holders, but you may include
+     translations of some or all Invariant Sections in addition to the
+     original versions of these Invariant Sections.  You may include a
+     translation of this License provided that you also include the
+     original English version of this License.  In case of a
+     disagreement between the translation and the original English
+     version of this License, the original English version will prevail.
+
+
+  9. TERMINATION
+
+     You may not copy, modify, sublicense, or distribute the Document
+     except as expressly provided for under this License.  Any other
+     attempt to copy, modify, sublicense or distribute the Document is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+
+ 10. FUTURE REVISIONS OF THIS LICENSE
+
+     The Free Software Foundation may publish new, revised versions of
+     the GNU Free Documentation License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.  See
+     http://www.gnu.org/copyleft/.
+
+     Each version of the License is given a distinguishing version
+     number.  If the Document specifies that a particular numbered
+     version of this License "or any later version" applies to it, you
+     have the option of following the terms and conditions either of
+     that specified version or of any later version that has been
+     published (not as a draft) by the Free Software Foundation.  If
+     the Document does not specify a version number of this License,
+     you may choose any version ever published (not as a draft) by the
+     Free Software Foundation.
+
+
+ADDENDUM: How to use this License for your documents
+====================================================
+
+   To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and license
+notices just after the title page:
+
+     Copyright (C)  YEAR  YOUR NAME.
+     Permission is granted to copy, distribute and/or modify this document
+     under the terms of the GNU Free Documentation License, Version 1.1
+     or any later version published by the Free Software Foundation;
+     with the Invariant Sections being LIST THEIR TITLES, with the
+     Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+     A copy of the license is included in the section entitled "GNU
+     Free Documentation License."
+
+   If you have no Invariant Sections, write "with no Invariant Sections"
+instead of saying which ones are invariant.  If you have no Front-Cover
+Texts, write "no Front-Cover Texts" instead of "Front-Cover Texts being
+LIST"; likewise for Back-Cover Texts.
+
+   If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License, to
+permit their use in free software.
+

@@ -1,0 +1,293 @@
+#
+# This variable holds the minimum version number of binutils that GCC requires
+# to build. If the binutils verion (actually the GAS version) is less than
+# this number, we'll change to the binutils directory and execute a 
+# "make" there, then arrange for this GCC build to use the newly created
+# binutils.
+#
+minimum_binutils=2.12.1
+need_new=""
+
+srcdir=${PWD}/..
+targ_root=${PWD}
+
+#
+# Set the default canonical target name
+#
+qnx_target_version=6.3.0
+nto_target=${PWD##*-}
+cpu_string=`echo ${nto_target} | sed 's/nto//'`
+if [ $cpu_string = x86 ]; then
+cpu_string=i386
+fi
+tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}`
+target=`${srcdir}/config.sub ${tmpstring}`
+basedir='/usr'
+
+STACKSIZE=${STACKSIZE:-4096000}
+
+case ${SYSNAME} in
+nto)
+	make_CC="env QNX_HOST=$QNX_HOST QNX_TARGET=$QNX_TARGET gcc"
+	export cc=$make_CC
+	export CC=$make_CC
+	;;
+win32)
+	QNXSDK_HOST_LDFLAGS="-Wl,--stack=$STACKSIZE"
+	;;
+esac
+
+export LDFLAGS="-Wl,-s $QNXSDK_HOST_LDFLAGS"
+
+
+
+function hook_preconfigure {
+	#
+	# We potentially override QNX_HOST and QNX_TARGET below
+	# so save the orig values to restore later (hook_postmake).
+	#
+	orig_qnx_host=$QNX_HOST
+	orig_qnx_target=$QNX_TARGET
+
+	case ${SYSNAME} in
+	nto)
+		case "${target}" in
+		*nto-qnx*)	basedir=${TOOL_PATH}/usr ;;
+		*)		basedir=/opt/QNXsdk/host/qnx6/x86/usr ;;
+		esac
+		;;
+	solaris)
+		basedir=${QNX_HOST:-/opt/QNXsdk/host/solaris/sparc/usr}
+		;;
+	linux)
+		basedir=${QNX_HOST:-/opt/QNXsdk/host/linux/x86/usr}
+		;;
+	win32)
+		basedir=${QNX_HOST:-c:/QNXsdk/host/win32/x86/usr}
+		if [ X${WIN32_ENVIRON} == Xmingw ]; then
+			configure_opts="${configure_opts} --host=i586-mingw32"
+			configure_opts="${configure_opts} --build=i586-cygwin"
+			export CC="gcc -mno-cygwin"
+			export AR=ar
+			export RANLIB=ranlib
+			make_CC="gcc -mno-cygwin"
+		else
+			export CC="gcc"
+			make_CC="gcc"
+                fi
+		;;
+	*)
+		echo "Don't have config for ${SYSNAME}"
+		exit 1
+		;;
+	esac
+
+	case ${target} in
+	*nto-qnx*)	
+		configure_opts="${configure_opts} --enable-cheaders=c"
+		configure_opts="${configure_opts} --with-gnu-as"
+		configure_opts="${configure_opts} --with-gnu-ld"
+		configure_opts="${configure_opts} --with-as=${nto_target}-as"
+		configure_opts="${configure_opts} --with-ld=${nto_target}-ld"
+	esac 
+
+	configure_opts="${configure_opts} --target=${target}"
+	configure_opts="${configure_opts} --srcdir=${srcdir}"
+	configure_opts="${configure_opts} --prefix=${basedir}"
+	configure_opts="${configure_opts} --exec-prefix=${basedir}"
+	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
+	configure_opts="${configure_opts} --enable-haifa"
+	configure_opts="${configure_opts} --enable-languages=c++"
+	configure_opts="${configure_opts} --enable-threads=posix"
+	configure_opts="${configure_opts} --disable-nls"
+	#
+	# __cxa_atexit is not fully implemented in gcc, libc or libcpp.  
+	# Postponed to 6.X.	
+	#
+	# configure_opts="${configure_opts} --enable-__cxa_atexit"
+	if [ ${SYSNAME} == nto ]; then
+		configure_opts="${configure_opts} --enable-shared"
+		configure_opts="${configure_opts} --enable-multilib"
+	else
+		configure_opts="${configure_opts} --disable-shared"
+		configure_opts="${configure_opts} --disable-multilib"
+	fi
+
+	# The cross compilation of libgcc.a and libstdc++ require system headers
+	# from the next version of Neutrino while gcc itself should be compiled
+	# against the currently released version.  So we set QNX_TARGET to point
+	# to the right place. 
+
+	if test "${SYSNAME}" = "nto"; then
+		if test -n "${USE_ROOT_nto}"; then 
+			export QNX_TARGET=${USE_ROOT_nto}
+		fi
+
+		as_ver=$(${nto_target}-as --version | head -l -n 1 | sed -e "s/^[^0-9]*//" -e "s/[^0-9.]*$//")
+		while [ -n "${as_ver}" ]; do
+			act=${as_ver%%.*}
+			req=${minimum_binutils%%.*}
+			if [ ${act} -lt ${req} ]; then
+				need_new="yes"
+				break;
+			fi
+			if [ ${act} -gt ${req} ]; then 
+				break
+			fi
+			minimum_binutils=${minimum_binutils#*.}
+			new=${as_ver#*.}
+			if [ "${new}" = "${as_ver}" ]; then
+				new=""
+			fi
+			as_ver=${new}
+		done
+		if [ -n "${need_new}" ]; then
+			echo "GCC Requires new binutils (assembler) to build..."
+			dir_pref=${PWD%-*}
+			binutils_dir=$(echo ${dir_pref}-ntomulti | sed s/gcc/binutils/)
+			# We have to undefine LOOPING since it's inherited from the parent
+			# make which has already gone through qmake-cfg.mk. If this is not
+			# done then the binutils make goes through the other part of qmake-cfg.mk
+			# which just does an "include Makefile" and fails to do the configure.
+			# We also have to specify the makefile since this is the nto-x86-o-ntomulti
+			# directory which doesn't have a Makefile yet 
+			make -C${binutils_dir} -fGNUmakefile LOOPING=""
+			ln -s ${binutils_dir}/binutils binutils
+			cp -crv ${binutils_dir}/gas/${target}/as-new ${srcdir}/qnxhost/usr/bin/${nto_target}-as
+			cp -crv ${binutils_dir}/ld/${target}/ld-new ${srcdir}/qnxhost/usr/bin/${nto_target}-ld
+			export QNX_HOST="${srcdir}/qnxhost"
+		else
+			cp -crv ${QNX_HOST}/usr/bin/${nto_target}-ar binutils/ar
+			cp -crv ${QNX_HOST}/usr/bin/${nto_target}-ranlib binutils/ranlib
+		fi
+	fi	
+}
+
+function hook_postconfigure {
+	case ${SYSNAME} in
+	nto) #
+	     #link in the new static libc since libiberty is linked against
+	     #the new libc, and we get undefined ref's with collect2 otherwise
+	     #
+	     cd gcc
+	     echo -n "s/COLLECT2_LIBS =/COLLECT2_LIBS = " > fix.$$
+	     echo -n ${USE_ROOT_nto}/x86/lib/libc.a | sed -e "s/\//\\\\\//g" >> fix.$$
+	     echo "/" >> fix.$$
+	     sed -f fix.$$ <Makefile >1.$$
+	     mv 1.$$ Makefile
+	     rm fix.$$
+	     cd ..
+	     ;; 
+	*)   # Only need to build libstdc++ & friends on one host
+             rm -Rf ${target} 
+	     echo "s/_PARTS = crtbegin.o crtend.o/_PARTS =/" >>/tmp/fix.$$
+	     echo "s/LIBGCC = libgcc.a/LIBGCC =/" >>/tmp/fix.$$
+	     echo "s/LIBGCC = stmp-multilib/LIBGCC =/" >>/tmp/fix.$$
+	     cd gcc
+	     sed -f/tmp/fix.$$ <Makefile >1.$$
+	     mv 1.$$ Makefile
+	     cd ..
+	     rm /tmp/fix.$$
+	     ;;
+	esac
+
+}
+
+function hook_premake {
+	strip_r_switch
+	make_opts="CFLAGS=-O2"
+}
+
+function hook_postmake {
+	# 
+	# We may have overridden QNX_HOST and QNX_TARGET in 
+	# hook_preconfigure, so restore to the saved values 
+	#
+	QNX_HOST=$orig_qnx_host
+	QNX_TARGET=$orig_qnx_target
+	export QNX_HOST
+	export QNX_TARGET
+
+	if [ ${SYSNAME} = nto ]; then
+#### START KLUDGE			
+		# Neutrino has a bug where procnto holds the executable
+		# open (should only do it for things with "sticky" bit on).
+		# The "cp" and "mv"'s below breaks the link with the version
+		# of the file that procnto has open, so we can do updates
+		# to it. We can get rid of this code later
+		cd gcc
+		cp xgcc xgcc.$$
+		mv xgcc.$$ xgcc
+		cp cc1 cc1.$$
+		mv cc1.$$ cc1
+		cp cc1plus cc1plus.$$
+		mv cc1plus.$$ cc1plus
+		cd ..
+#### END KLUDGE			
+		ldrel -L -S $STACKSIZE gcc/cc1
+		ldrel -L -S $STACKSIZE gcc/cc1plus
+
+		echo "objcopy --weaken ${target}/libstdc++-v3/libsupc++/.libs/libcxa.a"
+		objcopy --weaken ${target}/libstdc++-v3/libsupc++/.libs/libcxa.a
+		# If we are mips or arm, also weaken the be variant
+		case ${nto_target} in
+		ntoarm | ntomips)
+			echo "objcopy --weaken ${target}/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
+			objcopy --weaken ${target}/be/libstdc++-v3/libsupc++/.libs/libcxa.a
+			;;
+		esac
+
+		#
+		# We made some dirs and links in hook_preconfigure, so clean them up.
+		#
+		if [ -n "${need_new}" ]; then
+			echo "GCC Required new binutils (assembler) to build, cleaning up..."
+			rm binutils
+			rm -rf ${srcdir}/qnxhost
+		else
+			rm -rf binutils
+		fi
+	fi
+}
+
+function want_library {
+	# If it's not little endian on the SH, we don't want it
+	case ${nto_target} in
+	ntosh)
+		test "$(echo $1 | fgrep /ml)" != ""
+		return $?
+		;;
+	esac
+	return 0
+}
+
+function hook_pinfo {
+
+	version=$(grep version_string ../gcc/version.c | sed -e 's/^[^"]*"//' -e's/ .*$//')
+
+	if [ ${SYSNAME} == nto ]; then
+	# We are packaging stdc++ hdr symlinks as real files, which packager 
+	# does not like.  So copy them into real files first.
+	echo -n Copying include links to real files...
+	cd ${target}/libstdc++-v3
+	mv include link_include
+	cp -cr link_include include
+	cd ../..
+	echo Done
+	fi
+
+	case ${SYSNAME} in
+	win32)	exe_suffix=".exe" 	;;
+	*)	exe_suffix=""		;;
+	esac
+
+	# Executables
+	gen_pinfo -ngcc/cc1 cc1${exe_suffix} /usr/lib/gcc-lib/${target}/${version} USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/cc1plus cc1plus${exe_suffix} /usr/lib/gcc-lib/${target}/${version} USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/collect2 collect2${exe_suffix} /usr/lib/gcc-lib/${target}/${version} USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/xgcc ${target}-gcc${exe_suffix} usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/g++ ${target}-g++${exe_suffix} usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}" SYMLINK=/${target}-c++${exe_suffix} FINFO="0 0 1775"
+	gen_pinfo -ngcc/gcov ${target}-gcov${exe_suffix} usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GCC ${version}"
+	# gen_pinfo -ngcc/specs specs /usr/lib/gcc-lib/${target}/${version} LICE=GPL DESCRIPTION="GCC specs ${version}" 
+}
+

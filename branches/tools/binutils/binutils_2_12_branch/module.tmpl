@@ -1,0 +1,1515 @@
+<?xml version="1.0"?>
+<module name="binutils">
+
+	<type>Element</type>
+
+	<classification>Runtime</classification>
+
+	<supports>
+		<availability ref="toolshosts"/>
+	</supports>
+
+	<targets>
+		<availability ref="ostargets"/>
+	</targets>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+
+
+<GroupOwner>tools</GroupOwner>
+	<contents>
+		<package isHost="true">
+		<component id="size" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				size
+			</location>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/size" tisa="x86"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/ntoarm-size" tisa="arm"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/ntomips-size" tisa="mips"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/ntosh-size" tisa="sh"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/ntoppc-size" tisa="ppc"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/ntox86-size" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-size" tisa="arm"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-size" tisa="mips"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-size" tisa="sh"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-size" tisa="ppc"/>
+			<link os="nto" src="ntomulti-size" dst="/usr/bin/i386-pc-nto-qnx6.3.0-size" tisa="x86"/>
+
+			<!-- every time you do a link to usr/bin from usr/canonical/bin do the same for ntocpu -->
+
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/ntoarm/bin/size" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/ntomips/bin/size" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/ntosh/bin/size" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/ntoppc/bin/size" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/ntox86/bin/size" tisa="x86"/>
+			
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/size" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/size" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/size" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/size" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-size" dst="/usr/i386-pc-nto-qnx6.3.0/bin/size" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/ntoarm-size" tisa="arm"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/ntomips-size" tisa="mips"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/ntosh-size" tisa="sh"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/ntoppc-size" tisa="ppc"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/ntox86-size" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-size" tisa="arm"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-size" tisa="mips"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-size" tisa="sh"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-size" tisa="ppc"/>
+			<link os="linux" src="ntomulti-size" dst="/usr/bin/i386-pc-nto-qnx6.3.0-size" tisa="x86"/>
+
+			<!-- every time you do a link to usr/bin from usr/canonical/bin do the same for ntocpu -->
+
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/ntoarm/bin/size" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/ntomips/bin/size" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/ntosh/bin/size" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/ntoppc/bin/size" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/ntox86/bin/size" tisa="x86"/>
+			
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/size" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/size" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/size" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/size" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-size" dst="/usr/i386-pc-nto-qnx6.3.0/bin/size" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/ntoarm-size" tisa="arm"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/ntomips-size" tisa="mips"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/ntosh-size" tisa="sh"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/ntoppc-size" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/ntox86-size" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-size" tisa="arm"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-size" tisa="mips"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-size" tisa="sh"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-size" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-size" dst="/usr/bin/i386-pc-nto-qnx6.3.0-size" tisa="x86"/>
+
+			<!-- every time you do a link to usr/bin from usr/canonical/bin do the same for ntocpu -->
+
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/ntoarm/bin/size" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/ntomips/bin/size" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/ntosh/bin/size" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/ntoppc/bin/size" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/ntox86/bin/size" tisa="x86"/>
+			
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/size" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/size" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/size" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/size" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-size" dst="/usr/i386-pc-nto-qnx6.3.0/bin/size" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/ntoarm-size.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/ntomips-size.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/ntosh-size.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/ntoppc-size.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/ntox86-size.exe" tisa="x86"/>
+			
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-size.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-size.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-size.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-size.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-size.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-size.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/ntoarm/bin/size.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/ntomips/bin/size.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/ntosh/bin/size.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/ntoppc/bin/size.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/ntox86/bin/size.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/size.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/size.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/size.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/size.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-size.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/size.exe" tisa="x86"/>
+		</component>
+
+		<component id="objdump" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				objdump
+			</location>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/objdump" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/ntoarm-objdump" tisa="arm"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/ntomips-objdump" tisa="mips"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/ntosh-objdump" tisa="sh"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/ntoppc-objdump" tisa="ppc"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/ntox86-objdump" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objdump" tisa="arm"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objdump" tisa="mips"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objdump" tisa="sh"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objdump" tisa="ppc"/>
+			<link os="nto" src="ntomulti-objdump" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objdump" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/ntoarm/bin/objdump" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/ntomips/bin/objdump" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/ntosh/bin/objdump" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/ntoppc/bin/objdump" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/ntox86/bin/objdump" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objdump" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objdump" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objdump" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objdump" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-objdump" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objdump" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/ntoarm-objdump" tisa="arm"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/ntomips-objdump" tisa="mips"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/ntosh-objdump" tisa="sh"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/ntoppc-objdump" tisa="ppc"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/ntox86-objdump" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objdump" tisa="arm"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objdump" tisa="mips"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objdump" tisa="sh"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objdump" tisa="ppc"/>
+			<link os="linux" src="ntomulti-objdump" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objdump" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/ntoarm/bin/objdump" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/ntomips/bin/objdump" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/ntosh/bin/objdump" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/ntoppc/bin/objdump" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/ntox86/bin/objdump" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objdump" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objdump" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objdump" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objdump" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-objdump" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objdump" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/ntoarm-objdump" tisa="arm"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/ntomips-objdump" tisa="mips"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/ntosh-objdump" tisa="sh"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/ntoppc-objdump" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/ntox86-objdump" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objdump" tisa="arm"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objdump" tisa="mips"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objdump" tisa="sh"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objdump" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-objdump" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objdump" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/ntoarm/bin/objdump" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/ntomips/bin/objdump" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/ntosh/bin/objdump" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/ntoppc/bin/objdump" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/ntox86/bin/objdump" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objdump" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objdump" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objdump" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objdump" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-objdump" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objdump" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/ntoarm-objdump.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/ntomips-objdump.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/ntosh-objdump.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/ntoppc-objdump.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/ntox86-objdump.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objdump.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objdump.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objdump.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objdump.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-objdump.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objdump.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/ntoarm/bin/objdump.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/ntomips/bin/objdump.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/ntosh/bin/objdump.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/ntoppc/bin/objdump.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/ntox86/bin/objdump.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objdump.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objdump.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objdump.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objdump.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-objdump.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objdump.exe" tisa="x86"/>
+		</component>
+
+		<component id="ar" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				ar
+			</location>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ar" tisa="x86"/>
+			
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ntoarm-ar" tisa="arm"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ntomips-ar" tisa="mips"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ntosh-ar" tisa="sh"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ntoppc-ar" tisa="ppc"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/ntox86-ar" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ar" tisa="arm"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ar" tisa="mips"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ar" tisa="sh"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ar" tisa="ppc"/>
+			<link os="nto" src="ntomulti-ar" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ar" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/ntoarm/bin/ar" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/ntomips/bin/ar" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/ntosh/bin/ar" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/ntoppc/bin/ar" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/ntox86/bin/ar" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ar" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ar" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ar" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ar" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-ar" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ar" tisa="x86"/>
+			
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/ntoarm-ar" tisa="arm"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/ntomips-ar" tisa="mips"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/ntosh-ar" tisa="sh"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/ntoppc-ar" tisa="ppc"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/ntox86-ar" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ar" tisa="arm"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ar" tisa="mips"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ar" tisa="sh"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ar" tisa="ppc"/>
+			<link os="linux" src="ntomulti-ar" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ar" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/ntoarm/bin/ar" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/ntomips/bin/ar" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/ntosh/bin/ar" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/ntoppc/bin/ar" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/ntox86/bin/ar" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ar" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ar" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ar" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ar" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-ar" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ar" tisa="x86"/>
+			
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/ntoarm-ar" tisa="arm"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/ntomips-ar" tisa="mips"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/ntosh-ar" tisa="sh"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/ntoppc-ar" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/ntox86-ar" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ar" tisa="arm"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ar" tisa="mips"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ar" tisa="sh"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ar" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-ar" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ar" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/ntoarm/bin/ar" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/ntomips/bin/ar" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/ntosh/bin/ar" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/ntoppc/bin/ar" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/ntox86/bin/ar" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ar" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ar" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ar" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ar" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-ar" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ar" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/ntoarm-ar.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/ntomips-ar.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/ntosh-ar.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/ntoppc-ar.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/ntox86-ar.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ar.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ar.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ar.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ar.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-ar.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ar.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/ntoarm/bin/ar.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/ntomips/bin/ar.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/ntosh/bin/ar.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/ntoppc/bin/ar.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/ntox86/bin/ar.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ar.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ar.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ar.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ar.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-ar.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ar.exe" tisa="x86"/>
+		</component>
+
+		<component id="ranlib" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				ranlib
+			</location>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ranlib" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ntoarm-ranlib" tisa="arm"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ntomips-ranlib" tisa="mips"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ntosh-ranlib" tisa="sh"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ntoppc-ranlib" tisa="ppc"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/ntox86-ranlib" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ranlib" tisa="arm"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ranlib" tisa="mips"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ranlib" tisa="sh"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ranlib" tisa="ppc"/>
+			<link os="nto" src="ntomulti-ranlib" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ranlib" tisa="x86"/>
+			
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/ntoarm/bin/ranlib" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/ntomips/bin/ranlib" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/ntosh/bin/ranlib" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/ntoppc/bin/ranlib" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/ntox86/bin/ranlib" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ranlib" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ranlib" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ranlib" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ranlib" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-ranlib" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ranlib" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/ntoarm-ranlib" tisa="arm"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/ntomips-ranlib" tisa="mips"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/ntosh-ranlib" tisa="sh"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/ntoppc-ranlib" tisa="ppc"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/ntox86-ranlib" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ranlib" tisa="arm"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ranlib" tisa="mips"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ranlib" tisa="sh"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ranlib" tisa="ppc"/>
+			<link os="linux" src="ntomulti-ranlib" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ranlib" tisa="x86"/>
+			
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/ntoarm/bin/ranlib" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/ntomips/bin/ranlib" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/ntosh/bin/ranlib" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/ntoppc/bin/ranlib" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/ntox86/bin/ranlib" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ranlib" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ranlib" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ranlib" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ranlib" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-ranlib" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ranlib" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/ntoarm-ranlib" tisa="arm"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/ntomips-ranlib" tisa="mips"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/ntosh-ranlib" tisa="sh"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/ntoppc-ranlib" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/ntox86-ranlib" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ranlib" tisa="arm"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ranlib" tisa="mips"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ranlib" tisa="sh"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ranlib" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-ranlib" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ranlib" tisa="x86"/>
+			
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/ntoarm/bin/ranlib" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/ntomips/bin/ranlib" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/ntosh/bin/ranlib" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/ntoppc/bin/ranlib" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/ntox86/bin/ranlib" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ranlib" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ranlib" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ranlib" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ranlib" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-ranlib" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ranlib" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/ntoarm-ranlib.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/ntomips-ranlib.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/ntosh-ranlib.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/ntoppc-ranlib.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/ntox86-ranlib.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-ranlib.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-ranlib.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-ranlib.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-ranlib.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-ranlib.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-ranlib.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/ntoarm/bin/ranlib.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/ntomips/bin/ranlib.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/ntosh/bin/ranlib.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/ntoppc/bin/ranlib.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/ntox86/bin/ranlib.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ranlib.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ranlib.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ranlib.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ranlib.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-ranlib.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ranlib.exe" tisa="x86"/>
+		</component>
+
+		<component id="strings" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				strings
+			</location>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/strings" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/ntoarm-strings" tisa="arm"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/ntomips-strings" tisa="mips"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/ntosh-strings" tisa="sh"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/ntoppc-strings" tisa="ppc"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/ntox86-strings" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strings" tisa="arm"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strings" tisa="mips"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strings" tisa="sh"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strings" tisa="ppc"/>
+			<link os="nto" src="ntomulti-strings" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strings" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/ntoarm/bin/strings" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/ntomips/bin/strings" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/ntosh/bin/strings" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/ntoppc/bin/strings" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/ntox86/bin/strings" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strings" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strings" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strings" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strings" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-strings" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strings" tisa="x86"/>
+			
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/ntoarm-strings" tisa="arm"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/ntomips-strings" tisa="mips"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/ntosh-strings" tisa="sh"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/ntoppc-strings" tisa="ppc"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/ntox86-strings" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strings" tisa="arm"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strings" tisa="mips"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strings" tisa="sh"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strings" tisa="ppc"/>
+			<link os="linux" src="ntomulti-strings" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strings" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/ntoarm/bin/strings" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/ntomips/bin/strings" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/ntosh/bin/strings" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/ntoppc/bin/strings" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/ntox86/bin/strings" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strings" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strings" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strings" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strings" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-strings" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strings" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/ntoarm-strings" tisa="arm"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/ntomips-strings" tisa="mips"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/ntosh-strings" tisa="sh"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/ntoppc-strings" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/ntox86-strings" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strings" tisa="arm"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strings" tisa="mips"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strings" tisa="sh"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strings" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-strings" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strings" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/ntoarm/bin/strings" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/ntomips/bin/strings" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/ntosh/bin/strings" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/ntoppc/bin/strings" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/ntox86/bin/strings" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strings" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strings" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strings" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strings" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-strings" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strings" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/ntoarm-strings.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/ntomips-strings.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/ntosh-strings.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/ntoppc-strings.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/ntox86-strings.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strings.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strings.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strings.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strings.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-strings.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strings.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/ntoarm/bin/strings.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/ntomips/bin/strings.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/ntosh/bin/strings.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/ntoppc/bin/strings.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/ntox86/bin/strings.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strings.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strings.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strings.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strings.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-strings.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strings.exe" tisa="x86"/>
+		</component>
+
+		<component id="objcopy" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				objcopy
+			</location>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/objcopy" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/ntoarm-objcopy" tisa="arm"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/ntomips-objcopy" tisa="mips"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/ntosh-objcopy" tisa="sh"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/ntoppc-objcopy" tisa="ppc"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/ntox86-objcopy" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objcopy" tisa="arm"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objcopy" tisa="mips"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objcopy" tisa="sh"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objcopy" tisa="ppc"/>
+			<link os="nto" src="ntomulti-objcopy" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objcopy" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/ntoarm/bin/objcopy" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/ntomips/bin/objcopy" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/ntosh/bin/objcopy" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/ntoppc/bin/objcopy" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/ntox86/bin/objcopy" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objcopy" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objcopy" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objcopy" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objcopy" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-objcopy" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objcopy" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/ntoarm-objcopy" tisa="arm"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/ntomips-objcopy" tisa="mips"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/ntosh-objcopy" tisa="sh"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/ntoppc-objcopy" tisa="ppc"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/ntox86-objcopy" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objcopy" tisa="arm"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objcopy" tisa="mips"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objcopy" tisa="sh"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objcopy" tisa="ppc"/>
+			<link os="linux" src="ntomulti-objcopy" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objcopy" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/ntoarm/bin/objcopy" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/ntomips/bin/objcopy" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/ntosh/bin/objcopy" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/ntoppc/bin/objcopy" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/ntox86/bin/objcopy" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objcopy" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objcopy" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objcopy" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objcopy" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-objcopy" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objcopy" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/ntoarm-objcopy" tisa="arm"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/ntomips-objcopy" tisa="mips"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/ntosh-objcopy" tisa="sh"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/ntoppc-objcopy" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/ntox86-objcopy" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objcopy" tisa="arm"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objcopy" tisa="mips"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objcopy" tisa="sh"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objcopy" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-objcopy" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objcopy" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/ntoarm/bin/objcopy" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/ntomips/bin/objcopy" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/ntosh/bin/objcopy" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/ntoppc/bin/objcopy" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/ntox86/bin/objcopy" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objcopy" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objcopy" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objcopy" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objcopy" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-objcopy" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objcopy" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/ntoarm-objcopy.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/ntomips-objcopy.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/ntosh-objcopy.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/ntoppc-objcopy.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/ntox86-objcopy.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-objcopy.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-objcopy.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-objcopy.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-objcopy.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-objcopy.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-objcopy.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/ntoarm/bin/objcopy.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/ntomips/bin/objcopy.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/ntosh/bin/objcopy.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/ntoppc/bin/objcopy.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/ntox86/bin/objcopy.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/objcopy.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/objcopy.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/objcopy.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/objcopy.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-objcopy.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/objcopy.exe" tisa="x86"/>
+		</component>
+
+		<component id="strip" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				strip-new
+			</location>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/strip" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/ntoarm-strip" tisa="arm"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/ntomips-strip" tisa="mips"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/ntosh-strip" tisa="sh"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/ntoppc-strip" tisa="ppc"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/ntox86-strip" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strip" tisa="arm"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strip" tisa="mips"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strip" tisa="sh"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strip" tisa="ppc"/>
+			<link os="nto" src="ntomulti-strip" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strip" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/ntoarm/bin/strip" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/ntomips/bin/strip" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/ntosh/bin/strip" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/ntoppc/bin/strip" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/ntox86/bin/strip" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strip" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strip" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strip" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strip" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-strip" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strip" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/ntoarm-strip" tisa="arm"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/ntomips-strip" tisa="mips"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/ntosh-strip" tisa="sh"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/ntoppc-strip" tisa="ppc"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/ntox86-strip" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strip" tisa="arm"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strip" tisa="mips"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strip" tisa="sh"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strip" tisa="ppc"/>
+			<link os="linux" src="ntomulti-strip" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strip" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/ntoarm/bin/strip" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/ntomips/bin/strip" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/ntosh/bin/strip" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/ntoppc/bin/strip" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/ntox86/bin/strip" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strip" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strip" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strip" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strip" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-strip" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strip" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/ntoarm-strip" tisa="arm"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/ntomips-strip" tisa="mips"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/ntosh-strip" tisa="sh"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/ntoppc-strip" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/ntox86-strip" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strip" tisa="arm"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strip" tisa="mips"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strip" tisa="sh"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strip" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-strip" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strip" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/ntoarm/bin/strip" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/ntomips/bin/strip" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/ntosh/bin/strip" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/ntoppc/bin/strip" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/ntox86/bin/strip" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strip" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strip" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strip" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strip" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-strip" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strip" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/ntoarm-strip.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/ntomips-strip.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/ntosh-strip.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/ntoppc-strip.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/ntox86-strip.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-strip.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-strip.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-strip.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-strip.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-strip.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-strip.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/ntoarm/bin/strip.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/ntomips/bin/strip.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/ntosh/bin/strip.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/ntoppc/bin/strip.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/ntox86/bin/strip.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/strip.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/strip.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/strip.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/strip.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-strip.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/strip.exe" tisa="x86"/>
+		</component>
+
+		<component id="addr2line" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				addr2line
+			</location>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/addr2line" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/ntoarm-addr2line" tisa="arm"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/ntomips-addr2line" tisa="mips"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/ntosh-addr2line" tisa="sh"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/ntoppc-addr2line" tisa="ppc"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/ntox86-addr2line" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-addr2line" tisa="arm"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-addr2line" tisa="mips"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-addr2line" tisa="sh"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-addr2line" tisa="ppc"/>
+			<link os="nto" src="ntomulti-addr2line" dst="/usr/bin/i386-pc-nto-qnx6.3.0-addr2line" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/ntoarm/bin/addr2line" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/ntomips/bin/addr2line" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/ntosh/bin/addr2line" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/ntoppc/bin/addr2line" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/ntox86/bin/addr2line" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/addr2line" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/addr2line" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/addr2line" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/addr2line" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-addr2line" dst="/usr/i386-pc-nto-qnx6.3.0/bin/addr2line" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/ntoarm-addr2line" tisa="arm"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/ntomips-addr2line" tisa="mips"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/ntosh-addr2line" tisa="sh"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/ntoppc-addr2line" tisa="ppc"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/ntox86-addr2line" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-addr2line" tisa="arm"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-addr2line" tisa="mips"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-addr2line" tisa="sh"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-addr2line" tisa="ppc"/>
+			<link os="linux" src="ntomulti-addr2line" dst="/usr/bin/i386-pc-nto-qnx6.3.0-addr2line" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/ntoarm/bin/addr2line" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/ntomips/bin/addr2line" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/ntosh/bin/addr2line" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/ntoppc/bin/addr2line" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/ntox86/bin/addr2line" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/addr2line" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/addr2line" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/addr2line" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/addr2line" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-addr2line" dst="/usr/i386-pc-nto-qnx6.3.0/bin/addr2line" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/ntoarm-addr2line" tisa="arm"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/ntomips-addr2line" tisa="mips"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/ntosh-addr2line" tisa="sh"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/ntoppc-addr2line" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/ntox86-addr2line" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-addr2line" tisa="arm"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-addr2line" tisa="mips"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-addr2line" tisa="sh"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-addr2line" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-addr2line" dst="/usr/bin/i386-pc-nto-qnx6.3.0-addr2line" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/ntoarm/bin/addr2line" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/ntomips/bin/addr2line" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/ntosh/bin/addr2line" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/ntoppc/bin/addr2line" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/ntox86/bin/addr2line" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/addr2line" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/addr2line" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/addr2line" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/addr2line" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-addr2line" dst="/usr/i386-pc-nto-qnx6.3.0/bin/addr2line" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/ntoarm-addr2line.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/ntomips-addr2line.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/ntosh-addr2line.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/ntoppc-addr2line.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/ntox86-addr2line.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-addr2line.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-addr2line.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-addr2line.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-addr2line.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-addr2line.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-addr2line.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/ntoarm/bin/addr2line.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/ntomips/bin/addr2line.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/ntosh/bin/addr2line.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/ntoppc/bin/addr2line.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/ntox86/bin/addr2line.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/addr2line.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/addr2line.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/addr2line.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/addr2line.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-addr2line.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/addr2line.exe" tisa="x86"/>
+		</component>
+
+		<component id="nm" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				nm-new
+			</location>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/nm" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/ntoarm-nm" tisa="arm"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/ntomips-nm" tisa="mips"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/ntosh-nm" tisa="sh"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/ntoppc-nm" tisa="ppc"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/ntox86-nm" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-nm" tisa="arm"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-nm" tisa="mips"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-nm" tisa="sh"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-nm" tisa="ppc"/>
+			<link os="nto" src="ntomulti-nm" dst="/usr/bin/i386-pc-nto-qnx6.3.0-nm" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/ntoarm/bin/nm" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/ntomips/bin/nm" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/ntosh/bin/nm" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/ntoppc/bin/nm" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/ntox86/bin/nm" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/nm" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/nm" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/nm" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/nm" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-nm" dst="/usr/i386-pc-nto-qnx6.3.0/bin/nm" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/ntoarm-nm" tisa="arm"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/ntomips-nm" tisa="mips"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/ntosh-nm" tisa="sh"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/ntoppc-nm" tisa="ppc"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/ntox86-nm" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-nm" tisa="arm"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-nm" tisa="mips"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-nm" tisa="sh"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-nm" tisa="ppc"/>
+			<link os="linux" src="ntomulti-nm" dst="/usr/bin/i386-pc-nto-qnx6.3.0-nm" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/ntoarm/bin/nm" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/ntomips/bin/nm" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/ntosh/bin/nm" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/ntoppc/bin/nm" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/ntox86/bin/nm" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/nm" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/nm" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/nm" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/nm" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-nm" dst="/usr/i386-pc-nto-qnx6.3.0/bin/nm" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/ntoarm-nm" tisa="arm"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/ntomips-nm" tisa="mips"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/ntosh-nm" tisa="sh"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/ntoppc-nm" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/ntox86-nm" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-nm" tisa="arm"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-nm" tisa="mips"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-nm" tisa="sh"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-nm" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-nm" dst="/usr/bin/i386-pc-nto-qnx6.3.0-nm" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/ntoarm/bin/nm" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/ntomips/bin/nm" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/ntosh/bin/nm" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/ntoppc/bin/nm" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/ntox86/bin/nm" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/nm" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/nm" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/nm" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/nm" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-nm" dst="/usr/i386-pc-nto-qnx6.3.0/bin/nm" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/ntoarm-nm.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/ntomips-nm.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/ntosh-nm.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/ntoppc-nm.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/ntox86-nm.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-nm.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-nm.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-nm.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-nm.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-nm.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-nm.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/ntoarm/bin/nm.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/ntomips/bin/nm.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/ntosh/bin/nm.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/ntoppc/bin/nm.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/ntox86/bin/nm.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/nm.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/nm.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/nm.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/nm.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-nm.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/nm.exe" tisa="x86"/>
+		</component>
+
+		<component id="readelf" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				readelf
+			</location>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/readelf" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/ntoarm-readelf" tisa="arm"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/ntomips-readelf" tisa="mips"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/ntosh-readelf" tisa="sh"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/ntoppc-readelf" tisa="ppc"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/ntox86-readelf" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-readelf" tisa="arm"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-readelf" tisa="mips"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-readelf" tisa="sh"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-readelf" tisa="ppc"/>
+			<link os="nto" src="ntomulti-readelf" dst="/usr/bin/i386-pc-nto-qnx6.3.0-readelf" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/ntoarm/bin/readelf" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/ntomips/bin/readelf" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/ntosh/bin/readelf" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/ntoppc/bin/readelf" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/ntox86/bin/readelf" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/readelf" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/readelf" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/readelf" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/readelf" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-readelf" dst="/usr/i386-pc-nto-qnx6.3.0/bin/readelf" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/ntoarm-readelf" tisa="arm"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/ntomips-readelf" tisa="mips"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/ntosh-readelf" tisa="sh"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/ntoppc-readelf" tisa="ppc"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/ntox86-readelf" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-readelf" tisa="arm"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-readelf" tisa="mips"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-readelf" tisa="sh"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-readelf" tisa="ppc"/>
+			<link os="linux" src="ntomulti-readelf" dst="/usr/bin/i386-pc-nto-qnx6.3.0-readelf" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/ntoarm/bin/readelf" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/ntomips/bin/readelf" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/ntosh/bin/readelf" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/ntoppc/bin/readelf" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/ntox86/bin/readelf" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/readelf" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/readelf" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/readelf" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/readelf" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-readelf" dst="/usr/i386-pc-nto-qnx6.3.0/bin/readelf" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/ntoarm-readelf" tisa="arm"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/ntomips-readelf" tisa="mips"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/ntosh-readelf" tisa="sh"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/ntoppc-readelf" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/ntox86-readelf" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-readelf" tisa="arm"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-readelf" tisa="mips"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-readelf" tisa="sh"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-readelf" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-readelf" dst="/usr/bin/i386-pc-nto-qnx6.3.0-readelf" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/ntoarm/bin/readelf" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/ntomips/bin/readelf" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/ntosh/bin/readelf" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/ntoppc/bin/readelf" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/ntox86/bin/readelf" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/readelf" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/readelf" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/readelf" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/readelf" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-readelf" dst="/usr/i386-pc-nto-qnx6.3.0/bin/readelf" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/ntoarm-readelf.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/ntomips-readelf.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/ntosh-readelf.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/ntoppc-readelf.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/ntox86-readelf.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-readelf.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-readelf.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-readelf.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-readelf.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-readelf.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-readelf.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/ntoarm/bin/readelf.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/ntomips/bin/readelf.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/ntosh/bin/readelf.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/ntoppc/bin/readelf.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/ntox86/bin/readelf.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/readelf.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/readelf.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/readelf.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/readelf.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-readelf.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/readelf.exe" tisa="x86"/>
+		</component>
+
+		<component id="cxxfilt" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/binutils" runtime="true">
+				cxxfilt
+			</location>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/c++filt" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/ntoarm-c++filt" tisa="arm"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/ntomips-c++filt" tisa="mips"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/ntosh-c++filt" tisa="sh"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/ntoppc-c++filt" tisa="ppc"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/ntox86-c++filt" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-c++filt" tisa="arm"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-c++filt" tisa="mips"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-c++filt" tisa="sh"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-c++filt" tisa="ppc"/>
+			<link os="nto" src="ntomulti-c++filt" dst="/usr/bin/i386-pc-nto-qnx6.3.0-c++filt" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/ntoarm/bin/c++filt" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/ntomips/bin/c++filt" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/ntosh/bin/c++filt" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/ntoppc/bin/c++filt" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/ntox86/bin/c++filt" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/c++filt" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/c++filt" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/c++filt" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/c++filt" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-c++filt" dst="/usr/i386-pc-nto-qnx6.3.0/bin/c++filt" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/ntoarm-c++filt" tisa="arm"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/ntomips-c++filt" tisa="mips"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/ntosh-c++filt" tisa="sh"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/ntoppc-c++filt" tisa="ppc"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/ntox86-c++filt" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-c++filt" tisa="arm"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-c++filt" tisa="mips"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-c++filt" tisa="sh"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-c++filt" tisa="ppc"/>
+			<link os="linux" src="ntomulti-c++filt" dst="/usr/bin/i386-pc-nto-qnx6.3.0-c++filt" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/ntoarm/bin/c++filt" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/ntomips/bin/c++filt" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/ntosh/bin/c++filt" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/ntoppc/bin/c++filt" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/ntox86/bin/c++filt" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/c++filt" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/c++filt" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/c++filt" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/c++filt" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-c++filt" dst="/usr/i386-pc-nto-qnx6.3.0/bin/c++filt" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/ntoarm-c++filt" tisa="arm"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/ntomips-c++filt" tisa="mips"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/ntosh-c++filt" tisa="sh"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/ntoppc-c++filt" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/ntox86-c++filt" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-c++filt" tisa="arm"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-c++filt" tisa="mips"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-c++filt" tisa="sh"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-c++filt" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-c++filt" dst="/usr/bin/i386-pc-nto-qnx6.3.0-c++filt" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/ntoarm/bin/c++filt" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/ntomips/bin/c++filt" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/ntosh/bin/c++filt" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/ntoppc/bin/c++filt" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/ntox86/bin/c++filt" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/c++filt" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/c++filt" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/c++filt" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/c++filt" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-c++filt" dst="/usr/i386-pc-nto-qnx6.3.0/bin/c++filt" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/ntoarm-c++filt.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/ntomips-c++filt.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/ntosh-c++filt.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/ntoppc-c++filt.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/ntox86-c++filt.exe" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-c++filt.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-c++filt.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-c++filt.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-c++filt.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-c++filt.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-c++filt.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/ntoarm/bin/c++filt.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/ntomips/bin/c++filt.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/ntosh/bin/c++filt.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/ntoppc/bin/c++filt.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/ntox86/bin/c++filt.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/c++filt.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/c++filt.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/c++filt.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/c++filt.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-c++filt.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/c++filt.exe" tisa="x86"/>
+		</component>
+
+		<component id="gprof" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/gprof" runtime="true">
+				gprof
+			</location>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/gprof" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/ntoarm-gprof" tisa="arm"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/ntomips-gprof" tisa="mips"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/ntosh-gprof" tisa="sh"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/ntoppc-gprof" tisa="ppc"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/ntox86-gprof" tisa="x86"/>
+
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-gprof" tisa="arm"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-gprof" tisa="mips"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-gprof" tisa="sh"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-gprof" tisa="ppc"/>
+			<link os="nto" src="ntomulti-gprof" dst="/usr/bin/i386-pc-nto-qnx6.3.0-gprof" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/ntoarm/bin/gprof" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/ntomips/bin/gprof" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/ntosh/bin/gprof" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/ntoppc/bin/gprof" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/ntox86/bin/gprof" tisa="x86"/>
+
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gprof" tisa="arm"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gprof" tisa="mips"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gprof" tisa="sh"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gprof" tisa="ppc"/>
+			<link os="nto" src="../../bin/ntomulti-gprof" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gprof" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/ntoarm-gprof" tisa="arm"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/ntomips-gprof" tisa="mips"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/ntosh-gprof" tisa="sh"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/ntoppc-gprof" tisa="ppc"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/ntox86-gprof" tisa="x86"/>
+
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-gprof" tisa="arm"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-gprof" tisa="mips"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-gprof" tisa="sh"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-gprof" tisa="ppc"/>
+			<link os="linux" src="ntomulti-gprof" dst="/usr/bin/i386-pc-nto-qnx6.3.0-gprof" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/ntoarm/bin/gprof" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/ntomips/bin/gprof" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/ntosh/bin/gprof" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/ntoppc/bin/gprof" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/ntox86/bin/gprof" tisa="x86"/>
+
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gprof" tisa="arm"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gprof" tisa="mips"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gprof" tisa="sh"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gprof" tisa="ppc"/>
+			<link os="linux" src="../../bin/ntomulti-gprof" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gprof" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/ntoarm-gprof" tisa="arm"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/ntomips-gprof" tisa="mips"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/ntosh-gprof" tisa="sh"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/ntoppc-gprof" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/ntox86-gprof" tisa="x86"/>
+
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-gprof" tisa="arm"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-gprof" tisa="mips"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-gprof" tisa="sh"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-gprof" tisa="ppc"/>
+			<link os="solaris" src="ntomulti-gprof" dst="/usr/bin/i386-pc-nto-qnx6.3.0-gprof" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/ntoarm/bin/gprof" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/ntomips/bin/gprof" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/ntosh/bin/gprof" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/ntoppc/bin/gprof" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/ntox86/bin/gprof" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gprof" tisa="arm"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gprof" tisa="mips"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gprof" tisa="sh"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gprof" tisa="ppc"/>
+			<link os="solaris" src="../../bin/ntomulti-gprof" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gprof" tisa="x86"/>
+
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/ntoarm-gprof.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/ntomips-gprof.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/ntosh-gprof.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/ntoppc-gprof.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/ntox86-gprof.exe" tisa="x86"/>
+	
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/arm-unknown-nto-qnx6.3.0-gprof.exe" tisa="arm"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/mips-unknown-nto-qnx6.3.0-gprof.exe" tisa="mips"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/sh-unknown-nto-qnx6.3.0-gprof.exe" tisa="sh"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/powerpc-unknown-nto-qnx6.3.0-gprof.exe" tisa="ppc"/>
+			<link os="win32" src="ntomulti-gprof.exe" dst="/usr/bin/i386-pc-nto-qnx6.3.0-gprof.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/ntoarm/bin/gprof.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/ntomips/bin/gprof.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/ntosh/bin/gprof.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/ntoppc/bin/gprof.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/ntox86/bin/gprof.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gprof.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gprof.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gprof.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gprof.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/ntomulti-gprof.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gprof.exe" tisa="x86"/>
+		</component>
+		
+		<component id="ld" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/ld/i386-pc-nto-qnx6.3.0" tisa="x86" runtime="true">ld-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/ld/powerpc-unknown-nto-qnx6.3.0" tisa="ppc" runtime="true">ld-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/ld/mips-unknown-nto-qnx6.3.0" tisa="mips" runtime="true">ld-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/ld/sh-unknown-nto-qnx6.3.0" tisa="sh" runtime="true">ld-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/ld/arm-unknown-nto-qnx6.3.0" tisa="arm" runtime="true">ld-new</location>
+
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-ld" dst="/usr/bin/ld" tisa="x86"/>
+			
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-ld" dst="/usr/bin/ntox86-ld" tisa="x86"/>
+			<link os="nto" src="powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoppc-ld" tisa="ppc"/>
+			<link os="nto" src="sh-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntosh-ld" tisa="sh"/>
+			<link os="nto" src="mips-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntomips-ld" tisa="mips"/>
+			<link os="nto" src="arm-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoarm-ld" tisa="arm"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoarm/bin/ld" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/ntomips/bin/ld" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/ntosh/bin/ld" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoppc/bin/ld" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/ntox86/bin/ld" tisa="x86"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ld" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ld" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ld" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ld" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ld" tisa="x86"/>
+			
+			<link os="linux" src="i386-pc-nto-qnx6.3.0-ld" dst="/usr/bin/ntox86-ld" tisa="x86"/>
+			<link os="linux" src="powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoppc-ld" tisa="ppc"/>
+			<link os="linux" src="sh-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntosh-ld" tisa="sh"/>
+			<link os="linux" src="mips-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntomips-ld" tisa="mips"/>
+			<link os="linux" src="arm-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoarm-ld" tisa="arm"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoarm/bin/ld" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/ntomips/bin/ld" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/ntosh/bin/ld" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoppc/bin/ld" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/ntox86/bin/ld" tisa="x86"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ld" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ld" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ld" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ld" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ld" tisa="x86"/>
+			
+			<link os="solaris" src="i386-pc-nto-qnx6.3.0-ld" dst="/usr/bin/ntox86-ld" tisa="x86"/>
+			<link os="solaris" src="powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoppc-ld" tisa="ppc"/>
+			<link os="solaris" src="sh-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntosh-ld" tisa="sh"/>
+			<link os="solaris" src="mips-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntomips-ld" tisa="mips"/>
+			<link os="solaris" src="arm-unknown-nto-qnx6.3.0-ld" dst="/usr/bin/ntoarm-ld" tisa="arm"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoarm/bin/ld" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/ntomips/bin/ld" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/ntosh/bin/ld" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/ntoppc/bin/ld" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/ntox86/bin/ld" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-ld" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ld" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-ld" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ld" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-ld" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ld" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ld" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-ld" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ld" tisa="x86"/>
+
+			<link os="win32" src="i386-pc-nto-qnx6.3.0-ld.exe" dst="/usr/bin/ntox86-ld.exe" tisa="x86"/>
+			<link os="win32" src="powerpc-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/bin/ntoppc-ld.exe" tisa="ppc"/>
+			<link os="win32" src="sh-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/bin/ntosh-ld.exe" tisa="sh"/>
+			<link os="win32" src="mips-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/bin/ntomips-ld.exe" tisa="mips"/>
+			<link os="win32" src="arm-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/bin/ntoarm-ld.exe" tisa="arm"/>
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/ntoarm/bin/ld.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/ntomips/bin/ld.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/ntosh/bin/ld.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/ntoppc/bin/ld.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-ld.exe" dst="/usr/ntox86/bin/ld.exe" tisa="x86"/>
+			
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/ld.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/ld.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/ld.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-ld.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/ld.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-ld.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/ld.exe" tisa="x86"/>
+		</component>
+
+		<component id="as" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/i386-pc-nto-qnx6.3.0" tisa="x86" runtime="true"> as-new </location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/powerpc-unknown-nto-qnx6.3.0" tisa="ppc" runtime="true">as-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/mips-unknown-nto-qnx6.3.0" tisa="mips" runtime="true">as-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/sh-unknown-nto-qnx6.3.0" tisa="sh" runtime="true">as-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/arm-unknown-nto-qnx6.3.0" tisa="arm" runtime="true">as-new</location>
+			
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-as" dst="/usr/bin/as" tos="nto" tisa="x86"/>
+
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-as" dst="/usr/bin/ntox86-as" tisa="x86"/>
+			<link os="nto" src="powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoppc-as" tisa="ppc"/>
+			<link os="nto" src="sh-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntosh-as" tisa="sh"/>
+			<link os="nto" src="mips-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntomips-as" tisa="mips"/>
+			<link os="nto" src="arm-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoarm-as" tisa="arm"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/ntoarm/bin/as" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/ntomips/bin/as" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/ntosh/bin/as" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/ntoppc/bin/as" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/ntox86/bin/as" tisa="x86"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/as" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/as" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/as" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/as" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/i386-pc-nto-qnx6.3.0/bin/as" tisa="x86"/>
+
+			<link os="linux" src="i386-pc-nto-qnx6.3.0-as" dst="/usr/bin/ntox86-as" tisa="x86"/>
+			<link os="linux" src="powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoppc-as" tisa="ppc"/>
+			<link os="linux" src="sh-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntosh-as" tisa="sh"/>
+			<link os="linux" src="mips-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntomips-as" tisa="mips"/>
+			<link os="linux" src="arm-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoarm-as" tisa="arm"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/ntoarm/bin/as" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/ntomips/bin/as" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/ntosh/bin/as" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/ntoppc/bin/as" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/ntox86/bin/as" tisa="x86"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/as" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/as" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/as" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/as" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/i386-pc-nto-qnx6.3.0/bin/as" tisa="x86"/>
+
+			<link os="solaris" src="i386-pc-nto-qnx6.3.0-as" dst="/usr/bin/ntox86-as" tisa="x86"/>
+			<link os="solaris" src="powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoppc-as" tisa="ppc"/>
+			<link os="solaris" src="sh-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntosh-as" tisa="sh"/>
+			<link os="solaris" src="mips-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntomips-as" tisa="mips"/>
+			<link os="solaris" src="arm-unknown-nto-qnx6.3.0-as" dst="/usr/bin/ntoarm-as" tisa="arm"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/ntoarm/bin/as" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/ntomips/bin/as" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/ntosh/bin/as" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/ntoppc/bin/as" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/ntox86/bin/as" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-as" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/as" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-as" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/as" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-as" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/as" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/as" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-as" dst="/usr/i386-pc-nto-qnx6.3.0/bin/as" tisa="x86"/>
+
+			<link os="win32" src="i386-pc-nto-qnx6.3.0-as.exe" dst="/usr/bin/ntox86-as.exe" tisa="x86"/>
+			<link os="win32" src="powerpc-unknown-nto-qnx6.3.0-as.exe" dst="/usr/bin/ntoppc-as.exe" tisa="ppc"/>
+			<link os="win32" src="sh-unknown-nto-qnx6.3.0-as.exe" dst="/usr/bin/ntosh-as.exe" tisa="sh"/>
+			<link os="win32" src="mips-unknown-nto-qnx6.3.0-as.exe" dst="/usr/bin/ntomips-as.exe" tisa="mips"/>
+			<link os="win32" src="arm-unknown-nto-qnx6.3.0-as.exe" dst="/usr/bin/ntoarm-as.exe" tisa="arm"/>
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-as.exe" dst="/usr/ntoarm/bin/as.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-as.exe" dst="/usr/ntomips/bin/as.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-as.exe" dst="/usr/ntosh/bin/as.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as.exe" dst="/usr/ntoppc/bin/as.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-as.exe" dst="/usr/ntox86/bin/as.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-as.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/as.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-as.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/as.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-as.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/as.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-as.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/as.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-as.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/as.exe" tisa="x86"/>
+		</component>
+
+		<component id="gasp" generated="true">
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/i386-pc-nto-qnx6.3.0" tisa="x86" runtime="true"> gasp-new </location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/powerpc-unknown-nto-qnx6.3.0" isa="ppc" runtime="true">gasp-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/mips-unknown-nto-qnx6.3.0" isa="mips" runtime="true">gasp-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/sh-unknown-nto-qnx6.3.0" isa="sh" runtime="true">gasp-new</location>
+			<location basedir="{os}-{cpu}-o-ntomulti/gas/arm-unknown-nto-qnx6.3.0" isa="arm"  runtime="true">gasp-new</location>
+			
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-gasp" dst="/usr/bin/gasp" tos="nto" tisa="x86"/>
+			
+			<link os="nto" src="i386-pc-nto-qnx6.3.0-gasp" dst="/usr/bin/ntox86-gasp" tisa="x86"/>
+			<link os="nto" src="powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoppc-gasp" tisa="ppc"/>
+			<link os="nto" src="sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntosh-gasp" tisa="sh"/>
+			<link os="nto" src="mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntomips-gasp" tisa="mips"/>
+			<link os="nto" src="arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoarm-gasp" tisa="arm"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoarm/bin/gasp" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntomips/bin/gasp" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntosh/bin/gasp" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoppc/bin/gasp" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/ntox86/bin/gasp" tisa="x86"/>
+
+			<link os="nto" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gasp" tisa="arm"/>
+			<link os="nto" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gasp" tisa="mips"/>
+			<link os="nto" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gasp" tisa="sh"/>
+			<link os="nto" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gasp" tisa="ppc"/>
+			<link os="nto" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gasp" tisa="x86"/>
+			
+			<link os="linux" src="i386-pc-nto-qnx6.3.0-gasp" dst="/usr/bin/ntox86-gasp" tisa="x86"/>
+			<link os="linux" src="powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoppc-gasp" tisa="ppc"/>
+			<link os="linux" src="sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntosh-gasp" tisa="sh"/>
+			<link os="linux" src="mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntomips-gasp" tisa="mips"/>
+			<link os="linux" src="arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoarm-gasp" tisa="arm"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoarm/bin/gasp" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntomips/bin/gasp" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntosh/bin/gasp" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoppc/bin/gasp" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/ntox86/bin/gasp" tisa="x86"/>
+
+			<link os="linux" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gasp" tisa="arm"/>
+			<link os="linux" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gasp" tisa="mips"/>
+			<link os="linux" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gasp" tisa="sh"/>
+			<link os="linux" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gasp" tisa="ppc"/>
+			<link os="linux" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gasp" tisa="x86"/>
+			
+			<link os="solaris" src="i386-pc-nto-qnx6.3.0-gasp" dst="/usr/bin/ntox86-gasp" tisa="x86"/>
+			<link os="solaris" src="powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoppc-gasp" tisa="ppc"/>
+			<link os="solaris" src="sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntosh-gasp" tisa="sh"/>
+			<link os="solaris" src="mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntomips-gasp" tisa="mips"/>
+			<link os="solaris" src="arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/bin/ntoarm-gasp" tisa="arm"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoarm/bin/gasp" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntomips/bin/gasp" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntosh/bin/gasp" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/ntoppc/bin/gasp" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/ntox86/bin/gasp" tisa="x86"/>
+
+			<link os="solaris" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gasp" tisa="arm"/>
+			<link os="solaris" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gasp" tisa="mips"/>
+			<link os="solaris" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gasp" tisa="sh"/>
+			<link os="solaris" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gasp" tisa="ppc"/>
+			<link os="solaris" src="../../bin/i386-pc-nto-qnx6.3.0-gasp" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gasp" tisa="x86"/>
+
+			<link os="win32" src="i386-pc-nto-qnx6.3.0-gasp.exe" dst="/usr/bin/ntox86-gasp.exe" tisa="x86"/>
+			<link os="win32" src="powerpc-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/bin/ntoppc-gasp.exe" tisa="ppc"/>
+			<link os="win32" src="sh-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/bin/ntosh-gasp.exe" tisa="sh"/>
+			<link os="win32" src="mips-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/bin/ntomips-gasp.exe" tisa="mips"/>
+			<link os="win32" src="arm-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/bin/ntoarm-gasp.exe" tisa="arm"/>
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/ntoarm/bin/gasp.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/ntomips/bin/gasp.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/ntosh/bin/gasp.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/ntoppc/bin/gasp.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-gasp.exe" dst="/usr/ntox86/bin/gasp.exe" tisa="x86"/>
+
+			<link os="win32" src="../../bin/arm-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/arm-unknown-nto-qnx6.3.0/bin/gasp.exe" tisa="arm"/>
+			<link os="win32" src="../../bin/mips-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/mips-unknown-nto-qnx6.3.0/bin/gasp.exe" tisa="mips"/>
+			<link os="win32" src="../../bin/sh-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/sh-unknown-nto-qnx6.3.0/bin/gasp.exe" tisa="sh"/>
+			<link os="win32" src="../../bin/powerpc-unknown-nto-qnx6.3.0-gasp.exe" dst="/usr/powerpc-unknown-nto-qnx6.3.0/bin/gasp.exe" tisa="ppc"/>
+			<link os="win32" src="../../bin/i386-pc-nto-qnx6.3.0-gasp.exe" dst="/usr/i386-pc-nto-qnx6.3.0/bin/gasp.exe" tisa="x86"/>
+		</component>
+		</package>
+
+	</contents>
+
+</module>
