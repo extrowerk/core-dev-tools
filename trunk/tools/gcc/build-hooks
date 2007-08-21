@@ -89,7 +89,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-tls"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
-	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/4.2.0"
+	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/4.2.1"
 	
 	if [ ${SYSNAME} == nto ]; then
 		configure_opts="${configure_opts} --enable-shared"
