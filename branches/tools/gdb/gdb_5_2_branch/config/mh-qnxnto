@@ -1,1 +1,0 @@
-LIBCFLAGS += -DNEED_sys_siglist=1 -DNO_SYS_FILE_H
