@@ -1,0 +1,61 @@
+This is gdbint.info, produced by makeinfo version 4.1 from
+./gdbint.texinfo.
+
+INFO-DIR-SECTION Programming & development tools.
+START-INFO-DIR-ENTRY
+* Gdb-Internals: (gdbint).	The GNU debugger's internals.
+END-INFO-DIR-ENTRY
+
+   This file documents the internals of the GNU debugger GDB.
+Copyright 1990,1991,1992,1993,1994,1996,1998,1999,2000,2001,2002
+Free Software Foundation, Inc.  Contributed by Cygnus Solutions.
+Written by John Gilmore.  Second Edition by Stan Shebs.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+   (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+modify this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+Indirect:
+gdbint.info-1: 999
+gdbint.info-2: 48190
+gdbint.info-3: 81633
+gdbint.info-4: 131854
+gdbint.info-5: 171673
+gdbint.info-6: 219999
+
+Tag Table:
+(Indirect)
+Node: Top999
+Node: Requirements1730
+Node: Overall Structure3217
+Node: Algorithms6487
+Node: User Interface24881
+Ref: User Interface-Footnote-147906
+Ref: User Interface-Footnote-247955
+Node: libgdb48190
+Node: Symbol Handling52148
+Node: Language Support66294
+Node: Host Definition71689
+Node: Target Architecture Definition81633
+Ref: Target Architecture Definition-Footnote-1131854
+Node: Target Vector Definition132097
+Node: Native Debugging134665
+Node: Support Libraries146288
+Node: Coding147998
+Node: Porting GDB168480
+Node: Releasing GDB171673
+Node: Testsuite183847
+Node: Hints190332
+Node: Getting Started190668
+Node: Debugging GDB194804
+Node: GNU Free Documentation License200294
+Node: Index219999
+
+End Tag Table

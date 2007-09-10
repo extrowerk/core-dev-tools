@@ -1,0 +1,39 @@
+# Build libgcc.a with different options.  With gas, build pic libraries
+# as well no floating point
+
+# put this in if you want g++ to use the Dinkum lib
+#T_CFLAGS = -D__QNXTARGET__ -DLIBSTDCXX=\"-lcpp\"
+T_CFLAGS = -D__QNXTARGET__
+CRTSTUFF_T_CFLAGS = -msdata=none -fPIC -fno-omit-frame-pointer
+TARGET_LIBGCC2_CFLAGS = -fPIC -fno-honor-std
+FIXPROTO_DEFINES = -D__QNX__ -D__QNXNTO__ -D__PPC__ -D__GNUC__
+
+MULTILIB_OPTIONS	= msoft-float fPIC fexceptions
+MULTILIB_DIRNAMES	= nof pic exceptions
+MULTILIB_EXCEPTIONS	=
+MULTILIB_MATCHES	= ${MULTILIB_MATCHES_FLOAT} \
+			  fPIC=mrelocatable-lib \
+			  fPIC=mrelocatable \
+			  fPIC=shared \
+			  fPIC=fpic
+
+USER_H = $(EXTRA_HEADERS) $(LANG_EXTRA_HEADERS)
+
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
+
+CROSS_LIBGCC1 = libgcc1.a
+
+EXTRA_PARTS = crtbeginC++.o crtendC++.o
+
+LIB2FUNCS_EXTRA = tramp.S
+
+tramp.S: $(srcdir)/config/rs6000/tramp.asm
+	cat $(srcdir)/config/rs6000/tramp.asm > tramp.S
+
+$(T)crtbeginC++.o: crtbegin.o
+	cp crtbegin.o crtbeginC++.o
+
+$(T)crtendC++.o: crtend.o
+	cp crtend.o crtendC++.o
+

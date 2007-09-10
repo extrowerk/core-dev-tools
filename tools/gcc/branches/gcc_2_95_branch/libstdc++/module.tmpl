@@ -1,0 +1,193 @@
+<?xml version="1.0"?>
+<module name="gcc">
+
+	<type>Element</type>
+
+	<classification>Runtime</classification>
+
+	<targets>
+		<availability ref="ostargets"/>
+	</targets>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+
+
+	<GroupOwner>tools</GroupOwner>
+	<contents>
+		<package name="libstdc">
+
+		<component id="libstdc" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib</location>
+			<location os="any" isa="x86" basedir="../nto-x86-o-ntox86/ntox86/libstdc++" runtime="true">libstdc++.so.2.2.10.0</location>
+			<link isa="x86" runtime="true" src="../../libstdc++.so.2.2.10.0" dst="/lib/gcc/2.95.3/libstdc++.so"/> 
+		</component>
+				
+		<component id="libstdc" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/gcc/2.95.3</location>
+			<location os="any" isa="x86" basedir="../nto-x86-o-ntox86/ntox86/libstdc++" runtime="true">libstdc++.a.2.2.10.0</location>
+			<link isa="x86" runtime="true" src="libstdc++.a.2.2.10.0" dst="libstdc++.a"/> 
+		</component>
+
+		<component id="libstdc" generated="false">
+			<location type="install">/usr/include/g++-3/</location>
+			<location basedir="../libstdc++" runtime="false">stl.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">algo.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">algobase.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">algorithm</location>
+			<location basedir="../libstdc++/stl" runtime="false">alloc.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">bitset</location>
+			<location basedir="../libstdc++/stl" runtime="false">bvector.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">defalloc.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">deque</location>
+			<location basedir="../libstdc++/stl" runtime="false">deque.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">function.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">functional</location>
+			<location basedir="../libstdc++/stl" runtime="false">hash_map</location>
+			<location basedir="../libstdc++/stl" runtime="false">hash_map.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">hash_set</location>
+			<location basedir="../libstdc++/stl" runtime="false">hash_set.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">hashtable.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">heap.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">iterator</location>
+			<location basedir="../libstdc++/stl" runtime="false">iterator.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">list</location>
+			<location basedir="../libstdc++/stl" runtime="false">list.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">map</location>
+			<location basedir="../libstdc++/stl" runtime="false">map.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">memory</location>
+			<location basedir="../libstdc++/stl" runtime="false">multimap.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">multiset.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">numeric</location>
+			<location basedir="../libstdc++/stl" runtime="false">pair.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">pthread_alloc</location>
+			<location basedir="../libstdc++/stl" runtime="false">pthread_alloc.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">queue</location>
+			<location basedir="../libstdc++/stl" runtime="false">rope</location>
+			<location basedir="../libstdc++/stl" runtime="false">rope.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">ropeimpl.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">set</location>
+			<location basedir="../libstdc++/stl" runtime="false">set.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">slist</location>
+			<location basedir="../libstdc++/stl" runtime="false">slist.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stack</location>
+			<location basedir="../libstdc++/stl" runtime="false">stack.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_algo.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_algobase.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_alloc.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_bvector.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_config.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_construct.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_deque.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_function.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_hash_fun.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_hash_map.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_hash_set.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_hashtable.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_heap.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_iterator.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_list.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_map.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_multimap.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_multiset.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_numeric.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_pair.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_queue.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_raw_storage_iter.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_relops.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_rope.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_set.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_slist.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_stack.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_tempbuf.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_tree.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_uninitialized.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">stl_vector.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">tempbuf.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">tree.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">type_traits.h</location>
+			<location basedir="../libstdc++/stl" runtime="false">utility</location>
+			<location basedir="../libstdc++/stl" runtime="false">vector</location>
+			<location basedir="../libstdc++/stl" runtime="false">vector.h</location>
+			<location basedir="../libio" runtime="false">PlotFile.h</location>
+			<location basedir="../libio" runtime="false">SFile.h</location>
+			<location basedir="../libio" runtime="false">builtinbuf.h</location>
+			<location basedir="../libio" runtime="false">editbuf.h</location>
+			<location basedir="../libio" runtime="false">floatio.h</location>
+			<location basedir="../libio" runtime="false">fstream.h</location>
+			<location basedir="../libio" runtime="false">indstream.h</location>
+			<location basedir="../libio" runtime="false">iolibio.h</location>
+			<location basedir="../libio" runtime="false">iomanip.h</location>
+			<location basedir="../libio" runtime="false">iostdio.h</location>
+			<location basedir="../libio" runtime="false">iostream.h</location>
+			<location basedir="../libio" runtime="false">iostreamP.h</location>
+			<location basedir="../libio" runtime="false">istream.h</location>
+			<location basedir="../libio" runtime="false">libio.h</location>
+			<location basedir="../libio" runtime="false">libioP.h</location>
+			<location basedir="../libio" runtime="false">ostream.h</location>
+			<location basedir="../libio" runtime="false">parsestream.h</location>
+			<location basedir="../libio" runtime="false">pfstream.h</location>
+			<location basedir="../libio" runtime="false">procbuf.h</location>
+			<location basedir="../libio" runtime="false">stdiostream.h</location>
+			<location basedir="../libio" runtime="false">stream.h</location>
+			<location basedir="../libio" runtime="false">streambuf.h</location>
+			<location basedir="../libio" runtime="false">strfile.h</location>
+			<location basedir="../libio" runtime="false">strstream.h</location>
+			<location basedir="../libstdc++" runtime="false">cassert</location>
+			<location basedir="../libstdc++" runtime="false">cctype</location>
+			<location basedir="../libstdc++" runtime="false">cerrno</location>
+			<location basedir="../libstdc++" runtime="false">cfloat</location>
+			<location basedir="../libstdc++" runtime="false">ciso646</location>
+			<location basedir="../libstdc++" runtime="false">climits</location>
+			<location basedir="../libstdc++" runtime="false">clocale</location>
+			<location basedir="../libstdc++" runtime="false">cmath</location>
+			<location basedir="../libstdc++" runtime="false">complex</location>
+			<location basedir="../libstdc++" runtime="false">csetjmp</location>
+			<location basedir="../libstdc++" runtime="false">csignal</location>
+			<location basedir="../libstdc++" runtime="false">cstdarg</location>
+			<location basedir="../libstdc++" runtime="false">cstddef</location>
+			<location basedir="../libstdc++" runtime="false">cstdio</location>
+			<location basedir="../libstdc++" runtime="false">cstdlib</location>
+			<location basedir="../libstdc++" runtime="false">cstring</location>
+			<location basedir="../libstdc++" runtime="false">ctime</location>
+			<location basedir="../libstdc++" runtime="false">cwchar</location>
+			<location basedir="../libstdc++" runtime="false">cwctype</location>
+			<location basedir="../libstdc++" runtime="false">string</location>
+			<location basedir="../libstdc++" runtime="false">stdexcept</location>
+			<location basedir="../libstdc++" runtime="false">fstream</location>
+			<location basedir="../libstdc++" runtime="false">iomanip</location>
+			<location basedir="../libstdc++" runtime="false">iostream</location>
+			<location basedir="../libstdc++" runtime="false">strstream</location>
+			<location basedir="../libstdc++" runtime="false">iosfwd</location>
+			<location basedir="../libstdc++" runtime="false">valarray</location>
+			<location basedir="../libstdc++" runtime="false">sstream</location>
+			<location basedir="../libstdc++" runtime="false">complex.h</location>
+		</component>
+
+		<component id="libstdc" generated="false">
+			<location type="install">/usr/include/g++-3/std/</location>
+			<location basedir="../libstdc++/std/" runtime="false">bastring.cc</location>
+			<location basedir="../libstdc++/std/" runtime="false">bastring.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">complext.cc</location>
+			<location basedir="../libstdc++/std/" runtime="false">complext.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">dcomplex.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">fcomplex.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">gslice.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">gslice_array.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">indirect_array.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">ldcomplex.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">mask_array.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">slice.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">slice_array.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">std_valarray.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">straits.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">valarray_array.h</location>
+			<location basedir="../libstdc++/std/" runtime="false">valarray_array.tcc</location>
+			<location basedir="../libstdc++/std/" runtime="false">valarray_meta.h</location>
+		</component>
+		</package>
+	</contents>
+</module>

@@ -1,0 +1,28 @@
+<QPG:Generation>
+   <QPG:Owner file="owner.qpg"/>
+   <QPG:Values>
+      <QPG:Files>
+         <!-- Linux hosted binaries -->
+         <QPG:Add hos="linux" file="linux-x86-o-ntoarm/gdb/gdb" pinfo="ntoarm-gdb.pinfo" target="arm" proc="x86" />
+         <QPG:Add hos="linux" file="linux-x86-o-ntomips/gdb/gdb" pinfo="ntomips-gdb.pinfo" target="mips" proc="x86" />
+         <QPG:Add hos="linux" file="linux-x86-o-ntosh/gdb/gdb" pinfo="ntosh-gdb.pinfo" target="sh" proc="x86" />
+         <QPG:Add hos="linux" file="linux-x86-o-ntoppc/gdb/gdb" pinfo="ntoppc-gdb.pinfo" target="ppc" proc="x86" />
+         <QPG:Add hos="linux" file="linux-x86-o-ntox86/gdb/gdb" pinfo="ntox86-gdb.pinfo" target="x86" proc="x86" />
+
+         <!-- Solaris hosted binaries -->
+         <QPG:Add hos="solaris" file="solaris-sparc-o-ntoarm/gdb/gdb" pinfo="ntoarm-gdb.pinfo" target="arm" proc="sparc" />
+         <QPG:Add hos="solaris" file="solaris-sparc-o-ntomips/gdb/gdb" pinfo="ntomips-gdb.pinfo" target="mips" proc="sparc" />
+         <QPG:Add hos="solaris" file="solaris-sparc-o-ntosh/gdb/gdb" pinfo="ntosh-gdb.pinfo" target="sh" proc="sparc" />
+         <QPG:Add hos="solaris" file="solaris-sparc-o-ntoppc/gdb/gdb" pinfo="ntoppc-gdb.pinfo" target="ppc" proc="sparc" />
+         <QPG:Add hos="solaris" file="solaris-sparc-o-ntox86/gdb/gdb" pinfo="ntox86-gdb.pinfo" target="x86" proc="sparc" />
+
+
+         <!-- Windows hosted binaries -->
+         <QPG:Add hos="win32" file="win32-x86-o-ntoarm/gdb/gdb.exe" pinfo="ntoarm-gdb.exe.pinfo" target="arm" proc="x86" />
+         <QPG:Add hos="win32" file="win32-x86-o-ntomips/gdb/gdb.exe" pinfo="ntomips-gdb.exe.pinfo" target="mips" proc="x86" />
+         <QPG:Add hos="win32" file="win32-x86-o-ntosh/gdb/gdb.exe" pinfo="ntosh-gdb.exe.pinfo" target="sh" proc="x86" />
+         <QPG:Add hos="win32" file="win32-x86-o-ntoppc/gdb/gdb.exe" pinfo="ntoppc-gdb.exe.pinfo" target="ppc" proc="x86" />
+         <QPG:Add hos="win32" file="win32-x86-o-ntox86/gdb/gdb.exe" pinfo="ntox86-gdb.exe.pinfo" target="x86" proc="x86" />
+      </QPG:Files>
+   </QPG:Values>
+</QPG:Generation>
