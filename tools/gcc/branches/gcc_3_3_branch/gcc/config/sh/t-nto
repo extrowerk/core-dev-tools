@@ -1,0 +1,46 @@
+# put this in if you want g++ to use the Dinkum lib
+#T_CFLAGS = -D__QNXTARGET__ -DLIBSTDCXX=\"-lcpp\"
+
+# This allows us to use a staging area and find the new header files.
+# TCFLAGS is used by xgcc.
+TCFLAGS = -I $(shell echo ${QNX_TARGET})/usr/include
+
+ifeq "X$(QNX_SYSTEM_ROOT)" "X"
+ T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"\" -DTARGET_ALIAS=\"$(target_alias)\"
+else
+ ifeq "$(QNX_SYSTEM_ROOT)" "/"
+  T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"\" -DTARGET_ALIAS=\"$(target_alias)\"
+ else
+  T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"$(QNX_SYSTEM_ROOT)\" -DTARGET_ALIAS=\"$(target_alias)\"
+ endif
+endif
+
+CRTSTUFF_T_CFLAGS = -fno-omit-frame-pointer -fpic
+TARGET_LIBGCC2_CFLAGS = -fexceptions -Dinhibit_libc
+
+MULTILIB_OPTIONS = fpic
+MULTILIB_DIRNAMES = pic
+MULTILIB_MATCHES = fpic=shared
+
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
+
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
+
+LIB1ASMSRC = sh/lib1funcs.asm
+LIB1ASMFUNCS = _ashiftrt _ashiftrt_n _ashiftlt _lshiftrt _movstr \
+  _movstr_i4 _mulsi3 _sdivsi3 _sdivsi3_i4 _udivsi3 _udivsi3_i4 _set_fpscr
+
+LIB2FUNCS_EXTRA = $(srcdir)/config/sh/divdi.c embed-bb.c
+
+embed-bb.c: $(srcdir)/libgcc2.c
+	echo '#ifdef inhibit_libc' > $@
+	echo '#define L_bb' >> $@
+	echo '#undef inhibit_libc' >> $@
+	cat $< >> $@
+	echo '#endif' >> $@
+
+# Don't run fixproto or fixinc
+STMP_FIXPROTO =
+STMP_FIXINC =
+

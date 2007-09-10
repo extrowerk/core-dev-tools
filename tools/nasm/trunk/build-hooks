@@ -1,0 +1,19 @@
+function hook_preconfigure {
+	configure_opts="${configure_opts} --prefix=/usr"
+	if [ "$SYSNAME" == "win32" ] ; then
+		export CC="gcc -mno-cygwin"
+	fi
+}
+
+function hook_premake {
+	if [ "$SYSNAME" == "win32" ] ; then
+		make_opts="$make_opts LDFLAGS=-mno-cygwin"
+		make_CC="gcc -mno-cygwin"
+	fi
+	strip_r_switch
+}
+
+function hook_pinfo {
+	gen_pinfo -e nasm    usr/bin USE="%1>%C -h" LIC=NASM DESCRIPTION="Netwide X86 Assembler"
+	gen_pinfo -e ndisasm usr/bin USE="%2>%C -h" LIC=NASM DESCRIPTION="Netwide X86 Disassembler"
+}
