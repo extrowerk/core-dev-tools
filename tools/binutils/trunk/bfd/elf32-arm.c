@@ -5312,7 +5312,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 
 	  flags_compatible = FALSE;
 	}
-
+#ifndef __QNXTARGET__
       if ((in_flags & EF_ARM_VFP_FLOAT) != (out_flags & EF_ARM_VFP_FLOAT))
 	{
 	  if (in_flags & EF_ARM_VFP_FLOAT)
@@ -5326,7 +5326,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 
 	  flags_compatible = FALSE;
 	}
-
+#endif
       if ((in_flags & EF_ARM_MAVERICK_FLOAT) != (out_flags & EF_ARM_MAVERICK_FLOAT))
 	{
 	  if (in_flags & EF_ARM_MAVERICK_FLOAT)
@@ -5342,6 +5342,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 	}
 
 #ifdef EF_ARM_SOFT_FLOAT
+#ifndef __QNXTARGET__
       if ((in_flags & EF_ARM_SOFT_FLOAT) != (out_flags & EF_ARM_SOFT_FLOAT))
 	{
 	  /* We can allow interworking between code that is VFP format
@@ -5365,7 +5366,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 	    }
 	}
 #endif
-
+#endif
       /* Interworking mismatch is only a warning.  */
       if ((in_flags & EF_ARM_INTERWORK) != (out_flags & EF_ARM_INTERWORK))
 	{
