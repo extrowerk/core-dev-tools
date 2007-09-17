@@ -85,16 +85,16 @@ function hook_preconfigure {
         esac
 	configure_opts="${configure_opts} --program-suffix=${BINUTILS_SUFFIX}"
 	export CC="${make_CC}"
-	export CFLAGS="-g -Wall"
+	export CFLAGS="-O2 -Wall"
 }
 
 function hook_premake {
 	# DO NOT REMOVE THE FOLLOWING LINE!!!!
 	# Without inttypes.h, alignments get screwed up 
 	# as a result of a compiler bug. 
-	#export CFLAGS="-O2 -Wp,-idirafter -Wp,$QNX_TARGET/usr/include -Wp,-include -Wp,$QNX_TARGET/usr/include/inttypes.h"
+	export CFLAGS="-O2 -Wp,-idirafter -Wp,$QNX_TARGET/usr/include -Wp,-include -Wp,$QNX_TARGET/usr/include/inttypes.h"
 
-	#make_CC="env QCC_CONF_PATH=$QCC_CONF_PATH QNX_TARGET=$QNX_TARGET ${make_CC}"
+	make_CC="env QCC_CONF_PATH=$QCC_CONF_PATH QNX_TARGET=$QNX_TARGET ${make_CC}"
 
 	strip_r_switch;
 }
