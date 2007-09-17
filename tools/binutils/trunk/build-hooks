@@ -1,5 +1,6 @@
 srcdir=${PWD}/..
 nto_target=${PWD##*-}
+host_target=${PWD##*/}
 qnx_target_version=6.3.0
 
 if [ ${nto_target} != ntomulti ]; then
@@ -13,7 +14,7 @@ else
   target=`${srcdir}/config.sub ${nto_target}`
 fi
 
-targets="i686-pc-linux-gnu sparc-sun-solaris2.6 i686-pc-cygwin arm-unknown-nto-qnx${qnx_target_version} mips-unknown-nto-qnx${qnx_target_version} powerpc-unknown-nto-qnx${qnx_target_version} sh-unknown-nto-qnx${qnx_target_version} i386-pc-nto-qnx${qnx_target_version}"
+targets="i686-pc-linux-gnu i686-pc-cygwin arm-unknown-nto-qnx${qnx_target_version} mips-unknown-nto-qnx${qnx_target_version} powerpc-unknown-nto-qnx${qnx_target_version} sh-unknown-nto-qnx${qnx_target_version} i386-pc-nto-qnx${qnx_target_version}"
 
 function hook_preconfigure {
 	case ${nto_target} in
@@ -38,12 +39,26 @@ function hook_preconfigure {
                 execdir=/opt/qnx630/host/solaris/${host_cpu}/usr
                 ;;
         linux)
+		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
+		case  $host_target in 
+		nto*) 
+			configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0" 
+			execdir=/usr/qnx630/host/qnx6/x86/usr/ 
+		;;
+		
+		linux*)
                 host_cpu=$(uname -m)
                 case ${host_cpu} in
-        i[34567]86) host_cpu=x86 ;;
-                esac
-                execdir=/opt/qnx630/host/linux/${host_cpu}/usr
+			i[34567]86) host_cpu=x86 ;;
+			esac
+			execdir=/opt/qnx630/host/linux/${host_cpu}/usr
+		;;
+		win32*) 
+			configure_opts="${configure_opts} --host=i386-mingw32msvc"
+			execdir=/c/qnx630/host/win32/x86/usr
                 ;;
+		esac
+	;;
         win32)
                 execdir=/cygdrive/c/qnx630/host/win32/x86/usr
                 ;;
@@ -69,12 +84,8 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --program-prefix=${nto_target}-" ;;
         esac
 	configure_opts="${configure_opts} --program-suffix=${BINUTILS_SUFFIX}"
-
 	export CC="${make_CC}"
 	export CFLAGS="-g -Wall"
-}
-
-function hook_postconfigure {
 }
 
 function hook_premake {
