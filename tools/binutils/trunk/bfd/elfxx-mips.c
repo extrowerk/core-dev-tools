@@ -2891,7 +2891,7 @@ mips_elf_record_global_got_symbol (struct elf_link_hash_entry *h,
      generic ELF copy_indirect_symbol tests for <= 0.  */
   if (tls_flag == 0)
     h->got.offset = 1;
-
+ 
   if (QNX_COMPAT(abfd)) {
     if (g==NULL)
   	  return TRUE;
@@ -2901,7 +2901,6 @@ mips_elf_record_global_got_symbol (struct elf_link_hash_entry *h,
           g->global_gotsym = h;
     }
   }
-
   return TRUE;
 }
 
@@ -6087,6 +6086,7 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
        section when generating a shared object, since they do not use
        copy relocs.  */
   if (QNX_COMPAT(abfd)) {
+    /*
     if (! info->shared)
       {
         s = bfd_make_section (abfd, ".rel.bss");
@@ -6096,8 +6096,7 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
             || ! bfd_set_section_alignment (abfd, s, 3))
           return FALSE;
       }
-      }
-
+    */
     /* We also make a .bss and .sbss section here. This is needed in
        case we have copy relocs, but didn't have a bss section in
        from the normal symbols. */
@@ -6121,7 +6120,7 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
             || ! bfd_set_section_alignment (abfd, s, 3))
           return FALSE;
       }
-
+  }
   if (htab->is_vxworks)
     {
       /* Create the .plt, .rela.plt, .dynbss and .rela.bss sections.
@@ -6918,7 +6917,7 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
 {
   bfd *dynobj;
   struct mips_elf_link_hash_entry *hmips;
-  asection *s, *sreldyn = NULL;
+  asection *s;
   unsigned int power_of_two;
   struct mips_elf_link_hash_table *htab;
 
@@ -6927,7 +6926,7 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
   if (QNX_COMPAT(dynobj)) {
     if (h->got.offset == MINUS_ONE)
     {
-        h->got.offset = 1;
+       h->got.offset = 1;
     }
   }
 
@@ -6949,8 +6948,6 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
       && (h->root.type == bfd_link_hash_defweak
 	  || !h->def_regular))
     {
-       if (QNX_COMPAT(dynobj))
-         sreldyn = bfd_get_section_by_name (dynobj, ".rel.dyn");
       mips_elf_allocate_dynamic_relocations
 	(dynobj, info, hmips->possibly_dynamic_relocs);
       if (hmips->readonly_reloc)
@@ -7013,13 +7010,6 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
         h->root.u.def.value = s->size;
 
         h->def_regular = 1;
-        if ( sreldyn != NULL ) {
-          sreldyn->size -= hmips->possibly_dynamic_relocs * sizeof (Elf32_External_Rel);
-          if ( sreldyn->size == sizeof(Elf32_External_Rel) ) {
-            sreldyn->reloc_count--;
-            sreldyn->size = 0;
-          }
-        }
 
         /* XXX Write this stub address somewhere.  */
         h->plt.offset = s->size;
@@ -7068,19 +7058,10 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
    if (1 || (h->root.u.def.section->flags & SEC_ALLOC) != 0)
      {
        asection *srel;
-       srel = bfd_get_section_by_name(dynobj, ".rel.bss");
+       srel = mips_elf_rel_dyn_section (info, FALSE);
        BFD_ASSERT (srel != NULL);
-       srel->rawsize += sizeof (Elf32_External_Rel);
-       //RYAN - Revisit this addition. 
        srel->size += sizeof (Elf32_External_Rel);
        h->needs_copy = 1;
-       if ( sreldyn != NULL ) {
-         sreldyn->rawsize -= hmips->possibly_dynamic_relocs * sizeof (Elf32_External_Rel);
-         if ( sreldyn->rawsize == sizeof(Elf32_External_Rel) ) {
-           sreldyn->reloc_count--;
-           sreldyn->rawsize = 0;
-         }
-       }
      }
 
    /* We need to figure out the alignment required for this symbol.  I
@@ -7090,24 +7071,19 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
      power_of_two = 3;
 
    /* Apply the required alignment.  */
-   s->rawsize = BFD_ALIGN (s->rawsize,
+   s->size = BFD_ALIGN (s->size,
                              (bfd_size_type) (1 << power_of_two));
-   if (power_of_two > bfd_get_section_alignment (dynobj, s))
-     {
-       if (! bfd_set_section_alignment (dynobj, s, power_of_two))
-         return FALSE;
-     }
+   if (power_of_two > bfd_get_section_alignment (dynobj, s)
+       && ! bfd_set_section_alignment (dynobj, s, power_of_two))
+     return FALSE;
 
    /* Define the symbol as being at this point in the section.  */
    h->root.u.def.section = s;
    h->root.u.def.value = s->rawsize;
 
    /* Increment the section size to make room for the symbol.  */
-   s->rawsize += h->size;
-   /* Work around bug in sbss handling */
-   s->size = s->rawsize;
-  }
-
+   s->size += h->size;
+   }
   return TRUE;
 }
 
@@ -7806,9 +7782,6 @@ dynobj = elf_hash_table (info)->dynobj;
 	{
 	  if (mips_elf_rel_dyn_section (info, FALSE))
 	    {
-/*/              if (QNX_COMPAT(dynobj) && !(bfd_get_section_by_name (dyno
-		return FALSE; */
-
 	      if (! MIPS_ELF_ADD_DYNAMIC_ENTRY (info, DT_REL, 0))
 		return FALSE;
 
@@ -8310,12 +8283,8 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
   asection *sgot;
   struct mips_got_info *g, *gg;
   const char *name;
-  flagword flags; 
   int idx;
   struct mips_elf_link_hash_table *htab;
-
-  /* To see if we are linking PIC */
-  flags = elf_elfheader (output_bfd)->e_flags;
 
   htab = mips_elf_hash_table (info);
   dynobj = elf_hash_table (info)->dynobj;
@@ -8403,12 +8372,6 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
 
   BFD_ASSERT (h->dynindx != -1
 	      || h->forced_local);
-
-  sgot = mips_elf_got_section (dynobj, FALSE);
-  BFD_ASSERT (sgot != NULL);
-  BFD_ASSERT (mips_elf_section_data (sgot) != NULL);
-  g = mips_elf_section_data (sgot)->u.got_info;
-  BFD_ASSERT (g != NULL);
 
   /* Run through the global symbol table, creating GOT entries for all
      the symbols that need them.  */
@@ -8557,8 +8520,7 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
 
         /* Set up the copy reloc */
         BFD_ASSERT (h->dynindx != -1);
-        s = bfd_get_section_by_name (h->root.u.def.section->owner,
-                                       ".rel.bss");
+        s = mips_elf_rel_dyn_section (info, FALSE);
         BFD_ASSERT (s != NULL);
 
         rel.r_offset = (h->root.u.def.value
@@ -8895,11 +8857,6 @@ _bfd_mips_elf_finish_dynamic_sections (bfd *output_bfd,
 	  switch (dyn.d_tag)
 	    {
 	    case DT_RELENT:
-	      //RYAN
-              s = mips_elf_rel_dyn_section (info, FALSE);
-              if (QNX_COMPAT(output_bfd))
-                if (s == NULL)
-                   s = bfd_get_section_by_name (dynobj, ".rel.bss");
 	      dyn.d_un.d_val = MIPS_ELF_REL_SIZE (dynobj);
 	      break;
 
@@ -9171,11 +9128,7 @@ _bfd_mips_elf_finish_dynamic_sections (bfd *output_bfd,
 		 decided not to make.  This is for the n64 irix rld,
 		 which doesn't seem to apply any relocations if there
 		 are trailing null entries.  */
-	      /* QNX copy relocs are not working because DT_RELSZ ends up as
-              zero because the relocs are in rel.bss and not rel.dyn. The 
-              following work around is temporary until we use rel.dyn */
-	      /* s = mips_elf_rel_dyn_section (info, FALSE); */
-              s = bfd_get_section_by_name (dynobj, ".rel.bss");
+	      s = mips_elf_rel_dyn_section (info, FALSE); 
 	      dyn.d_un.d_val = (s->reloc_count
 				* (ABI_64_P (output_bfd)
 				   ? sizeof (Elf64_Mips_External_Rel)
@@ -10165,11 +10118,6 @@ _bfd_elf_mips_get_relocated_section_contents
   if (!bfd_get_section_contents (input_bfd, input_section, data, 0, sz))
     goto error_return;
 
-    /* We're not relaxing the section, so just copy the size info */
-  if (QNX_COMPAT(abfd)) {
-    input_section->size = input_section->rawsize;
-    input_section->reloc_done = TRUE;
-  }
   reloc_count = bfd_canonicalize_reloc (input_bfd,
 					input_section,
 					reloc_vector,
@@ -11224,7 +11172,8 @@ _bfd_mips_elf_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
     return TRUE;
 
   ok = TRUE;
-
+  
+  if (!QNX_COMPAT(obfd)) {
   if (((new_flags & (EF_MIPS_PIC | EF_MIPS_CPIC)) != 0)
       != ((old_flags & (EF_MIPS_PIC | EF_MIPS_CPIC)) != 0))
     {
@@ -11233,7 +11182,7 @@ _bfd_mips_elf_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
 	 ibfd);
       ok = TRUE;
     }
-
+  }
   if (new_flags & (EF_MIPS_PIC | EF_MIPS_CPIC))
     elf_elfheader (obfd)->e_flags |= EF_MIPS_CPIC;
   if (! (new_flags & EF_MIPS_PIC))
