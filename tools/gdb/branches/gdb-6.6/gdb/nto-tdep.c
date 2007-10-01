@@ -1,6 +1,6 @@
 /* nto-tdep.c - general QNX Neutrino target functionality.
 
-   Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2007 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,10 +17,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "gdb_assert.h"
 #include "gdb_stat.h"
 #include "gdb_string.h"
 #include "nto-tdep.h"
@@ -33,10 +32,17 @@
 #include "elf-bfd.h"
 #include "solib-svr4.h"
 #include "gdbcore.h"
+#include "objfiles.h"
+
+#include "gdbcmd.h"
+
+#include <string.h>
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
+
+#define link_map 	so_map
 
 #ifdef __CYGWIN__
 static char default_nto_target[] = "C:\\QNXsdk\\target\\qnx6";
@@ -68,6 +74,7 @@ nto_target (void)
 void
 nto_set_target (struct nto_target_ops *targ)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   nto_regset_id = targ->regset_id;
   nto_supply_gregset = targ->supply_gregset;
   nto_supply_fpregset = targ->supply_fpregset;
@@ -105,21 +112,24 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 #define PATH_FMT "%s/lib:%s/usr/lib:%s/usr/photon/lib:%s/usr/photon/dll:%s/lib/dll"
 
   nto_root = nto_target ();
-  if (strcmp (TARGET_ARCHITECTURE->arch_name, "i386") == 0)
+  if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name, "i386") == 0)
     {
       arch = "x86";
       endian = "";
     }
-  else if (strcmp (TARGET_ARCHITECTURE->arch_name, "rs6000") == 0
-	   || strcmp (TARGET_ARCHITECTURE->arch_name, "powerpc") == 0)
+  else if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
+		   "rs6000") == 0
+	   || strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
+		   "powerpc") == 0)
     {
       arch = "ppc";
       endian = "be";
     }
   else
     {
-      arch = TARGET_ARCHITECTURE->arch_name;
-      endian = TARGET_BYTE_ORDER == BFD_ENDIAN_BIG ? "be" : "le";
+      arch = gdbarch_bfd_arch_info (current_gdbarch)->arch_name;
+      endian = gdbarch_byte_order (current_gdbarch)
+	       == BFD_ENDIAN_BIG ? "be" : "le";
     }
 
   /* In case nto_root is short, add strlen(solib)
@@ -150,7 +160,12 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 	  if (ret >= 0)
 	    *temp_pathname = gdb_realpath (arch_path);
 	  else
-	    **temp_pathname = '\0';
+	    {
+	      if (*temp_pathname)
+	        **temp_pathname = '\0';
+	      else
+	        *temp_pathname = "";
+	    }
 	}
     }
   return ret;
@@ -164,21 +179,24 @@ nto_init_solib_absolute_prefix (void)
   const char *arch;
 
   nto_root = nto_target ();
-  if (strcmp (TARGET_ARCHITECTURE->arch_name, "i386") == 0)
+  if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name, "i386") == 0)
     {
       arch = "x86";
       endian = "";
     }
-  else if (strcmp (TARGET_ARCHITECTURE->arch_name, "rs6000") == 0
-	   || strcmp (TARGET_ARCHITECTURE->arch_name, "powerpc") == 0)
+  else if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
+		   "rs6000") == 0
+	   || strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
+		   "powerpc") == 0)
     {
       arch = "ppc";
       endian = "be";
     }
   else
     {
-      arch = TARGET_ARCHITECTURE->arch_name;
-      endian = TARGET_BYTE_ORDER == BFD_ENDIAN_BIG ? "be" : "le";
+      arch = gdbarch_bfd_arch_info (current_gdbarch)->arch_name;
+      endian = gdbarch_byte_order (current_gdbarch)
+	       == BFD_ENDIAN_BIG ? "be" : "le";
     }
 
   sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
@@ -252,25 +270,36 @@ struct lm_info
   char *lm;
 };
 
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
+#endif
+#define fieldsize(TYPE, MEMBER) (sizeof (((TYPE *)0)->MEMBER))
+
 static CORE_ADDR
-LM_ADDR (struct so_list *so)
+LM_ADDR_FROM_LINK_MAP (struct so_list *so)
 {
   struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
 
-  return (CORE_ADDR) extract_signed_integer (so->lm_info->lm +
+  /*return (CORE_ADDR) extract_signed_integer (so->lm_info->lm +
 					     lmo->l_addr_offset,
-					     lmo->l_addr_size);
+					     lmo->l_addr_size);*/
+  gdb_byte *buf = so->lm_info->lm + lmo->l_addr_offset;
+  //gdb_assert (buf != 0);
+  if (!buf)
+      return 0xBAADBAAD;
+  return extract_typed_address (so->lm_info->lm + lmo->l_addr_offset,
+               builtin_type_void_data_ptr);
 }
 
 static CORE_ADDR
 nto_truncate_ptr (CORE_ADDR addr)
 {
-  if (TARGET_PTR_BIT == sizeof (CORE_ADDR) * 8)
+  if (gdbarch_ptr_bit (current_gdbarch) == sizeof (CORE_ADDR) * 8)
     /* We don't need to truncate anything, and the bit twiddling below
        will fail due to overflow problems.  */
     return addr;
   else
-    return addr & (((CORE_ADDR) 1 << TARGET_PTR_BIT) - 1);
+    return addr & (((CORE_ADDR) 1 << gdbarch_ptr_bit (current_gdbarch)) - 1);
 }
 
 Elf_Internal_Phdr *
@@ -300,8 +329,8 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->bfd);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
-  sec->addr = nto_truncate_ptr (sec->addr + LM_ADDR (so) - vaddr);
-  sec->endaddr = nto_truncate_ptr (sec->endaddr + LM_ADDR (so) - vaddr);
+  sec->addr = nto_truncate_ptr (sec->addr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
+  sec->endaddr = nto_truncate_ptr (sec->endaddr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -336,7 +365,7 @@ nto_generic_supply_altregset (const struct regset *regset,
 }
 
 void
-nto_dummy_supply_regset (char *regs)
+nto_dummy_supply_regset (struct regcache *regcache, char *regs)
 {
   /* Do nothing.  */
 }
@@ -347,6 +376,14 @@ nto_elf_osabi_sniffer (bfd *abfd)
   if (nto_is_nto_target)
     return nto_is_nto_target (abfd);
   return GDB_OSABI_UNKNOWN;
+}
+
+char *
+nto_target_extra_thread_info (struct thread_info *ti)
+{
+  if (ti && ti->private && ti->private->name[0])
+    return ti->private->name;
+  return "";
 }
 
 void
@@ -372,17 +409,26 @@ nto_initialize_signals (void)
 #endif
 }
 
+static void
+show_nto_debug (struct ui_file *file, int from_tty,
+                struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
+}
+
 void
 _initialize_nto_tdep (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   add_setshow_zinteger_cmd ("nto-debug", class_maintenance,
 			    &nto_internal_debugging, _("\
-Set QNX NTO internal debugging."), _("\
-Show QNX NTO internal debugging."), _("\
+Set QNX NTO debug level."), _("\
+Show QNX NTO debug level."), _("\
 When non-zero, nto specific debug info is\n\
 displayed. Different information is displayed\n\
 for different positive values."),
 			    NULL,
-			    NULL, /* FIXME: i18n: QNX NTO internal debugging is %s.  */
-			    &setdebuglist, &showdebuglist);
+			    show_nto_debug,
+			    &maintenance_set_cmdlist,
+			    &maintenance_show_cmdlist);
 }

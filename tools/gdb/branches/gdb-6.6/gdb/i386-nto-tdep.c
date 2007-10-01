@@ -1,6 +1,6 @@
 /* Target-dependent code for QNX Neutrino x86.
 
-   Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2007 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,9 +17,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
 #include "frame.h"
@@ -81,7 +79,7 @@ nto_reg_offset (int regnum)
 }
 
 static void
-i386nto_supply_gregset (char *gpregs)
+i386nto_supply_gregset (struct regcache *regcache, char *gpregs)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (current_gdbarch);
 
@@ -90,29 +88,29 @@ i386nto_supply_gregset (char *gpregs)
 				  i386_collect_gregset);
 
   gdb_assert (tdep->gregset_reg_offset == i386nto_gregset_reg_offset);
-  tdep->gregset->supply_regset (tdep->gregset, current_regcache, -1,
+  tdep->gregset->supply_regset (tdep->gregset, regcache, -1,
 				gpregs, NUM_GPREGS * 4);
 }
 
 static void
-i386nto_supply_fpregset (char *fpregs)
+i386nto_supply_fpregset (struct regcache *regcache, char *fpregs)
 {
   if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
-    i387_supply_fxsave (current_regcache, -1, fpregs);
+    i387_supply_fxsave (regcache, -1, fpregs);
   else
-    i387_supply_fsave (current_regcache, -1, fpregs);
+    i387_supply_fsave (regcache, -1, fpregs);
 }
 
 static void
-i386nto_supply_regset (int regset, char *data)
+i386nto_supply_regset (struct regcache *regcache, int regset, char *data)
 {
   switch (regset)
     {
     case NTO_REG_GENERAL:
-      i386nto_supply_gregset (data);
+      i386nto_supply_gregset (regcache, data);
       break;
     case NTO_REG_FLOAT:
-      i386nto_supply_fpregset (data);
+      i386nto_supply_fpregset (regcache, data);
       break;
     }
 }
@@ -166,7 +164,8 @@ i386nto_register_area (int regno, int regset, unsigned *off)
       if (regno == -1)
 	return regset_size;
 
-      *off = (regno - FP0_REGNUM) * regsize + off_adjust;
+      *off = (regno - gdbarch_fp0_regnum (current_gdbarch))
+	     * regsize + off_adjust;
       return 10;
       /* Why 10 instead of regsize?  GDB only stores 10 bytes per FP
          register so if we're sending a register back to the target,
@@ -177,7 +176,7 @@ i386nto_register_area (int regno, int regset, unsigned *off)
 }
 
 static int
-i386nto_regset_fill (int regset, char *data)
+i386nto_regset_fill (const struct regcache *regcache, int regset, char *data)
 {
   if (regset == NTO_REG_GENERAL)
     {
@@ -187,15 +186,15 @@ i386nto_regset_fill (int regset, char *data)
 	{
 	  int offset = nto_reg_offset (regno);
 	  if (offset != -1)
-	    regcache_raw_collect (current_regcache, regno, data + offset);
+	    regcache_raw_collect (regcache, regno, data + offset);
 	}
     }
   else if (regset == NTO_REG_FLOAT)
     {
       if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
-	i387_fill_fxsave (data, -1);
+	i387_collect_fxsave (regcache, -1, data);
       else
-	i387_fill_fsave (data, -1);
+	i387_collect_fsave (regcache, -1, data);
     }
   else
     return -1;
@@ -216,7 +215,8 @@ i386nto_sigtramp_p (struct frame_info *next_frame)
   return name && strcmp ("__signalstub", name) == 0;
 }
 
-#define I386_NTO_SIGCONTEXT_OFFSET 136
+#define I386_NTO_SIGCONTEXT_OFFSET 132
+//136
 
 /* Assuming NEXT_FRAME is a frame following a QNX Neutrino sigtramp
    routine, return the address of the associated sigcontext structure.  */
@@ -227,10 +227,15 @@ i386nto_sigcontext_addr (struct frame_info *next_frame)
   char buf[4];
   CORE_ADDR sp;
 
+  nto_trace(0) ("%s ()\n", __func__);
+
   frame_unwind_register (next_frame, I386_ESP_REGNUM, buf);
   sp = extract_unsigned_integer (buf, 4);
 
-  return sp + I386_NTO_SIGCONTEXT_OFFSET;
+  nto_trace(0) ("sp=0x%s\n", paddr(sp));
+  sp += I386_NTO_SIGCONTEXT_OFFSET;
+  nto_trace(0) ("sigcontext addr=0x%s\n", paddr(sp));
+  return sp;
 }
 
 static void
@@ -268,8 +273,10 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   tdep->sigtramp_p = i386nto_sigtramp_p;
   tdep->sigcontext_addr = i386nto_sigcontext_addr;
-  tdep->sc_pc_offset = 56;
-  tdep->sc_sp_offset = 68;
+  tdep->sc_reg_offset = i386nto_gregset_reg_offset;
+  tdep->sc_num_regs = ARRAY_SIZE (i386nto_gregset_reg_offset); 
+  //tdep->sc_pc_offset = 56; //8 * 4; //56;
+  //tdep->sc_sp_offset = 68; //11 * 4; //68;
 
   /* Setjmp()'s return PC saved in EDX (5).  */
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */

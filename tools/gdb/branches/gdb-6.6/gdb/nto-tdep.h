@@ -1,6 +1,6 @@
 /* nto-tdep.h - QNX Neutrino target header.
 
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2007 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,9 +17,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #ifndef _NTO_TDEP_H
 #define _NTO_TDEP_H
@@ -28,6 +26,7 @@
 #include "solist.h"
 #include "osabi.h"
 #include "regset.h"
+#include "gdbthread.h"
 
 /* Target operations defined for Neutrino targets (<target>-nto-tdep.c).  */
 
@@ -51,14 +50,14 @@ struct nto_target_ops
    regset it came from.  If reg == -1 update all regsets.  */
   int (*regset_id) (int);
 
-  void (*supply_gregset) (char *);
+  void (*supply_gregset) (struct regcache *, char *);
 
-  void (*supply_fpregset) (char *);
+  void (*supply_fpregset) (struct regcache *, char *);
 
-  void (*supply_altregset) (char *);
+  void (*supply_altregset) (struct regcache *, char *);
 
 /* Given a regset, tell gdb about registers stored in data.  */
-  void (*supply_regset) (int, char *);
+  void (*supply_regset) (struct regcache *, int, char *);
 
 /* Given a register and regset, calculate the offset into the regset
    and stuff it into the last argument.  If regno is -1, calculate the
@@ -68,7 +67,7 @@ struct nto_target_ops
 
 /* Build the Neutrino register set info into the data buffer.  
    Return -1 if unknown regset, 0 otherwise.  */
-  int (*regset_fill) (int, char *);
+  int (*regset_fill) (const struct regcache *, int, char *);
 
 /* Gives the fetch_link_map_offsets function exposure outside of
    solib-svr4.c so that we can override relocate_section_addresses().  */
@@ -106,6 +105,18 @@ extern struct nto_target_ops current_nto_target;
 
 #define nto_is_nto_target (current_nto_target.is_nto_target)
 
+#define nto_trace(level) \
+  if ((nto_internal_debugging & 0xFF) <= level) {} else \
+    printf_unfiltered
+
+/* register supply helper macros*/
+#define NTO_ALL_REGS (-1)
+#define RAW_SUPPLY_IF_NEEDED(regcache, whichreg, dataptr) \
+  {if (!(NTO_ALL_REGS == regno || regno == (whichreg))) {} \
+    else regcache_raw_supply (regcache, whichreg, dataptr); }
+
+
+
 /* Keep this consistant with neutrino syspage.h.  */
 enum
 {
@@ -141,6 +152,14 @@ typedef struct _debug_regs
   qnx_reg64 padding[1024];
 } nto_regset_t;
 
+/* Used by gdbthread.h.  Same as struct tidinfo in pdebug protocol */
+struct private_thread_info {
+  short tid;
+  unsigned char state;
+  unsigned char flags;
+  char name[1];
+};
+
 /* Generic functions in nto-tdep.c.  */
 
 void nto_init_solib_absolute_prefix (void);
@@ -174,8 +193,10 @@ void nto_generic_supply_altregset (const struct regset *, struct regcache *,
 
 /* Dummy function for initializing nto_target_ops on targets which do
    not define a particular regset.  */
-void nto_dummy_supply_regset (char *regs);
+void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
+
+char *nto_target_extra_thread_info (struct thread_info *);
 
 #endif
