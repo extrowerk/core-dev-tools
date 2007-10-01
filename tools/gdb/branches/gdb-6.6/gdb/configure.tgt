@@ -149,6 +149,7 @@ mips*-*-linux*)		gdb_target=linux
 mips*-*-netbsd* | mips*-*-knetbsd*-gnu)
 			gdb_target=nbsd ;;
 mips64*-*-openbsd*)	gdb_target=obsd64 ;;
+mips-*-nto*)            gdb_target=nto ;;
 mips*-*-*)		gdb_target=embed ;;
 
 mn10300-*-*)		gdb_target=mn10300 ;;
@@ -162,6 +163,7 @@ powerpc-*-aix*)		gdb_target=aix ;;
 powerpc-*-linux*)	gdb_target=linux
 			build_gdbserver=yes
 			;;
+powerpc-*-nto*)         gdb_target=nto ;;
 powerpc64-*-linux*)	gdb_target=linux
 			build_gdbserver=yes
 			;;
