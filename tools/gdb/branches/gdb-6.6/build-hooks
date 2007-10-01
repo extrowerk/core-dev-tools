@@ -1,5 +1,14 @@
 target=${PWD##*-}
 target_cpu=${target#nto*}
+nto_target=${PWD##*-}
+srcdir=${PWD}/..
+qnx_target_version=6.3.0
+
+if [ $target_cpu = x86 ]; then
+	target_cpu=i386
+fi
+tmpstring=`echo ${target_cpu}-nto-qnx${qnx_target_version}`
+target=`${srcdir}/config.sub ${tmpstring}`
 
 function hook_preconfigure {
 	case ${SYSNAME} in
@@ -8,7 +17,6 @@ function hook_preconfigure {
 
 		case "${target}" in
 		nto*)   basedir=/usr
-			target_cpu=${target#nto*}
 			if [ ${host_cpu} = ${target_cpu} ]; then
 				configure_opts="${configure_opts} --host=${target}"
 			fi
@@ -38,8 +46,7 @@ function hook_preconfigure {
 		exit 1
 		;;
 	esac
-	#configure_opts="${configure_opts} --target=${target}"
-	configure_opts="${configure_opts} --target=${target_cpu}-nto"
+	configure_opts="${configure_opts} --target=${target}"
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --exec-prefix=${basedir}"
 	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
