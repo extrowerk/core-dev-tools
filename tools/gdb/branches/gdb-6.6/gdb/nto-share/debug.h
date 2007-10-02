@@ -33,6 +33,12 @@
 
 #define QNX_NOTE_NAME	"QNX"
 
+#ifdef __MINGW32__
+#ifndef uid_t
+typedef int uid_t;
+#endif
+#endif // __MINGW32__
+
 typedef char qnx_64[8];
 
 enum Elf_nto_note_types
