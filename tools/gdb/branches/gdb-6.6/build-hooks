@@ -34,7 +34,18 @@ function hook_preconfigure {
 		;;
 	linux)
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
-		case $host_target in
+			;;
+	win32)
+		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
+		;;
+	*)
+		echo "Don't have config for ${SYSNAME}"
+		exit 1
+		;;
+	esac
+
+        if [ $host_target != ${SYSNAME} ]; then
+	  case $host_target in
 		nto*)
 	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0"
   		  ;;
@@ -50,16 +61,9 @@ function hook_preconfigure {
 		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
 		  execdir=/c/qnx630/host/win32/x86/usr
 		;;
-		esac
-		;;
-	win32)
-		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
-		;;
-	*)
-		echo "Don't have config for ${SYSNAME}"
-		exit 1
-		;;
-	esac
+ 	  esac
+	fi  
+
 	configure_opts="${configure_opts} --target=${target}"
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --exec-prefix=${basedir}"
