@@ -1,6 +1,6 @@
 /*
  * $QNXtpLicenseC:  
- * Copyright 2005, QNX Software Systems. All Rights Reserved.
+ * Copyright 2005,2007, QNX Software Systems. All Rights Reserved.
  *
  * This source code may contain confidential information of QNX Software 
  * Systems (QSS) and its licensors.  Any use, reproduction, modification, 
@@ -300,6 +300,46 @@ static unsigned char ch_text_packet[] =
 #define SEND_CH_RESET    serial_write(current_session->desc,ch_reset_packet,sizeof(ch_reset_packet))
 #define SEND_CH_DEBUG    serial_write(current_session->desc,ch_debug_packet,sizeof(ch_debug_packet))
 #define SEND_CH_TEXT     serial_write(current_session->desc,ch_text_packet,sizeof(ch_text_packet))
+
+/* pdebug returns errno values on Neutrino that do not correspond to right
+   errno values on host side. */
+
+#define NTO_ENAMETOOLONG        78
+#define NTO_ELIBACC             83
+#define NTO_ELIBBAD             84
+#define NTO_ELIBSCN             85
+#define NTO_ELIBMAX             86
+#define NTO_ELIBEXEC            87
+#define NTO_EILSEQ              88
+#define NTO_ENOSYS              89
+
+struct errnomap_t { int nto; int other; };
+
+static int errnoconvert(int x) 
+{
+  struct errnomap_t errnomap[] = {
+    #if defined (__linux__)
+      {NTO_ENAMETOOLONG, ENAMETOOLONG}, {NTO_ELIBACC, ELIBACC},
+      {NTO_ELIBBAD, ELIBBAD}, {NTO_ELIBSCN, ELIBSCN}, {NTO_ELIBMAX, ELIBMAX},
+      {NTO_ELIBEXEC, ELIBEXEC}, {NTO_EILSEQ, EILSEQ}, {NTO_ENOSYS, ENOSYS}
+    #elif defined(__CYGWIN__)
+      {NTO_ENAMETOOLONG, ENAMETOOLONG}, {NTO_ENOSYS, ENOSYS}
+    #endif
+  };
+  int i;
+
+  for (i = 0; i < sizeof(errnomap) / sizeof(errnomap[0]); i++)
+    if (errnomap[i].nto == x) return errnomap[i].other;
+  return x;
+}
+
+#if defined(__QNXNTO__) || defined (__SOLARIS__)
+#define errnoconvert(x) x
+#elif defined(__linux__) || defined (__CYGWIN__) || defined (__MINGW32__)
+#define errnoconvert(x) errnoconvert(x)
+#else 
+#error errno mapping not setup for this host
+#endif
 
 /* Send a packet to the remote machine.  Also sets channelwr and informs
    target if channelwr has changed.  */
@@ -704,7 +744,7 @@ nto_send (unsigned len, int report_errors)
       recv.pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
       if (recv.pkt.hdr.cmd == DSrMsg_err)
 	{
-	  errno = EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4);
+	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
 	  if (report_errors)
 	    {
 	      switch (recv.pkt.hdr.subcmd)
@@ -2417,7 +2457,7 @@ nto_fileopen (char *fname, int mode, int perms)
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      errno = EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4);
+      errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
       return -1;
     }
   return nto_remote_fd = 0;
@@ -2446,7 +2486,7 @@ nto_fileread (char *buf, int size)
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      errno = recv.pkt.err.err;
+      errno = errnoconvert (recv.pkt.err.err);
       return -1;
     }
 
@@ -2470,7 +2510,7 @@ nto_filewrite (char *buf, int size)
 
       if (recv.pkt.hdr.cmd == DSrMsg_err)
 	{
-	  errno = recv.pkt.err.err;
+	  errno = errnoconvert (recv.pkt.err.err);
 	  return size - siz;
 	}
     }
@@ -2610,7 +2650,7 @@ nto_find_new_threads ()
     nto_send(sizeof(tran.pkt.pidlist), 0);
     if (recv.pkt.hdr.cmd == DSrMsg_err) 
     {
-      errno = EXTRACT_SIGNED_INTEGER(&recv.pkt.err.err, 4);
+      errno = errnoconvert (EXTRACT_SIGNED_INTEGER(&recv.pkt.err.err, 4));
       return;
     }
     if (recv.pkt.hdr.cmd != DSrMsg_okdata) 
@@ -2677,7 +2717,7 @@ nto_pidlist (char *args, int from_tty)
       nto_send (sizeof (tran.pkt.pidlist), 0);
       if (recv.pkt.hdr.cmd == DSrMsg_err)
 	{
-	  errno = EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4);
+	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
 	  return;
 	}
       if (recv.pkt.hdr.cmd != DSrMsg_okdata)
@@ -2736,7 +2776,7 @@ nto_mapinfo (unsigned addr, int first, int elfonly)
   nto_send (sizeof (*mapinfo), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      errno = EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4);
+      errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
       return NULL;
     }
   if (recv.pkt.hdr.cmd != DSrMsg_okdata)
@@ -2877,7 +2917,7 @@ nto_thread_info (pid_t pid, short tid)
       nto_send (sizeof (tran.pkt.pidlist), 1);
       if (recv.pkt.hdr.cmd == DSrMsg_err)
 	{
-	  errno = recv.pkt.err.err;
+	  errno = errnoconvert (recv.pkt.err.err);
 	  return NULL;
 	}
     }
