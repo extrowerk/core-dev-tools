@@ -34,8 +34,12 @@
 #define QNX_NOTE_NAME	"QNX"
 
 #ifdef __MINGW32__
+#define	ENOTCONN	57		/* Socket is not connected */
 #ifndef uid_t
 typedef int uid_t;
+#endif
+#ifndef gid_t
+typedef unsigned int gid_t;
 #endif
 #endif // __MINGW32__
 
