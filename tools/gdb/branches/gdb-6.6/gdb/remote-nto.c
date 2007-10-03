@@ -59,6 +59,8 @@
 #include "elf-bfd.h"
 #include "elf/common.h"
 
+#include <time.h>
+
 #include "nto-share/dsmsgs.h"
 #include "nto-share/debug.h"
 #include "nto-tdep.h"
@@ -192,6 +194,15 @@ static int target_signal_to_nto (enum target_signal sig);
 
 static struct target_ops nto_ops;
 
+#ifdef __MINGW32__
+static void
+alarm (int sig)
+{
+ // do nothing, this is windows.
+}
+#endif
+
+
 struct pdebug_session
 {
   /* Number of seconds to wait for a timeout on the remote side.  */
@@ -256,6 +267,11 @@ static int nto_intholder;
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
 #define HOST_QNX_PROTOVER_MINOR	3
+
+#ifdef __MINGW32__
+/* name collision with a symbol declared in Winsock2.h */
+#define recv recvb
+#endif
 
 static union
 {
@@ -1293,7 +1309,9 @@ interrupt_query ()
 {
   alarm (0);
   signal (SIGINT, ofunc);
+#ifndef __MINGW32__
   signal (SIGALRM, ofunc_alrm);
+#endif
   target_terminal_ours ();
   InterruptedTwice = 0;
 
@@ -1305,7 +1323,9 @@ interrupt_query ()
       deprecated_throw_reason (RETURN_QUIT);
     }
   target_terminal_inferior ();
+#ifndef __MINGW32__
   signal (SIGALRM, nto_interrupt_retry);
+#endif
   signal (SIGINT, nto_interrupt_twice);
   alarm (QNX_TIMER_TIMEOUT);
 }
@@ -1335,7 +1355,9 @@ nto_interrupt (int signo)
 
   /* If this doesn't work, try more severe steps.  */
   signal (signo, nto_interrupt_twice);
+#ifndef __MINGW32__
   signal (SIGALRM, nto_interrupt_retry);
+#endif
 
   WaitingForStopResponse = 1;
 
@@ -1371,7 +1393,9 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
       InterruptedTwice = 0;
 
       ofunc = (void (*)()) signal (SIGINT, nto_interrupt);
+#ifndef __MINGW32__
       ofunc_alrm = (void (*)()) signal (SIGALRM, nto_interrupt_retry);
+#endif
       for (;;)
 	{
 	  len = getpkt (1);
@@ -1382,7 +1406,11 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
 		  /* We do not want to get SIGALRM while calling it's handler
 		     the timer is reset in the handler.  */
 		  alarm (0);
+#ifndef __MINGW32__
 		  nto_interrupt_retry (SIGALRM);
+#else	
+		  nto_interrupt_retry (0);
+#endif
 		  continue;
 		}
 	      else
@@ -1390,7 +1418,9 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
 		  /* Turn off the alarm, and reset the signals, and return.  */
 		  alarm (0);
 		  signal (SIGINT, ofunc);
+#ifndef __MINGW32__
 		  signal (SIGALRM, ofunc_alrm);
+#endif
 		  return null_ptid;
 		}
 	    }
@@ -1456,7 +1486,9 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
 	interrupt_query ();
 
       signal (SIGINT, ofunc);
+#ifndef __MINGW32__
       signal (SIGALRM, ofunc_alrm);
+#endif
     }
 
   recv.pkt.hdr.cmd = DSrMsg_ok;	/* To make us wait the next time.  */
@@ -1888,6 +1920,7 @@ nto_mourn_inferior ()
 int
 nto_fd_raw (int fd)
 {
+#ifndef __MINGW32__
   struct termios termios_p;
 
   if (tcgetattr (fd, &termios_p))
@@ -1898,6 +1931,9 @@ nto_fd_raw (int fd)
   termios_p.c_lflag &= ~(ECHO | ICANON | ISIG | ECHOE | ECHOK | ECHONL);
   termios_p.c_oflag &= ~(OPOST);
   return (tcsetattr (fd, TCSADRAIN, &termios_p));
+#else
+  return 0;
+#endif
 }
 
 static void
@@ -2167,7 +2203,7 @@ nto_to_remove_breakpoint (struct bp_target_info *bp_tg_inf)
   
 }
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 void
 slashify (char *buf)
 {
@@ -2191,7 +2227,7 @@ slashify (char *buf)
 static void
 upload_command (char *args, int fromtty)
 {
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) 
   char cygbuf[PATH_MAX];
 #endif
   int fd;
@@ -2206,7 +2242,7 @@ upload_command (char *args, int fromtty)
       return;
     }
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
   /* We need to convert back slashes to forward slashes for DOS
      style paths, else buildargv will remove them.  */
   slashify (args);
@@ -2216,7 +2252,7 @@ upload_command (char *args, int fromtty)
   if (argv == NULL)
     nomem (0);
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__)
   cygwin_conv_to_posix_path (argv[0], cygbuf);
   from = cygbuf;
 #else
@@ -2268,7 +2304,7 @@ exit:
 static void
 download_command (char *args, int fromtty)
 {
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) 
   char cygbuf[PATH_MAX];
 #endif
   int fd;
@@ -2283,7 +2319,7 @@ download_command (char *args, int fromtty)
       return;
     }
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
   slashify (args);
 #endif
 
@@ -2292,7 +2328,7 @@ download_command (char *args, int fromtty)
     nomem (0);
 
   from = argv[0];
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__)
   if (argv[1])
     {
       cygwin_conv_to_posix_path (argv[1], cygbuf);
