@@ -31,6 +31,10 @@
 #ifndef __DEBUG_H_INCLUDED
 #define __DEBUG_H_INCLUDED
 
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+
 #define QNX_NOTE_NAME	"QNX"
 
 #ifdef __MINGW32__

@@ -33,6 +33,9 @@
 #include "gdb_dirent.h"
 #include <sys/netmgr.h>
 
+#include "solib.h"
+#include "regcache.h"
+
 #include "exceptions.h"
 #include "gdb_string.h"
 #include "gdbcore.h"
@@ -62,7 +65,7 @@ static int procfs_can_run (void);
 
 static ptid_t procfs_wait (ptid_t, struct target_waitstatus *);
 
-static int procfs_xfer_memory (CORE_ADDR, char *, int, int,
+static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
 			       struct mem_attrib *attrib,
 			       struct target_ops *);
 
@@ -726,13 +729,13 @@ procfs_fetch_registers (int regno)
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset ((char *) &reg.greg);
+    nto_supply_gregset (current_regcache, (char *) &reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset ((char *) &reg.fpreg);
+    nto_supply_fpregset (current_regcache, (char *) &reg.fpreg);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset ((char *) &reg.altreg);
+    nto_supply_altregset (current_regcache, (char *) &reg.altreg);
 }
 
 /* Copy LEN bytes to/from inferior's memory starting at MEMADDR
@@ -744,7 +747,7 @@ procfs_fetch_registers (int regno)
    doesn't allow memory operations to cross below us in the target stack
    anyway.  */
 static int
-procfs_xfer_memory (CORE_ADDR memaddr, char *myaddr, int len, int dowrite,
+procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
 		    struct mem_attrib *attrib, struct target_ops *target)
 {
   int nbytes = 0;
@@ -977,7 +980,7 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   pid_t pid;
   int flags, errn;
   char **argv, *args;
-  const char *in = "", *out = "", *err = "";
+  char *in = "", *out = "", *err = "";
   int fd, fds[3];
   sigset_t set;
   const char *inferior_io_terminal = get_inferior_io_terminal ();
@@ -1007,11 +1010,11 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   if (inferior_io_terminal)
     {
       if (!in[0])
-	in = inferior_io_terminal;
+	in = (char*) inferior_io_terminal;
       if (!out[0])
-	out = inferior_io_terminal;
+	out = (char*) inferior_io_terminal;
       if (!err[0])
-	err = inferior_io_terminal;
+	err = (char*) inferior_io_terminal;
     }
 
   if (in[0])
@@ -1172,7 +1175,7 @@ procfs_store_registers (int regno)
 	  if (dev_set == -1)
 	    continue;
 
-	  if (nto_regset_fill (regset, (char *) &reg) == -1)
+	  if (nto_regset_fill (current_regcache, regset, (char *) &reg) == -1)
 	    continue;
 
 	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
