@@ -3,6 +3,7 @@ target_cpu=${target#nto*}
 nto_target=${PWD##*-}
 srcdir=${PWD}/..
 qnx_target_version=6.3.0
+host_target=${PWD##*/}
 
 if [ $target_cpu = x86 ]; then
 	target_cpu=i386
@@ -32,11 +33,24 @@ function hook_preconfigure {
 		basedir=/opt/QNXsdk/host/solaris/${host_cpu}/usr
 		;;
 	linux)
-		host_cpu=$(uname -m)
-		case ${host_cpu} in
-        i[34567]86) host_cpu=x86 ;;
+		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
+		case $host_target in
+		nto*)
+	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0"
+  		  ;;
+		linux*)
+		  host_cpu=$(uname -m)
+		  case ${host_cpu} in
+                    i[34567]86) host_cpu=x86 ;;
+		  esac
+		  basedir=/opt/QNXsdk/host/linux/${host_cpu}/usr
+		  execdir=/opt/qnx630/host/linux/${host_cpu}/usr
+		  ;;
+		win32*)
+		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
+		  execdir=/c/qnx630/host/win32/x86/usr
+		;;
 		esac
-		basedir=/opt/QNXsdk/host/linux/${host_cpu}/usr
 		;;
 	win32)
 		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
@@ -59,6 +73,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-gdbmi"
 	configure_opts="${configure_opts} --enable-build-warnings=-Wall"
 	configure_opts="${configure_opts} --disable-nls"
+	configure_opts="${configure_opts} --disable-sim --without-sim"
 }
 
 function hook_premake {
