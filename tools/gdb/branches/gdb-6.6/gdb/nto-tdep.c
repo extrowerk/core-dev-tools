@@ -203,6 +203,15 @@ nto_init_solib_absolute_prefix (void)
 
   sprintf (buf, "set solib-absolute-prefix %s", arch_path);
   execute_command (buf, 0);
+
+#if defined (__MINGW32__)
+#define PATH_SEP ";"
+#else
+#define PATH_SEP ":"
+#endif
+
+  sprintf (buf, "set solib-search-path %s/%s" PATH_SEP "%s/%s", arch_path, "lib", arch_path, "usr/lib");
+  execute_command (buf, 0);
 }
 
 char **
@@ -416,6 +425,26 @@ show_nto_debug (struct ui_file *file, int from_tty,
   fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
 }
 
+static int
+nto_print_tidinfo_callback (struct thread_info *tp, void *data)
+{
+  printf_filtered("%c%d\t%d\t%d\n", ptid_equal (tp->ptid, inferior_ptid) ? '*' : ' ', tp->private->tid, tp->private->state, tp->private->flags );
+  return 0;
+}
+
+static void 
+nto_info_tidinfo_command (char *args, int from_tty)
+{
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+
+  target_find_new_threads ();
+  printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n", ptid_get_pid (inferior_ptid), get_exec_file (0));
+  
+  iterate_over_threads (nto_print_tidinfo_callback, NULL);
+}
+
+
+
 void
 _initialize_nto_tdep (void)
 {
@@ -431,4 +460,6 @@ for different positive values."),
 			    show_nto_debug,
 			    &maintenance_set_cmdlist,
 			    &maintenance_show_cmdlist);
+
+  add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
 }
