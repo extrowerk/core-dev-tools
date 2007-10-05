@@ -2581,6 +2581,8 @@ update_threadnames ()
   pid_t cur_pid;
   unsigned int numleft;
 
+  nto_trace (0) ("%s ()\n", __func__);
+
   cur_pid = ptid_get_pid (inferior_ptid);
   if(!cur_pid)
     {
@@ -2596,7 +2598,14 @@ update_threadnames ()
       nto_send_init( DStMsg_tidnames, 0, SET_CHANNEL_DEBUG);
       nto_send(sizeof(tran.pkt.tidnames), 0);
       if (recv.pkt.hdr.cmd == DSrMsg_err)
-	return;
+        {
+	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
+	  if (errno != EINVAL) /* not old pdebug, but something else */
+	    {
+	      warning ("Warning: could not retrieve tidnames (errno=%d)\n", errno);
+	    }
+	  return;
+	}
 
       numtids = EXTRACT_UNSIGNED_INTEGER (&tidnames->numtids, 4);
       numleft = EXTRACT_UNSIGNED_INTEGER (&tidnames->numleft, 4);
@@ -2613,6 +2622,8 @@ update_threadnames ()
 	  tid = strtol(buf, &tmp, 10);
 	  buf = tmp + 1; /* Skip the null terminator.  */
 	  namelen = strlen(buf);
+
+	  nto_trace (0) ("Thread %d name: %s\n", tid, buf);
 	  
 	  ptid = ptid_build(cur_pid, 0, tid);
 	  ti = find_thread_pid(ptid);
@@ -2637,6 +2648,8 @@ nto_find_new_threads ()
   struct tidinfo *tip;
   char subcmd;
 
+  nto_trace (0) ("%s ()\n", __func__); 
+
   cur_pid = ptid_get_pid (inferior_ptid);
   if(!cur_pid){
     fprintf_unfiltered(gdb_stderr, "No inferior.\n");
@@ -2656,6 +2669,7 @@ nto_find_new_threads ()
     if (recv.pkt.hdr.cmd != DSrMsg_okdata) 
     {
       errno = EOK;
+      internal_warning (__FILE__, __LINE__, "msg not DSrMsg_okdata!");
       return;
     }
   
@@ -2680,7 +2694,7 @@ nto_find_new_threads ()
     start_tid = total_tids + 1;
   } while(total_tids < EXTRACT_UNSIGNED_INTEGER (&pidlist->num_tids, 4));
 
-  update_threadnames();
+  update_threadnames ();
 }
 
 void
