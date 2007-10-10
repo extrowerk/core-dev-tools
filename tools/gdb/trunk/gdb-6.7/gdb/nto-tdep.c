@@ -19,6 +19,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "gdb_assert.h"
 #include "gdb_stat.h"
 #include "gdb_string.h"
 #include "nto-tdep.h"
@@ -33,11 +34,15 @@
 #include "gdbcore.h"
 #include "objfiles.h"
 
+#include "gdbcmd.h"
+
 #include <string.h>
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
+
+#define link_map 	so_map
 
 #ifdef __CYGWIN__
 static char default_nto_target[] = "C:\\QNXsdk\\target\\qnx6";
@@ -69,6 +74,7 @@ nto_target (void)
 void
 nto_set_target (struct nto_target_ops *targ)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   nto_regset_id = targ->regset_id;
   nto_supply_gregset = targ->supply_gregset;
   nto_supply_fpregset = targ->supply_fpregset;
@@ -154,7 +160,12 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 	  if (ret >= 0)
 	    *temp_pathname = gdb_realpath (arch_path);
 	  else
-	    **temp_pathname = '\0';
+	    {
+	      if (*temp_pathname)
+	        **temp_pathname = '\0';
+	      else
+	        *temp_pathname = "";
+	    }
 	}
     }
   return ret;
@@ -191,6 +202,15 @@ nto_init_solib_absolute_prefix (void)
   sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
 
   sprintf (buf, "set solib-absolute-prefix %s", arch_path);
+  execute_command (buf, 0);
+
+#if defined (__MINGW32__)
+#define PATH_SEP ";"
+#else
+#define PATH_SEP ":"
+#endif
+
+  sprintf (buf, "set solib-search-path %s/%s" PATH_SEP "%s/%s", arch_path, "lib", arch_path, "usr/lib");
   execute_command (buf, 0);
 }
 
@@ -247,6 +267,32 @@ nto_parse_redirection (char *pargv[], char **pin, char **pout, char **perr)
   return argv;
 }
 
+struct link_map_offsets *
+nto_generic_svr4_fetch_link_map_offsets (void)
+{
+  static struct link_map_offsets lmo;
+  static struct link_map_offsets *lmp = NULL;
+
+  if (lmp == NULL)
+    {
+      lmp = &lmo;
+
+      lmo.r_map_offset = 4;
+
+      lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
+				   this is all we need.  */
+      lmo.l_addr_offset = 0;
+
+      lmo.l_name_offset = 4;
+
+      lmo.l_next_offset = 12;
+
+      lmo.l_prev_offset = 16;
+    }
+
+  return lmp;
+}
+
 /* The struct lm_info, LM_ADDR, and nto_truncate_ptr are copied from
    solib-svr4.c to support nto_relocate_section_addresses
    which is different from the svr4 version.  */
@@ -259,14 +305,23 @@ struct lm_info
   char *lm;
 };
 
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
+#endif
+#define fieldsize(TYPE, MEMBER) (sizeof (((TYPE *)0)->MEMBER))
+
 static CORE_ADDR
-LM_ADDR (struct so_list *so)
+LM_ADDR_FROM_LINK_MAP (struct so_list *so)
 {
   struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
 
-  return (CORE_ADDR) extract_signed_integer (so->lm_info->lm +
-					     lmo->l_addr_offset,
-					     lmo->l_addr_size);
+  gdb_byte *buf = so->lm_info->lm + lmo->l_addr_offset;
+  if (NULL == buf)
+    {
+      return 0;
+    }
+  return extract_typed_address (so->lm_info->lm + lmo->l_addr_offset,
+               builtin_type_void_data_ptr);
 }
 
 static CORE_ADDR
@@ -307,8 +362,8 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->bfd);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
-  sec->addr = nto_truncate_ptr (sec->addr + LM_ADDR (so) - vaddr);
-  sec->endaddr = nto_truncate_ptr (sec->endaddr + LM_ADDR (so) - vaddr);
+  sec->addr = nto_truncate_ptr (sec->addr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
+  sec->endaddr = nto_truncate_ptr (sec->endaddr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -356,6 +411,14 @@ nto_elf_osabi_sniffer (bfd *abfd)
   return GDB_OSABI_UNKNOWN;
 }
 
+char *
+nto_target_extra_thread_info (struct thread_info *ti)
+{
+  if (ti && ti->private && ti->private->name[0])
+    return ti->private->name;
+  return "";
+}
+
 void
 nto_initialize_signals (void)
 {
@@ -379,17 +442,48 @@ nto_initialize_signals (void)
 #endif
 }
 
+static void
+show_nto_debug (struct ui_file *file, int from_tty,
+                struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
+}
+
+static int 
+nto_print_tidinfo_callback (struct thread_info *tp, void *data)
+{
+  printf_filtered("%c%d\t%d\t%d\n", ptid_equal (tp->ptid, inferior_ptid) ? '*' : ' ', tp->private->tid, tp->private->state, tp->private->flags );
+  return 0;
+}
+
+static void 
+nto_info_tidinfo_command (char *args, int from_tty)
+{
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+
+  target_find_new_threads ();
+  printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n", ptid_get_pid (inferior_ptid), get_exec_file (0));
+  
+  iterate_over_threads (nto_print_tidinfo_callback, NULL);
+}
+
+
+
 void
 _initialize_nto_tdep (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   add_setshow_zinteger_cmd ("nto-debug", class_maintenance,
 			    &nto_internal_debugging, _("\
-Set QNX NTO internal debugging."), _("\
-Show QNX NTO internal debugging."), _("\
+Set QNX NTO debug level."), _("\
+Show QNX NTO debug level."), _("\
 When non-zero, nto specific debug info is\n\
 displayed. Different information is displayed\n\
 for different positive values."),
 			    NULL,
-			    NULL, /* FIXME: i18n: QNX NTO internal debugging is %s.  */
-			    &setdebuglist, &showdebuglist);
+			    show_nto_debug,
+			    &maintenance_set_cmdlist,
+			    &maintenance_show_cmdlist);
+
+  add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
 }
