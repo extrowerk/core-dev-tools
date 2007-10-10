@@ -12331,7 +12331,7 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
 
   if (mips_pic == QNX_PIC) {
         expressionS ep;
-
+	int macro_warn = mips_opts.warn_about_macros;
         /* In our case, we do a bltzal first to get the current PC, and
          * then add the offset to the got... Thus, we always do "cpload $31"
          */
@@ -12341,7 +12341,7 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
 
 	macro_start ();
 	mips_opts.noreorder ++;
-        mips_opts.warn_about_macros--;
+ 	mips_opts.warn_about_macros = 0;	
 	macro_build (&ep, "bltzal", "s,p", 0);
 	macro_build (NULL, "nop", "", 0);
         macro_build_lui (&ex, QNX_GP_REG);
@@ -12351,7 +12351,7 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
         macro_build ((expressionS *) NULL, "addu", "d,v,t",
                        QNX_GP_REG, QNX_GP_REG, RA);
 	macro_end ();
-        mips_opts.warn_about_macros++;
+ 	mips_opts.warn_about_macros = macro_warn;	
   } else
   {
   macro_start ();
