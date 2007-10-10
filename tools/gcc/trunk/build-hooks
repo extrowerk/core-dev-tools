@@ -90,13 +90,12 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-tls"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/4.2.1"
+	configure_opts="${configure_opts} --enable-multilib"
 	
-	if [ ${SYSNAME} == nto ]; then
+	if [ ${target} != mips-unknown-nto-qnx6.3.0 ]; then
 		configure_opts="${configure_opts} --enable-shared"
-		configure_opts="${configure_opts} --enable-multilib"
 	else
 		configure_opts="${configure_opts} --disable-shared"
-		configure_opts="${configure_opts} --disable-multilib"
 	fi
 
 	# The cross compilation of libgcc.a and libstdc++ require system headers
