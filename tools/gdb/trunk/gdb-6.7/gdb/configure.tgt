@@ -81,6 +81,7 @@ arm*-*-linux*)		gdb_target=linux
 			;;
 arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
 			gdb_target=nbsd ;;
+arm-*-nto*)             gdb_target=nto ;;
 arm*-*-openbsd*)	gdb_target=obsd ;;
 arm*-*-* | thumb*-*-* | strongarm*-*-*)
 			gdb_target=embed
@@ -162,6 +163,7 @@ mips*-*-linux*)		gdb_target=linux
 mips*-*-netbsd* | mips*-*-knetbsd*-gnu)
 			gdb_target=nbsd ;;
 mips64*-*-openbsd*)	gdb_target=obsd64 ;;
+mips-*-nto*)            gdb_target=nto ;;
 mips*-*-*)		gdb_target=embed ;;
 
 mn10300-*-*)		gdb_target=mn10300 ;;
@@ -176,6 +178,7 @@ powerpc-*-aix* | rs6000-*-*)
 powerpc-*-linux*)	gdb_target=linux
 			build_gdbserver=yes
 			;;
+powerpc-*-nto*)         gdb_target=nto ;;
 powerpc64-*-linux*)	gdb_target=linux
 			build_gdbserver=yes
 			;;
@@ -199,6 +202,7 @@ sh-*-linux*)		gdb_target=linux
 sh*-*-netbsdelf* | sh*-*-knetbsd*-gnu)
 			gdb_target=nbsd ;;
 sh*-*-openbsd*)		gdb_target=obsd ;;
+sh-*-nto*)              gdb_target=nto ;;
 sh64-*-elf*)		gdb_target=sh64 ;;
 sh*)			gdb_target=embed ;;
 

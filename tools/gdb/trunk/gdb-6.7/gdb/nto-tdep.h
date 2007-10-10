@@ -26,6 +26,7 @@
 #include "solist.h"
 #include "osabi.h"
 #include "regset.h"
+#include "gdbthread.h"
 
 /* Target operations defined for Neutrino targets (<target>-nto-tdep.c).  */
 
@@ -104,6 +105,18 @@ extern struct nto_target_ops current_nto_target;
 
 #define nto_is_nto_target (current_nto_target.is_nto_target)
 
+#define nto_trace(level) \
+  if ((nto_internal_debugging & 0xFF) <= level) {} else \
+    printf_unfiltered
+
+/* register supply helper macros*/
+#define NTO_ALL_REGS (-1)
+#define RAW_SUPPLY_IF_NEEDED(regcache, whichreg, dataptr) \
+  {if (!(NTO_ALL_REGS == regno || regno == (whichreg))) {} \
+    else regcache_raw_supply (regcache, whichreg, dataptr); }
+
+
+
 /* Keep this consistant with neutrino syspage.h.  */
 enum
 {
@@ -138,6 +151,14 @@ typedef struct _debug_regs
 {
   qnx_reg64 padding[1024];
 } nto_regset_t;
+
+/* Used by gdbthread.h.  Same as struct tidinfo in pdebug protocol */
+struct private_thread_info {
+  short tid;
+  unsigned char state;
+  unsigned char flags;
+  char name[1];
+};
 
 /* Generic functions in nto-tdep.c.  */
 
@@ -175,5 +196,9 @@ void nto_generic_supply_altregset (const struct regset *, struct regcache *,
 void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
+
+char *nto_target_extra_thread_info (struct thread_info *);
+
+struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 
 #endif

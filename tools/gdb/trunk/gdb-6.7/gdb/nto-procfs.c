@@ -97,6 +97,8 @@ nto_node (void)
 {
   unsigned node;
 
+  nto_trace (0) ("%s ()\n", __func__);
+
   if (ND_NODE_CMP (nto_procfs_node, ND_LOCAL_NODE) == 0)
     return ND_LOCAL_NODE;
 
@@ -125,6 +127,8 @@ procfs_open (char *arg, int from_tty)
   char buffer[50];
   int fd, total_size;
   procfs_sysinfo *sysinfo;
+
+  nto_trace (0) ("%s (arg=%s, from_tty=%d)\n", __func__, arg, from_tty);
 
   nto_is_nto_target = procfs_is_nto_target;
 
@@ -219,6 +223,8 @@ procfs_set_thread (ptid_t ptid)
 {
   pid_t tid;
 
+  nto_trace (0) ("%s (ptid.tid=%d)\n", __func__, ptid.tid);
+
   tid = ptid_get_tid (ptid);
   devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0);
 }
@@ -228,6 +234,8 @@ static int
 procfs_thread_alive (ptid_t ptid)
 {
   pid_t tid;
+
+  nto_trace (0) ("%s (ptid.tid=%d)\n", __func__, ptid.tid);
 
   tid = ptid_get_tid (ptid);
   if (devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0) == EOK)
@@ -241,6 +249,8 @@ procfs_find_new_threads (void)
   procfs_status status;
   pid_t pid;
   ptid_t ptid;
+
+  nto_trace (0) ("%s ()\n", __func__);
 
   if (ctl_fd == -1)
     return;
@@ -272,6 +282,8 @@ procfs_pidlist (char *args, int from_tty)
   pid_t num_threads = 0;
   pid_t pid;
   char name[512];
+
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
 
   dp = opendir (nto_procfs_path);
   if (dp == NULL)
@@ -376,6 +388,8 @@ procfs_meminfo (char *args, int from_tty)
     struct info data;
     char name[256];
   } printme;
+
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
 
   /* Get the number of map entrys.  */
   err = devctl (ctl_fd, DCMD_PROC_MAPINFO, NULL, 0, &num);
@@ -513,6 +527,8 @@ procfs_attach (char *args, int from_tty)
   char *exec_file;
   int pid;
 
+  nto_trace (0) ("%s (args=%s, from_tty=%s)\n", __func__, args, from_tty);
+
   if (!args)
     error_no_arg (_("process-id to attach"));
 
@@ -541,6 +557,8 @@ procfs_attach (char *args, int from_tty)
 static void
 procfs_post_attach (pid_t pid)
 {
+  nto_trace (0) ("%s (pid.pid=%d)\n", __func__, pid);
+
   if (exec_bfd)
     solib_create_inferior_hook ();
 }
@@ -551,6 +569,8 @@ do_attach (ptid_t ptid)
   procfs_status status;
   struct sigevent event;
   char path[PATH_MAX];
+
+  nto_trace (0) ("%s (ptid.pid=%d)\n", __func__, ptid.pid);
 
   snprintf (path, PATH_MAX - 1, "%s/%d/as", nto_procfs_path, PIDGET (ptid));
   ctl_fd = open (path, O_RDWR);
@@ -580,6 +600,7 @@ do_attach (ptid_t ptid)
 static void
 interrupt_query (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   target_terminal_ours ();
 
   if (query ("Interrupted while waiting for the program.\n\
@@ -618,6 +639,8 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
   procfs_status status;
   static int exit_signo = 0;	/* To track signals that cause termination.  */
 
+  nto_trace (0) ("%s (..)\n", __func__);
+
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
 
   if (ptid_equal (inferior_ptid, null_ptid))
@@ -634,8 +657,13 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
   devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
   while (!(status.flags & _DEBUG_FLAG_ISTOP))
     {
+      int sigwaitres;
       ofunc = (void (*)()) signal (SIGINT, nto_interrupt);
-      sigwaitinfo (&set, &info);
+      sigwaitres = sigwaitinfo (&set, &info);
+      if (sigwaitres == -1)
+        {
+	  internal_error (__FILE__, __LINE__ - 3, "sigwaitres failed with errno: %d\n", errno);
+        }
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
@@ -724,6 +752,8 @@ procfs_fetch_registers (struct regcache *regcache, int regno)
   reg;
   int regsize;
 
+  nto_trace (0) ("%s ()\n", __func__);
+
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
     nto_supply_gregset (regcache, (char *) &reg.greg);
@@ -749,6 +779,8 @@ procfs_xfer_memory (CORE_ADDR memaddr, char *myaddr, int len, int dowrite,
 {
   int nbytes = 0;
 
+  nto_trace (0) ("%s (...)\n", __func__);
+
   if (lseek (ctl_fd, (off_t) memaddr, SEEK_SET) == (off_t) memaddr)
     {
       if (dowrite)
@@ -769,6 +801,8 @@ static void
 procfs_detach (char *args, int from_tty)
 {
   int siggnal = 0;
+
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
 
   if (from_tty)
     {
@@ -797,6 +831,8 @@ static int
 procfs_breakpoint (CORE_ADDR addr, int type, int size)
 {
   procfs_break brk;
+
+  nto_trace (0) ("%s (addr=%s, type=%d, size=%d)\n", __func__, paddr (addr), type, size);
 
   brk.type = type;
   brk.addr = addr;
@@ -838,6 +874,8 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 {
   int signal_to_pass;
   procfs_status status;
+
+  nto_trace (0) ("%s (...)\n", __func__);
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -897,6 +935,8 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 static void
 procfs_mourn_inferior (void)
 {
+  nto_trace (0) ("%s () \n", __func__);
+
   if (!ptid_equal (inferior_ptid, null_ptid))
     {
       SignalKill (nto_node (), PIDGET (inferior_ptid), 0, SIGKILL, 0, 0);
@@ -981,6 +1021,8 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   int fd, fds[3];
   sigset_t set;
   const char *inferior_io_terminal = get_inferior_io_terminal ();
+
+  nto_trace (0) ("%s (exec_file=%s, allargs=%s, ...)\n", __func__, exec_file, allargs);
 
   argv = xmalloc (((strlen (allargs) + 1) / (unsigned) 2 + 2) *
 		  sizeof (*argv));
@@ -1096,12 +1138,14 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
 static void
 procfs_stop (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   devctl (ctl_fd, DCMD_PROC_STOP, NULL, 0, 0);
 }
 
 static void
 procfs_kill_inferior (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   target_mourn_inferior ();
 }
 
@@ -1266,6 +1310,7 @@ procfs_pid_to_str (ptid_t ptid)
 static void
 init_procfs_ops (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   procfs_ops.to_shortname = "procfs";
   procfs_ops.to_longname = "QNX Neutrino procfs child process";
   procfs_ops.to_doc =
