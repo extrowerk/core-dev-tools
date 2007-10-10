@@ -7312,7 +7312,7 @@ sh_elf_plt_sym_val (bfd_vma i, const asection *plt,
 #define ELF_MAXPAGESIZE		0x80
 #endif
 
-#ifndef __QNX_TARGET__
+#ifndef __QNXTARGET__
 #define elf_symbol_leading_char '_'
 #endif
 
