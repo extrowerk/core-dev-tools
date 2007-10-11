@@ -37,6 +37,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h> 		/* strcasecmp, etc... */
+#endif
+
 #include <fcntl.h>
 
 /* First include ansidecl.h so we can use the various macro definitions
