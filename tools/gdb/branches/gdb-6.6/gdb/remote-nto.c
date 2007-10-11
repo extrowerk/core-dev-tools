@@ -896,7 +896,7 @@ nto_start_remote (char *dummy)
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       error ("Connection failed: %lld.",
-	     EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
+	     errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4)));
     }
   /* NYI: need to size transmit/receive buffers to allowed size in connect response.  */
   immediate_quit = 0;
