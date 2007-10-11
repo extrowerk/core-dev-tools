@@ -934,6 +934,19 @@ exec_entry_point (struct bfd *abfd, struct target_ops *targ)
 					     targ);
 }
 
+static int cmp_host_to_target_word(bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr) {
+	unsigned host_word, target_word;
+	
+	if((bfd_seek(abfd, host_addr, SEEK_SET) == -1) ||
+			bfd_bread((char*)&host_word, sizeof(host_word), abfd) != sizeof(host_word)) {
+		return -1;
+	}
+	if(target_read_memory(target_addr, (char*)&target_word, sizeof(target_word))) {
+		return -1;
+	}
+	return (host_word-target_word);
+}
+
 /*
 
    LOCAL FUNCTION
@@ -1047,6 +1060,8 @@ enable_break (void)
 	  goto bkpt_at_symbol;
 	}
 
+	  fprintf_filtered(gdb_stdout,"Setting Dynamic-Linker Breakpoint based on %s\n", tmp_pathname);
+
       /* Now convert the TMP_BFD into a target.  That way target, as
          well as BFD operations can be used.  Note that closing the
          target will also close the underlying bfd.  */
@@ -1114,6 +1129,13 @@ enable_break (void)
 	  sym_addr = bfd_lookup_symbol (tmp_bfd, *bkpt_namep, SEC_CODE);
 	  if (sym_addr != 0)
 	    break;
+	}
+
+	if(sym_addr != 0) {
+		if(cmp_host_to_target_word(tmp_bfd, sym_addr, sym_addr+load_addr) != 0) {
+			warning("Host file %s does not match target file %s", tmp_pathname, buf);
+			sym_addr=0;
+		}
 	}
 
       /* We're done with both the temporary bfd and target.  Remember,
