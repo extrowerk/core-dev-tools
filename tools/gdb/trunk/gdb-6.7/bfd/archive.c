@@ -2031,7 +2031,7 @@ _bfd_archive_bsd_update_armap_timestamp (bfd *arch)
       /* Can't read mod time for some reason.  */
       return TRUE;
     }
-  if (archstat.st_mtime <= bfd_ardata (arch)->armap_timestamp)
+  if (archstat.st_mtime - bfd_ardata (arch)->armap_timestamp <= 0)
     /* OK by the linker's rules.  */
     return TRUE;
 

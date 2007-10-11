@@ -1982,7 +1982,7 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
   char **start_argv, **argv, **pargv,  *p;
   int fd;
   struct target_waitstatus status;
-  char *in, *out, *err;
+  const char *in, *out, *err;
   int len = 0;
   int totlen = 0;
 

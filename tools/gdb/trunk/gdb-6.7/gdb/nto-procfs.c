@@ -61,7 +61,7 @@ static int procfs_can_run (void);
 
 static ptid_t procfs_wait (ptid_t, struct target_waitstatus *);
 
-static int procfs_xfer_memory (CORE_ADDR, char *, int, int,
+static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
 			       struct mem_attrib *attrib,
 			       struct target_ops *);
 
@@ -223,8 +223,6 @@ procfs_set_thread (ptid_t ptid)
 {
   pid_t tid;
 
-  nto_trace (0) ("%s (ptid.tid=%d)\n", __func__, ptid.tid);
-
   tid = ptid_get_tid (ptid);
   devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0);
 }
@@ -234,8 +232,6 @@ static int
 procfs_thread_alive (ptid_t ptid)
 {
   pid_t tid;
-
-  nto_trace (0) ("%s (ptid.tid=%d)\n", __func__, ptid.tid);
 
   tid = ptid_get_tid (ptid);
   if (devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0) == EOK)
@@ -527,7 +523,7 @@ procfs_attach (char *args, int from_tty)
   char *exec_file;
   int pid;
 
-  nto_trace (0) ("%s (args=%s, from_tty=%s)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
 
   if (!args)
     error_no_arg (_("process-id to attach"));
@@ -774,7 +770,7 @@ procfs_fetch_registers (struct regcache *regcache, int regno)
    doesn't allow memory operations to cross below us in the target stack
    anyway.  */
 static int
-procfs_xfer_memory (CORE_ADDR memaddr, char *myaddr, int len, int dowrite,
+procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
 		    struct mem_attrib *attrib, struct target_ops *target)
 {
   int nbytes = 0;
