@@ -57,6 +57,7 @@
 #include "target-descriptions.h"
 #include "dwarf2-frame.h"
 #include "user-regs.h"
+#include "solist.h"
 
 static const struct objfile_data *mips_pdr_data;
 
@@ -2238,6 +2239,14 @@ mips_stub_frame_sniffer (struct frame_info *next_frame)
       && strcmp (bfd_get_section_name (s->objfile->obfd, s->the_bfd_section),
 		 ".MIPS.stubs") == 0)
     return &mips_stub_frame_unwind;
+
+  /* Finally, try with target provided function: */
+  if (current_target_so_ops->in_dynsym_resolve_code != NULL)
+    {
+      if (current_target_so_ops->in_dynsym_resolve_code (pc))
+        return &mips_stub_frame_unwind;
+    }
+
 
   return NULL;
 }
