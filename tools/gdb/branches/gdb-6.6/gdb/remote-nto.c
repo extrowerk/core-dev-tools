@@ -1920,14 +1920,40 @@ nto_kill_1 (char *dummy)
 static void
 nto_kill ()
 {
+  char *cmd = "continue";
+  int steps = 5;
+  struct target_waitstatus wstatus;
+  ptid_t ptid;
+
   nto_trace (0) ("nto_kill()\n");
 
+  remove_breakpoints ();
+  get_last_target_status (&ptid, &wstatus);
+  if (wstatus.value.sig == TARGET_SIGNAL_SEGV) 
+    {
+      /* No need to do anything else but do continue once again */
+      execute_command (cmd, 0); 
+      return;
+    }
+  
   /* Use catch_errors so the user can quit from gdb even when we aren't on
      speaking terms with the remote system.  */
   catch_errors
       ((catch_errors_ftype *) nto_kill_1, (char *) 0, "", RETURN_MASK_ERROR);
 
-  target_mourn_inferior ();
+  /* If inferior is sitting in a trap, we need to continue so the inferior
+   * can process the kill signal */
+  while (steps--)
+    {
+      get_last_target_status (&ptid, &wstatus);
+      nto_trace (0) ("last_target_status: %s\n", target_signal_to_string (wstatus.value.sig));
+      if (wstatus.value.sig == TARGET_SIGNAL_KILL)
+        {
+	  execute_command (cmd, 0);
+	  break;
+	}
+      execute_command (cmd, 0);
+    }
 }
 
 static void
