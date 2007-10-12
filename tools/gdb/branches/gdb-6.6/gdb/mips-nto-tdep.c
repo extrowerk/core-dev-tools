@@ -274,6 +274,47 @@ init_mipsnto_ops ()
   nto_fetch_link_map_offsets = mipsnto_svr4_fetch_link_map_offsets;
 }
 
+/* */
+static int
+mips_nto_in_dynsym_resolve_code (CORE_ADDR pc)
+{
+  gdb_byte buff[24];
+  gdb_byte *p = buff + 8;
+  ULONGEST instr[] = { 0x8f990000, 0x03200008 };
+  ULONGEST instrmask[] = { 0xFFFF0000, 0xFFFFFFFF };
+
+  nto_trace (0) ("%s (pc=%s)\n", __func__, paddr (pc));
+
+  read_memory (pc - 8, buff, 24);
+
+  while (p >= buff)
+    {
+      if ((extract_unsigned_integer (p, 4) & instrmask[0]) == instr[0])
+        break;
+
+      p -= 4;
+    }
+
+  if (p >= buff)
+    {
+      p += 4;
+
+      // first instruction found, see if the following one looks correct:
+      if ((extract_unsigned_integer (p, 4) & instrmask[1]) == instr[1])
+        {
+          if (extract_unsigned_integer (p + 4, 4) == 0
+      	    && extract_unsigned_integer (p + 8, 4) == 0)
+	    {
+	      nto_trace (0) ("looks like plt code\n");
+	      return 1;
+	    }
+        }
+    }
+  
+  nto_trace (0) ("%s: could not recognize plt code\n", __func__);
+  return nto_in_dynsym_resolve_code (pc);
+}
+
 /* Core file support */
 static void
 mipsnto_core_supply_gregset (const struct regset *regset, 
@@ -424,7 +465,7 @@ mipsnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   TARGET_SO_FIND_AND_OPEN_SOLIB = nto_find_and_open_solib;
 
   /* Our linker code is in libc.  */
-  TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
+  TARGET_SO_IN_DYNSYM_RESOLVE_CODE = mips_nto_in_dynsym_resolve_code;
 
   /* register core handler */
   set_gdbarch_regset_from_core_section (gdbarch, 
