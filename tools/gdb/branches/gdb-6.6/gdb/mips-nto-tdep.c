@@ -170,10 +170,14 @@ mipsnto_register_area(int regno, int regset, unsigned *off)
       if (regno == -1)
 	return GP_REGSET_SIZE;
 
-      if(regno < 38)
-	      *off = (regno - MIPS_ZERO_REGNUM) * 8 +
-		      (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG &&
-		       register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4) ? 4 : 0;
+      if(regno < 38) 
+        {
+	  ULONGEST offset = (regno - MIPS_ZERO_REGNUM) * 8;
+	  if (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG
+	      && register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
+	    offset += 4;
+	  *off = offset;
+        }
       else
 	      return 0;
       return 4;
@@ -184,9 +188,14 @@ mipsnto_register_area(int regno, int regset, unsigned *off)
 	return FP_REGSET_SIZE;
       
       if (regno >= gdbarch_fp0_regnum (current_gdbarch) && regno <= gdbarch_fp0_regnum (current_gdbarch) + 32)
-	      *off = (regno - gdbarch_fp0_regnum (current_gdbarch)) * 8 +
-		      (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG &&
-		       register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4) ? 4 : 0;
+        {
+	  ULONGEST offset = (regno - gdbarch_fp0_regnum (current_gdbarch)) * 8;
+	  if (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG
+	      && register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
+	    offset += 4;
+
+	  *off = offset;
+        }
       else if (regno == mips_regnum(current_gdbarch)->fp_control_status)
 	      *off = FPCR31_OFF;
       else
