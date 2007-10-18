@@ -45,6 +45,9 @@
 #include "exceptions.h"
 #include "solib.h"
 
+#ifndef __QNXNTO__
+#include "nto-tdep.h"
+#endif
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -362,7 +365,13 @@ core_open (char *filename, int from_tty)
        value is called ``target_signal'' and this function got the
        name ..._from_host(). */
     printf_filtered (_("Program terminated with signal %d, %s.\n"), siggy,
-		     target_signal_to_string (target_signal_from_host (siggy)));
+		     target_signal_to_string (
+#ifndef __QNXNTO__
+                     target_signal_from_nto (siggy)
+#else
+		     target_signal_from_host (siggy)
+#endif //__QNXNTO__
+                   ));
 
   /* Build up thread list from BFD sections. */
 
