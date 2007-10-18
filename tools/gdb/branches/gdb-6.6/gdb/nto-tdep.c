@@ -395,6 +395,176 @@ nto_target_extra_thread_info (struct thread_info *ti)
   return "";
 }
 
+#ifndef __QNXNTO__
+
+#define NTO_SIGHUP      1   /* hangup */
+#define NTO_SIGINT      2   /* interrupt */
+#define NTO_SIGQUIT     3   /* quit */
+#define NTO_SIGILL      4   /* illegal instruction (not reset when caught) */
+#define NTO_SIGTRAP     5   /* trace trap (not reset when caught) */
+#define NTO_SIGIOT      6   /* IOT instruction */
+#define NTO_SIGABRT     6   /* used by abort */
+#define NTO_SIGEMT      7   /* EMT instruction */
+#define NTO_SIGDEADLK   7   /* Mutex deadlock */
+#define NTO_SIGFPE      8   /* floating point exception */
+#define NTO_SIGKILL     9   /* kill (cannot be caught or ignored) */
+#define NTO_SIGBUS      10  /* bus error */
+#define NTO_SIGSEGV     11  /* segmentation violation */
+#define NTO_SIGSYS      12  /* bad argument to system call */
+#define NTO_SIGPIPE     13  /* write on pipe with no reader */
+#define NTO_SIGALRM     14  /* real-time alarm clock */
+#define NTO_SIGTERM     15  /* software termination signal from kill */
+#define NTO_SIGUSR1     16  /* user defined signal 1 */
+#define NTO_SIGUSR2     17  /* user defined signal 2 */
+#define NTO_SIGCHLD     18  /* death of child */
+#define NTO_SIGPWR      19  /* power-fail restart */
+#define NTO_SIGWINCH    20  /* window change */
+#define NTO_SIGURG      21  /* urgent condition on I/O channel */
+#define NTO_SIGPOLL     22  /* System V name for NTO_SIGIO */
+#define NTO_SIGIO       NTO_SIGPOLL
+#define NTO_SIGSTOP     23  /* sendable stop signal not from tty */
+#define NTO_SIGTSTP     24  /* stop signal from tty */
+#define NTO_SIGCONT     25  /* continue a stopped process */
+#define NTO_SIGTTIN     26  /* attempted background tty read */
+#define NTO_SIGTTOU     27  /* attempted background tty write */
+#define NTO_SIGVTALRM   28  /* virtual timer expired */
+#define NTO_SIGPROF     29  /* profileing timer expired */
+#define NTO_SIGXCPU     30  /* exceded cpu limit */
+#define NTO_SIGXFSZ     31  /* exceded file size limit */
+
+static struct
+  {
+    int nto_sig;
+    enum target_signal gdb_sig;
+  }
+sig_map[] =
+{
+  {1, TARGET_SIGNAL_HUP},
+  {2, TARGET_SIGNAL_INT},
+  {3, TARGET_SIGNAL_QUIT},
+  {4, TARGET_SIGNAL_ILL},
+  {5, TARGET_SIGNAL_TRAP},
+  {6, TARGET_SIGNAL_ABRT},
+  {7, TARGET_SIGNAL_EMT},
+  {8, TARGET_SIGNAL_FPE},
+  {9, TARGET_SIGNAL_KILL},
+  {10, TARGET_SIGNAL_BUS},
+  {11, TARGET_SIGNAL_SEGV},
+  {12, TARGET_SIGNAL_SYS},
+  {13, TARGET_SIGNAL_PIPE},
+  {14, TARGET_SIGNAL_ALRM},
+  {15, TARGET_SIGNAL_TERM},
+  {16, TARGET_SIGNAL_USR1},
+  {17, TARGET_SIGNAL_USR2},
+  {18, TARGET_SIGNAL_CHLD},
+  {19, TARGET_SIGNAL_PWR},
+  {20, TARGET_SIGNAL_WINCH},
+  {21, TARGET_SIGNAL_URG},
+  {22, TARGET_SIGNAL_POLL},
+  {23, TARGET_SIGNAL_STOP},
+  {24, TARGET_SIGNAL_TSTP},
+  {25, TARGET_SIGNAL_CONT},
+  {26, TARGET_SIGNAL_TTIN},
+  {27, TARGET_SIGNAL_TTOU},
+  {28, TARGET_SIGNAL_VTALRM},
+  {29, TARGET_SIGNAL_PROF},
+  {30, TARGET_SIGNAL_XCPU},
+  {31, TARGET_SIGNAL_XFSZ}
+};
+#endif // ndef __QNXNTO__
+
+/* Convert nto signal to gdb signal.  */
+enum target_signal
+target_signal_from_nto(int sig)
+{
+#ifndef __QNXNTO__
+  switch(sig)
+  {
+    case 0: return 0; break;
+    case NTO_SIGHUP: return TARGET_SIGNAL_HUP; break;
+    case NTO_SIGINT: return TARGET_SIGNAL_INT; break;
+    case NTO_SIGQUIT: return TARGET_SIGNAL_QUIT; break;
+    case NTO_SIGILL: return TARGET_SIGNAL_ILL; break;
+    case NTO_SIGTRAP: return TARGET_SIGNAL_TRAP; break;
+    case NTO_SIGABRT: return TARGET_SIGNAL_ABRT; break;
+    case NTO_SIGEMT: return TARGET_SIGNAL_EMT; break;
+    case NTO_SIGFPE: return TARGET_SIGNAL_FPE; break;
+    case NTO_SIGKILL: return TARGET_SIGNAL_KILL; break;
+    case NTO_SIGBUS: return TARGET_SIGNAL_BUS; break;
+    case NTO_SIGSEGV: return TARGET_SIGNAL_SEGV; break;
+    case NTO_SIGSYS: return TARGET_SIGNAL_SYS; break;
+    case NTO_SIGPIPE: return TARGET_SIGNAL_PIPE; break;
+    case NTO_SIGALRM: return TARGET_SIGNAL_ALRM; break;
+    case NTO_SIGTERM: return TARGET_SIGNAL_TERM; break;
+    case NTO_SIGUSR1: return TARGET_SIGNAL_USR1; break;
+    case NTO_SIGUSR2: return TARGET_SIGNAL_USR2; break;
+    case NTO_SIGCHLD: return TARGET_SIGNAL_CHLD; break;
+    case NTO_SIGPWR: return TARGET_SIGNAL_PWR; break;
+    case NTO_SIGWINCH: return TARGET_SIGNAL_WINCH; break;
+    case NTO_SIGURG: return TARGET_SIGNAL_URG; break;
+    case NTO_SIGPOLL: return TARGET_SIGNAL_POLL; break;
+    case NTO_SIGSTOP: return TARGET_SIGNAL_STOP; break;
+    case NTO_SIGTSTP: return TARGET_SIGNAL_TSTP; break;
+    case NTO_SIGCONT: return TARGET_SIGNAL_CONT; break;
+    case NTO_SIGTTIN: return TARGET_SIGNAL_TTIN; break;
+    case NTO_SIGTTOU: return TARGET_SIGNAL_TTOU; break;
+    case NTO_SIGVTALRM: return TARGET_SIGNAL_VTALRM; break;
+    case NTO_SIGPROF: return TARGET_SIGNAL_PROF; break;
+    case NTO_SIGXCPU: return TARGET_SIGNAL_XCPU; break;
+    case NTO_SIGXFSZ: return TARGET_SIGNAL_XFSZ; break;
+    default: break;
+  }
+#endif /* __QNXNTO__ */
+  return target_signal_from_host(sig);
+}
+
+
+/* Convert gdb signal to nto signal.  */
+int
+target_signal_to_nto(enum target_signal sig)
+{
+#ifndef __QNXNTO__
+  switch(sig)
+  {
+    case 0: return 0; break;
+    case TARGET_SIGNAL_HUP: return NTO_SIGHUP; break;
+    case TARGET_SIGNAL_INT: return NTO_SIGINT; break;
+    case TARGET_SIGNAL_QUIT: return NTO_SIGQUIT; break;
+    case TARGET_SIGNAL_ILL: return NTO_SIGILL; break;
+    case TARGET_SIGNAL_TRAP: return NTO_SIGTRAP; break;
+    case TARGET_SIGNAL_ABRT: return NTO_SIGABRT; break;
+    case TARGET_SIGNAL_EMT: return NTO_SIGEMT; break;
+    case TARGET_SIGNAL_FPE: return NTO_SIGFPE; break;
+    case TARGET_SIGNAL_KILL: return NTO_SIGKILL; break;
+    case TARGET_SIGNAL_BUS: return NTO_SIGBUS; break;
+    case TARGET_SIGNAL_SEGV: return NTO_SIGSEGV; break;
+    case TARGET_SIGNAL_SYS: return NTO_SIGSYS; break;
+    case TARGET_SIGNAL_PIPE: return NTO_SIGPIPE; break;
+    case TARGET_SIGNAL_ALRM: return NTO_SIGALRM; break;
+    case TARGET_SIGNAL_TERM: return NTO_SIGTERM; break;
+    case TARGET_SIGNAL_USR1: return NTO_SIGUSR1; break;
+    case TARGET_SIGNAL_USR2: return NTO_SIGUSR2; break;
+    case TARGET_SIGNAL_CHLD: return NTO_SIGCHLD; break;
+    case TARGET_SIGNAL_PWR: return NTO_SIGPWR; break;
+    case TARGET_SIGNAL_WINCH: return NTO_SIGWINCH; break;
+    case TARGET_SIGNAL_URG: return NTO_SIGURG; break;
+    case TARGET_SIGNAL_IO: return NTO_SIGIO; break;
+    case TARGET_SIGNAL_POLL: return NTO_SIGPOLL; break;
+    case TARGET_SIGNAL_STOP: return NTO_SIGSTOP; break;
+    case TARGET_SIGNAL_TSTP: return NTO_SIGTSTP; break;
+    case TARGET_SIGNAL_CONT: return NTO_SIGCONT; break;
+    case TARGET_SIGNAL_TTIN: return NTO_SIGTTIN; break;
+    case TARGET_SIGNAL_TTOU: return NTO_SIGTTOU; break;
+    case TARGET_SIGNAL_VTALRM: return NTO_SIGVTALRM; break;
+    case TARGET_SIGNAL_PROF: return NTO_SIGPROF; break;
+    case TARGET_SIGNAL_XCPU: return NTO_SIGXCPU; break;
+    case TARGET_SIGNAL_XFSZ: return NTO_SIGXFSZ; break;
+    default: break;
+  }
+#endif /* __QNXNTO__ */
+  return target_signal_to_host(sig);
+}
+
 void
 nto_initialize_signals (void)
 {

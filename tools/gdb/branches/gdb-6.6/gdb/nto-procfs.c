@@ -620,6 +620,7 @@ Give up (and stop debugging it)? "))
 static void
 nto_interrupt_twice (int signo)
 {
+  nto_trace (0) ("%s (signo: %d)\n", __func__, signo);
   signal (signo, ofunc);
   interrupt_query ();
   signal (signo, nto_interrupt_twice);
@@ -628,6 +629,7 @@ nto_interrupt_twice (int signo)
 static void
 nto_interrupt (int signo)
 {
+  nto_trace (0) ("%s (signo: %d)\n", __func__, signo);
   /* If this doesn't work, try more severe steps.  */
   signal (signo, nto_interrupt_twice);
 
