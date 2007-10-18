@@ -199,4 +199,11 @@ int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
 char *nto_target_extra_thread_info (struct thread_info *);
 
+/* needed for remote protocol and for core files */
+enum target_signal target_signal_from_nto (int sig);
+int target_signal_to_nto(enum target_signal sig);
+
+
+
+
 #endif
