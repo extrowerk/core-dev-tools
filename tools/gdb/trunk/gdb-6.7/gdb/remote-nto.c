@@ -55,6 +55,7 @@
 #include "regcache.h"
 #include "gdbcore.h"
 #include "serial.h"
+#include "readline/readline.h"
 
 #include "elf-bfd.h"
 #include "elf/common.h"
@@ -2295,6 +2296,9 @@ upload_command (char *args, int fromtty)
   char buf[DS_DATA_MAX_SIZE];
   char *from, *to;
   char **argv;
+  char *filename_opened = NULL; //full file name. Things like $cwd will be expanded.
+  // see source.c, openp and exec.c, file_command for more details.
+  // 
 
   if (args == 0)
     {
@@ -2312,6 +2316,9 @@ upload_command (char *args, int fromtty)
   if (argv == NULL)
     nomem (0);
 
+  if (*argv == NULL)
+    error (_("No source file name was specified"));
+
 #if defined(__CYGWIN__)
   cygwin_conv_to_posix_path (argv[0], cygbuf);
   from = cygbuf;
@@ -2319,18 +2326,25 @@ upload_command (char *args, int fromtty)
   from = argv[0];
 #endif
   to = argv[1] ? argv[1] : from;
+  
+  from = tilde_expand (*argv);
 
-  if ((fd = open (from, O_RDONLY | O_BINARY)) == -1)
+  if ((fd = openp (NULL, OPF_TRY_CWD_FIRST, from, 
+                  O_RDONLY | O_BINARY, 0, &filename_opened)) < 0)
     {
       printf_unfiltered ("Unable to open '%s': %s\n", from, strerror (errno));
       return;
     }
+
+  nto_trace(0) ("Opened %s for reading\n", filename_opened);
 
   if (nto_fileopen (to, QNX_WRITE_MODE, QNX_WRITE_PERMS) == -1)
     {
       printf_unfiltered ("Remote was unable to open '%s': %s\n", to,
 			 strerror (errno));
       close (fd);
+      xfree (filename_opened);
+      xfree (from);
       return;
     }
 
@@ -2358,6 +2372,8 @@ upload_command (char *args, int fromtty)
 
 exit:
   nto_fileclose (fd);
+  xfree (filename_opened);
+  xfree (from);
   close (fd);
 }
 
@@ -2441,7 +2457,7 @@ nto_add_commands ()
   c =
     add_com ("upload", class_obscure, upload_command,
 	     "Send a file to the target (upload {local} [{remote}])");
-  c->completer = filename_completer;
+  set_cmd_completer (c, filename_completer);
   add_com ("download", class_obscure, download_command,
 	   "Get a file from the target (download {remote} [{local}])");
 }

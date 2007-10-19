@@ -112,6 +112,7 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 #define PATH_FMT "%s/lib:%s/usr/lib:%s/usr/photon/lib:%s/usr/photon/dll:%s/lib/dll"
 
   nto_root = nto_target ();
+  nto_trace (0) ("%s (..) nto_root: %s\n", __func__, nto_root);
   if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name, "i386") == 0)
     {
       arch = "x86";
