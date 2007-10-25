@@ -3369,7 +3369,13 @@ find_arch_by_info (struct gdbarch_info info)
   new_gdbarch->initialized_p = 1;
 
   if (gdbarch_debug)
-    gdbarch_dump (new_gdbarch, gdb_stdlog);
+    {
+      //FIXME: dirty hack to have debug info
+      struct gdbarch *old_gdbarch = current_gdbarch;
+      current_gdbarch = new_gdbarch;
+      gdbarch_dump (new_gdbarch, gdb_stdlog);
+      current_gdbarch = old_gdbarch;
+    }
 
   return new_gdbarch;
 }
