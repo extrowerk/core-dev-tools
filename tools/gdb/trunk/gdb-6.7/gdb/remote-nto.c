@@ -653,7 +653,6 @@ nto_incoming_text (int len)
 {
   int textlen;
   TSMsg_text_t *text;
-  const char *fmt = "%" STRINGIZE(TS_TEXT_MAX_SIZE) "." STRINGIZE(TS_TEXT_MAX_SIZE) "s" ;
   char buf[TS_TEXT_MAX_SIZE];
 
   text = (void *) &recv.buf[0];
@@ -662,8 +661,7 @@ nto_incoming_text (int len)
   switch (text->hdr.cmd)
     {
     case TSMsg_text:
-      /*//sprintf (fmt, "%%%d.%ds", textlen, textlen);*/
-      snprintf (buf, TS_TEXT_MAX_SIZE, "%" STRINGIZE(TS_TEXT_MAX_SIZE) "." STRINGIZE(TS_TEXT_MAX_SIZE) "s", text->text);
+      snprintf (buf, TS_TEXT_MAX_SIZE, "%s", text->text);
       ui_file_write (gdb_stdtarg, buf, textlen);
       return 0;
     default:
