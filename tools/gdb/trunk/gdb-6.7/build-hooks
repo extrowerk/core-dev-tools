@@ -97,5 +97,5 @@ function hook_postconfigure {
 
 function hook_pinfo {
 	cd gdb
-	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 5.2"
+	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 6.7"
 }
