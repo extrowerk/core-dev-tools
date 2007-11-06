@@ -33,6 +33,7 @@
 
 #include "trad-frame.h"
 #include "tramp-frame.h"
+#include "gdbcore.h"
 
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
@@ -150,6 +151,58 @@ init_armnto_ops ()
   nto_fetch_link_map_offsets = armnto_svr4_fetch_link_map_offsets;
 }
 
+/* */
+static int
+arm_nto_in_dynsym_resolve_code (CORE_ADDR pc)
+{
+  gdb_byte buff[24];
+  gdb_byte *p = buff + 8;
+  ULONGEST instr[] = { 0xe59fc004, 0xe08fc00c, 0xe59cf000 };
+  ULONGEST instrmask[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+
+  nto_trace (0) ("%s (pc=%s)\n", __func__, paddr (pc));
+
+  read_memory (pc - 8, buff, 24);
+
+  while (p >= buff)
+    {
+      if ((extract_unsigned_integer (p, 4) & instrmask[0]) == instr[0])
+        break;
+
+      p -= 4;
+    }
+
+  if (p >= buff)
+    {
+      int i;
+      int match = 1;
+     
+      for (i = 1; i != sizeof(instr)/sizeof(instr[0]); ++i)
+        {
+	  ULONGEST inst;
+	  
+	  p += 4;
+
+	  inst = extract_unsigned_integer (p, 4) & instrmask[i];
+
+	  if (inst != instr[i])
+	    {
+	      match = 0;
+	      break; // did not match
+	    }
+        }
+
+	if (match) 
+	  {
+	    nto_trace (0) ("Looks like plt code\n");
+	    return 1;
+	  }
+    }
+  
+  nto_trace (0) ("%s: could not recognize plt code\n", __func__);
+  return nto_in_dynsym_resolve_code (pc);
+}
+
 /* Core file support */
 static void
 armnto_core_supply_gregset (const struct regset *regset, 
@@ -198,31 +251,42 @@ armnto_sigtramp_cache_init (const struct tramp_frame *self,
 {
   struct gdbarch *gdbarch = get_frame_arch (next_frame);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  CORE_ADDR base, addr;
+  CORE_ADDR ptrctx, sp;
   int regi, off = 0;
+  const int REGSIZE = 4;
+  //struct frame_info *this_frame = get_prev_frame(next_frame);
   
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddr (func));
 
-  base = frame_unwind_register_unsigned (next_frame,
-                                         gdbarch_sp_regnum (current_gdbarch));
+  /* stack pointer for __signal_stub frame */
+  sp = frame_unwind_register_unsigned (next_frame,
+                                         gdbarch_sp_regnum (gdbarch));
 
-  gdb_assert (gdbarch_sp_regnum (current_gdbarch) == ARM_SP_REGNUM);
+  nto_trace (0) ("sp: 0x%s\n", paddr (sp));
 
-  nto_trace (0) ("base address = 0x%s\n", paddr (base));
+  gdb_assert (gdbarch_sp_regnum (gdbarch) == ARM_SP_REGNUM);
 
-/* Construct the frame ID using the function start. */
-  trad_frame_set_id (this_cache, frame_id_build (base, func));
+  /* Construct the frame ID using the function start. */
+  trad_frame_set_id (this_cache, frame_id_build (sp, func));
 
-  base += 124; /* offset to context */
- 
+  /*  read base from r5 of the sigtramp frame:
+   we store base + 4 (addr of r1, not r0) in r5. 
+   stmia	lr, {r1-r12} 
+   mov	r5, lr 
+  */
+  ptrctx = frame_unwind_register_unsigned (next_frame, ARM_A1_REGNUM + 5);
+  ptrctx -= 4;
+
+  nto_trace (0) ("context addr: 0x%s\n", paddr (ptrctx));
+
   /* retrieve registers */
   for (regi = ARM_A1_REGNUM; regi < ARM_F0_REGNUM; regi++)
     {
-      CORE_ADDR addr = base + (regi - ARM_A1_REGNUM) * 4;
-      trad_frame_set_reg_addr (this_cache, regi, addr );
+      const CORE_ADDR addr = ptrctx + (regi - ARM_A1_REGNUM) * REGSIZE;
+      trad_frame_set_reg_addr (this_cache, regi, addr);
     }
 
-  //trad_frame_set_reg_addr (this_cache, ARM_PS_REGNUM, base + 16 * 4);
+  trad_frame_set_reg_addr (this_cache, ARM_PS_REGNUM, ptrctx + 16 * REGSIZE);
 }
 
 static struct tramp_frame arm_nto_sighandler_tramp_frame = {
@@ -236,6 +300,16 @@ static struct tramp_frame arm_nto_sighandler_tramp_frame = {
   armnto_sigtramp_cache_init
 };
 
+static struct tramp_frame armbe_nto_sighandler_tramp_frame = {
+  SIGTRAMP_FRAME,
+  4,
+  {
+    { 0xebfffff0, 0xFFFFFFFF },
+    { 0xe91ba800, 0xFFFFFFFF },
+    { TRAMP_SENTINEL_INSN, -1 },
+  },
+  armnto_sigtramp_cache_init
+};
 
 
 static void
@@ -256,7 +330,7 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   TARGET_SO_FIND_AND_OPEN_SOLIB = nto_find_and_open_solib;
 
   /* Our linker code is in libc.  */
-  TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
+  TARGET_SO_IN_DYNSYM_RESOLVE_CODE = arm_nto_in_dynsym_resolve_code;
 
 /* register core handler */
   set_gdbarch_regset_from_core_section (gdbarch, 
@@ -265,6 +339,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Signal trampoline */
   tramp_frame_prepend_unwinder (gdbarch,
 				&arm_nto_sighandler_tramp_frame);
+//  tramp_frame_prepend_unwinder (gdbarch,
+//				&armbe_nto_sighandler_tramp_frame);
 
   init_armnto_ops ();
 }

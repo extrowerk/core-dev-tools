@@ -363,31 +363,44 @@ mipsnto_sigtramp_cache_init (const struct tramp_frame *self,
 {
   struct gdbarch *gdbarch = get_frame_arch (next_frame);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  CORE_ADDR base, addr;
+  CORE_ADDR ptrctx, sp;
   int regi, off = 0;
-  const int num_regs = gdbarch_num_regs (current_gdbarch);
+  const int num_regs = gdbarch_num_regs (gdbarch);
   
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddr (func));
 
-  base = frame_unwind_register_unsigned (next_frame,
-                                         gdbarch_sp_regnum (current_gdbarch));
+  /* stack pointer for __signal_stub frame */
+  sp = frame_unwind_register_unsigned (next_frame,
+                                         gdbarch_sp_regnum (gdbarch));
+
+  nto_trace (0) ("sp: 0x%s\n", paddr (sp));
 
   /* Construct the frame ID using the function start. */
-  trad_frame_set_id (this_cache, frame_id_build (base, func));
+  trad_frame_set_id (this_cache, frame_id_build (sp, func));
 
-  base += 136; /* offset to context */
- 
+  /* we store context address in s1 register; we store addr of
+   _sighandler_info; hence the offset of 24. If _sighandler_info
+   changes in such a way that the context offset changes, this code 
+   will be broken.*/
+  ptrctx = frame_unwind_register_unsigned (next_frame, MIPS_AT_REGNUM + 16);
+
+  nto_trace (0) ("reg s1: 0x%s\n", paddr (ptrctx));
+
+  /* 24 for siginfo_t and a pointer (see neutrino.h, _sighandler_info) */
+  ptrctx += 24;
+
+  nto_trace (0) ("context addr: 0x%s \n", paddr (ptrctx));
+  
   /* retrieve registers */
   /* on big endian, register data is in second word of Neutrino's 8 byte regs */
-  if(gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG &&
-     register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
+  if(gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG &&
+     register_size (gdbarch, MIPS_ZERO_REGNUM) == 4)
           off = 4;
 
-  for(regi = MIPS_ZERO_REGNUM; regi < gdbarch_fp0_regnum (current_gdbarch); regi++)
+  for(regi = MIPS_ZERO_REGNUM; regi < gdbarch_fp0_regnum (gdbarch); regi++)
     {
       /* nto stores registers in 8 byte storage */
-      const CORE_ADDR addr = base + 8 * (regi - MIPS_ZERO_REGNUM) + off;
-
+      const CORE_ADDR addr = ptrctx + 8 * (regi - MIPS_ZERO_REGNUM) + off;
       trad_frame_set_reg_addr (this_cache, regi + num_regs, addr);
     }
 
@@ -410,7 +423,17 @@ static struct tramp_frame mipsbe32_nto_sighandler_tramp_frame = {
   mipsnto_sigtramp_cache_init
 };
 
-
+static struct tramp_frame mipsle32_nto_sighandler_tramp_frame = {
+  SIGTRAMP_FRAME,
+  4,
+  { 
+    { 0x02201021, 0xFFFFFFFF }, 
+    { 0x02002021, 0xFFFFFFFF }, 
+    { 0x04100001, 0xFFFFFFFF },
+    { TRAMP_SENTINEL_INSN, -1 },
+  },
+  mipsnto_sigtramp_cache_init
+};
 
 static void
 mipsnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
@@ -432,6 +455,7 @@ mipsnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Trampoline */
   tramp_frame_prepend_unwinder (gdbarch, &mipsbe32_nto_sighandler_tramp_frame);
+  tramp_frame_prepend_unwinder (gdbarch, &mipsle32_nto_sighandler_tramp_frame);
 
   /* Our loader handles solib relocations slightly differently than svr4.  */
   TARGET_SO_RELOCATE_SECTION_ADDRESSES = nto_relocate_section_addresses;
