@@ -872,6 +872,8 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 {
   int signal_to_pass;
   procfs_status status;
+  void *pvoid;
+  sigset_t *psigset;
 
   nto_trace (0) ("%s (...)\n", __func__);
 
@@ -885,17 +887,21 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
   if (step)
     run.flags |= _DEBUG_RUN_STEP;
 
-  sigemptyset ((sigset_t *) &run.fault);
-  sigaddset ((sigset_t *) &run.fault, FLTBPT);
-  sigaddset ((sigset_t *) &run.fault, FLTTRACE);
-  sigaddset ((sigset_t *) &run.fault, FLTILL);
-  sigaddset ((sigset_t *) &run.fault, FLTPRIV);
-  sigaddset ((sigset_t *) &run.fault, FLTBOUNDS);
-  sigaddset ((sigset_t *) &run.fault, FLTIOVF);
-  sigaddset ((sigset_t *) &run.fault, FLTIZDIV);
-  sigaddset ((sigset_t *) &run.fault, FLTFPE);
+  pvoid = (void*)&run.fault;
+
+  psigset = (sigset_t *) pvoid;
+
+  sigemptyset (psigset);
+  sigaddset (psigset, FLTBPT);
+  sigaddset (psigset, FLTTRACE);
+  sigaddset (psigset, FLTILL);
+  sigaddset (psigset, FLTPRIV);
+  sigaddset (psigset, FLTBOUNDS);
+  sigaddset (psigset, FLTIOVF);
+  sigaddset (psigset, FLTIZDIV);
+  sigaddset (psigset, FLTFPE);
   /* Peter V will be changing this at some point.  */
-  sigaddset ((sigset_t *) &run.fault, FLTPAGE);
+  sigaddset (psigset, FLTPAGE);
 
   run.flags |= _DEBUG_RUN_ARM;
 
