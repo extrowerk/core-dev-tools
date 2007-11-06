@@ -26,6 +26,7 @@
 #include "top.h"		/* for "execute_command" */
 #include "gdb_string.h"
 #include "exceptions.h"
+#include "gdb_assert.h" 
 
 struct ui_out *cli_uiout;
 
@@ -95,10 +96,28 @@ cli_interpreter_exec (void *data, const char *command_str)
 {
   struct ui_file *old_stream;
   struct gdb_exception result;
+  int freemem = 0;
+  char *tmp;
+  int buflen;
 
   /* FIXME: cagney/2003-02-01: Need to const char *propogate
      safe_execute_command.  */
-  char *str = strcpy (alloca (strlen (command_str) + 1), command_str);
+  char *str;
+  
+  gdb_assert (command_str);
+
+  buflen = strlen (command_str) + 1;
+    
+  tmp = alloca (buflen);
+
+  if (!tmp)
+    { 
+      /* out of stack space.. fallback to malloc */
+      tmp = xmalloc (buflen);
+      freemem = 1;
+    }
+  
+  str = strcpy (tmp, command_str);
 
   /* gdb_stdout could change between the time cli_uiout was initialized
      and now. Since we're probably using a different interpreter which has
@@ -109,6 +128,8 @@ cli_interpreter_exec (void *data, const char *command_str)
   old_stream = cli_out_set_stream (cli_uiout, gdb_stdout);
   result = safe_execute_command (cli_uiout, str, 1);
   cli_out_set_stream (cli_uiout, old_stream);
+  if (freemem) 
+    xfree (str);
   return result;
 }
 
