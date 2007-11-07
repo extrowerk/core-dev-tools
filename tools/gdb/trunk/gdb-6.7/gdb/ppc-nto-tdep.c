@@ -750,40 +750,42 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
 {
   struct gdbarch *gdbarch = get_frame_arch (next_frame);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  CORE_ADDR base;
+  CORE_ADDR ptrctx, sp;
   int i;
   
-  nto_trace (0) ("%s () \n", __func__);
+  nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddr (func));
 
-  base = frame_unwind_register_unsigned (next_frame,
+  sp = frame_unwind_register_unsigned (next_frame,
                                          gdbarch_sp_regnum (current_gdbarch));
 
-  nto_trace (0) ("This should be SP of our main thread: %s\n", paddr (base));
+  nto_trace (0) ("sp: 0x%s\n", paddr (sp));
 
   /* Construct the frame ID using the function start. */
-  trad_frame_set_id (this_cache, frame_id_build (base, func));
+  trad_frame_set_id (this_cache, frame_id_build (sp, func));
 
-  base += 136; /* 136 is offset to context */
+  /* read base from r31 of the sigtramp frame:
+   */
+  ptrctx = frame_unwind_register_unsigned (next_frame, tdep->ppc_gp0_regnum + 31);
 
   for (i = 0; i != ppc_num_gprs; i++)
     {
-      int regnum = i + tdep->ppc_gp0_regnum;
-      int addr = base + i * tdep->wordsize;
+      const int regnum = i + tdep->ppc_gp0_regnum;
+      const int addr = ptrctx + i * tdep->wordsize;
       trad_frame_set_reg_addr (this_cache, regnum, addr);
     }
   
-  trad_frame_set_reg_addr (this_cache, tdep->ppc_ctr_regnum, base + CTR_OFF);
-  trad_frame_set_reg_addr (this_cache, tdep->ppc_lr_regnum, base + LR_OFF);
-  trad_frame_set_reg_addr (this_cache, tdep->ppc_ps_regnum, base + MSR_OFF);
-  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (current_gdbarch), base + IAR_OFF);
-  trad_frame_set_reg_addr (this_cache, tdep->ppc_cr_regnum, base + CR_OFF);
-  trad_frame_set_reg_addr (this_cache, tdep->ppc_xer_regnum, base + XER_OFF);
+  trad_frame_set_reg_addr (this_cache, tdep->ppc_ctr_regnum, ptrctx + CTR_OFF);
+  trad_frame_set_reg_addr (this_cache, tdep->ppc_lr_regnum, ptrctx + LR_OFF);
+  trad_frame_set_reg_addr (this_cache, tdep->ppc_ps_regnum, ptrctx + MSR_OFF);
+  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (current_gdbarch), ptrctx + IAR_OFF);
+  trad_frame_set_reg_addr (this_cache, tdep->ppc_cr_regnum, ptrctx + CR_OFF);
+  trad_frame_set_reg_addr (this_cache, tdep->ppc_xer_regnum, ptrctx + XER_OFF);
 //  trad_frame_set_reg_addr (this_cache, ??? tdep->ppc_ear_regnum, base + EAR_OFF);
   /* FIXME: mq is only on the 601 - should we check? */
   if(tdep->ppc_mq_regnum != -1)
-    trad_frame_set_reg_addr (this_cache, tdep->ppc_mq_regnum, base + MQ_OFF);
+    trad_frame_set_reg_addr (this_cache, tdep->ppc_mq_regnum, ptrctx + MQ_OFF);
   if(tdep->ppc_vrsave_regnum != -1)
-    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum, base + VRSAVE_OFF);
+    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum, ptrctx + VRSAVE_OFF);
 
 }
 
@@ -826,7 +828,7 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* NTO has shared libraries.  */
   //set_gdbarch_in_solib_call_trampoline (gdbarch, in_plt_section);
   //set_gdbarch_skip_trampoline_code (gdbarch, find_solib_trampoline_target);
-  set_gdbarch_skip_trampoline_code (gdbarch, ppc_nto_skip_trampoline_code);
+  //  set_gdbarch_skip_trampoline_code (gdbarch, ppc_nto_skip_trampoline_code);
   
   set_solib_svr4_fetch_link_map_offsets (gdbarch,
 					 nto_generic_svr4_fetch_link_map_offsets);

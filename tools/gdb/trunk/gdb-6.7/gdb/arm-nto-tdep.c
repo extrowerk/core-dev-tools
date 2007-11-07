@@ -339,8 +339,6 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Signal trampoline */
   tramp_frame_prepend_unwinder (gdbarch,
 				&arm_nto_sighandler_tramp_frame);
-//  tramp_frame_prepend_unwinder (gdbarch,
-//				&armbe_nto_sighandler_tramp_frame);
 
   init_armnto_ops ();
 }
