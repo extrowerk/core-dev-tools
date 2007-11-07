@@ -1,6 +1,5 @@
 target=${PWD##*-}
 target_cpu=${target#nto*}
-nto_target=${PWD##*-}
 srcdir=${PWD}/..
 qnx_target_version=6.3.0
 host_target=${PWD##*/}
@@ -28,7 +27,7 @@ function hook_preconfigure {
 	solaris)
 		host_cpu=$(uname -p)
 		case ${host_cpu} in
-        i[34567]86) host_cpu=x86 ;;
+        		i[34567]86) host_cpu=x86 ;;
 		esac
 		basedir=/opt/QNXsdk/host/solaris/${host_cpu}/usr
 		;;
@@ -49,13 +48,10 @@ function hook_preconfigure {
 		nto*)
 	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0"
   		  ;;
-		linux*)
-		  host_cpu=$(uname -m)
-		  case ${host_cpu} in
-                    i[34567]86) host_cpu=x86 ;;
-		  esac
-		  basedir=/opt/QNXsdk/host/linux/${host_cpu}/usr
-		  execdir=/opt/qnx630/host/linux/${host_cpu}/usr
+		linux*) 
+		  # basedir=${INSTALL_ROOT_linux}/${SYSNAME}/${host_cpu}/usr
+		  # /opt/QNXsdk/host/linux/${host_cpu}/usr
+		  # execdir=/opt/qnx630/host/linux/${host_cpu}/usr
 		  ;;
 		win32*)
 		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
@@ -63,12 +59,31 @@ function hook_preconfigure {
 		;;
  	  esac
 	fi  
+		  
+	case ${host_cpu} in
+           i[34567]86) 
+		host_cpu=x86 
+		;;
+	esac
+
+	case ${target_cpu} in
+	   i[34567]86)
+	   	target_cpu=x86
+		;;
+	esac
+
+	basedir=${INSTALL_ROOT}/${host_target%%-*}/${host_cpu}/usr
+	if [ x$INSTALL_ROOT = x ]; then
+	  echo "Using QNX_HOST as install dir: ${QNX_HOST}"
+	  basedir=${QNX_HOST}/usr
+	fi
+	echo ${basedir}
 
 	configure_opts="${configure_opts} --target=${target}"
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --exec-prefix=${basedir}"
 	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
-	configure_opts="${configure_opts} --program-prefix=${target}-"
+	configure_opts="${configure_opts} --program-prefix=${host_target##*-}-"
 	# This setting of --includedir is so that the readline compiles don't
 	# get things from the wrong place - we'd prefer not to have to say
 	# anything at all and let the qcc/gcc get the system headers on their
@@ -77,6 +92,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-gdbmi"
 #	configure_opts="${configure_opts} --enable-build-warnings=-Wall"
 	configure_opts="${configure_opts} --disable-nls"
+	configure_opts="${configure_opts} --disable-tui"
 	configure_opts="${configure_opts} --disable-sim --without-sim"
 }
 
