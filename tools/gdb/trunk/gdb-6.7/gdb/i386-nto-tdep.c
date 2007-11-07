@@ -215,27 +215,21 @@ i386nto_sigtramp_p (struct frame_info *next_frame)
   return name && strcmp ("__signalstub", name) == 0;
 }
 
-#define I386_NTO_SIGCONTEXT_OFFSET 132
-//136
-
 /* Assuming NEXT_FRAME is a frame following a QNX Neutrino sigtramp
    routine, return the address of the associated sigcontext structure.  */
 
 static CORE_ADDR
 i386nto_sigcontext_addr (struct frame_info *next_frame)
 {
-  char buf[4];
-  CORE_ADDR sp;
-
+  CORE_ADDR ptrctx;
   nto_trace(0) ("%s ()\n", __func__);
 
-  frame_unwind_register (next_frame, I386_ESP_REGNUM, buf);
-  sp = extract_unsigned_integer (buf, 4);
-
-  nto_trace(0) ("sp=0x%s\n", paddr(sp));
-  sp += I386_NTO_SIGCONTEXT_OFFSET;
-  nto_trace(0) ("sigcontext addr=0x%s\n", paddr(sp));
-  return sp;
+  /* we store __ucontext_t addr in EDI register */
+  ptrctx = frame_unwind_register_unsigned (next_frame, 
+  				I386_EDI_REGNUM);
+  ptrctx += 24 /* context pointer is at this offset */;
+  nto_trace(0) ("sigcontext addr=0x%s\n", paddr(ptrctx));
+  return ptrctx;
 }
 
 static void
