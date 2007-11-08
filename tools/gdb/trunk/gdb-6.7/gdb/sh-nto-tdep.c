@@ -324,32 +324,40 @@ shnto_sigtramp_cache_init (const struct tramp_frame *self,
 {
   struct gdbarch *gdbarch = get_frame_arch (next_frame);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  CORE_ADDR base, addr;
+  CORE_ADDR sp, ptrctx, fp, pc;
   int regi;
   
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddr (func));
 
-  base = frame_unwind_register_unsigned (next_frame,
-                                         gdbarch_sp_regnum (current_gdbarch));
+  sp = frame_unwind_register_unsigned (next_frame, 
+                                      gdbarch_sp_regnum (current_gdbarch));
 
+  nto_trace (0) ("sp: 0x%s\n", paddr (sp));
+ 
   /* Construct the frame ID using the function start. */
-  trad_frame_set_id (this_cache, frame_id_build (base, func));
-
-  base += 192; /* offset to context */
-
-  nto_trace (0) ("saved context address is 0x%s\n", paddr (base));
+  trad_frame_set_id (this_cache, frame_id_build (sp, func));
+ 
+  /* we store context addr in [r8]. The address is really address
+   * of reg 5, we need to back-up for 5 * 4 bytes to point
+   * at the begining. */
+  ptrctx = frame_unwind_register_unsigned (next_frame, R0_REGNUM + 8);
+  nto_trace (0) ("r8: 0x%s\n", paddr (ptrctx));
+  ptrctx -= 20;
+  nto_trace (0) ("context address: 0x%s\n", paddr (ptrctx));
 
   for (regi = 0; regi < 16; regi++)
     {
-      trad_frame_set_reg_addr (this_cache, regi, base + regi * 4);
-    }
-  trad_frame_set_reg_addr (this_cache, SR_REGNUM, base + SR_OFF);
-  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (current_gdbarch), base + PC_OFF);
-  trad_frame_set_reg_addr (this_cache, GBR_REGNUM, base + GBR_OFF);
-  trad_frame_set_reg_addr (this_cache, MACH_REGNUM, base + MACH_OFF);
-  trad_frame_set_reg_addr (this_cache, MACL_REGNUM, base + MACL_OFF);
-  trad_frame_set_reg_addr (this_cache, PR_REGNUM, base + PR_OFF);
+      unsigned int regval;
+      CORE_ADDR addr = ptrctx + regi * 4;
 
+      trad_frame_set_reg_addr (this_cache, regi, addr);
+    }
+  trad_frame_set_reg_addr (this_cache, SR_REGNUM, ptrctx + SR_OFF);
+  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (current_gdbarch), ptrctx + PC_OFF);
+  trad_frame_set_reg_addr (this_cache, GBR_REGNUM, ptrctx + GBR_OFF);
+  trad_frame_set_reg_addr (this_cache, MACH_REGNUM, ptrctx + MACH_OFF);
+  trad_frame_set_reg_addr (this_cache, MACL_REGNUM, ptrctx + MACL_OFF);
+  trad_frame_set_reg_addr (this_cache, PR_REGNUM, ptrctx + PR_OFF);
 }
 
 static struct tramp_frame sh_nto_sighandler_tramp_frame = {
