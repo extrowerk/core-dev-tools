@@ -3,6 +3,8 @@ target_cpu=${target#nto*}
 srcdir=${PWD}/..
 qnx_target_version=6.3.0
 host_target=${PWD##*/}
+host_cpu=${host_target#*-}
+host_cpu=${host_cpu%%-*}
 
 if [ $target_cpu = x86 ]; then
 	target_cpu=i386
