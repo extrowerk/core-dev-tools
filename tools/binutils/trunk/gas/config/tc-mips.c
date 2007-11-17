@@ -12329,40 +12329,41 @@ s_cpload (int ignore ATTRIBUTE_UNUSED)
   /* In ELF, this symbol is implicitly an STT_OBJECT symbol.  */
   symbol_get_bfdsym (ex.X_add_symbol)->flags |= BSF_OBJECT;
 
-  if (mips_pic == QNX_PIC) {
-        expressionS ep;
-	int macro_warn = mips_opts.warn_about_macros;
-        /* In our case, we do a bltzal first to get the current PC, and
-         * then add the offset to the got... Thus, we always do "cpload $31"
-         */
-        ep.X_op = O_constant;
-        ep.X_add_number = 4;
-        //tc_get_register(0); 
+  if (mips_pic == QNX_PIC)
+    {
+      expressionS ep;
+      int macro_warn = mips_opts.warn_about_macros;
+      /* In our case, we do a bltzal first to get the current PC, and
+       * then add the offset to the got... Thus, we always do "cpload $31"
+       */
+      ep.X_op = O_constant;
+      ep.X_add_number = 4;
 
-	macro_start ();
-	mips_opts.noreorder ++;
- 	mips_opts.warn_about_macros = 0;	
-	macro_build (&ep, "bltzal", "s,p", 0);
-	macro_build (NULL, "nop", "", 0);
-        macro_build_lui (&ex, QNX_GP_REG);
-        macro_build (&ex, "addiu", "t,r,j", QNX_GP_REG, QNX_GP_REG,
-                       (int) BFD_RELOC_LO16);
-        mips_opts.noreorder --;
-        macro_build ((expressionS *) NULL, "addu", "d,v,t",
-                       QNX_GP_REG, QNX_GP_REG, RA);
-	macro_end ();
- 	mips_opts.warn_about_macros = macro_warn;	
-  } else
-  {
-  macro_start ();
-  macro_build_lui (&ex, mips_gp_register);
-  macro_build (&ex, "addiu", "t,r,j", mips_gp_register,
-	       mips_gp_register, BFD_RELOC_LO16);
-  if (in_shared)
-    macro_build (NULL, "addu", "d,v,t", mips_gp_register,
-		     mips_gp_register, tc_get_register (0));
-  macro_end ();
-  }
+      macro_start ();
+      mips_opts.noreorder ++;
+      mips_opts.warn_about_macros = 0;	
+      macro_build (&ep, "bltzal", "s,p", 0);
+      macro_build (NULL, "nop", "", 0);
+      macro_build_lui (&ex, QNX_GP_REG);
+      macro_build (&ex, "addiu", "t,r,j", QNX_GP_REG, QNX_GP_REG,
+                  (int) BFD_RELOC_LO16);
+      mips_opts.noreorder --;
+      macro_build ((expressionS *) NULL, "addu", "d,v,t",
+                   QNX_GP_REG, QNX_GP_REG, RA);
+      macro_end ();
+      mips_opts.warn_about_macros = macro_warn;	
+    }
+  else 
+    {
+      macro_start ();
+      macro_build_lui (&ex, mips_gp_register);
+      macro_build (&ex, "addiu", "t,r,j", mips_gp_register,
+                   mips_gp_register, BFD_RELOC_LO16);
+      if (in_shared)
+        macro_build (NULL, "addu", "d,v,t", mips_gp_register,
+		     mips_gp_register, reg);
+      macro_end ();
+    }
   demand_empty_rest_of_line ();
 }
 
