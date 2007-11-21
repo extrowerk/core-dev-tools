@@ -660,7 +660,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
       sigwaitres = sigwaitinfo (&set, &info);
       if (sigwaitres == -1)
         {
-	  internal_error (__FILE__, __LINE__ - 3, "sigwaitres failed with errno: %d\n", errno);
+	  perror_with_name (__FILE__);
         }
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
@@ -867,13 +867,23 @@ procfs_remove_hw_breakpoint (struct bp_target_info *bp_tgt)
 			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, -1);
 }
 
+/* Workaround for aliasing rules violation. In our case,
+  violation is o.k. We use sigaddset on fltset_t which is 
+  equivalent to sigset_t in nto. */
+
+typedef union 
+  {
+    sigset_t *ps;
+    fltset_t *pflt;
+  } ufltset;
+
 static void
 procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 {
   int signal_to_pass;
   procfs_status status;
-  void *pvoid;
-  sigset_t *psigset;
+  /* Workaround for aliasing rules violation. */
+  ufltset psigset;
 
   nto_trace (0) ("%s (...)\n", __func__);
 
@@ -887,21 +897,18 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
   if (step)
     run.flags |= _DEBUG_RUN_STEP;
 
-  pvoid = (void*)&run.fault;
+  psigset.pflt = &run.fault;
 
-  psigset = (sigset_t *) pvoid;
-
-  sigemptyset (psigset);
-  sigaddset (psigset, FLTBPT);
-  sigaddset (psigset, FLTTRACE);
-  sigaddset (psigset, FLTILL);
-  sigaddset (psigset, FLTPRIV);
-  sigaddset (psigset, FLTBOUNDS);
-  sigaddset (psigset, FLTIOVF);
-  sigaddset (psigset, FLTIZDIV);
-  sigaddset (psigset, FLTFPE);
-  /* Peter V will be changing this at some point.  */
-  sigaddset (psigset, FLTPAGE);
+  sigemptyset (psigset.ps);
+  sigaddset (psigset.ps, FLTBPT);
+  sigaddset (psigset.ps, FLTTRACE);
+  sigaddset (psigset.ps, FLTILL);
+  sigaddset (psigset.ps, FLTPRIV);
+  sigaddset (psigset.ps, FLTBOUNDS);
+  sigaddset (psigset.ps, FLTIOVF);
+  sigaddset (psigset.ps, FLTIZDIV);
+  sigaddset (psigset.ps, FLTFPE);
+  sigaddset (psigset.ps, FLTPAGE);
 
   run.flags |= _DEBUG_RUN_ARM;
 
@@ -913,7 +920,9 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
     {
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
       signal_to_pass = target_signal_to_host (signo);
-      if (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED))
+
+      if ((status.why == _DEBUG_WHY_REQUESTED) ||
+         (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED)))
 	{
 	  if (signal_to_pass != status.info.si_signo)
 	    {
@@ -1315,6 +1324,7 @@ static void
 init_procfs_ops (void)
 {
   nto_trace (0) ("%s ()\n", __func__);
+  memset (procfs_ops, 0, sizeof (procfs_ops));
   procfs_ops.to_shortname = "procfs";
   procfs_ops.to_longname = "QNX Neutrino procfs child process";
   procfs_ops.to_doc =
