@@ -124,14 +124,6 @@ armnto_regset_fill (const struct regcache *regcache, int regset, char *data)
   return 0;
 }
 
-/* FIXME: use generic directly */
-static struct link_map_offsets *
-armnto_svr4_fetch_link_map_offsets (void)
-{
-  return nto_generic_svr4_fetch_link_map_offsets ();
-}
-
-
 static enum gdb_osabi
 ntoarm_elf_osabi_sniffer (bfd *abfd)
 {
@@ -148,7 +140,7 @@ init_armnto_ops ()
   nto_supply_regset = armnto_supply_regset;
   nto_register_area = armnto_register_area;
   nto_regset_fill = armnto_regset_fill;
-  nto_fetch_link_map_offsets = armnto_svr4_fetch_link_map_offsets;
+  nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
 }
 
 /* */
@@ -321,7 +313,7 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   nto_initialize_signals();
 
   set_solib_svr4_fetch_link_map_offsets (gdbarch,
-					 armnto_svr4_fetch_link_map_offsets);
+					 nto_generic_svr4_fetch_link_map_offsets);
 
   /* Our loader handles solib relocations slightly differently than svr4.  */
   TARGET_SO_RELOCATE_SECTION_ADDRESSES = nto_relocate_section_addresses;

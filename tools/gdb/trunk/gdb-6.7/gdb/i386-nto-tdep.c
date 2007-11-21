@@ -33,9 +33,6 @@
 #include "nto-tdep.h"
 #include "solib-svr4.h"
 
-/* Target vector for QNX NTO x86.  */
-static struct nto_target_ops i386_nto_target;
-
 #ifndef X86_CPU_FXSR
 #define X86_CPU_FXSR (1L << 12)
 #endif
@@ -224,10 +221,9 @@ i386nto_sigcontext_addr (struct frame_info *next_frame)
   CORE_ADDR ptrctx;
   nto_trace(0) ("%s ()\n", __func__);
 
-  /* we store __ucontext_t addr in EDI register */
-  ptrctx = frame_unwind_register_unsigned (next_frame, 
-  				I386_EDI_REGNUM);
-  ptrctx += 24 /* context pointer is at this offset */;
+  /* We store __ucontext_t addr in EDI register. */
+  ptrctx = frame_unwind_register_unsigned (next_frame, I386_EDI_REGNUM);
+  ptrctx += 24 /* Context pointer is at this offset. */;
   nto_trace(0) ("sigcontext addr=0x%s\n", paddr(ptrctx));
   return ptrctx;
 }
@@ -235,15 +231,14 @@ i386nto_sigcontext_addr (struct frame_info *next_frame)
 static void
 init_i386nto_ops (void)
 {
-  i386_nto_target.regset_id = i386nto_regset_id;
-  i386_nto_target.supply_gregset = i386nto_supply_gregset;
-  i386_nto_target.supply_fpregset = i386nto_supply_fpregset;
-  i386_nto_target.supply_altregset = nto_dummy_supply_regset;
-  i386_nto_target.supply_regset = i386nto_supply_regset;
-  i386_nto_target.register_area = i386nto_register_area;
-  i386_nto_target.regset_fill = i386nto_regset_fill;
-  i386_nto_target.fetch_link_map_offsets =
-    svr4_ilp32_fetch_link_map_offsets;
+  nto_regset_id = i386nto_regset_id;
+  nto_supply_gregset = i386nto_supply_gregset;
+  nto_supply_fpregset = i386nto_supply_fpregset;
+  nto_supply_altregset = nto_dummy_supply_regset;
+  nto_supply_regset = i386nto_supply_regset;
+  nto_register_area = i386nto_register_area;
+  nto_regset_fill = i386nto_regset_fill;
+  nto_fetch_link_map_offsets = svr4_ilp32_fetch_link_map_offsets;
 }
 
 static void
@@ -269,8 +264,6 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->sigcontext_addr = i386nto_sigcontext_addr;
   tdep->sc_reg_offset = i386nto_gregset_reg_offset;
   tdep->sc_num_regs = ARRAY_SIZE (i386nto_gregset_reg_offset); 
-  //tdep->sc_pc_offset = 56; //8 * 4; //56;
-  //tdep->sc_sp_offset = 68; //11 * 4; //68;
 
   /* Setjmp()'s return PC saved in EDX (5).  */
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
@@ -286,8 +279,6 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Our linker code is in libc.  */
   TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
-
-  nto_set_target (&i386_nto_target);
 }
 
 void
