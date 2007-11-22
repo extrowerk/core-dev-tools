@@ -1067,6 +1067,7 @@ nto_is_remote_target (bfd *abfd)
 static void
 nto_open (char *name, int from_tty)
 {
+  int tries = 0;
   nto_is_nto_target = nto_is_remote_target;
   nto_trace (0) ("nto_open(name '%s', from_tty %d)\n", name,
 			 from_tty);
@@ -1080,9 +1081,20 @@ nto_open (char *name, int from_tty)
   target_preopen (from_tty);
   unpush_target (&nto_ops);
 
-  nto_trace (3) ("nto_open() - unpush_target\n");
-
-  current_session->desc = serial_open (name);
+  while (tries < MAX_TRAN_TRIES)
+  {
+    current_session->desc = serial_open (name);
+    /* Give the target some time to come up. When we are connecting
+       immediately after disconnecting from the remote, pdebug
+       needs some time to start listening to the port. */
+    if (!current_session->desc)
+      {
+        tries++;
+        sleep (1);
+      }
+    else
+        break;
+  }
 
   if (!current_session->desc)
     {
