@@ -704,9 +704,6 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 
 	case _DEBUG_WHY_TERMINATED:
 	  {
-	    int waitval = 0;
-
-	    waitpid (PIDGET (inferior_ptid), &waitval, WNOHANG);
 	    if (exit_signo)
 	      {
 		/* Abnormal death.  */
@@ -717,7 +714,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 	      {
 		/* Normal death.  */
 		ourstatus->kind = TARGET_WAITKIND_EXITED;
-		ourstatus->value.integer = WEXITSTATUS (waitval);
+		ourstatus->value.integer = status.what; 
 	      }
 	    exit_signo = 0;
 	    break;
