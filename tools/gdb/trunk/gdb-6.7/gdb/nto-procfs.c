@@ -81,6 +81,8 @@ static int procfs_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
 static int procfs_stopped_by_watchpoint (void);
 
+static int procfs_notice_signals (ptid_t ptid);
+
 /* These two globals are only ever set in procfs_open(), but are
    referenced elsewhere.  'nto_procfs_node' is a flag used to say
    whether we are local, or we should get the current node descriptor
@@ -909,8 +911,7 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 
   run.flags |= _DEBUG_RUN_ARM;
 
-  sigemptyset (&run.trace);
-  notice_signals ();
+  procfs_notice_signals (inferior_ptid);
   signal_to_pass = target_signal_to_host (signo);
 
   if (signal_to_pass)
@@ -927,7 +928,7 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 			  signal_to_pass, 0, 0);
 	      run.flags |= _DEBUG_RUN_CLRFLT | _DEBUG_RUN_CLRSIG;
 	    }
-	  else			/* Let it kill the program without telling us.  */
+	  else		/* Let it kill the program without telling us.  */
 	    sigdelset (&run.trace, signal_to_pass);
 	}
     }
@@ -1321,7 +1322,7 @@ static void
 init_procfs_ops (void)
 {
   nto_trace (0) ("%s ()\n", __func__);
-  memset (procfs_ops, 0, sizeof (procfs_ops));
+  memset (&procfs_ops, 0, sizeof (procfs_ops));
   procfs_ops.to_shortname = "procfs";
   procfs_ops.to_longname = "QNX Neutrino procfs child process";
   procfs_ops.to_doc =
