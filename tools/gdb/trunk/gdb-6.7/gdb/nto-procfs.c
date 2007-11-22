@@ -81,7 +81,7 @@ static int procfs_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
 static int procfs_stopped_by_watchpoint (void);
 
-static int procfs_notice_signals (ptid_t ptid);
+static void procfs_notice_signals (ptid_t ptid);
 
 /* These two globals are only ever set in procfs_open(), but are
    referenced elsewhere.  'nto_procfs_node' is a flag used to say
