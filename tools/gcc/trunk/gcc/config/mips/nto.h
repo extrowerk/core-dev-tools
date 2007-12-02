@@ -108,7 +108,6 @@ do                                                \
    {                                              \
         NTO_TARGET_OS_CPP_BUILTINS();             \
         builtin_define_std ("__MIPS__");          \
-        builtin_define_std ("__LITTLEENDIAN__");  \
   }						  \
   while (0)
 
