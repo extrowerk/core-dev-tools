@@ -195,6 +195,9 @@ alarm (int sig)
 {
  // do nothing, this is windows.
 }
+
+#define sleep(x) Sleep(1000 * (x))
+
 #endif
 
 
