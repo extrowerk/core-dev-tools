@@ -67,8 +67,6 @@ static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
 
 static void procfs_fetch_registers (struct regcache *, int);
 
-static void notice_signals (void);
-
 static void init_procfs_ops (void);
 
 static ptid_t do_attach (ptid_t ptid);
@@ -941,6 +939,8 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
       perror ("run error!\n");
       return;
     }
+
+  printf_unfiltered ("*****\n");
 }
 
 static void
@@ -1095,12 +1095,13 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   /* Clear any pending SIGUSR1's but keep the behavior the same.  */
   signal (SIGUSR1, signal (SIGUSR1, SIG_IGN));
 
-  sigemptyset (&set);
-  sigaddset (&set, SIGUSR1);
-  sigprocmask (SIG_UNBLOCK, &set, NULL);
-
+  
   memset (&inherit, 0, sizeof (inherit));
 
+  sigemptyset (&inherit.sigdefault);
+  sigaddset (&inherit.sigdefault, SIGHUP);
+  sigaddset (&inherit.sigdefault, SIGPIPE);
+  sigaddset (&inherit.sigdefault, SIGINT);
   if (ND_NODE_CMP (nto_procfs_node, ND_LOCAL_NODE) != 0)
     {
       inherit.nd = nto_node ();
@@ -1112,12 +1113,16 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   pid = spawnp (argv[0], 3, fds, &inherit, argv,
 		ND_NODE_CMP (nto_procfs_node, ND_LOCAL_NODE) == 0 ? env : 0);
   xfree (args);
-
-  sigprocmask (SIG_BLOCK, &set, NULL);
-
+  
   if (pid == -1)
     error (_("Error spawning %s: %d (%s)"), argv[0], errno,
 	   safe_strerror (errno));
+  
+  sigemptyset (&set);
+  sigaddset (&set, SIGUSR1);
+  sigprocmask (SIG_UNBLOCK, &set, NULL);
+
+  sigprocmask (SIG_BLOCK, &set, NULL);
 
   if (fds[0] != STDIN_FILENO)
     close (fds[0]);
@@ -1262,22 +1267,6 @@ procfs_store_registers (struct regcache *regcache, int regno)
     }
 }
 
-static void
-notice_signals (void)
-{
-  int signo;
-
-  for (signo = 1; signo < NSIG; signo++)
-    {
-      if (signal_stop_state (target_signal_from_host (signo)) == 0
-	  && signal_print_state (target_signal_from_host (signo)) == 0
-	  && signal_pass_state (target_signal_from_host (signo)) == 1)
-	sigdelset (&run.trace, signo);
-      else
-	sigaddset (&run.trace, signo);
-    }
-}
-
 /* When the user changes the state of gdb's signal handling via the
    "handle" command, this function gets called to see if any change
    in the /proc interface is required.  It is also called internally
@@ -1286,8 +1275,18 @@ notice_signals (void)
 static void
 procfs_notice_signals (ptid_t ptid)
 {
+  int signo;
   sigemptyset (&run.trace);
-  notice_signals ();
+
+  for (signo = 1; signo < NSIG; signo++)
+    {
+      if (signal_stop_state (target_signal_from_host (signo)) == 0
+	  && signal_print_state (target_signal_from_host (signo)) == 0
+	  && signal_pass_state (target_signal_from_host (signo)) == 1)
+	sigaddset (&run.trace, signo);
+      else
+	sigdelset (&run.trace, signo);
+    }
 }
 
 static struct tidinfo *
