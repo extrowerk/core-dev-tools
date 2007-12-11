@@ -2723,8 +2723,10 @@ nto_find_new_threads ()
     for ( tip = (void *) &pidlist->name[(strlen(pidlist->name) + 1 + 3) & ~3]; tip->tid != 0; tip++ ) 
     {
       struct thread_info *new_thread;
-      pid_t tid = EXTRACT_UNSIGNED_INTEGER (&tip->tid, 2);
-      ptid_t ptid = ptid_build(cur_pid, 0, tid);
+      ptid_t ptid;      
+      
+      tip->tid =  EXTRACT_UNSIGNED_INTEGER (&tip->tid, 2);
+      ptid = ptid_build(cur_pid, 0, tip->tid);
 
       new_thread = find_thread_pid(ptid);
       if(!new_thread)
