@@ -332,6 +332,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tramp_frame_prepend_unwinder (gdbarch,
 				&arm_nto_sighandler_tramp_frame);
 
+  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
+
   init_armnto_ops ();
 }
 

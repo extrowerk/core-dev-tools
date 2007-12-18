@@ -658,6 +658,16 @@ typedef LONGEST (gdbarch_core_xfer_shared_libraries_ftype) (struct gdbarch *gdba
 extern LONGEST gdbarch_core_xfer_shared_libraries (struct gdbarch *gdbarch, gdb_byte *readbuf, ULONGEST offset, LONGEST len);
 extern void set_gdbarch_core_xfer_shared_libraries (struct gdbarch *gdbarch, gdbarch_core_xfer_shared_libraries_ftype *core_xfer_shared_libraries);
 
+/* Name rationale: 'target_signal' comes from 'enum target_signal',
+     'from_target' means from target as in inferior. */
+
+extern int gdbarch_target_signal_from_target_p (struct gdbarch *gdbarch);
+
+typedef enum target_signal (gdbarch_target_signal_from_target_ftype) (int signo);
+extern enum target_signal gdbarch_target_signal_from_target (struct gdbarch *gdbarch, int signo);
+extern void set_gdbarch_target_signal_from_target (struct gdbarch *gdbarch, gdbarch_target_signal_from_target_ftype *target_signal_from_target);
+
+
 /* If the elements of C++ vtables are in-place function descriptors rather
    than normal function pointers (which may point to code or a descriptor),
    set this to one. */
