@@ -470,6 +470,8 @@ mipsnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_regset_from_core_section (gdbarch, 
                                     mipsnto_regset_from_core_section);
 
+  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
+
   init_mipsnto_ops ();
 }
 

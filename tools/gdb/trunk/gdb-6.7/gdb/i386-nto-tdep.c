@@ -279,6 +279,8 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Our linker code is in libc.  */
   TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
+
+  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
 }
 
 void

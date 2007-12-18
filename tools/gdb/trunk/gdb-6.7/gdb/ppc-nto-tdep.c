@@ -849,6 +849,8 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_regset_from_core_section
     (gdbarch, ppcnto_regset_from_core_section);
 
+  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
+
   //frame_unwind_append_sniffer (gdbarch, ppc_nto_sigtramp_sniffer);
   init_ppcnto_ops ();
 }
