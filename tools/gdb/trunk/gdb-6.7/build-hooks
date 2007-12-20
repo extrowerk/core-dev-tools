@@ -58,6 +58,9 @@ function hook_preconfigure {
 		win32*)
 		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
 		  execdir=/c/qnx630/host/win32/x86/usr
+                  if [ $SYSNAME != "win32" ]; then
+                     INSTALL_ROOT=/c/qnx630/host
+                  fi
 		;;
  	  esac
 	fi  
@@ -96,6 +99,9 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tui"
 	configure_opts="${configure_opts} --disable-sim --without-sim"
+        if [ ${GDB_SUFFIX} ]; then
+           configure_opts="${configure_opts} --program-suffix=${GDB_SUFFIX}"
+        fi
 }
 
 function hook_premake {
