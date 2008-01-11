@@ -106,7 +106,9 @@ extern struct nto_target_ops current_nto_target;
 #define nto_is_nto_target (current_nto_target.is_nto_target)
 
 #define nto_trace(level) \
-  if ((nto_internal_debugging & 0xFF) <= level) {} else \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered ("nto: "); \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
     printf_unfiltered
 
 /* register supply helper macros*/
