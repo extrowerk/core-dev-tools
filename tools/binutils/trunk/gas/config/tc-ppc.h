@@ -76,6 +76,9 @@ extern char *ppc_target_format PARAMS ((void));
 /* We don't need to handle .word strangely.  */
 #define WORKING_DOT_WORD
 
+#define tc_init_after_args() ppc_init_after_args()
+extern void ppc_init_after_args(void);
+
 #define MAX_MEM_FOR_RS_ALIGN_CODE 4
 #define HANDLE_ALIGN(FRAGP)						\
   if ((FRAGP)->fr_type == rs_align_code) 				\

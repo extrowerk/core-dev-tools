@@ -97,6 +97,7 @@ static void ppc_byte PARAMS ((int));
 static int ppc_is_toc_sym PARAMS ((symbolS *sym));
 static void ppc_tc PARAMS ((int));
 static void ppc_machine PARAMS ((int));
+static void ppc_cpuop PARAMS ((int));
 #endif
 
 #ifdef OBJ_XCOFF
@@ -261,6 +262,7 @@ const pseudo_typeS md_pseudo_table[] =
 #if defined (OBJ_XCOFF) || defined (OBJ_ELF)
   { "tc",	ppc_tc,		0 },
   { "machine",  ppc_machine,    0 },
+  { "cpu",	ppc_cpuop,	0 },
 #endif
 
   { NULL,	NULL,		0 }
@@ -727,6 +729,7 @@ static flagword ppc_flags = 0;
 #endif
 
 static bfd_boolean msolaris = SOLARIS_P;
+static bfd_boolean mcpuop = TRUE;
 #endif
 
 #ifdef OBJ_XCOFF
@@ -825,6 +828,8 @@ const size_t md_longopts_size = sizeof (md_longopts);
 static int
 parse_cpu (const char *arg)
 {
+  unsigned long altivec_or_spe = ppc_cpu & (PPC_OPCODE_ALTIVEC | PPC_OPCODE_SPE);
+
   /* -mpwrx and -mpwr2 mean to assemble for the IBM POWER/2
      (RIOS2).  */
   if (strcmp (arg, "pwrx") == 0 || strcmp (arg, "pwr2") == 0)
@@ -864,9 +869,9 @@ parse_cpu (const char *arg)
   else if (strcmp (arg, "altivec") == 0)
     {
       if (ppc_cpu == 0)
-	ppc_cpu = PPC_OPCODE_PPC | PPC_OPCODE_CLASSIC | PPC_OPCODE_ALTIVEC;
-      else
-	ppc_cpu |= PPC_OPCODE_ALTIVEC;
+	ppc_cpu = PPC_OPCODE_PPC | PPC_OPCODE_CLASSIC;
+
+      altivec_or_spe |= PPC_OPCODE_ALTIVEC;
     }
   else if (strcmp (arg, "e500") == 0 || strcmp (arg, "e500x2") == 0)
     {
@@ -878,9 +883,9 @@ parse_cpu (const char *arg)
   else if (strcmp (arg, "spe") == 0)
     {
       if (ppc_cpu == 0)
-	ppc_cpu = PPC_OPCODE_PPC | PPC_OPCODE_SPE | PPC_OPCODE_EFS;
-      else
-	ppc_cpu |= PPC_OPCODE_SPE;
+	ppc_cpu = PPC_OPCODE_PPC | PPC_OPCODE_EFS;
+
+      altivec_or_spe |= PPC_OPCODE_SPE;
     }
   /* -mppc64 and -m620 mean to assemble for the 64-bit PowerPC
      620.  */
@@ -926,6 +931,8 @@ parse_cpu (const char *arg)
   else
     return 0;
 
+  /* Make sure the the Altivec and SPE bits are not lost.  */
+  ppc_cpu |= altivec_or_spe;
   return 1;
 }
 
@@ -1048,6 +1055,10 @@ md_parse_option (c, arg)
 	{
 	  msolaris = FALSE;
 	  ppc_comment_chars = ppc_eabi_comment_chars;
+	}
+      else if (strcmp (arg, "no-cpuop") == 0)
+	{
+	  mcpuop = FALSE;
 	}
 #endif
       else
@@ -4073,6 +4084,30 @@ ppc_machine (ignore)
   demand_empty_rest_of_line ();
 }
 
+static void
+ppc_cpuop (ignore)
+    int ignore ATTRIBUTE_UNUSED;
+{
+  char *cpu_string = input_line_pointer, c;
+  
+  while (!is_end_of_line[(unsigned char) *input_line_pointer])
+    input_line_pointer++;
+  c = *input_line_pointer;
+  *input_line_pointer = '\0';
+
+  if (mcpuop == TRUE)
+    { 
+    if (parse_cpu (cpu_string))
+      ppc_setup_opcodes ();
+    else
+      as_bad (_("invalid cpu `%s'"), cpu_string);
+    }
+  else 
+    as_bad (_("unknown pseudo-op: `.cpu'"));
+  demand_empty_rest_of_line ();
+    
+}
+
 /* See whether a symbol is in the TOC section.  */
 
 static int
@@ -6113,4 +6148,18 @@ tc_ppc_regname_to_dw2regnum (const char *regname)
       regnum = p[0] - '0' + 68;
     }
   return regnum;
+}
+
+/*  QNX - This function adds a defsym indicating that this version of the
+    assembler has the '.cpu' pseudo-op enabled.  */
+void
+ppc_init_after_args(void)
+{
+  if (mcpuop == TRUE)
+    { 
+      symbolS *sym;
+      sym = symbol_new ("PPC_CPUOP_ENABLED", absolute_section, 1, 
+                        &zero_address_frag); 
+      symbol_table_insert (sym);
+    }
 }
