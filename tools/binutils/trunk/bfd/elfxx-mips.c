@@ -7043,7 +7043,7 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
 
   if (QNX_COMPAT(dynobj)) {
    if (info->shared)
-         return FALSE;
+         return TRUE;
    /* In this case, it is a data reference; we must therefore allocate it
       in the bss/sbss, and generate a copy relocation for it.
     */
