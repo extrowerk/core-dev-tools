@@ -819,7 +819,18 @@ nto_thread_alive (ptid_t th)
   tran.pkt.select.tid = ptid_get_tid (th);
   tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid, 4);
   nto_send (sizeof (tran.pkt.select), 0);
-  return recv.pkt.hdr.cmd != DSrMsg_err;
+  if (recv.pkt.hdr.cmd == DSrMsg_okdata)
+    {
+      /* Data is tidinfo. 
+	Note: tid returned might not be the same as requested.
+	If it is not, then requested thread is dead.  */
+      struct tidinfo *ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
+      return (ptid_get_tid (th) == ptidinfo->tid) && ptidinfo->state;
+    }
+  
+  /* In case of a failure, return 0. This will happen when requested
+    thread is dead and there is no alive thread with the larger tid.  */
+  return 0;
 }
 
 /* Clean up connection to a remote debugger.  */
