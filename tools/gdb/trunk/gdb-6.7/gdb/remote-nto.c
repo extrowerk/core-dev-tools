@@ -82,8 +82,7 @@
 #define QNX_WRITE_MODE	0x301
 #define QNX_WRITE_PERMS	0x1ff
 
-/* the following define does a cast to const gdb_byte * type.
- */
+/* The following define does a cast to const gdb_byte * type.  */
 
 #define EXTRACT_SIGNED_INTEGER(ptr, len) extract_signed_integer ((const gdb_byte *)(ptr), len)
 #define EXTRACT_UNSIGNED_INTEGER(ptr, len) extract_unsigned_integer ((const gdb_byte *)(ptr), len)
@@ -178,7 +177,7 @@ static struct target_ops nto_ops;
 static void
 alarm (int sig)
 {
- // do nothing, this is windows.
+  /* Do nothing, this is windows.  */
 }
 
 #define sleep(x) Sleep(1000 * (x))
@@ -252,7 +251,7 @@ static int nto_intholder;
 #define HOST_QNX_PROTOVER_MINOR	3
 
 #ifdef __MINGW32__
-/* name collision with a symbol declared in Winsock2.h */
+/* Name collision with a symbol declared in Winsock2.h.  */
 #define recv recvb
 #endif
 
@@ -284,8 +283,8 @@ static unsigned char ch_text_packet[] =
 #define SEND_CH_DEBUG    serial_write(current_session->desc,ch_debug_packet,sizeof(ch_debug_packet))
 #define SEND_CH_TEXT     serial_write(current_session->desc,ch_text_packet,sizeof(ch_text_packet))
 
-/* pdebug returns errno values on Neutrino that do not correspond to right
-   errno values on host side. */
+/* Pdebug returns errno values on Neutrino that do not correspond to right
+   errno values on host side.  */
 
 #define NTO_ENAMETOOLONG        78
 #define NTO_ELIBACC             83
@@ -906,7 +905,7 @@ nto_start_remote (char *dummy)
   tran.pkt.protover.major = HOST_QNX_PROTOVER_MAJOR;
   tran.pkt.protover.minor = HOST_QNX_PROTOVER_MINOR;
   nto_send (sizeof (tran.pkt.protover), 0);
-  if ((recv.pkt.hdr.cmd == DSrMsg_err) && (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4) == EINVAL))	/* old pdebug protocol version 0.0 */
+  if ((recv.pkt.hdr.cmd == DSrMsg_err) && (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4) == EINVAL))	/* Old pdebug protocol version 0.0.  */
     {
       current_session->target_proto_major = 0;
       current_session->target_proto_minor = 0;
@@ -1053,8 +1052,8 @@ nto_is_remote_target (bfd *abfd)
     } 
   else
     {
-      /* one day, we will be marking our binaries...
-       until then, */
+      /* One day, we will be marking our binaries...
+       until then...  */
       osabi = GDB_OSABI_QNXNTO;
     }
 
@@ -1196,7 +1195,7 @@ nto_attach (char *args, int from_tty)
   current_session->cpuid =
     EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.un.pidload.cpuid, 4);
 #ifdef QNX_SET_PROCESSOR_TYPE
-  QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips. */
+  QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips.  */
 #endif
   inferior_ptid = ptid;
   target_has_execution = 1;
@@ -1279,7 +1278,7 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
      the HandleSig comes back with an error, then revert to protover 0.0
      behaviour, regardless of actual protover.
      The handlesig msg sends the signal to pass, and a char array
-     'signals', which is the list of signals to notice. */
+     'signals', which is the list of signals to notice.  */
   nto_send_init (DStMsg_handlesig, 0, SET_CHANNEL_DEBUG);
   tran.pkt.handlesig.sig_to_pass = target_signal_to_nto (sig);
   tran.pkt.handlesig.sig_to_pass =
@@ -1416,7 +1415,7 @@ nto_interrupt (int signo)
 
 /* Wait until the remote machine stops, then return,
    storing status in STATUS just as `wait' would.
-   Returns "pid". */
+   Returns "pid".  */
 static ptid_t
 nto_wait (ptid_t ptid, struct target_waitstatus *status)
 {
@@ -1914,7 +1913,7 @@ nto_kill_1 (char *dummy)
   if (!ptid_equal (inferior_ptid, null_ptid))
     {
       nto_send_init (DStMsg_kill, DSMSG_KILL_PID, SET_CHANNEL_DEBUG);
-      tran.pkt.kill.signo = 9;	/* SIGKILL */
+      tran.pkt.kill.signo = 9;	/* SIGKILL  */
       tran.pkt.kill.signo = EXTRACT_SIGNED_INTEGER (&tran.pkt.kill.signo, 4);
       nto_send (sizeof (tran.pkt.kill), 0);
     }
@@ -1935,7 +1934,7 @@ nto_kill ()
   get_last_target_status (&ptid, &wstatus);
   if (wstatus.value.sig == TARGET_SIGNAL_SEGV) 
     {
-      /* No need to do anything else but do continue once again */
+      /* No need to do anything else but do continue once again.  */
       execute_command (cmd, 0); 
       return;
     }
@@ -1946,7 +1945,7 @@ nto_kill ()
       ((catch_errors_ftype *) nto_kill_1, (char *) 0, "", RETURN_MASK_ERROR);
 
   /* If inferior is sitting in a trap, we need to continue so the inferior
-   * can process the kill signal */
+     can process the kill signal.  */
   while (steps--)
     {
       get_last_target_status (&ptid, &wstatus);
@@ -2200,7 +2199,7 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
       add_thread (inferior_ptid);
     }
 
-  /* NYI: add the symbol info somewhere? */
+  /* NYI: add the symbol info somewhere?  */
 #ifdef SOLIB_CREATE_INFERIOR_HOOK
   if (exec_bfd)
     SOLIB_CREATE_INFERIOR_HOOK (pid);
@@ -2208,8 +2207,8 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
   attach_flag = 0;
   stop_soon = 0;
 
-  /* re-insert breakpoints; by this point we should have successfully
-   * created inferior process */
+  /* Re-insert breakpoints; by this point we should have successfully
+   * created inferior process.  */
   insert_breakpoints ();
   clear_proceed_status ();
   //proceed (-1, TARGET_SIGNAL_DEFAULT, 0);
@@ -2228,7 +2227,8 @@ nto_insert_breakpoint (CORE_ADDR addr, char *contents_cache)
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
 
-/* To be called from breakpoint.c through current_target.to_insert_breakpoint */
+/* To be called from breakpoint.c through 
+  current_target.to_insert_breakpoint.  */
 
 static int 
 nto_to_insert_breakpoint (struct bp_target_info *bp_tg_inf)
@@ -2372,7 +2372,7 @@ upload_command (char *args, int fromtty)
       goto exit;
     }
 
-  /* Everything worked so set remote exec file. */
+  /* Everything worked so set remote exec file.  */
   if (upload_sets_exec)
     {
       xfree (current_session->remote_exe);
@@ -2605,7 +2605,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_thread_alive = nto_thread_alive;
   nto_ops.to_find_new_threads = nto_find_new_threads;
   nto_ops.to_stop = 0;
-  /* nto_ops.to_query = nto_query; */
+  /* nto_ops.to_query = nto_query;  */
   nto_ops.to_stratum = process_stratum;
   nto_ops.to_has_all_memory = 1;
   nto_ops.to_has_memory = 1;
@@ -2645,7 +2645,7 @@ update_threadnames ()
       if (recv.pkt.hdr.cmd == DSrMsg_err)
         {
 	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4));
-	  if (errno != EINVAL) /* not old pdebug, but something else */
+	  if (errno != EINVAL) /* Not old pdebug, but something else.  */
 	    {
 	      warning ("Warning: could not retrieve tidnames (errno=%d)\n", errno);
 	    }
