@@ -1,0 +1,60 @@
+load_lib libqnx.exp
+
+set timeout 300
+
+#Test: Sanity
+#Purpose: sanity check to see if gdb can connect to a remote target and run an app on it.
+#Date: Nov 2,2007
+#Author: Wade Hawkins
+
+#check if we are testing with a remote target.  These tests require one.
+if [is_remote target] then {
+  
+   set testfile sanity
+   set srcfile ${srcdir}/${subdir}/${testfile}.c
+   set binfile ${objdir}/${subdir}/${testfile}
+
+   # clean up any old gdbs running
+   gdb_exit
+
+   # compile the program into a binary
+   if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags="-w"}] != "" } {
+       gdb_suppress_entire_file "Testcase compile failed, so all tests in this file will automatically fail."
+       }
+
+	if [get_compiler_info ${binfile}] {
+	    return -1
+	}
+	
+	# start a fresh gdb then connect and upload our sanity test
+	# finish it up by running our sanity and checking its output with the gdb_test func
+	gdb_start
+	
+	#these vars are found in the target baseboard file.
+	if [ gdb_target_qnx $target_address $debug_port ] then {
+	    perror "couldn't connect to target"
+	    fail "Targeting qnx debug Sanity."
+	    gdb_exit
+	    exit 1
+	}
+	
+	if { [ gdb_upload_binary ${binfile} ${testfile} ] != 0 } then {
+	   perror "error uploading test file"
+	   gdb_exit
+	   exit 1
+	 }
+	  
+	send_gdb "run /tmp/${testfile}\r"
+		
+	send_gdb "continue\r"
+	gdb_expect {
+	  -re "hello world*" { pass "Targeting qnx debug Sanity." }
+	  timeout { fail "Targeting qnx debug Sanity." }
+	}	
+} else {
+   untested "Targeting qnx debug Sanity."
+}
+
+# TODO:  add function to clean target of binary
+       
+gdb_exit
