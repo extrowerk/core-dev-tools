@@ -109,9 +109,13 @@ static int nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
 			    int should_write, struct mem_attrib *attrib,
 			    struct target_ops *target);
 
+void nto_outgoing_text (char *buf, int nbytes);
+
 static int nto_incoming_text (int len);
 
-void nto_outgoing_text (char *buf, int nbytes);
+static int nto_send_env (const char *env);
+
+static int nto_send_arg (const char *arg);
 
 void nto_fetch_registers (struct regcache *regcache, int regno);
 
@@ -656,8 +660,77 @@ nto_incoming_text (int len)
     }
 }
 
+
+/* Send env. string. Send multipart if env string too long and
+   our protocol version allows multipart env string. 
+
+   Returns > 0 if successful, 0 on error.  */
+
+static int
+nto_send_env (const char *env)
+{
+  int len; /* Length including zero terminating char.  */
+  int totlen = 0;
+  gdb_assert (env != NULL);
+  len = strlen (env) + 1;
+  if (current_session->target_proto_minor >= 2)
+    {
+	while (len > DS_DATA_MAX_SIZE)
+	  {
+	    nto_send_init (DStMsg_env, DSMSG_ENV_SETENV_MORE,
+		      SET_CHANNEL_DEBUG);
+	    memcpy (tran.pkt.env.data, env + totlen,
+		      DS_DATA_MAX_SIZE);
+	    if (!nto_send (offsetof (DStMsg_env_t, data) +
+		      DS_DATA_MAX_SIZE, 1))
+	      {
+		/* An error occured.  */
+		 return 0;
+	      }
+	    len -= DS_DATA_MAX_SIZE;
+	    totlen += DS_DATA_MAX_SIZE;
+	  }
+    }
+  else if (len > DS_DATA_MAX_SIZE)
+    {
+      /* Not supported by this protocol version.  */
+      printf_unfiltered
+	("** Skipping env var \"%.40s .....\" <cont>\n", env);
+      printf_unfiltered
+	("** Protovers under 0.2 do not handle env vars longer than %d\n", 
+	  DS_DATA_MAX_SIZE - 1);
+      return 0;
+    }
+  nto_send_init (DStMsg_env, DSMSG_ENV_SETENV, SET_CHANNEL_DEBUG);
+  memcpy (tran.pkt.env.data, env + totlen, len);
+  return nto_send (offsetof (DStMsg_env_t, data) + len, 1);
+}
+
+
+/* Send an argument to inferior. Unfortunately, DSMSG_ENV_ADDARG
+   does not support multipart strings limiting the length
+   of single argument to DS_DATA_MAX_SIZE.  */
+
+static int 
+nto_send_arg (const char *arg)
+{
+  int len; 
+  gdb_assert (arg != NULL);
+  
+  len = strlen(arg) + 1;
+  if (len > DS_DATA_MAX_SIZE)
+    {
+      printf_unfiltered ("Argument too long: %.40s...\n", arg);
+      return 0;
+    }
+  nto_send_init (DStMsg_env, DSMSG_ENV_ADDARG, SET_CHANNEL_DEBUG);
+  memcpy (tran.pkt.env.data, arg, len);
+  return nto_send (offsetof (DStMsg_env_t, data) + len, 1);
+}
+
 /* Send the command in tran.buf to the remote machine,
    and read the reply into recv.buf.  */
+
 static unsigned
 nto_send (unsigned len, int report_errors)
 {
@@ -2016,6 +2089,7 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
   const char *in, *out, *err;
   int len = 0;
   int totlen = 0;
+  int errors = 0;
 
   remove_breakpoints ();  
 
@@ -2042,39 +2116,10 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
     {
       for (envc = 0; *env; env++, envc++)
 	{
-	  len = strlen (*env);
-	  totlen = 0;
-	  if (current_session->target_proto_minor >= 2)
-	    {
-	      if (len > DS_DATA_MAX_SIZE)
-		{
-		  while (len > DS_DATA_MAX_SIZE)
-		    {
-		      nto_send_init (DStMsg_env, DSMSG_ENV_SETENV_MORE,
-				     SET_CHANNEL_DEBUG);
-		      memcpy (tran.pkt.env.data, *env + totlen,
-			      DS_DATA_MAX_SIZE);
-		      nto_send (offsetof (DStMsg_env_t, data) +
-				DS_DATA_MAX_SIZE, 1);
-		      len -= DS_DATA_MAX_SIZE;
-		      totlen += DS_DATA_MAX_SIZE;
-		    }
-		}
-	    }
-	  else if (len > DS_DATA_MAX_SIZE)
-	    {
-	      printf_unfiltered
-		("** Skipping env var \"%.40s .....\" <cont>\n", *env);
-	      printf_unfiltered
-		("** Protovers under 0.2 do not handle env vars longer than %d\n",
-		 DS_DATA_MAX_SIZE);
-	      continue;
-	    }
-	  nto_send_init (DStMsg_env, DSMSG_ENV_SETENV, SET_CHANNEL_DEBUG);
-	  strcpy (tran.pkt.env.data, *env + totlen);
-	  nto_send (offsetof (DStMsg_env_t, data) +
-		    strlen (tran.pkt.env.data) + 1, 1);
+	  errors += !nto_send_env (*env);
 	}
+      if (errors)
+	warning ("Error(s) occured while sending environment variables.\n");
     }
 
   if (current_session->remote_cwd != NULL)
@@ -2123,44 +2168,57 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
   argc = 0;
   if (exec_file != NULL)
     {
-      nto_send_init (DStMsg_env, DSMSG_ENV_ADDARG, SET_CHANNEL_DEBUG);
-      strcpy (tran.pkt.env.data, exec_file);
+      errors = !nto_send_arg (exec_file);
       /* Send it twice - first as cmd, second as argv[0]. */
-      nto_send (offsetof (DStMsg_env_t, data) + strlen (tran.pkt.env.data) +
-		1, 1);
-      nto_send_init (DStMsg_env, DSMSG_ENV_ADDARG, SET_CHANNEL_DEBUG);
-      strcpy (tran.pkt.env.data, exec_file);
-      nto_send (offsetof (DStMsg_env_t, data) + strlen (tran.pkt.env.data) +
-		1, 1);
+      if (!errors)
+	errors = !nto_send_arg (exec_file);
+
+      if (errors) 
+	{
+	  error ("Failed to send executable file name.\n");
+	  goto freeargs;
+	}
     }
   else if (*start_argv == NULL)
     {
       error ("No executable specified.");
-      freeargv (pargv);
-      free (start_argv);
-      return;
+      errors = 1;
+      goto freeargs;
     }
   else
     {
+      /* Send arguments (starting from index 1, argv[0] has already been
+         sent above. */
       if (symfile_objfile != NULL)
 	exec_file_attach (symfile_objfile->name, 0);
 
       exec_file = *start_argv;
-      nto_send_init (DStMsg_env, DSMSG_ENV_ADDARG, SET_CHANNEL_DEBUG);
-      strcpy (tran.pkt.env.data, *start_argv);
-      nto_send (offsetof (DStMsg_env_t, data) + strlen (tran.pkt.env.data) +
-		1, 1);
+
+      errors = !nto_send_arg (*start_argv);
+
+      if (errors)
+	{
+	  error ("Failed to send argument.\n");
+	  goto freeargs;
+	}
     }
 
+  errors = 0;
   for (argv = start_argv; *argv && **argv; argv++, argc++)
     {
-      nto_send_init (DStMsg_env, DSMSG_ENV_ADDARG, SET_CHANNEL_DEBUG);
-      strcpy (tran.pkt.env.data, *argv);
-      nto_send (offsetof (DStMsg_env_t, data) + strlen (tran.pkt.env.data) +
-		1, 1);
+      errors |= !nto_send_arg (*argv);
     }
+
+  if (errors) 
+    {
+      error ("Error(s) encountered while sending arguments.\n");
+    }
+
+freeargs:
   freeargv (pargv);
   free (start_argv);
+  if (errors)
+    return;
 
   /* NYI: msg too big for buffer.  */
   if (current_session->inherit_env)
