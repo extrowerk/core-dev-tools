@@ -429,15 +429,15 @@ nto_initialize_signals (void)
 
   /* By default we don't want to stop on these two, but we do want to pass.  */
 #if defined(SIGSELECT)
-  signal_stop_update (SIGSELECT, 0);
-  signal_print_update (SIGSELECT, 0);
-  signal_pass_update (SIGSELECT, 1);
+  signal_stop_update (target_signal_from_nto (SIGSELECT), 0);
+  signal_print_update (target_signal_from_nto (SIGSELECT), 0);
+  signal_pass_update (target_signal_from_nto (SIGSELECT), 1);
 #endif
 
 #if defined(SIGPHOTON)
-  signal_stop_update (SIGPHOTON, 0);
-  signal_print_update (SIGPHOTON, 0);
-  signal_pass_update (SIGPHOTON, 1);
+  signal_stop_update (target_signal_from_nto (SIGPHOTON), 0);
+  signal_print_update (target_signal_from_nto (SIGPHOTON), 0);
+  signal_pass_update (target_signal_from_nto (SIGPHOTON), 1);
 #endif
 }
 
