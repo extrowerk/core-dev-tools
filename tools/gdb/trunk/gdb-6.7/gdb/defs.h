@@ -1263,4 +1263,9 @@ void dummy_obstack_deallocate (void *object, void *data);
 #endif
 #endif
 
+/* Lightweight path manipulation. Eliminates '..' and '.' elements
+  (if possible).  */
+
+extern const char *normalize_path (const char *path);
+
 #endif /* #ifndef DEFS_H */

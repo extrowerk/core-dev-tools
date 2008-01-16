@@ -541,25 +541,41 @@ void
 start_subfile (char *name, char *dirname)
 {
   struct subfile *subfile;
+  int is_name_abs;
+  char *abs_name = name;
 
   /* See if this subfile is already known as a subfile of the current
      main source file.  */
 
+  is_name_abs = IS_ABSOLUTE_PATH (name);
+  if (!is_name_abs
+      && dirname != NULL)
+    {
+      abs_name = concat (dirname, SLASH_STRING, name, NULL);
+      make_cleanup (xfree, abs_name);
+    }
+
   for (subfile = subfiles; subfile; subfile = subfile->next)
     {
-      char *subfile_name;
+      char *subfile_name, *aname;
+      int is_subfile_name_abs = IS_ABSOLUTE_PATH (subfile->name);
 
       /* If NAME is an absolute path, and this subfile is not, then
 	 attempt to create an absolute path to compare.  */
-      if (IS_ABSOLUTE_PATH (name)
-	  && !IS_ABSOLUTE_PATH (subfile->name)
+      if (is_name_abs
+	  && !is_subfile_name_abs
 	  && subfile->dirname != NULL)
 	subfile_name = concat (subfile->dirname, SLASH_STRING,
 			       subfile->name, NULL);
       else
 	subfile_name = subfile->name;
 
-      if (FILENAME_CMP (subfile_name, name) == 0)
+      if (!is_name_abs && is_subfile_name_abs)
+	aname = abs_name;
+      else
+	aname = name;
+
+      if (FILENAME_CMP (subfile_name, aname) == 0)
 	{
 	  current_subfile = subfile;
 	  if (subfile_name != subfile->name)
