@@ -25,7 +25,6 @@
 #include "gdb_string.h"
 #include "event-top.h"
 #include "exceptions.h"
-#include "filenames.h"
 
 #ifdef TUI
 #include "tui/tui.h"		/* For tui_get_command_dimension.   */
@@ -62,8 +61,6 @@
 #include "gdb_curses.h"
 
 #include "readline/readline.h"
-
-#include "source.h"
 
 #if !HAVE_DECL_MALLOC
 extern PTR malloc ();		/* OK: PTR */
@@ -2870,111 +2867,6 @@ string_to_core_addr (const char *my_string)
   return addr;
 }
 
-
-/* Normalize_path does lightweight path clean-up. It removes './' 
- elements and resolves '../' elements by removing previous entry if any.
- If FILENAME starts with '../', then '../' does not get removed.  
-
- Examples:
- ../main.c   -->    ../main.c
- ./main.c    -->    main.c
- /main.c     -->    /main.c
- /foo/./bar/././main.c  -->   /foo/bar/main.c
- C:/Temp/Debug/../main.c  -->  C:/Temp/main.c
-  */
-
-const char *
-normalize_path (const char *filename)
-{
-  char *p;
-  char *pi;
-  int len;
-# if defined (PATH_MAX)
-  char buf[PATH_MAX];
-#  define USE_REALPATH
-# elif defined (MAXPATHLEN)
-  char buf[MAXPATHLEN];
-# endif
-  char *retval;
-
-  gdb_assert (filename != NULL);
-  printf_unfiltered ("normalize_path: %s\n", filename);
-
-  strncpy (buf, filename, sizeof (buf));
-  buf[sizeof (buf) - 1] = '\0';
-
-  p = buf;
-
-  while ((pi = strstr (p, "./")))
-    {
-      if (pi == p) /* FILENAME starts with './'. Remove it.  */
-	  p += 2;
-      else
-	break;
-    }
-
-  if (p != buf)
-      strncpy (buf, filename + (p - buf), sizeof (buf));
- 
-  len = strlen (buf);
-
-  /* Remove all double '//' except the leading occurence.  */
-  p = buf + 1;
-  while (p < buf + len)
-    {
-      if (p[0] == '/' && p[1] == '/')
-	{
-	  memmove (p, p+1, buf + len - p);
-	  len--;
-	}
-      p++;
-    }
-
-  /* Replace all other occurences of '/./' with '/'.  */
-  p = buf;
-  while ((pi = strstr (p, "/./")))
-    {
-      p = pi + 3;
-      memmove (pi, p, buf + len  - p);
-      len -= 3;
-      memset (buf + len, 0, 3);
-    }
-
-  /* Remove trailing '/.'.  */
-  while (buf[len-2] == '/' && buf[len-1] == '.')
-    {
-      len -= 2;
-      buf[len] = '\0';
-      buf[len+1] = '\0';
-    }
-
-  /* Deal with '../' sequences.  */
-  p = buf + 1; /* In an odd case that path begins with '/../' we don't want
-		to know.  */
-  while ((pi = strstr (p, "/..")))
-    {
-      p = pi;
-      /* Reverse find '/'.  */
-      pi = p - 1;
-      while (pi > buf && *pi != '/')
-	pi--;
-
-      if (pi != p)
-	{
-	  p += 3;
-	  memmove (pi, p, buf + len - p);
-	  len -= (p - pi);
-	  memset (buf + len, 0, p - pi);
-	}
-      else
-	p++;
-    }
-
-  retval = xstrdup (buf);
-  make_cleanup (xfree, retval);
-  return retval;
-}
-
 char *
 gdb_realpath (const char *filename)
 {
@@ -2993,7 +2885,8 @@ gdb_realpath (const char *filename)
 # endif
 # if defined (USE_REALPATH)
     const char *rp = realpath (filename, buf);
-    rp = filename;
+    if (rp == NULL)
+      rp = filename;
     return xstrdup (rp);
 # endif
   }
@@ -3006,7 +2899,7 @@ gdb_realpath (const char *filename)
   {
     char *rp = canonicalize_file_name (filename);
     if (rp == NULL)
-      return xstrdup (filename); 
+      return xstrdup (filename);
     else
       return rp;
   }
@@ -3037,12 +2930,12 @@ gdb_realpath (const char *filename)
 	/* PATH_MAX is bounded.  */
 	char *buf = alloca (path_max);
 	char *rp = realpath (filename, buf);
-	return xstrdup (rp);
+	return xstrdup (rp ? rp : filename);
       }
   }
 #endif
+
   /* This system is a lost cause, just dup the buffer.  */
-  //return xstrdup (filename);
   return xstrdup (filename);
 }
 
@@ -3327,59 +3220,4 @@ ldirname (const char *filename)
 
   dirname[base - filename] = '\0';
   return dirname;
-}
-
-int
-is_absolute_path (const char *path)
-{
-  char *rwpath = rewrite_source_path (path);
-
-  if (rwpath == NULL)
-    rwpath = (char *) path;
-  else
-    make_cleanup (xfree, rwpath);
-
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-  return IS_ABSOLUTE_PATH_DOS (rwpath);
-#else
-  return IS_ABSOLUTE_PATH_POSIX (rwpath);
-#endif
-
-}
-
-int
-qnx_filename_cmp (const char *s1, const char *s2)
-{
-  int c1, c2;
-
-  if (0 == filename_cmp (s1, s2))
-    return 0;
-
-  for (;;)
-    {
-
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-      int c1 = tolower (*s1);
-      int c2 = tolower (*s2);
-#else
-      int c1 = *s1;
-      int c2 = *s2;
-#endif
-
-      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
-
-      if (c1 == '\\')
-        c1 = '/';
-      if (c2 == '\\')
-        c2 = '/';
-
-      if (c1 != c2)
-        return (c1 - c2);
-
-      if (c1 == '\0')
-        return 0;
-
-      s1++;
-      s2++;
-    }
 }
