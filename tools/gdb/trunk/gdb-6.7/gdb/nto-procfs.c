@@ -232,11 +232,28 @@ static int
 procfs_thread_alive (ptid_t ptid)
 {
   pid_t tid;
+  pid_t pid;
+  procfs_status status;
+  int err;
 
   tid = ptid_get_tid (ptid);
-  if (devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0) == EOK)
-    return 1;
-  return 0;
+  pid = ptid_get_pid (ptid);
+
+  if (kill (pid, 0) == -1)
+    return 0;
+
+  status.tid = tid;
+  if ((err = devctl (ctl_fd, DCMD_PROC_TIDSTATUS, 
+	      &status, sizeof (status), 0)) != EOK)
+    return 0;
+
+  /* Thread is alive or dead but not yet joined,
+  or dead and there is an alive (or dead unjoined) thread with
+  higher tid. We return tidinfo.  
+
+  Client should check if the tid is the same as 
+  requested; if not, requested tid is dead.  */
+  return (status.tid == tid) && (status.state != STATE_DEAD);
 }
 
 void
@@ -939,8 +956,6 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
       perror ("run error!\n");
       return;
     }
-
-  printf_unfiltered ("*****\n");
 }
 
 static void
@@ -1097,7 +1112,7 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
 
   
   memset (&inherit, 0, sizeof (inherit));
-
+  inherit.flags |= SPAWN_SETSIGDEF;
   sigemptyset (&inherit.sigdefault);
   sigaddset (&inherit.sigdefault, SIGHUP);
   sigaddset (&inherit.sigdefault, SIGPIPE);
@@ -1278,14 +1293,14 @@ procfs_notice_signals (ptid_t ptid)
   int signo;
   sigemptyset (&run.trace);
 
-  for (signo = 1; signo < NSIG; signo++)
+  for (signo = 0; signo < NSIG; signo++)
     {
       if (signal_stop_state (target_signal_from_host (signo)) == 0
 	  && signal_print_state (target_signal_from_host (signo)) == 0
 	  && signal_pass_state (target_signal_from_host (signo)) == 1)
-	sigaddset (&run.trace, signo);
-      else
 	sigdelset (&run.trace, signo);
+      else
+	sigaddset (&run.trace, signo);
     }
 }
 
