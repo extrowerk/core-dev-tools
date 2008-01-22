@@ -33,8 +33,10 @@
 #include "solib-svr4.h"
 #include "gdbcore.h"
 #include "objfiles.h"
+#include "filenames.h"
 
 #include "gdbcmd.h"
+#include "safe-ctype.h"
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
@@ -583,6 +585,178 @@ target_signal_to_nto(enum target_signal sig)
     }
 #endif /* __QNXNTO__ */
   return target_signal_to_host(sig);
+}
+
+
+/* Utility functions. Handle paths for qnx.  */
+int
+qnx_is_absolute_path (const char *path)
+{
+ /* char *rwpath = rewrite_source_path (path);
+
+  if (rwpath == NULL)
+    rwpath = (char *) path;
+  else
+    make_cleanup (xfree, rwpath);
+*/
+#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+//  return IS_ABSOLUTE_PATH_DOS (rwpath);
+#else
+//  return IS_ABSOLUTE_PATH_POSIX (rwpath);
+#endif
+  return IS_ABSOLUTE_PATH (path);
+}
+
+int
+qnx_filename_cmp (const char *s1, const char *s2)
+{
+  int c1, c2;
+
+  if (0 == filename_cmp (s1, s2))
+    return 0;
+
+  for (;;)
+    {
+
+#ifdef HAVE_DOS_BASED_FILE_SYSTEM
+      int c1 = TOLOWER (*s1);
+      int c2 = TOLOWER (*s2);
+#else
+      int c1 = *s1;
+      int c2 = *s2;
+#endif
+
+      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
+
+      if (c1 == '\\')
+        c1 = '/';
+      if (c2 == '\\')
+        c2 = '/';
+
+      if (c1 != c2)
+        return (c1 - c2);
+
+      if (c1 == '\0')
+        return 0;
+
+      s1++;
+      s2++;
+    }
+}
+
+
+/* Normalize_path does lightweight path clean-up. It removes './' 
+ elements and resolves '../' elements by removing previous entry if any.
+ If FILENAME starts with '../', then '../' does not get removed.  
+
+ Examples:
+ ../main.c   -->    ../main.c
+ ./main.c    -->    main.c
+ /main.c     -->    /main.c
+ /foo/./bar/././main.c  -->   /foo/bar/main.c
+ C:/Temp/Debug/../main.c  -->  C:/Temp/main.c
+  */
+
+const char *
+normalize_path (const char *filename)
+{
+  char *p;
+  char *pi;
+  int len;
+# if defined (PATH_MAX)
+  char buf[PATH_MAX];
+#  define USE_REALPATH
+# elif defined (MAXPATHLEN)
+  char buf[MAXPATHLEN];
+# endif
+  char *retval;
+
+  gdb_assert (filename != NULL);
+  printf_unfiltered ("normalize_path: %s\n", filename);
+
+  strncpy (buf, filename, sizeof (buf));
+  buf[sizeof (buf) - 1] = '\0';
+
+  p = buf;
+
+  while ((pi = strstr (p, "./")))
+    {
+      if (pi == p) /* FILENAME starts with './'. Remove it.  */
+	  p += 2;
+      else
+	break;
+    }
+
+  if (p != buf)
+      strncpy (buf, filename + (p - buf), sizeof (buf));
+ 
+  len = strlen (buf);
+
+  /* Remove all double '//' except the leading occurence.  */
+  p = buf + 1;
+  while (p < buf + len)
+    {
+      if (p[0] == '/' && p[1] == '/')
+	{
+	  memmove (p, p+1, buf + len - p);
+	  len--;
+	}
+      p++;
+    }
+
+  /* Replace all other occurences of '/./' with '/'.  */
+  p = buf;
+  while ((pi = strstr (p, "/./")))
+    {
+      p = pi + 3;
+      memmove (pi, p, buf + len  - p);
+      len -= 3;
+      memset (buf + len, 0, 3);
+    }
+
+  /* Remove trailing '/.'.  */
+  while (buf[len-2] == '/' && buf[len-1] == '.')
+    {
+      len -= 2;
+      buf[len] = '\0';
+      buf[len+1] = '\0';
+    }
+
+  /* Deal with '../' sequences.  */
+  p = buf + 1; /* In an odd case that path begins with '/../' we don't want
+		to know.  */
+  while ((pi = strstr (p, "/..")))
+    {
+      p = pi;
+      /* Reverse find '/'.  */
+      pi = p - 1;
+      while (pi > buf && *pi != '/')
+	pi--;
+
+      if (pi != p)
+	{
+	  p += 3;
+	  memmove (pi, p, buf + len - p);
+	  len -= (p - pi);
+	  memset (buf + len, 0, p - pi);
+	}
+      else
+	p++;
+    }
+
+  retval = xstrdup (buf);
+  make_cleanup (xfree, retval);
+  return retval;
+}
+
+
+
+/* NOTE: this function basically overrides libiberty's implementation.  */
+int
+filename_cmp (const char *s1, const char *s2)
+{
+  printf_unfiltered ("qnx_filename_cmp\n");
+  return qnx_filename_cmp (s1, s2);
 }
 
 void

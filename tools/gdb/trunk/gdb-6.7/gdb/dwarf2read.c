@@ -82,16 +82,14 @@ _COMP_UNIT_HEADER;
 #define _ACTUAL_COMP_UNIT_HEADER_SIZE 11
 #endif
 
-#define POSIXFY_PATH(s)		\
-  if (s)			\
-    {				\
-      char *p = (s);	\
-      for (; *p; p++)		\
-	{			\
-	  if (*p == '\\')	\
-	    *p = '/';		\
-	}			\
-    }
+#ifdef __QNXNTO__
+extern const char *normalize_path (const char *path);
+#else /* not __QNXNTO__ */
+static const char *normalize_path (const char *path)
+{
+  return path;
+}
+#endif /* not __QNXNTO__ */
 
 /* .debug_pubnames header
    Because of alignment constraints, this structure has padding and cannot
@@ -2822,14 +2820,14 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
     {
       char *p;
       name = DW_STRING (attr);
-      POSIXFY_PATH (name);
+      /* TODO: QNX: deal with dir. delimiters.  */
     }
 
   attr = dwarf2_attr (die, DW_AT_comp_dir, cu);
   if (attr)
     {
       comp_dir = DW_STRING (attr);
-      POSIXFY_PATH (comp_dir);
+      /* TODO: QNX: deal with dir. delimiters.  */
     }
   else if (name != NULL && IS_ABSOLUTE_PATH (name))
     {
@@ -5576,14 +5574,14 @@ read_partial_die (struct partial_die_info *part_die,
 	  if (part_die->name == NULL)
 	    {
 	      part_die->name = DW_STRING (&attr);
-	      POSIXFY_PATH (part_die->name);
+	      /* TODO: QNX: deal with dir. delimiters.  */
 	    }
 	  break;
 	case DW_AT_comp_dir:
 	  if (part_die->dirname == NULL) 
 	    {
 	      part_die->dirname = DW_STRING (&attr);
-	      POSIXFY_PATH (part_die->dirname);
+	      /* TODO: QNX: deal with dir. delimiters.  */
 	    }
 	  break;
 	case DW_AT_MIPS_linkage_name:
