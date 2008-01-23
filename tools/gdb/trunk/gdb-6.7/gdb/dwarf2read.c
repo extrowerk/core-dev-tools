@@ -82,14 +82,14 @@ _COMP_UNIT_HEADER;
 #define _ACTUAL_COMP_UNIT_HEADER_SIZE 11
 #endif
 
-#ifdef __QNXNTO__
+#ifdef __QNXTARGET__
 extern const char *normalize_path (const char *path);
-#else /* not __QNXNTO__ */
+#else /* not __QNXTARGET__ */
 static const char *normalize_path (const char *path)
 {
   return path;
 }
-#endif /* not __QNXNTO__ */
+#endif /* not __QNXTARGET__ */
 
 /* .debug_pubnames header
    Because of alignment constraints, this structure has padding and cannot
