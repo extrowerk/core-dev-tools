@@ -612,7 +612,10 @@ qnx_filename_cmp (const char *s1, const char *s2)
 {
   int c1, c2;
 
-  if (0 == filename_cmp (s1, s2))
+  gdb_assert (s1 != NULL);
+  gdb_assert (s2 != NULL);
+
+  if (0 == strcmp (s1, s2))
     return 0;
 
   for (;;)
@@ -755,7 +758,6 @@ normalize_path (const char *filename)
 int
 filename_cmp (const char *s1, const char *s2)
 {
-  printf_unfiltered ("qnx_filename_cmp\n");
   return qnx_filename_cmp (s1, s2);
 }
 
