@@ -177,7 +177,7 @@ extern const struct mips_rtx_cost_data *mips_cost;
 	sibcall.  */
 
 #define TARGET_SIBCALLS \
-  (!TARGET_MIPS16 && ((!TARGET_ABICALLS)|| TARGET_EXPLICIT_RELOCS))
+  (!TARGET_MIPS16 && ((!TARGET_ABICALLS && !TARGET_QNXPIC)|| TARGET_EXPLICIT_RELOCS))
 
 /* True if .gpword or .gpdword should be used for switch tables.
 
