@@ -1,5 +1,3 @@
 # Host: PowerPC running QNX Neutrino
 
-NAT_FILE= nm-nto.h
-
 NATDEPFILES= nto-procfs.o

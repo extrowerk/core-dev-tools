@@ -302,11 +302,6 @@ struct lm_info
   char *lm;
 };
 
-#ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
-#endif
-#define fieldsize(TYPE, MEMBER) (sizeof (((TYPE *)0)->MEMBER))
-
 static CORE_ADDR
 LM_ADDR_FROM_LINK_MAP (struct so_list *so)
 {
