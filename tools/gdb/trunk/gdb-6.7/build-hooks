@@ -9,8 +9,16 @@ host_cpu=${host_cpu%%-*}
 if [ $target_cpu = x86 ]; then
 	target_cpu=i386
 fi
-tmpstring=`echo ${target_cpu}-nto-qnx${qnx_target_version}`
-target=`${srcdir}/config.sub ${tmpstring}`
+case ${host_target} in
+  *-nto*)
+    tmpstring=${target_cpu}-nto-qnx${qnx_target_version}
+    target=`${srcdir}/config.sub ${tmpstring}`
+  ;;
+  *)
+    target=""
+    echo Configuring for native target.
+  ;;
+esac
 
 function hook_preconfigure {
 	case ${SYSNAME} in
@@ -45,7 +53,7 @@ function hook_preconfigure {
 		;;
 	esac
 
-        if [ $host_target != ${SYSNAME} ]; then
+        if [ ${host_target%%-*} != ${SYSNAME} ]; then
 	  case $host_target in
 		nto*)
 	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0"
@@ -104,6 +112,12 @@ function hook_preconfigure {
         if [ ${GDB_SUFFIX} ]; then
            configure_opts="${configure_opts} --program-suffix=${GDB_SUFFIX}"
         fi
+	
+	case ${target} in 
+	  *-nto-*)
+	    configure_opts="${configure_opts} CFLAGS=-D__QNXTARGET__"
+	  ;;
+	esac
 }
 
 function hook_premake {
