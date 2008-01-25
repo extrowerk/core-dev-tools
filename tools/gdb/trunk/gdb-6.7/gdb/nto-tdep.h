@@ -22,8 +22,6 @@
 #ifndef _NTO_TDEP_H
 #define _NTO_TDEP_H
 
-#define __QNXTARGET__
-
 #include "defs.h"
 #include "solist.h"
 #include "osabi.h"
