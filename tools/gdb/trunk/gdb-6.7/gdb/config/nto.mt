@@ -1,3 +1,6 @@
+# Tell it we want to build all:
+default_maketarget : all
+
 nto_share_dsmsgs_h = $(srcdir)/nto-share/dsmsgs.h
 nto_share_debug_h = $(srcdir)/nto-share/debug.h
 remote-nto.o: remote-nto.c $(defs_h) $(exceptions_h) $(gdb_string_h) \

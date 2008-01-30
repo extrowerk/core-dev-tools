@@ -115,7 +115,7 @@ function hook_preconfigure {
 	
 	case ${target} in 
 	  *-nto-*)
-	    configure_opts="${configure_opts} CFLAGS="-D__QNXTARGET__ -g -O2""
+	    CFLAGS="-D__QNXTARGET__ -g -O2"; export CFLAGS
 	  ;;
 	esac
 }
