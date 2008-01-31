@@ -850,7 +850,7 @@ nto_send (unsigned len, int report_errors)
   return rlen;
 }
 
-static void
+static int
 set_thread (int th)
 {
   nto_trace (0) ("set_thread(th %d pid %d, prev tid %ld)\n", th,
@@ -861,6 +861,14 @@ set_thread (int th)
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid, 4);
   tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&th, 4);
   nto_send (sizeof (tran.pkt.select), 1);
+
+  if (recv.pkt.hdr.cmd == DSrMsg_err)
+    {
+      warning ("Thread %d has terminated. \n", th);
+      return 0;
+    }
+
+  return 1;
 }
 
 #if 0
@@ -897,7 +905,18 @@ nto_thread_alive (ptid_t th)
 	Note: tid returned might not be the same as requested.
 	If it is not, then requested thread is dead.  */
       struct tidinfo *ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
-      return (ptid_get_tid (th) == ptidinfo->tid) && ptidinfo->state;
+      int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2);
+      return (ptid_get_tid (th) == returned_tid) && ptidinfo->state;
+    }
+  else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
+    {
+      /* This is the old behaviour. It doesn't really tell us
+      what is the status of the thread, but rather answers question:
+      "Does the thread exist?". Note that a thread might have already
+      exited but has not been joined yet; we will show it here as 
+      alive an well. Not completely correct.  */
+      int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4);
+      return (ptid_get_tid (th) == returned_tid);
     }
   
   /* In case of a failure, return 0. This will happen when requested
@@ -1343,8 +1362,10 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
 
-  set_thread (ptid_equal (ptid, minus_one_ptid) ? ptid_get_tid (inferior_ptid)
-	      : ptid_get_tid (ptid));
+  if (!set_thread (
+	ptid_equal (ptid, minus_one_ptid) ? ptid_get_tid (inferior_ptid)
+	      : ptid_get_tid (ptid)))
+    return; /* Thread not found?  */
 
   /* The HandleSig stuff is part of the new protover 0.1, but has not
      been implemented in all pdebugs that reflect that version.  If
@@ -1773,7 +1794,8 @@ nto_fetch_registers (struct regcache *regcache, int regno)
       return;
     }
 
-  set_thread (ptid_get_tid (inferior_ptid));
+  if (!set_thread (ptid_get_tid (inferior_ptid))) 
+    return;
 
   if (regno == -1)
     {				/* Get all regsets.  */
@@ -1809,7 +1831,8 @@ nto_store_registers (struct regcache *regcache, int regno)
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
 
-  set_thread (ptid_get_tid (inferior_ptid));
+  if (!set_thread (ptid_get_tid (inferior_ptid)))
+    return;
 
   if (regno == -1)		/* Send them all.  */
     {
@@ -2115,9 +2138,7 @@ nto_create_inferior (char *exec_file, char *args, char **env, int from_tty)
   if (!current_session->inherit_env)
     {
       for (envc = 0; *env; env++, envc++)
-	{
-	  errors += !nto_send_env (*env);
-	}
+	errors += !nto_send_env (*env);
       if (errors)
 	warning ("Error(s) occured while sending environment variables.\n");
     }
@@ -2623,6 +2644,7 @@ nto_filewrite (char *buf, int size)
 static int
 nto_can_run (void)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   return 0;
 }
 
