@@ -246,10 +246,6 @@ struct pdebug_session *current_session = &only_session;
 /* Flag for whether upload command sets the current session's remote_exe.  */
 static int upload_sets_exec = 1;
 
-/* Temporary holding area for set commands.  */
-static char *nto_stringholder;
-static int nto_intholder;
-
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
 #define HOST_QNX_PROTOVER_MINOR	3
@@ -3092,46 +3088,6 @@ nto_pid_to_str (ptid_t ptid)
   return buf;
 }
 
-/* Functions for setting variables in the nto session via
-   set/show commands added by _initialize_nto().  */
-
-static void
-set_nto_int (char *args, int from_tty, struct cmd_list_element *c)
-{
-  int *target = NULL;
-
-  if (strcmp (c->name, "nto-timeout") == 0)
-    target = &current_session->timeout;
-  else if (strcmp (c->name, "nto-inherit-env") == 0)
-    target = &current_session->inherit_env;
-  else
-    {
-      warning ("unknown variable: %s\n", c->name);
-      return;
-    }
-
-  *target = nto_intholder;
-}
-
-static void
-set_nto_string (char *args, int from_tty, struct cmd_list_element *c)
-{
-  char **target = NULL;
-
-  if (strcmp (c->name, "nto-executable") == 0)
-    target = &current_session->remote_exe;
-  else if (strcmp (c->name, "nto-cwd") == 0)
-    target = &current_session->remote_cwd;
-  else
-    {
-      warning ("unknown variable: %s\n", c->name);
-      return;
-    }
-
-  xfree (*target);
-  *target = nto_stringholder;
-  nto_stringholder = NULL;
-}
 
 void
 _initialize_nto ()
@@ -3139,39 +3095,45 @@ _initialize_nto ()
   init_nto_ops ();
   add_target (&nto_ops);
 
-  add_setshow_zinteger_cmd ("nto-timeout", no_class, &nto_intholder,
-			    "Set timeout value for remote read.\n",
-			    //"Show timeout value for remote read.\n",
-			    "The timeout for communication with the remote.\n",
-			    "The remote will timeout after %s seconds.",
-			    set_nto_int, NULL, &setlist, &showlist);
+  add_setshow_zinteger_cmd ("nto-timeout", no_class, 
+			    &only_session.timeout, _("\
+Set timeout value for communication with the remote."), _("\
+Show timeout value for communication with the remote."), _("\
+The remote will timeout after nto-timeout seconds."),
+			    NULL, NULL, &setlist, &showlist);
 
-  add_setshow_boolean_cmd ("nto-inherit-env", no_class, &nto_intholder, "\
-Set whether a process inherits env from pdebug or has it set by gdb.\n", /*"\
-Show whether a process inherits env from pdebug or has it set by gdb.\n", */"\
-If nto-inherit-env is 0 (the default), the process spawned on the remote\
-will have its environment set by gdb.  Otherwise, it will inherit its\
-environment from pdebug.", "NTO inherit env is %s.", set_nto_int, NULL, &setlist, &showlist);
+  add_setshow_boolean_cmd ("nto-inherit-env", no_class, 
+			  &only_session.inherit_env, _("\
+Set if the inferior should inherit environment from pdebug or gdb."), _("\
+Show nto-inherit-env value."), _("\
+If nto-inherit-env is off, the process spawned on the remote\
+will have its environment set by gdb.  Otherwise, it will inherit its \
+environment from pdebug."), NULL, NULL, 
+			  &setlist, &showlist);
 
-  add_setshow_string_cmd ("nto-cwd", class_support, &nto_stringholder,
-			  "Set the working directory for the remote process.\n",
-			  //"Show the working directory for the remote process.\n",
-			  "Current working directory for starting the process on \
-the remote.\n", "The process will be started in %s on the remote.", set_nto_string, NULL, &setlist, &showlist);
+  add_setshow_string_cmd ("nto-cwd", class_support, &only_session.remote_cwd,
+			  _("\
+Set the working directory for the remote process."), _("\
+Show current working directory for the remote process."), _("\
+Working directory for the remote process. This directory must be \
+specified before remote process is run."), 
+			  NULL, NULL, &setlist, &showlist);
 
-  add_setshow_string_cmd ("nto-executable", class_files, &nto_stringholder, "\
-Set the file to be executed on the remote QNX Neutrino target.\n", /*"\
-Show the file to be executed on the remote QNX Neutrino target.\n", */"\
-The remote file to be executed when a user issues the 'run'command \
-to a QNX Neutrino remote target.\n", "\
-A run command will execute %s on the remote.\n", set_nto_string, NULL, &setlist, &showlist);
+  add_setshow_string_cmd ("nto-executable", class_files, 
+			  &only_session.remote_exe, _("\
+Set the binary to be executed on the remote QNX Neutrino target."), _("\
+Show currently set binary to be executed on the remote QNX Neutrino target."),
+			_("\
+Binary to be executed on the remote QNX Neutrino target when "\
+"'run' command is used."), 
+			  NULL, NULL, &setlist, &showlist);
 
   add_setshow_boolean_cmd ("upload-sets-exec", class_files,
-			   &upload_sets_exec,
-			   "Set the flag for upload to set nto-executable.\n",
-			   //"Show the flag for upload to set nto-executable.\n",
-			   "If set, upload will set nto-executable.\n",
-			   "The value of upload-sets-exec is %s.",
+			   &upload_sets_exec, _("\
+Set the flag for upload to set nto-executable."), _("\
+Show nto-executable flag."), _("\
+If set, upload will set nto-executable. Otherwise, nto-executable \
+will not change."),
 			   NULL, NULL, &setlist, &showlist);
 
   add_info ("pidlist", nto_pidlist, "pidlist");
