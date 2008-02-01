@@ -1023,7 +1023,6 @@ nto_start_remote (char *dummy)
   target_has_execution = 0;
   target_has_stack = 0;
   current_session->target_has_stack_frame = 0;
-  start_remote (1);		/* Initialize gdb process mechanisms.  */
 
   nto_send_init (DStMsg_cpuinfo, 0, SET_CHANNEL_DEBUG);
   nto_send (sizeof (tran.pkt.cpuinfo), 1);
