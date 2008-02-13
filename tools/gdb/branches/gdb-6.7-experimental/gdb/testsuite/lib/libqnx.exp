@@ -1,0 +1,42 @@
+# File Name: libqnx.exp
+# Author:    Wade Hawkins
+# Date:      Oct 30, 2007
+# Purpose:   To add qnx specific target connection functions to gdb testsuite
+
+# load other supporting libs
+load_lib libgloss.exp
+load_lib ../lib/gdb.exp
+
+# Function Name:  gdb_target_qnx
+# Purpose: To connect a local gdb to a remote qnx target for debugging.  
+# Inputs:  qnx_target - The network address to a target
+#         debug_port - The port on the target to communicate through 
+proc gdb_target_qnx { qnx_target debug_port } {
+   
+   global gdb_prompt;
+
+   # send gdb the connection command with target and port if error return 1
+   send_gdb "target qnx $qnx_target:$debug_port\r";
+   gdb_expect {
+      -re "$gdb_prompt" { return 0 }
+      timeout { return 1 }
+   }
+  
+}
+
+# Function Name:  gdb_upload_binary
+# Purpose: To upload a binary to a target so it can be debugged
+# Inputs: absolute_binary - the absolute path to the binary on the local machine
+#         binary_name - the name we want the binary to be called on the target filesystem
+proc gdb_upload_binary { absolute_binary binary_name} {
+    global gdb_prompt;
+    
+    # send gdb the upload command and send the file if error return 1
+    send_gdb "upload $absolute_binary /tmp/$binary_name\r";
+    gdb_expect {
+       -re "$gdb_prompt" { return 0 }
+       -re "Unable to open" { return 1 }
+       timeout { return 1 }
+    }
+}
+
