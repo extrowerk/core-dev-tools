@@ -448,7 +448,11 @@ show_nto_debug (struct ui_file *file, int from_tty,
 static int 
 nto_print_tidinfo_callback (struct thread_info *tp, void *data)
 {
-  printf_filtered("%c%d\t%d\t%d\n", ptid_equal (tp->ptid, inferior_ptid) ? '*' : ' ', tp->private->tid, tp->private->state, tp->private->flags );
+  printf_filtered ("%c", ptid_equal (tp->ptid, inferior_ptid) ? '*' : ' ');
+  if (tp->private) 
+    printf_filtered ("%d\t%d\t%d", tp->private->tid, tp->private->state, 
+		    tp->private->flags );
+  printf_filtered ("\n");
   return 0;
 }
 
