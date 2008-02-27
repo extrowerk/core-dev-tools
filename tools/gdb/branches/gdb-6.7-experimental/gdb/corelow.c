@@ -45,6 +45,7 @@
 #include "exceptions.h"
 #include "solib.h"
 #include "filenames.h"
+#include "elf-bfd.h"
 
 #ifndef __QNXNTO__
 #include "nto-tdep.h"
@@ -239,20 +240,24 @@ static void
 add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
 {
   int thread_id;
+  ptid_t ptid;
   asection *reg_sect = (asection *) reg_sect_arg;
 
   if (strncmp (bfd_section_name (abfd, asect), ".reg/", 5) != 0)
     return;
 
   thread_id = atoi (bfd_section_name (abfd, asect) + 5);
-
-  add_thread (pid_to_ptid (thread_id));
+  if (abfd != NULL && elf_tdata (abfd) != NULL)
+    ptid = ptid_build (elf_tdata (abfd)->core_pid, 0, thread_id);
+  else
+    ptid = ptid_build (42, 0, thread_id);
+  add_thread (ptid);
 
 /* Warning, Will Robinson, looking at BFD private data! */
 
   if (reg_sect != NULL
       && asect->filepos == reg_sect->filepos)	/* Did we find .reg? */
-    inferior_ptid = pid_to_ptid (thread_id);	/* Yes, make it current */
+    inferior_ptid = ptid;	/* Yes, make it current */
 }
 
 /* This routine opens and sets up the core file bfd.  */
@@ -439,8 +444,8 @@ get_core_register_section (struct regcache *regcache,
   char *contents;
 
   xfree (section_name);
-  if (PIDGET (inferior_ptid))
-    section_name = xstrprintf ("%s/%d", name, PIDGET (inferior_ptid));
+  if (ptid_get_tid (inferior_ptid))
+    section_name = xstrprintf ("%s/%ld", name, ptid_get_tid (inferior_ptid));
   else
     section_name = xstrdup (name);
 
