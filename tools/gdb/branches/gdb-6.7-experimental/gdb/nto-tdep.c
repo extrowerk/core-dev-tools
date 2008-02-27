@@ -19,10 +19,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "defs.h"
 #include "gdb_assert.h"
 #include "gdb_stat.h"
 #include "gdb_string.h"
-#include "nto-tdep.h"
 #include "top.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-cmds.h"
@@ -37,10 +37,19 @@
 
 #include "gdbcmd.h"
 #include "safe-ctype.h"
+#include "elf-bfd.h"
+
+#include "nto-share/debug.h"
+#include "nto-tdep.h"
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
+
+/* The following define does a cast to const gdb_byte * type.  */
+
+#define EXTRACT_SIGNED_INTEGER(ptr, len) extract_signed_integer ((const gdb_byte *)(ptr), len)
+#define EXTRACT_UNSIGNED_INTEGER(ptr, len) extract_unsigned_integer ((const gdb_byte *)(ptr), len)
 
 static char default_nto_target[] = "";
 
@@ -452,8 +461,29 @@ show_nto_debug (struct ui_file *file, int from_tty,
 static int 
 nto_print_tidinfo_callback (struct thread_info *tp, void *data)
 {
-  printf_filtered("%c%d\t%d\t%d\n", ptid_equal (tp->ptid, inferior_ptid) ? '*' : ' ', tp->private->tid, tp->private->state, tp->private->flags );
-  return 0;
+  char star = ' ';
+  int tid = 0;
+  int state = 0;
+  int flags = 0;
+
+  if (tp)
+    {
+      if (ptid_equal (tp->ptid, inferior_ptid))
+	star = '*';
+
+      if (tp->private)
+	{
+	  tid = tp->private->tid;
+	  state = tp->private->state;
+	  flags = tp->private->flags;
+	}
+      else
+	tid = ptid_get_tid (tp->ptid);
+
+      printf_filtered ("%c%d\t%d\t%d\n", star, tid, state, flags);
+    }
+
+    return 0;
 }
 
 static void 
@@ -760,9 +790,125 @@ filename_cmp (const char *s1, const char *s2)
   return qnx_filename_cmp (s1, s2);
 }
 
+extern struct gdbarch *core_gdbarch;
+
+/* Add thread status for the given gdb_thread_id.  */
+
+static void
+nto_core_add_thread_status_info (pid_t core_pid, int gdb_thread_id, const nto_procfs_status *ps)
+{
+  struct thread_info *ti;
+  ptid_t ptid;
+  struct private_thread_info *priv;
+  struct gdbarch *curr_gdbarch = current_gdbarch;
+ 
+  /* See corelow, function add_to_thread_list for details on pid.  */
+  ptid = ptid_build(core_pid, 0, gdb_thread_id);
+  ti = find_thread_pid(ptid);
+  if(!ti)
+    {
+      warning ("Thread with gdb id %d not found.\n", gdb_thread_id);
+      return;
+    }
+  priv = malloc (sizeof (*priv));
+  if (priv == NULL)
+    {
+      warning ("Out of memory.\n");
+      return;
+    }
+  memset (priv, 0, sizeof (*priv));
+  ti->private = priv;
+  if (core_gdbarch != current_gdbarch)
+    /* Dirty hack - current_gdbarch is not the same, and we need
+       core_gdbarch for endiannes.  */
+    current_gdbarch = core_gdbarch;
+  priv->tid = EXTRACT_UNSIGNED_INTEGER (&ps->tid, sizeof (ps->tid));
+  priv->state = EXTRACT_UNSIGNED_INTEGER (&ps->state, sizeof (ps->state)); 
+  priv->flags = EXTRACT_UNSIGNED_INTEGER (&ps->flags, sizeof (ps->flags));
+  if (curr_gdbarch != current_gdbarch)
+    current_gdbarch = curr_gdbarch;
+}
+
+/* Add thread statuses read from qnx notes.  */
+static void
+nto_core_add_thread_private_data (bfd *abfd, asection *sect, void *notused)
+{
+  const char *sectname;
+  unsigned int sectsize;
+  const char * const qnx_core_status = ".qnx_core_status/";
+  const unsigned int qnx_sectnamelen = 17;/* strlen (qnx_core_status).  */
+  const char * const warning_msg = "Unable to read %s section from core.\n";
+  int gdb_thread_id;
+  int data_ofs;
+  nto_procfs_status status;
+  int len;
+
+  sectname = bfd_get_section_name (abfd, sect);
+  sectsize = bfd_section_size (abfd, sect);
+  if (sectsize > sizeof (status))
+    sectsize = sizeof (status);
+
+  if (strncmp (sectname, qnx_core_status, qnx_sectnamelen) != 0) 
+    return;
+
+  if (bfd_seek (abfd, sect->filepos, SEEK_SET) != 0)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  len = bfd_bread ((gdb_byte *)&status, sectsize, abfd);
+  if (len != sectsize)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  gdb_thread_id = atoi (sectname + qnx_sectnamelen);
+  nto_core_add_thread_status_info (elf_tdata (abfd)->core_pid, gdb_thread_id, &status);
+}
+
+static void (*original_core_open) (char *, int);
+
+static void
+nto_core_open (char *filename, int from_tty)
+{
+  static int solib_absolute_prefix_set = 0;
+  nto_trace (0) ("%s (%s)\n", __func__, filename);
+  if (!solib_absolute_prefix_set)
+    {
+      solib_absolute_prefix_set = 1;
+      nto_init_solib_absolute_prefix ();
+    }
+  original_core_open (filename, from_tty);
+
+  /* Now we need to load additional thread status information stored
+     in qnx notes.  */
+  if (core_bfd)
+    bfd_map_over_sections (core_bfd, nto_core_add_thread_private_data, NULL);
+}
+
+static void
+init_nto_core_ops ()
+{
+  gdb_assert (core_ops.to_shortname != NULL 
+	      && !!"core_ops must be initialized first!");
+  core_ops.to_extra_thread_info = nto_target_extra_thread_info;
+  original_core_open = core_ops.to_open;
+  if (!original_core_open)
+    error ("Orignal core open not set yet\n");
+  core_ops.to_open = nto_core_open;
+}
+
+/* Prevent corelow.c from adding core_ops target. We will do it
+   after overriding some of the default functions. See comment in
+   corelow.c for details.  */
+int coreops_suppress_target = 1;
+
 void
 _initialize_nto_tdep (void)
 {
+  init_nto_core_ops ();
+  add_target (&core_ops);
+
   nto_trace (0) ("%s ()\n", __func__);
   add_setshow_zinteger_cmd ("nto-debug", class_maintenance,
 			    &nto_internal_debugging, _("\

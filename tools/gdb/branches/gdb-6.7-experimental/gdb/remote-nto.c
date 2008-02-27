@@ -1072,7 +1072,7 @@ nto_sniff_abi_note_section (bfd *abfd, asection *sect, void *obj)
   sectname = bfd_get_section_name (abfd, sect);
   sectsize = bfd_section_size (abfd, sect);
 
-  nto_trace (0) ("%s sectname=%s size=%d\n", __func__, sectname, sectsize);
+  nto_trace (3) ("%s sectname=%s size=%d\n", __func__, sectname, sectsize);
 
   //TODO: limit the note size here, for now limit is 128 bytes
   // (enough to check the name and type).
@@ -1125,24 +1125,30 @@ static enum gdb_osabi
 nto_is_remote_target (bfd *abfd)
 {
   unsigned int elfosabi;
+  unsigned int elftype;
   enum gdb_osabi osabi = GDB_OSABI_UNKNOWN;
+
+  /* Note: if we ever get to sign our binaries, we should
+     really check if the OSABI matches. But untill then, just
+     hope the user knows what they are doing and are really opening
+     QNXNTO binary.  */
 
   nto_trace (0) ("nto_is_remote_target\n");
 
-  elfosabi = elf_elfheader (abfd)->e_ident[EI_OSABI];
-    
-  if (elfosabi == ET_CORE)
-    {
+  elftype = elf_elfheader (abfd)->e_type;
+
+  if (elftype == ET_CORE)
+      /* We do properly mark our core files, get the OSABI from
+         core note section.  */
       bfd_map_over_sections (abfd,
-			   nto_sniff_abi_note_section, 
-			   &osabi);
-    } 
+			     nto_sniff_abi_note_section, 
+			     &osabi);
   else
-    {
-      /* One day, we will be marking our binaries...
-       until then...  */
-      osabi = GDB_OSABI_QNXNTO;
-    }
+  /* Note: if we ever get to sign our binaries, we should
+     really check if the OSABI matches. But untill then, just
+     hope the user knows what they are doing and are really opening
+     QNXNTO binary.  */
+    osabi = GDB_OSABI_QNXNTO;
 
   if (nto_internal_debugging)
     gdb_assert (osabi == GDB_OSABI_QNXNTO);
