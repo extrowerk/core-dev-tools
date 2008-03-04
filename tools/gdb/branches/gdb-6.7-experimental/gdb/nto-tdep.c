@@ -181,7 +181,6 @@ void
 nto_init_solib_absolute_prefix (void)
 {
   char buf[PATH_MAX * 2], arch_path[PATH_MAX];
-  char const *additional = getenv ("QNX_SOLIB_SEARCH_PATH");
   char *nto_root, *endian;
   const char *arch;
 
@@ -217,7 +216,7 @@ nto_init_solib_absolute_prefix (void)
 #define PATH_SEP ":"
 #endif
 
-  sprintf (buf, "set solib-search-path %s" PATH_SEP "%s/%s" PATH_SEP "%s/%s", additional, arch_path, "lib", arch_path, "usr/lib");
+  sprintf (buf, "set solib-search-path %s/%s" PATH_SEP "%s/%s", arch_path, "lib", arch_path, "usr/lib");
   execute_command (buf, 0);
 }
 
@@ -284,20 +283,17 @@ nto_generic_svr4_fetch_link_map_offsets (void)
     {
       lmp = &lmo;
 
-      /* Offsets of r_debug fields.  */
-      lmo.r_version_offset = 0;
-      lmo.r_version_size = sizeof(int);
       lmo.r_map_offset = 4;
-      lmo.r_ldsomap_offset = 20;
 
       lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
 				   this is all we need.  */
-      /* Offsets of link_map fields.  */
-      lmo.l_addr_offset = 0;    
-      lmo.l_ld_offset = 8;
-      lmo.l_next_offset = 12;
-      lmo.l_prev_offset = 16;
+      lmo.l_addr_offset = 0;
+
       lmo.l_name_offset = 4;
+
+      lmo.l_next_offset = 12;
+
+      lmo.l_prev_offset = 16;
     }
 
   return lmp;
@@ -483,16 +479,18 @@ nto_print_tidinfo_callback (struct thread_info *tp, void *data)
       printf_filtered ("%c%d\t%d\t%d\n", star, tid, state, flags);
     }
 
-    return 0;
+  return 0;
 }
 
 static void 
 nto_info_tidinfo_command (char *args, int from_tty)
 {
-  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, 
+		  args ? args : "(null)", from_tty);
 
   target_find_new_threads ();
-  printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n", ptid_get_pid (inferior_ptid), get_exec_file (0));
+  printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n", 
+		  ptid_get_pid (inferior_ptid), get_exec_file (0));
   
   iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
