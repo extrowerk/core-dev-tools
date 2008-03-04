@@ -882,7 +882,11 @@ set_exec_bfd (char *filename)
 }
 #endif
 
-/* Return nonzero if the thread TH is still alive on the remote system.  */
+
+/* Return nonzero if the thread TH is still alive on the remote system.  
+   RECV will contain returned_tid. NOTE: Make sure this stays like that
+   since we will use this side effect in other functions to determine
+   first thread alive (for example, after attach).  */
 static int
 nto_thread_alive (ptid_t th)
 {
@@ -918,6 +922,37 @@ nto_thread_alive (ptid_t th)
   /* In case of a failure, return 0. This will happen when requested
     thread is dead and there is no alive thread with the larger tid.  */
   return 0;
+}
+
+static ptid_t
+nto_get_thread_alive (ptid_t th)
+{
+  int returned_tid;
+  /* We are not interested in the return value. What we want is 
+     the side-effect of nto_thread_alive, it will leave
+     first threadid of a live thread that is >= th.tid.  */
+  nto_thread_alive (th);
+  if (recv.pkt.hdr.cmd == DSrMsg_okdata)
+    {
+      /* Data is tidinfo. 
+	Note: tid returned might not be the same as requested.
+	If it is not, then requested thread is dead.  */
+      struct tidinfo *ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
+      returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2);
+    }
+  else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
+    {
+      /* This is the old behaviour. It doesn't really tell us
+      what is the status of the thread, but rather answers question:
+      "Does the thread exist?". Note that a thread might have already
+      exited but has not been joined yet; we will show it here as 
+      alive an well. Not completely correct.  */
+      returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4);
+    }
+  else
+    returned_tid = ptid_get_tid (th);
+
+ return ptid_build (ptid_get_pid (th), ptid_get_lwp (th), returned_tid);
 }
 
 /* Clean up connection to a remote debugger.  */
@@ -1276,12 +1311,6 @@ nto_attach (char *args, int from_tty)
   tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4);
   nto_send (sizeof (tran.pkt.attach), 1);
 
-  /* NYI: add symbol information for process.  */
-  /* Turn the PIDLOAD into a STOPPED notification so that when gdb
-     calls nto_wait, we won't cycle around.  */
-  recv.pkt.hdr.cmd = DShMsg_notify;
-  recv.pkt.hdr.subcmd = DSMSG_NOTIFY_STOPPED;
-
   /* Hack this in here, since we will bypass the notify.  */
   current_session->cputype =
     EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.un.pidload.cputype, 2);
@@ -1290,7 +1319,19 @@ nto_attach (char *args, int from_tty)
 #ifdef QNX_SET_PROCESSOR_TYPE
   QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips.  */
 #endif
+  ptid = nto_get_thread_alive (ptid);
   inferior_ptid = ptid;
+  /* Initalize thread list.  */
+  nto_find_new_threads ();
+  /* NYI: add symbol information for process.  */
+  /* Turn the PIDLOAD into a STOPPED notification so that when gdb
+     calls nto_wait, we won't cycle around.  */
+  recv.pkt.hdr.cmd = DShMsg_notify;
+  recv.pkt.hdr.subcmd = DSMSG_NOTIFY_STOPPED;
+  recv.pkt.notify.pid = ptid_get_pid (ptid);
+  recv.pkt.notify.tid = ptid_get_tid (ptid);
+  recv.pkt.notify.pid = EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.pid, 4);
+  recv.pkt.notify.tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.tid, 4); 
   target_has_execution = 1;
   target_has_stack = 1;
   target_has_registers = 1;
@@ -1340,6 +1381,7 @@ nto_detach (char *args, int from_tty)
   tran.pkt.detach.pid = PIDGET (inferior_ptid);
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid, 4);
   nto_send (sizeof (tran.pkt.detach), 1);
+  nto_mourn_inferior ();
   inferior_ptid = null_ptid;
   init_thread_list ();
   target_has_execution = 0;
@@ -1357,8 +1399,9 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
 {
   int signo;
 
-  nto_trace (0) ("nto_resume(pid %d, step %d, sig %d)\n",
-			 PIDGET (ptid), step, target_signal_to_nto (sig));
+  nto_trace (0) ("nto_resume(pid %d, tid %ld, step %d, sig %d)\n",
+			 PIDGET (ptid), TIDGET (ptid),
+			 step, target_signal_to_nto (sig));
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -1514,8 +1557,9 @@ nto_interrupt (int signo)
 static ptid_t
 nto_wait (ptid_t ptid, struct target_waitstatus *status)
 {
-  nto_trace (0) ("nto_wait pid %d, inferior pid %d\n",
-			 ptid_get_pid (ptid), ptid_get_pid (inferior_ptid));
+  nto_trace (0) ("nto_wait pid %d, inferior pid %d tid %ld\n",
+			 ptid_get_pid (ptid), ptid_get_pid (inferior_ptid),
+			 ptid_get_tid (ptid));
 
   status->kind = TARGET_WAITKIND_STOPPED;
   status->value.sig = TARGET_SIGNAL_0;
