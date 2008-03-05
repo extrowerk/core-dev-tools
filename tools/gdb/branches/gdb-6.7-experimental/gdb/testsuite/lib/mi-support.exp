@@ -887,7 +887,7 @@ proc mi_runto_helper {func run_or_continue} {
   }
 
   gdb_expect {
-    -re ".*000\\*stopped,thread-id=\"$decimal\",frame=\{addr=\"$hex\",func=\"$func\",args=\(\\\[.*\\\]\|\{.*\}\),file=\".*\",fullname=\"${fullname_syntax}.*\",line=\"\[0-9\]*\"\}\r\n$mi_gdb_prompt$" {
+    -re ".*000\\*stopped,reason=.*thread-id=\"$decimal\",frame=\{addr=\"$hex\",func=\"$func\",args=\(\\\[.*\\\]\|\{.*\}\),file=\".*\",fullname=\"${fullname_syntax}.*\",line=\"\[0-9\]*\"\}\r\n$mi_gdb_prompt$" {
       pass "$test"
       return 0
     }
