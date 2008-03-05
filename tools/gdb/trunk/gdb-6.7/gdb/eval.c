@@ -1956,8 +1956,18 @@ evaluate_subexp_standard (struct type *expect_type,
       arg1 = evaluate_subexp (type, exp, pos, noside);
       if (noside == EVAL_SKIP)
 	goto nosideret;
-      if (type != value_type (arg1))
-	arg1 = value_cast (type, arg1);
+      if (type != value_type (arg1)) 
+	{
+	  if (TYPE_CODE (value_type (arg1)) == TYPE_CODE_REF
+	      && TYPE_CODE (type) == TYPE_CODE_REF)
+	    arg1 = value_cast_pointers (type, arg1);
+	  else if (TYPE_CODE (value_type (arg1)) != TYPE_CODE_REF
+		   && TYPE_CODE (type) != TYPE_CODE_REF)
+	    arg1 = value_cast (type, arg1);
+	  else /* We can not do much here.  */
+	    error (_("Attempt to cast to reference type from non-reference "\
+		     "type or vice versa."));
+	}
       return arg1;
 
     case UNOP_MEMVAL:
