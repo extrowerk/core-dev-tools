@@ -198,6 +198,7 @@ allocate_space_in_inferior (int len)
 struct value *
 value_cast_pointers (struct type *type, struct value *arg2)
 {
+  struct type *type1 = check_typedef (type);
   struct type *type2 = check_typedef (value_type (arg2));
   struct type *t1 = check_typedef (TYPE_TARGET_TYPE (type));
   struct type *t2 = check_typedef (TYPE_TARGET_TYPE (type2));
@@ -207,18 +208,20 @@ value_cast_pointers (struct type *type, struct value *arg2)
       && !value_logical_not (arg2))
     {
       struct value *v;
+      struct value *v2; /* Real thing, dereferenced PTR/REF.  */
 
-      /* Look in the type of the source to see if it contains the
+      if (TYPE_CODE (type2) == TYPE_CODE_REF)
+	v2 = coerce_ref (arg2);
+      else
+	v2 = value_ind (arg2);
+      gdb_assert (TYPE_CODE (value_type (v2)) == TYPE_CODE_STRUCT
+		  && !!"Why did coercion fail?");
+
+      /* Upcasting: look in the type of the source to see if it contains the
 	 type of the target as a superclass.  If so, we'll need to
 	 offset the pointer rather than just change its type.  */
       if (TYPE_NAME (t1) != NULL)
 	{
-	  struct value *v2;
-
-	  if (TYPE_CODE (type2) == TYPE_CODE_REF)
-	    v2 = coerce_ref (arg2);
-	  else
-	    v2 = value_ind (arg2);
 	  v = search_struct_field (type_name_no_tag (t1),
 				   v2, 0, t2, 1);
 	  if (v)
@@ -229,7 +232,7 @@ value_cast_pointers (struct type *type, struct value *arg2)
 	    }
 	}
 
-      /* Look in the type of the target to see if it contains the
+      /* Downcasting: look in the type of the target to see if it contains the
 	 type of the source as a superclass.  If so, we'll need to
 	 offset the pointer rather than just change its type.
 	 FIXME: This fails silently with virtual inheritance.  */
@@ -239,11 +242,12 @@ value_cast_pointers (struct type *type, struct value *arg2)
 				   value_zero (t1, not_lval), 0, t1, 1);
 	  if (v)
 	    {
-	      CORE_ADDR addr2 = value_as_address (arg2);
+	      /* Downcasting is possible (t1 is superclass of v2).  */
+	      CORE_ADDR addr2 = VALUE_ADDRESS (v2);
 	      addr2 -= (VALUE_ADDRESS (v)
 			+ value_offset (v)
 			+ value_embedded_offset (v));
-	      return value_from_pointer (type, addr2);
+	      return value_from_pointer (type1, addr2);
 	    }
 	}
     }
