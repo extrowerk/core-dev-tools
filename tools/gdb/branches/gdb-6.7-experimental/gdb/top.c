@@ -1249,7 +1249,12 @@ quit_target (void *arg)
   if (write_history_p && history_filename)
     write_history (history_filename);
 
+#ifndef __QNXTARGET__
   do_final_cleanups (ALL_CLEANUPS);	/* Do any final cleanups before exiting */
+#else
+  gdb_flush (gdb_stdout);
+  gdb_flush (gdb_stderr);
+#endif /* __QNXTARGET__ */
 
   return 0;
 }
@@ -1280,6 +1285,11 @@ quit_force (char *args, int from_tty)
   catch_errors (quit_target, &qt,
 	        "Quitting: ", RETURN_MASK_ALL);
 
+#ifdef __QNXTARGET__
+  /* This is a hack. It sends end-of-line to the IDE. It looks like 
+     this way IDE processes the return message ("exit") faster.  */
+  printf_unfiltered ("\n");
+#endif
   exit (exit_code);
 }
 
