@@ -949,7 +949,7 @@ proc gdb_test_exact { args } {
 
     return [gdb_test $command $pattern $message]
 }
-
+
 proc gdb_reinitialize_dir { subdir } {
     global gdb_prompt
 
@@ -959,7 +959,7 @@ proc gdb_reinitialize_dir { subdir } {
     send_gdb "dir\n"
     gdb_expect 60 {
 	-re "Reinitialize source path to empty.*y or n. " {
-	    send_gdb "y\n"
+            send_gdb "y\n"
 	    gdb_expect 60 {
 		-re "Source directories searched.*$gdb_prompt $" {
 		    send_gdb "dir $subdir\n"
