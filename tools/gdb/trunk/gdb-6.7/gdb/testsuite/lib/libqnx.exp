@@ -70,4 +70,39 @@ proc gdb_load { arg } {
   return 0
 }
 
+# Function Name:  mi_gdb_start
+# Purpose: To start a gdb process and target a qnx target
+# Inputs: args (optional) 
+proc mi_gdb_start { args } {
+  global qnx_target_host
+  global qnx_target_port
+  if [default_mi_gdb_start $args] {
+    return 1
+  }
+  verbose "Connecting to $qnx_target_host:$qnx_target_port\n"
+  send_gdb "100-target-select qnx $qnx_target_host:$qnx_target_port\n"
+  gdb_expect 10 {
+    -re ".*connected.*" { return 0 }
+    timeout { perror "connect to $qnx_target_host:$qnx_target_port failed" }
+  }
+  return 0
+}
+
+# Function Name:  mi_gdb_load
+# Purpose: To load a binary into gdb and upload it to a qnx target
+# Inputs:  An absolute path to a binary
+proc mi_gdb_load { arg } {
+  global testfile
+  if [mi_gdb_file_cmd $arg] {
+    perror "mi_gdb_load $arg failed"
+    return 1
+  }
+  verbose "Uploading $arg /tmp/$testfile\n"
+  send_gdb "upload ${arg} /tmp/${testfile}\n"
+  gdb_expect 60 {
+     -re ".*done.*" { return 0}
+     timeout { perror "upload ${arg} /tmp/${testfile} failed" }
+  }
+  return 1
+}
 
