@@ -24,7 +24,7 @@ if [target_info exists gdb,nosignals] {
     continue
 }
 
-load_lib mi-support.exp
+
 set MIFLAGS "-i=mi"
 
 set testfile "mi-syn-frame"
@@ -37,6 +37,7 @@ if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {deb
 
 mi_gdb_exit
 mi_gdb_start
+
 mi_run_to_main
 
 mi_gdb_test "400-break-insert foo" \
