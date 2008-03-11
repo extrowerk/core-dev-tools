@@ -1,11 +1,8 @@
 # File Name: libqnx.exp
 # Author:    Wade Hawkins
-# Date:      Oct 30, 2007
+# Date:      edited Mar 11, 2008 
 # Purpose:   To add qnx specific target connection functions to gdb testsuite
 
-# load other supporting libs
-load_lib libgloss.exp
-load_lib ../lib/gdb.exp
 
 # Function Name:  gdb_target_qnx
 # Purpose: To connect a local gdb to a remote qnx target for debugging.  
@@ -39,4 +36,38 @@ proc gdb_upload_binary { absolute_binary binary_name} {
        timeout { return 1 }
     }
 }
+
+# Function Name:  gdb_start
+# Purpose: To start a gdb process and target a qnx target
+# Inputs: none as long as a board description file is loaded.
+proc gdb_start { } {
+  default_gdb_start
+  global qnx_target_host
+  global qnx_target_port
+  global gdb_prompt
+
+  send_gdb "target qnx ${qnx_target_host}:${qnx_target_port}\n"
+  gdb_expect 60 {
+     -re "$gdb_prompt $" { return 0}
+     timeout { perror "target qnx ${qnx_target_host}:${qnx_target_port} failed" }
+  }
+}
+
+# Function Name:  gdb_load
+# Purpose: To load a binary into gdb and upload it to a qnx target
+# Inputs:  An absolute path to a binary
+proc gdb_load { arg } {
+# override
+  global testfile
+  global gdb_prompt
+
+  gdb_file_cmd $arg
+  send_gdb "upload ${arg} /tmp/${testfile}\n"
+  gdb_expect 60 {
+     -re "$gdb_prompt $" { return 0}
+     timeout { perror "upload ${arg} /tmp/${testfile} failed" }
+  }
+  return 0
+}
+
 
