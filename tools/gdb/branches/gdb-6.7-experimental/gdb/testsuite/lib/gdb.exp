@@ -27,7 +27,7 @@ if {$tool == ""} {
 }
 
 load_lib libgloss.exp
-
+load_lib mi-support.exp
 global GDB
 
 if [info exists TOOL_EXECUTABLE] {
@@ -1965,7 +1965,7 @@ proc gdb_clear_suppressed { } {
 }
 
 proc gdb_start { } {
-    default_gdb_start
+    default_gdb_start 
 }
 
 proc gdb_exit { } {
