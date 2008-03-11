@@ -211,12 +211,14 @@ nto_init_solib_absolute_prefix (void)
   execute_command (buf, 0);
 
 #if defined (__MINGW32__)
-#define PATH_SEP ";"
+#define PATH_SEP ';'
 #else
-#define PATH_SEP ":"
+#define PATH_SEP ':'
 #endif
 
-  sprintf (buf, "set solib-search-path %s/%s" PATH_SEP "%s/%s", arch_path, "lib", arch_path, "usr/lib");
+  sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
+	   arch_path, "lib", PATH_SEP, 
+	   arch_path, "usr/lib");
   execute_command (buf, 0);
 }
 
