@@ -1,4 +1,3 @@
-load_lib libqnx.exp
 
 set timeout 300
 
@@ -8,8 +7,7 @@ set timeout 300
 #Author: Wade Hawkins
 
 #check if we are testing with a remote target.  These tests require one.
-if [is_remote target] then {
-  
+ 
    set testfile sanity
    set srcfile ${srcdir}/${subdir}/${testfile}.c
    set binfile ${objdir}/${subdir}/${testfile}
@@ -30,31 +28,21 @@ if [is_remote target] then {
 	# finish it up by running our sanity and checking its output with the gdb_test func
 	gdb_start
 	
-	#these vars are found in the target baseboard file.
-	if [ gdb_target_qnx $target_address $debug_port ] then {
-	    perror "couldn't connect to target"
-	    fail "Targeting qnx debug Sanity."
-	    gdb_exit
-	    exit 1
-	}
+	gdb_load ${binfile}
+
+	send_user "Off to testing...\n"
+
+	gdb_test "break main" "Breakpoint.*" "Set breakpoint at main"
+
+	verbose "Running to breakpoint...\n"
+
+	gdb_test "run /tmp/${testfile}\r" "Breakpoint.*" "Run to breakpoint"
 	
-	if { [ gdb_upload_binary ${binfile} ${testfile} ] != 0 } then {
-	   perror "error uploading test file"
-	   gdb_exit
-	   exit 1
-	 }
-	  
-	send_gdb "run /tmp/${testfile}\r"
-		
+	verbose "Stopped at breakpint, continuing...\n"
 	send_gdb "continue\r"
 	gdb_expect {
 	  -re "hello world*" { pass "Targeting qnx debug Sanity." }
 	  timeout { fail "Targeting qnx debug Sanity." }
 	}	
-} else {
-   untested "Targeting qnx debug Sanity."
-}
-
-# TODO:  add function to clean target of binary
-       
+      
 gdb_exit
