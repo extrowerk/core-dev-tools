@@ -4,109 +4,46 @@ set timeout 60
 
 #Test: basictarget
 #Purpose: basic funcionality tests for gdb using remote qnx targets
-#Date: Nov 2,2007
-#Author: Wade Hawkins
 
 #check if we are testing with a remote target.  These tests require one.
-if [is_remote target] then {
 
-	set testfile basictarget
-	set srcfile ${srcdir}/${subdir}/${testfile}.c
-	set binfile ${objdir}/${subdir}/${testfile}
-	
-	# clean up any old gdbs running
-	gdb_exit
-	
-	# compile the program into a binary
-	if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags="-w"}] != "" } {
-	    gdb_suppress_entire_file "Testcase compile failed, so all tests in this file will automatically fail."
-	    }
-	
-	if [get_compiler_info ${binfile}] {
-	    return -1
-	}
-	
-	
-	# start a fresh gdb then connect and upload our sanity test
-	# finish it up by running our sanity and checking its output with the gdb_test func
-	gdb_start
-	
-	if [ gdb_target_qnx $target_address $debug_port ] then {
-	    perror "couldn't connect to target"
-	    gdb_exit
-	    exit 1
-	}
-	
-	if { [ gdb_upload_binary ${binfile} ${testfile} ] != 0 } then {
-	   perror "error uploading test file"
-	   gdb_exit
-	   exit 1
-	 }
-	
-	#test the finish command in a function that returns double  
-	set test "Finish cmd returning a double."
-	
-	send_gdb "run /tmp/${testfile}\r"
-	
-	send_gdb "sym $binfile\r"
-	
-	send_gdb "break double_func\r"
-	gdb_expect {
-	   -re "Breakpoint 1 at *: file basictarget.c"
-	   timeout { untested $test
-	             perror "Previous errors have prevented the rest of basictarget test to execute."
-	             gdb_exit
-	             exit 1 }
-	}
-	
-	send_gdb "continue\r"
-	gdb_expect {
-	  -re "Breakpoint 1, double_func * at basictarget.c:*"
-	  timeout { untested $test
-	            perror "Previous errors have prevented the rest of basictarget test to execute."
-	            gdb_exit
-	            exit 1 }
-	}
-	
-	send_gdb "finish\r"
-	gdb_expect {
-	   -re "Run till exit from #0  double_func () at basictarget.c*Value returned is $1 = 0.99995367427815629*" { 
-	      pass $test }
-	   timeout { fail $test }
-	}
-	
-	#test calling a function that returns double
-	set test "Retruning double from function."
-	#restart the program
-	send_gdb "run /tmp/${testfile}\r"
-	gdb_expect {
-	   -re "The program being debugged has been started already.*Start it from the beginning? (y or n)" { send_gdb "y\r" }
-	   timeout { perror "Could not restart ${testfile}."
-	           untested $test
-                   gdb_exit
-                   exit 1  }
-	}
-	
-	send_gdb "break main\r"
-	gdb_expect {
-	   -re "Breakpoint 2 at *: file basictarget.c"
-	   timeout { untested $test
-	             perror "Previous errors have prevented the rest of basictarget test to execute."
-	             gdb_exit
-	             exit 1 }
-	}
-	
-	send_gdb "next\r"
-	
-	send_gdb "call dummy(10)\r"
-	gdb_expect {
-	   -re "15.0" { pass $test }
-	   timeout { fail $test }
-	}
-	
-} else {
-   untested "Basic remote debugging tests."
+set testfile basictarget
+set srcfile ${srcdir}/${subdir}/${testfile}.c
+set binfile ${objdir}/${subdir}/${testfile}
+global gdb_prompt	
+# clean up any old gdbs running
+gdb_exit
+
+# compile the program into a binary
+if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags="-w"}] != "" } {
+    gdb_suppress_entire_file "Testcase compile failed, so all tests in this file will automatically fail."
+    }
+
+if [get_compiler_info ${binfile}] {
+    return -1
 }
-# TODO:  add function to clean target of binary
-       
+
+
+# start a fresh gdb then connect and upload our sanity test
+# finish it up by running our sanity and checking its output with the gdb_test func
+gdb_start
+
+gdb_load ${binfile}
+	
+
+gdb_test "break double_func" \
+ "Breakpoint.*at.* file .*$srcfile, line.*" \
+ "Breakpoint function"
+
+send_gdb "run /tmp/${testfile}\r"
+gdb_expect "$gdb_prompt"
+send_gdb "break main\r"
+gdb_expect "$gdb_prompt"
+send_gdb "s\r"
+gdb_expect "$gdb_prompt"
+
+gdb_test "call dummy(10)" \
+ "15" \
+ "Returning double from a function"
+	
 gdb_exit
