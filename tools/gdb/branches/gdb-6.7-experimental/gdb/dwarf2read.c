@@ -6988,7 +6988,16 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
                       read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
                     line_ptr += bytes_read;
                     add_file_name (lh, cur_file, dir_index, mod_time, length);
-                  }
+		    if (!decode_for_pst_p)
+		      {
+			/* Re-create subfile_names. We created it initially
+			   assuming lh->file_names is final, but now that
+			   it changed, we need to rebuild.  */
+			subfile_names = dwarf_build_subfile_names (
+						  lh, cu_file_name, comp_dir);
+			make_cleanup (dwarf_free_subfile_names, subfile_names);
+		      }
+		  }
 		  break;
 		default:
 		  complaint (&symfile_complaints,
