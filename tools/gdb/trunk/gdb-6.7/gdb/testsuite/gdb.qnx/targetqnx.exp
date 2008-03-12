@@ -1,16 +1,7 @@
 load_lib libqnx.exp
 
-
-# since all of the target qnx tests are remote we need to define a default compiler for our tests
-# QCC should be the default unless it is broken
-set CC_FOR_TARGET ntoppc-gcc
-set CXX_FOR_TARGET ntoppc-gcc
-set target_address 10.42.104.186
-set debug_port 8000
-
 set timeout 300
 
-# set additional_flags "-w -Vntox86_gcc
 
 set testfile targetqnx
 set srcfile ${srcdir}/${subdir}/${testfile}.c
@@ -33,21 +24,9 @@ if [get_compiler_info ${binfile}] {
 # finish it up by running our sanity and checking its output with the gdb_test func
 gdb_start
 
-#if [ gdb_target_qnx $target_address $debug_port ] then {
-#    perror "couldn't connect to target"
-#    gdb_exit
-#    exit 1
-#}
-
-#if { [ gdb_upload_binary ${binfile} ${testfile} ] != 0 } then {
-#   perror "error uploading test file"
-#   gdb_exit
-#   exit 1
-# }
 gdb_load ${binfile}
 
 runto_main
-#send_gdb "run /tmp/${testfile}\r"
 
 
 send_gdb "continue\r"
@@ -56,7 +35,5 @@ gdb_expect {
   timeout { fail "sanity" }
 }
 
-
-# TODO:  add function to clean target of binary
        
 gdb_exit
