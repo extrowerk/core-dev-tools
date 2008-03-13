@@ -166,12 +166,7 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 	  if (ret >= 0)
 	    *temp_pathname = gdb_realpath (arch_path);
 	  else
-	    {
-	      if (*temp_pathname)
-	        **temp_pathname = '\0';
-	      else
-	        *temp_pathname = "";
-	    }
+	    *temp_pathname = NULL;
 	}
     }
   return ret;
@@ -210,20 +205,15 @@ nto_init_solib_absolute_prefix (void)
   sprintf (buf, "set solib-absolute-prefix %s", arch_path);
   execute_command (buf, 0);
 
-#if defined (__MINGW32__)
-#define PATH_SEP ';'
-#else
-#define PATH_SEP ':'
-#endif
-
   sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
-	   arch_path, "lib", PATH_SEP, 
+	   arch_path, "lib", DIRNAME_SEPARATOR, 
 	   arch_path, "usr/lib");
   execute_command (buf, 0);
 }
 
 char **
-nto_parse_redirection (char *pargv[], const char **pin, const char **pout, const char **perr)
+nto_parse_redirection (char *pargv[], const char **pin, 
+		       const char **pout, const char **perr)
 {
   char **argv;
   char *in, *out, *err, *p;
@@ -319,12 +309,10 @@ LM_ADDR_FROM_LINK_MAP (struct so_list *so)
   struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
 
   gdb_byte *buf = so->lm_info->lm + lmo->l_addr_offset;
-  if (NULL == buf)
-    {
-      return 0;
-    }
-  return extract_typed_address (so->lm_info->lm + lmo->l_addr_offset,
-               builtin_type_void_data_ptr);
+  if (buf == NULL)
+    return 0;
+  return extract_typed_address (buf,
+				builtin_type_void_data_ptr);
 }
 
 static CORE_ADDR
@@ -365,8 +353,12 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->bfd);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
-  sec->addr = nto_truncate_ptr (sec->addr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
-  sec->endaddr = nto_truncate_ptr (sec->endaddr + LM_ADDR_FROM_LINK_MAP (so) - vaddr);
+  sec->addr = nto_truncate_ptr (sec->addr 
+			        + LM_ADDR_FROM_LINK_MAP (so) 
+				- vaddr);
+  sec->endaddr = nto_truncate_ptr (sec->endaddr 
+				   + LM_ADDR_FROM_LINK_MAP (so) 
+				   - vaddr);
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -375,11 +367,7 @@ int
 nto_in_dynsym_resolve_code (CORE_ADDR pc)
 {
   if (in_plt_section (pc, NULL)) 
-    {
-      nto_trace (0) ("in plt section\n");
-      return 1;
-    }
-  nto_trace (0) ("Not in plt section\n");
+    return 1;
   return 0;
 }
 
