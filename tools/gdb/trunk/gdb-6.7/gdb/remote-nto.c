@@ -2071,8 +2071,7 @@ nto_kill ()
 
   nto_trace (0) ("nto_kill()\n");
 
-  /* Delete breakpoints (and remove them).  */
-  delete_command (NULL, 0);
+  remove_breakpoints ();
   get_last_target_status (&ptid, &wstatus);
   if (wstatus.value.sig == TARGET_SIGNAL_SEGV) 
     {
