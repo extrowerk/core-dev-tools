@@ -98,7 +98,7 @@ do {                                            \
 
 #undef	SUBTARGET_CPP_SPEC
 #define	SUBTARGET_CPP_SPEC \
- "-idirafter %$QNX_TARGET/usr/include \
+ QNX_SYSTEM_INCLUDES "\
  %(cpp_cpu) \
  %{!EB:-D__LITTLEENDIAN__ -D__ARMEL__} \
  %{EB:-D__BIGENDIAN__ -D__ARMEB__} \

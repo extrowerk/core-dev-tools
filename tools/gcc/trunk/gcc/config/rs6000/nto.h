@@ -110,7 +110,9 @@ do {                                            \
 %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2} "
 
 #undef CPP_SPEC
-#define CPP_SPEC "%{posix: -D_POSIX_SOURCE} \
+#define CPP_SPEC \
+QNX_SYSTEM_INCLUDES \
+"%{posix: -D_POSIX_SOURCE} \
 %(cpp_sysv) %(cpp_endian) %(cpp_cpu) \
 %{mads: %(cpp_os_ads) } \
 %{myellowknife: %(cpp_os_yellowknife) } \
@@ -122,9 +124,7 @@ do {                                            \
 %{mcall-netbsd: %(cpp_os_netbsd) } \
 %{!mads: %{!myellowknife: %{!mmvme: %{!msim: %{!mcall-freebsd: \
 %{!mcall-linux: %{!mcall-gnu: %{!mcall-netbsd: %(cpp_os_default) }}}}}}}} \
--idirafter %$QNX_TARGET/usr/include \
-%{e500v1:-D__E500_V1__} %{e500v2:-D__E500_V2__} \
-%{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}"
+%{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}" 
 
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \

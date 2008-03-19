@@ -38,6 +38,13 @@ do { \
     add_prefix (&exec_prefixes, standard_bindir_prefix, NULL, PREFIX_PRIORITY_LAST, 0, 0); \
 } while (0)
 
+#define QNX_SYSTEM_INCLUDES \
+"-isystem %$QNX_HOST/usr/lib/gcc/" TARGET_ALIAS "/%v1.%v2.%v3/include \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" TARGET_ALIAS " \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
+ -idirafter %$QNX_TARGET/usr/include "
+
 /* Don't assume anything about the header files.  */
 #undef NO_IMPLICIT_EXTERN_C
 #define NO_IMPLICIT_EXTERN_C

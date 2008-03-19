@@ -113,7 +113,7 @@ do                                                \
 
 
 #undef SUBTARGET_CPP_SPEC
-#define SUBTARGET_CPP_SPEC "\
+#define SUBTARGET_CPP_SPEC QNX_SYSTEM_INCLUDES "\
 %{!EB:-D__LITTLEENDIAN__} \
 %{EB:-D__BIGENDIAN__} \
 %{fpic: -D__PIC__} %{fPIC: -D__PIC__} \
