@@ -56,13 +56,6 @@ Boston, MA 02111-1307, USA.  */
 %$QNX_TARGET/sh%{EB:be}%{!EB:le}/usr/lib:\
 %$QNX_TARGET/sh%{EB:be}%{!EB:le}/opt/lib "
 
-#define QNX_SYSTEM_INCLUDES \
-"-isystem %$QNX_HOST/usr/lib/gcc-lib/" TARGET_ALIAS "/%v1.%v2.%v3/include \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" TARGET_ALIAS " \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
- -idirafter %$QNX_TARGET/usr/include" 
-
 #undef SUBTARGET_CPP_SPEC
 #define SUBTARGET_CPP_SPEC \
 QNX_SYSTEM_INCLUDES " \

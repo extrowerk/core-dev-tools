@@ -36,8 +36,8 @@ Boston, MA 02110-1301, USA.  */
 
 #undef CPP_SPEC
 #define CPP_SPEC \
-"-idirafter %$QNX_TARGET/usr/include \
- %(cpp_cpu) \
+QNX_SYSTEM_INCLUDES \
+" %(cpp_cpu) \
  %{posix:-D_POSIX_SOURCE}"
 
 #undef STARTFILE_SPEC
