@@ -1752,9 +1752,13 @@ if test "${with_ld+set}" = set; then
 fi;
 if test x"${DEFAULT_LINKER+set}" = x"set"; then
   if test ! -x "$DEFAULT_LINKER"; then
-    { { echo "$as_me:$LINENO: error: cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER" >&5
+    if test ! -x "`which $DEFAULT_LINKER`"; then
+      { { echo "$as_me:$LINENO: error: cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER" >&5
 echo "$as_me: error: cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER" >&2;}
    { (exit 1); exit 1; }; }
+    elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gnu_ld_flag=yes
+    fi
   elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gnu_ld_flag=yes
   fi
@@ -1812,9 +1816,13 @@ if test "${with_as+set}" = set; then
 fi;
 if test x"${DEFAULT_ASSEMBLER+set}" = x"set"; then
   if test ! -x "$DEFAULT_ASSEMBLER"; then
-    { { echo "$as_me:$LINENO: error: cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER" >&5
+    if test ! -x "`which $DEFAULT_ASSEMBLER`"; then
+      { { echo "$as_me:$LINENO: error: cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER" >&5
 echo "$as_me: error: cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER" >&2;}
    { (exit 1); exit 1; }; }
+    elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gas_flag=yes
+    fi
   elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gas_flag=yes
   fi

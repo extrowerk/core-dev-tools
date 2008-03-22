@@ -2665,13 +2665,25 @@ find_a_file (const struct path_prefix *pprefix, const char *name, int mode,
   struct file_at_path_info info;
 
 #ifdef DEFAULT_ASSEMBLER
-  if (! strcmp (name, "as") && access (DEFAULT_ASSEMBLER, mode) == 0)
-    return xstrdup (DEFAULT_ASSEMBLER);
+  if (! strcmp (name, "as"))
+  {
+    if (access (DEFAULT_ASSEMBLER, mode) == 0)
+      return xstrdup (DEFAULT_ASSEMBLER);
+    if ((!IS_ABSOLUTE_PATH(DEFAULT_ASSEMBLER))
+      && (strcmp(DEFAULT_ASSEMBLER,name)))
+      return find_a_file(pprefix, DEFAULT_ASSEMBLER, mode, 0); 
+  }
 #endif
 
 #ifdef DEFAULT_LINKER
-  if (! strcmp(name, "ld") && access (DEFAULT_LINKER, mode) == 0)
-    return xstrdup (DEFAULT_LINKER);
+  if (! strcmp(name, "ld"))
+  { 
+    if (access (DEFAULT_LINKER, mode) == 0)
+      return xstrdup (DEFAULT_LINKER);
+    if ((!IS_ABSOLUTE_PATH(DEFAULT_LINKER))
+      && (strcmp(DEFAULT_LINKER,name)))
+      return find_a_file(pprefix, DEFAULT_LINKER, mode, 0); 
+  }
 #endif
 
   /* Determine the filename to execute (special case for absolute paths).  */
