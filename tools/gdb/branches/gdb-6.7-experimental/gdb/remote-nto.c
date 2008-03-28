@@ -3155,7 +3155,7 @@ The remote will timeout after nto-timeout seconds."),
 			  &only_session.inherit_env, _("\
 Set if the inferior should inherit environment from pdebug or gdb."), _("\
 Show nto-inherit-env value."), _("\
-If nto-inherit-env is off, the process spawned on the remote\
+If nto-inherit-env is off, the process spawned on the remote \
 will have its environment set by gdb.  Otherwise, it will inherit its \
 environment from pdebug."), NULL, NULL, 
 			  &setlist, &showlist);
