@@ -1,5 +1,5 @@
 This is doc/gcc.info, produced by makeinfo version 4.8 from
-/scratch/mitchell/gcc-releases/gcc-4.2.1/gcc-4.2.1/gcc/doc/gcc.texi.
+/scratch/mitchell/gcc-releases/gcc-4.2.2/gcc-4.2.2/gcc/doc/gcc.texi.
 
  Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
 1999, 2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
@@ -58,7 +58,7 @@ Introduction
 
 This manual documents how to use the GNU compilers, as well as their
 features and incompatibilities, and how to report bugs.  It corresponds
-to GCC version 4.2.1.  The internals of the GNU compilers, including
+to GCC version 4.2.2.  The internals of the GNU compilers, including
 how to port them to new targets and some information about how to write
 front ends for new languages, are documented in a separate manual.
 *Note Introduction: (gccint)Top.
@@ -28895,6 +28895,9 @@ alphabetical order.
 
    * Robert Lipe for OpenServer support, new testsuites, testing, etc.
 
+   * Chen Liqin for various S+core related fixes/improvement, and for
+     maintaining the S+core port.
+
    * Weiwen Liu for testing and various bug fixes.
 
    * Dave Love for his ongoing work with the Fortran front end and
@@ -33100,7 +33103,7 @@ Node: GNU Project1170091
 Node: Copying1170737
 Node: GNU Free Documentation License1189914
 Node: Contributors1212320
-Node: Option Index1248176
-Node: Keyword Index1384054
+Node: Option Index1248281
+Node: Keyword Index1384159
 
 End Tag Table
