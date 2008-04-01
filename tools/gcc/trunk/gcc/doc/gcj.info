@@ -1,5 +1,5 @@
 This is doc/gcj.info, produced by makeinfo version 4.8 from
-/scratch/mitchell/gcc-releases/gcc-4.2.2/gcc-4.2.2/gcc/java/gcj.texi.
+/scratch/joseph/4.2.3/gcc-4.2.3/gcc-4.2.3/gcc/java/gcj.texi.
 
    Copyright (C) 2001, 2002, 2003, 2004, 2005 Free Software Foundation,
 Inc.
@@ -3339,52 +3339,52 @@ Index
 
 
 Tag Table:
-Node: Top2846
-Node: Copying4168
-Node: GNU Free Documentation License23363
-Node: Invoking gcj45775
-Node: Input and output files46474
-Node: Input Options48000
-Node: Encodings51148
-Node: Warnings52354
-Node: Linking53467
-Node: Code Generation56406
-Node: Configure-time Options62956
-Node: Compatibility64379
-Node: Limitations64859
-Node: Extensions66441
-Node: Invoking gcjh69535
-Node: Invoking gjnih71890
-Node: Invoking jv-scan74078
-Node: Invoking jcf-dump75120
-Node: Invoking gij76068
-Node: Invoking gcj-dbtool79319
-Node: Invoking jv-convert81785
-Node: Invoking grmic82864
-Node: Invoking grmiregistry84254
-Node: About CNI84667
-Node: Basic concepts86109
-Node: Packages89005
-Node: Primitive types91333
-Node: Reference types93011
-Node: Interfaces94100
-Node: Objects and Classes95011
-Node: Class Initialization97206
-Node: Object allocation99548
-Node: Memory allocation100338
-Node: Arrays100970
-Node: Methods103781
-Node: Strings106602
-Node: Mixing with C++108086
-Node: Exception Handling111557
-Node: Synchronization113191
-Node: Invocation115181
-Node: Reflection120117
-Node: System properties120578
-Node: Standard Properties121455
-Node: GNU Classpath Properties125887
-Node: libgcj Runtime Properties126934
-Node: Resources131436
-Node: Index132274
+Node: Top2837
+Node: Copying4159
+Node: GNU Free Documentation License23354
+Node: Invoking gcj45766
+Node: Input and output files46465
+Node: Input Options47991
+Node: Encodings51139
+Node: Warnings52345
+Node: Linking53458
+Node: Code Generation56397
+Node: Configure-time Options62947
+Node: Compatibility64370
+Node: Limitations64850
+Node: Extensions66432
+Node: Invoking gcjh69526
+Node: Invoking gjnih71881
+Node: Invoking jv-scan74069
+Node: Invoking jcf-dump75111
+Node: Invoking gij76059
+Node: Invoking gcj-dbtool79310
+Node: Invoking jv-convert81776
+Node: Invoking grmic82855
+Node: Invoking grmiregistry84245
+Node: About CNI84658
+Node: Basic concepts86100
+Node: Packages88996
+Node: Primitive types91324
+Node: Reference types93002
+Node: Interfaces94091
+Node: Objects and Classes95002
+Node: Class Initialization97197
+Node: Object allocation99539
+Node: Memory allocation100329
+Node: Arrays100961
+Node: Methods103772
+Node: Strings106593
+Node: Mixing with C++108077
+Node: Exception Handling111548
+Node: Synchronization113182
+Node: Invocation115172
+Node: Reflection120108
+Node: System properties120569
+Node: Standard Properties121446
+Node: GNU Classpath Properties125878
+Node: libgcj Runtime Properties126925
+Node: Resources131427
+Node: Index132265
 
 End Tag Table

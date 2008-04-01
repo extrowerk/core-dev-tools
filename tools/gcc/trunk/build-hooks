@@ -89,14 +89,9 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-tls"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
-	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/4.2.1"
+	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/${gcc_version}"
 	configure_opts="${configure_opts} --enable-multilib"
-	
-	if [ ${target} != mips-unknown-nto-qnx6.3.0 ]; then
-		configure_opts="${configure_opts} --enable-shared"
-	else
-		configure_opts="${configure_opts} --disable-shared"
-	fi
+	configure_opts="${configure_opts} --enable-shared"
 
 	# The cross compilation of libgcc.a and libstdc++ require system headers
 	# from the next version of Neutrino while gcc itself should be compiled
