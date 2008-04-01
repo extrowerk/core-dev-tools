@@ -248,11 +248,11 @@ procfs_thread_alive (ptid_t ptid)
     return 0;
 
   /* Thread is alive or dead but not yet joined,
-  or dead and there is an alive (or dead unjoined) thread with
-  higher tid. We return tidinfo.  
+     or dead and there is an alive (or dead unjoined) thread with
+     higher tid. We return tidinfo.  
 
-  Client should check if the tid is the same as 
-  requested; if not, requested tid is dead.  */
+     Client should check if the tid is the same as 
+     requested; if not, requested tid is dead.  */
   return (status.tid == tid) && (status.state != STATE_DEAD);
 }
 
@@ -676,9 +676,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
       ofunc = (void (*)()) signal (SIGINT, nto_interrupt);
       sigwaitres = sigwaitinfo (&set, &info);
       if (sigwaitres == -1)
-        {
-	  perror_with_name (__FILE__);
-        }
+	perror_with_name (__FILE__);
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
@@ -882,8 +880,8 @@ procfs_remove_hw_breakpoint (struct bp_target_info *bp_tgt)
 }
 
 /* Workaround for aliasing rules violation. In our case,
-  violation is o.k. We use sigaddset on fltset_t which is 
-  equivalent to sigset_t in nto. */
+   violation is o.k. We use sigaddset on fltset_t which is 
+   equivalent to sigset_t in nto. */
 
 typedef union 
   {
@@ -934,8 +932,8 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
       signal_to_pass = target_signal_to_host (signo);
 
-      if ((status.why == _DEBUG_WHY_REQUESTED) ||
-         (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED)))
+      if ((status.why == _DEBUG_WHY_REQUESTED) 
+	  || (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED)))
 	{
 	  if (signal_to_pass != status.info.si_signo)
 	    {
@@ -1336,7 +1334,6 @@ static void
 init_procfs_ops (void)
 {
   nto_trace (0) ("%s ()\n", __func__);
-  memset (&procfs_ops, 0, sizeof (procfs_ops));
   procfs_ops.to_shortname = "procfs";
   procfs_ops.to_longname = "QNX Neutrino procfs child process";
   procfs_ops.to_doc =
