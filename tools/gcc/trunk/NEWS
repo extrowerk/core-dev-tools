@@ -9,23 +9,18 @@ http://gcc.gnu.org/gcc-4.2/index.html
 
                            GCC 4.2 Release Series
 
-   July 18, 2007
+   October 7, 2007
 
    The  [1]GNU project and the GCC developers are pleased to announce the
-   release of GCC 4.2.1.
+   release of GCC 4.2.2.
 
    This release is a bug-fix release, containing fixes for regressions in GCC
-   4.2.0 relative to previous releases of GCC.
-
-   May 13, 2007
-
-   The  [2]GNU project and the GCC developers are pleased to announce the
-   release of GCC 4.2.0.
-
-   This release is a major release, containing new features (as well as many
-   other improvements) relative to GCC 4.1.x.
+   4.2.1 relative to previous releases of GCC.
 
 Release History
+
+   GCC 4.2.2
+          October 7, 2007 ([2]changes)
 
    GCC 4.2.1
           July 18, 2007 ([3]changes)
@@ -71,12 +66,12 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-07-19 [20]Valid XHTML 1.0 
+   Last modified 2007-10-07 [20]Valid XHTML 1.0 
 
 References
 
    1. http://www.gnu.org/
-   2. http://www.gnu.org/
+   2. http://gcc.gnu.org/gcc-4.2/changes.html
    3. http://gcc.gnu.org/gcc-4.2/changes.html
    4. http://gcc.gnu.org/gcc-4.2/changes.html
    5. http://gcc.gnu.org/gcc-4.2/buildstat.html
@@ -119,7 +114,7 @@ General Optimizer Improvements
 New Languages and Language specific improvements
 
      * [1]OpenMP is now supported for the C, C++ and Fortran compilers.
-     * New command line options -fstrict-overflow and -Wstrict-overflow have
+     * New command-line options -fstrict-overflow and -Wstrict-overflow have
        been added. -fstrict-overflow tells the compiler that it may assume that
        the program follows the strict signed overflow semantics permitted for
        the language: for C and C++ this means that the compiler may assume that
@@ -134,7 +129,7 @@ New Languages and Language specific improvements
        about cases where the compiler assumes that signed overflow will not
        occur. It takes five different levels: -Wstrict-overflow=1 to 5. See the
        [2]documentation for details. -Wstrict-overflow=1 is enabled by -Wall.
-     * The new command line option -fno-toplevel-reorder directs GCC to emit
+     * The new command-line option -fno-toplevel-reorder directs GCC to emit
        top-level functions, variables, and asm statements in the same order
        that they appear in the input file. This is intended to support existing
        code which relies on a particular ordering (for example, code which uses
@@ -155,10 +150,10 @@ New Languages and Language specific improvements
        preparation for this, GCC 4.2 will warn about any use of non-static
        inline functions in gnu99 or c99 mode. This new warning may be disabled
        with the new gnu_inline function attribute or the new -fgnu89-inline
-       command line option. Also, GCC 4.2 and later will define one of the
+       command-line option. Also, GCC 4.2 and later will define one of the
        preprocessor macros __GNUC_GNU_INLINE__ or __GNUC_STDC_INLINE__ to
        indicate the semantics of inline functions in the current compilation.
-     * A  new  command line option -Waddress has been added to warn about
+     * A  new  command-line option -Waddress has been added to warn about
        suspicious uses of memory addresses as, for example, using the address
        of a function in a conditional expression, and comparisons against the
        memory address of a string literal. This warning is enabled by -Wall.
@@ -193,7 +188,7 @@ New Languages and Language specific improvements
        to C which has only one parameter.
      * The <?, >?, <?=, and >?= operators, deprecated in previous GCC releases,
        have been removed.
-     * The command line option -fconst-strings, deprecated in previous GCC
+     * The command-line option -fconst-strings, deprecated in previous GCC
        releases, has been removed.
      * The configure variable enable-__cxa_atexit is now enabled by default for
        more targets. Enabling this variable is necessary in order for static
@@ -269,7 +264,7 @@ New Languages and Language specific improvements
 
   Java (GCJ)
 
-     * A new command line option -static-libgcj has been added for targets that
+     * A new command-line option -static-libgcj has been added for targets that
        use a linker compatible with GNU Binutils. As its name implies, this
        causes libgcj to be linked statically. In some cases this causes the
        resulting executable to start faster and use less memory than if the
@@ -291,7 +286,7 @@ New Targets and Target Specific Improvements
        Pentium 4 and Intel Core 2.
      * -mtune=native and -march=native will produce code optimized for the host
        architecture as detected using the cpuid instruction.
-     * Added a new command line option -fstackrealign and and __attribute__
+     * Added a new command-line option -fstackrealign and and __attribute__
        ((force_align_arg_pointer)) to realign the stack at runtime. This allows
        functions compiled with a vector-aligned stack to be invoked from legacy
        objects that keep only word-alignment.
@@ -391,7 +386,7 @@ Other significant improvements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-05-12 [16]Valid XHTML 1.0 
+   Last modified 2007-09-19 [16]Valid XHTML 1.0 
 
 References
 
@@ -473,7 +468,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-14 [20]Valid XHTML 1.0 
+   Last modified 2007-07-25 [20]Valid XHTML 1.0 
 
 References
 
@@ -606,7 +601,7 @@ General Optimizer Improvements
        reliable  (hopefully  avoiding  profile mismatch errors when using
        -fprofile-use or -fbranch-probabilities) and can be used to drive higher
        level optimizations, such as inlining.
-       The  -ftree-based-profiling  command  line  option was removed and
+       The  -ftree-based-profiling  command-line  option  was removed and
        -fprofile-use  now  implies disabling old RTL level loop optimizer
        (-fno-loop-optimize). Speculative prefetching optimization (originally
        enabled by -fspeculative-prefetching) was removed.
@@ -1017,7 +1012,7 @@ GCC 4.1.2
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-14 [15]Valid XHTML 1.0 
+   Last modified 2007-09-19 [15]Valid XHTML 1.0 
 
 References
 
@@ -1104,7 +1099,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-03 [22]Valid XHTML 1.0 
+   Last modified 2007-07-25 [22]Valid XHTML 1.0 
 
 References
 
@@ -1460,7 +1455,7 @@ New Targets and Target Specific Improvements
 
   S/390 and zSeries
 
-     * New command line options help to generate code intended to run in an
+     * New command-line options help to generate code intended to run in an
        environment where stack space is restricted, e.g. Linux kernel code:
           + -mwarn-framesize and -mwarn-dynamicstack trigger compile-time
             warnings for single functions that require large or dynamic stack
@@ -1621,7 +1616,7 @@ GCC 4.0.4
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-03 [24]Valid XHTML 1.0 
+   Last modified 2007-09-19 [24]Valid XHTML 1.0 
 
 References
 
@@ -1727,7 +1722,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [26]Valid XHTML 1.0 
+   Last modified 2007-07-25 [26]Valid XHTML 1.0 
 
 References
 
@@ -1858,7 +1853,7 @@ General Optimizer Improvements
             ranges  or  other properties of the operands. At the moment a
             conversion of expensive divisions into cheaper operations has been
             implemented.
-          + New -fprofile-generate and -fprofile-use command line options to
+          + New -fprofile-generate and -fprofile-use command-line options to
             simplify the use of profile feedback.
      * A new unit-at-a-time compilation scheme for C, Objective-C, C++ and Java
        which is enabled via -funit-at-a-time (and implied by -O2). In this
@@ -3456,7 +3451,7 @@ GCC 3.4.6
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [421]Valid XHTML 1.0 
+   Last modified 2007-09-19 [421]Valid XHTML 1.0 
 
 References
 
@@ -3960,7 +3955,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [25]Valid XHTML 1.0 
+   Last modified 2007-07-25 [25]Valid XHTML 1.0 
 
 References
 
@@ -5273,7 +5268,7 @@ GCC 3.3.6
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-11-12 [561]Valid XHTML 1.0 
+   Last modified 2007-08-20 [561]Valid XHTML 1.0 
 
 References
 
@@ -5911,7 +5906,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [21]Valid XHTML 1.0 
+   Last modified 2007-07-25 [21]Valid XHTML 1.0 
 
 References
 
@@ -6523,7 +6518,7 @@ GCC 3.2
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [254]Valid XHTML 1.0 
+   Last modified 2007-07-25 [254]Valid XHTML 1.0 
 
 References
 
@@ -6835,7 +6830,7 @@ http://gcc.gnu.org/gcc-3.1/index.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [18]Valid XHTML 1.0 
+   Last modified 2007-07-25 [18]Valid XHTML 1.0 
 
 References
 
@@ -7193,7 +7188,7 @@ Documentation improvements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-18 [21]Valid XHTML 1.0 
+   Last modified 2007-07-25 [21]Valid XHTML 1.0 
 
 References
 
@@ -7278,7 +7273,7 @@ Previous 3.0.x Releases
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-01 [18]Valid XHTML 1.0 
+   Last modified 2007-07-25 [18]Valid XHTML 1.0 
 
 References
 
@@ -7474,7 +7469,7 @@ Other significant improvements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2007-02-24 [22]Valid XHTML 1.0 
+   Last modified 2007-07-25 [22]Valid XHTML 1.0 
 
 References
 
@@ -7554,7 +7549,7 @@ http://gcc.gnu.org/gcc-3.0/caveats.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [12]Valid XHTML 1.0 
+   Last modified 2007-07-25 [12]Valid XHTML 1.0 
 
 References
 
@@ -7644,7 +7639,7 @@ References and Acknowledgements
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [21]Valid XHTML 1.0 
+   Last modified 2007-07-25 [21]Valid XHTML 1.0 
 
 References
 
@@ -7909,7 +7904,7 @@ Additional Changes in GCC 2.95.3
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [25]Valid XHTML 1.0 
+   Last modified 2007-07-25 [25]Valid XHTML 1.0 
 
 References
 
@@ -7999,7 +7994,7 @@ http://gcc.gnu.org/gcc-2.95/caveats.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [10]Valid XHTML 1.0 
+   Last modified 2007-07-25 [10]Valid XHTML 1.0 
 
 References
 
@@ -8218,7 +8213,7 @@ http://gcc.gnu.org/egcs-1.1/index.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [19]Valid XHTML 1.0 
+   Last modified 2007-07-25 [19]Valid XHTML 1.0 
 
 References
 
@@ -8325,7 +8320,7 @@ http://gcc.gnu.org/egcs-1.1/features.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [14]Valid XHTML 1.0 
+   Last modified 2007-07-25 [14]Valid XHTML 1.0 
 
 References
 
@@ -8386,7 +8381,7 @@ http://gcc.gnu.org/egcs-1.1/caveats.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [9]Valid XHTML 1.0 
+   Last modified 2007-07-25 [9]Valid XHTML 1.0 
 
 References
 
@@ -8586,7 +8581,7 @@ http://gcc.gnu.org/egcs-1.0/index.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [14]Valid XHTML 1.0 
+   Last modified 2007-07-25 [14]Valid XHTML 1.0 
 
 References
 
@@ -8660,7 +8655,7 @@ http://gcc.gnu.org/egcs-1.0/features.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [11]Valid XHTML 1.0 
+   Last modified 2007-07-25 [11]Valid XHTML 1.0 
 
 References
 
@@ -8721,7 +8716,7 @@ http://gcc.gnu.org/egcs-1.0/caveats.html
 
    Verbatim copying and distribution of this entire article is permitted in any
    medium, provided this notice is preserved.
-   Last modified 2006-06-21 [9]Valid XHTML 1.0 
+   Last modified 2007-07-25 [9]Valid XHTML 1.0 
 
 References
 

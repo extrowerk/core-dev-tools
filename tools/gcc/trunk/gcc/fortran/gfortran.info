@@ -1,5 +1,5 @@
 This is doc/gfortran.info, produced by makeinfo version 4.8 from
-/scratch/mitchell/gcc-releases/gcc-4.2.1/gcc-4.2.1/gcc/fortran/gfortran.texi.
+/scratch/mitchell/gcc-releases/gcc-4.2.2/gcc-4.2.2/gcc/fortran/gfortran.texi.
 
    Copyright (C) 1999-2007 Free Software Foundation, Inc.
 
@@ -331,19 +331,19 @@ only one of these two forms, whichever one is not the default.
 * Runtime Options::     Influencing runtime behavior
 * Code Gen Options::    Specifying conventions for function calls, data layout
                         and register usage.
-* Environment Variables:: Env vars that affect `gfortran'.
+* Environment Variables:: Environment variables that affect `gfortran'.
 
 
 File: gfortran.info,  Node: Option Summary,  Next: Fortran Dialect Options,  Up: Invoking GNU Fortran
 
-2.1 Option Summary
+2.1 Option summary
 ==================
 
 Here is a summary of all the options specific to GNU Fortran, grouped
 by type.  Explanations are in the following sections.
 
 _Fortran Language Options_
-     *Note Options Controlling Fortran Dialect: Fortran Dialect Options.
+     *Note Options controlling Fortran dialect: Fortran Dialect Options.
           -fall-intrinsics  -ffree-form  -fno-fixed-form
           -fdollar-ok  -fimplicit-none  -fmax-identifier-length
           -std=STD -fd-lines-as-code  -fd-lines-as-comments
@@ -353,20 +353,21 @@ _Fortran Language Options_
           -fcray-pointer  -fopenmp  -frange-check -fno-backslash
 
 _Error and Warning Options_
-     *Note Options to Request or Suppress Errors and Warnings: Error
+     *Note Options to request or suppress errors and warnings: Error
      and Warning Options.
           -fmax-errors=N
           -fsyntax-only  -pedantic  -pedantic-errors
-          -w  -Wall  -Waliasing  -Wampersand  -Wcharacter-truncation  -Wconversion
+          -Wall  -Waliasing  -Wampersand  -Wcharacter-truncation  -Wconversion
           -Wimplicit-interface  -Wline-truncation  -Wnonstd-intrinsics  -Wsurprising
-          -Wno-tabs  -Wunderflow  -W
+          -Wno-tabs  -Wunderflow
 
 _Debugging Options_
-     *Note Options for Debugging Your Program or GCC: Debugging Options.
+     *Note Options for debugging your program or GNU Fortran: Debugging
+     Options.
           -fdump-parse-tree  -ffpe-trap=LIST
 
 _Directory Options_
-     *Note Options for Directory Search: Directory Options.
+     *Note Options for directory search: Directory Options.
           -IDIR  -JDIR  -MDIR
 
 _Runtime Options_
@@ -375,7 +376,7 @@ _Runtime Options_
           -fmax-subrecord-length=LENGTH
 
 _Code Generation Options_
-     *Note Options for Code Generation Conventions: Code Gen Options.
+     *Note Options for code generation conventions: Code Gen Options.
           -fno-automatic  -ff2c  -fno-underscoring
           -fsecond-underscore
           -fbounds-check  -fmax-stack-var-size=N
@@ -396,7 +397,7 @@ _Code Generation Options_
 
 File: gfortran.info,  Node: Fortran Dialect Options,  Next: Error and Warning Options,  Prev: Option Summary,  Up: Invoking GNU Fortran
 
-2.2 Options Controlling Fortran Dialect
+2.2 Options controlling Fortran dialect
 =======================================
 
 The following options control the details of the Fortran dialect
@@ -513,7 +514,7 @@ accepted by the compiler:
 
 File: gfortran.info,  Node: Error and Warning Options,  Next: Debugging Options,  Prev: Fortran Dialect Options,  Up: Invoking GNU Fortran
 
-2.3 Options to Request or Suppress Errors and Warnings
+2.3 Options to request or suppress errors and warnings
 ======================================================
 
 Errors are diagnostic messages that report that the GNU Fortran compiler
@@ -567,9 +568,6 @@ produced by GNU Fortran:
 `-pedantic-errors'
      Like `-pedantic', except that errors are produced rather than
      warnings.
-
-`-w'
-     Inhibit all warning messages.
 
 `-Wall'
      Enables commonly used warning options pertaining to usage that we
@@ -644,11 +642,6 @@ produced by GNU Fortran:
 `-Werror'
      Turns all warnings into errors.
 
-`-W'
-     Turns on "extra warnings" and, if optimization is specified via
-     `-O', the `-Wuninitialized' option.  (This might change in future
-     versions of GNU Fortran.)
-
    *Note Options to Request or Suppress Errors and Warnings: (gcc)Error
 and Warning Options, for information on more options offered by the GBE
 shared by `gfortran', `gcc' and other GNU compilers.
@@ -659,7 +652,7 @@ Fortran.
 
 File: gfortran.info,  Node: Debugging Options,  Next: Directory Options,  Prev: Error and Warning Options,  Up: Invoking GNU Fortran
 
-2.4 Options for Debugging Your Program or GNU Fortran
+2.4 Options for debugging your program or GNU Fortran
 =====================================================
 
 GNU Fortran has various special options that are used for debugging
@@ -687,7 +680,7 @@ Options, for more information on debugging options.
 
 File: gfortran.info,  Node: Directory Options,  Next: Runtime Options,  Prev: Debugging Options,  Up: Invoking GNU Fortran
 
-2.5 Options for Directory Search
+2.5 Options for directory search
 ================================
 
 These options affect how GNU Fortran searches for files specified by
@@ -746,9 +739,9 @@ Fortran.
 `-frecord-marker=LENGTH'
      Specify the length of record markers for unformatted files.  Valid
      values for LENGTH are 4 and 8.  Default is 4.  _This is different
-     from previous versions of gfortran_, which specified a default
+     from previous versions of `gfortran'_, which specified a default
      record marker length of 8 on most systems.  If you want to read or
-     write files compatible with earlier versions of gfortran, use
+     write files compatible with earlier versions of `gfortran', use
      `-frecord-marker=8'.
 
 `-fmax-subrecord-length=LENGTH'
@@ -759,7 +752,7 @@ Fortran.
 
 File: gfortran.info,  Node: Code Gen Options,  Next: Environment Variables,  Prev: Runtime Options,  Up: Invoking GNU Fortran
 
-2.7 Options for Code Generation Conventions
+2.7 Options for code generation conventions
 ===========================================
 
 These machine-independent options control the interface conventions
@@ -930,7 +923,7 @@ Options, for information on more options offered by the GBE shared by
 
 File: gfortran.info,  Node: Environment Variables,  Prev: Code Gen Options,  Up: Invoking GNU Fortran
 
-2.8 Environment Variables Affecting `gfortran'
+2.8 Environment variables affecting `gfortran'
 ==============================================
 
 The `gfortran' compiler currently does not make use of any environment
@@ -1930,7 +1923,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine
 
 _Syntax_:
      `CALL ABORT'
@@ -2398,7 +2391,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     transformational function
+     Transformational function
 
 _Syntax_:
      `RESULT = ALL(MASK [, DIM])'
@@ -2495,7 +2488,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = AND(I, J)'
@@ -2583,7 +2576,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     transformational function
+     Transformational function
 
 _Syntax_:
      `RESULT = ANY(MASK [, DIM])'
@@ -3300,7 +3293,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL CHDIR(NAME [, STATUS])'
@@ -3345,7 +3338,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL CHMOD(NAME, MODE[, STATUS])'
@@ -3375,7 +3368,7 @@ _Example_:
             call chmod('test.dat','u+x',status)
             print *, 'Status: ', status
           end program chmod_test
-     `CHMOD' as non-elemental function:
+     `CHMOD' as function:
           program chmod_test
             implicit none
             integer :: status
@@ -3650,7 +3643,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     transformational function
+     Transformational function
 
 _Syntax_:
      `RESULT = COUNT(MASK [, DIM])'
@@ -3789,7 +3782,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL CTIME(TIME, RESULT)'.
@@ -4093,7 +4086,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     transformational function
+     Transformational function
 
 _Syntax_:
      `RESULT = DOT_PRODUCT(X, Y)'
@@ -4210,8 +4203,8 @@ _Description_:
      less than previous values, during a single run of the compiled
      program.
 
-     If `DTIME' is invoked as a function, it can not be invoked as a
-     subroutine, and vice versa.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
 
      TARRAY and RESULT are `INTENT(OUT)' and provide the following:
 
@@ -4224,7 +4217,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL DTIME(TARRAY, RESULT)'.
@@ -4437,8 +4430,8 @@ _Description_:
      less than previous values, during a single run of the compiled
      program.
 
-     If `ETIME' is invoked as a function, it can not be invoked as a
-     subroutine, and vice versa.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
 
      TARRAY and RESULT are `INTENT(OUT)' and provide the following:
 
@@ -4450,7 +4443,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL ETIME(TARRAY, RESULT)'.
@@ -4605,8 +4598,8 @@ _Description_:
      `FDATE(DATE)' returns the current date (using the same format as
      `CTIME') in DATE. It is equivalent to `CALL CTIME(DATE, TIME())'.
 
-     If `FDATE' is invoked as a function, it can not be invoked as a
-     subroutine, and vice versa.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
 
      DATE is an `INTENT(OUT)' `CHARACTER' variable.
 
@@ -4614,7 +4607,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FDATE(DATE)'.
@@ -4684,17 +4677,20 @@ _Description_:
      normal record-oriented (formatted or unformatted) I/O on the same
      unit; the results are unpredictable.
 
-     This intrinsic routine is provided for backwards compatibility with
-     `g77'.  GNU Fortran provides the Fortran 2003 Stream facility.
-     Programmers should consider the use of new stream IO feature in
-     new code for future portability. See also *Note Fortran 2003
-     status::.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
+     Note that the `FGET' intrinsic is provided for backwards
+     compatibility with `g77'.  GNU Fortran provides the Fortran 2003
+     Stream facility.  Programmers should consider the use of new
+     stream IO feature in new code for future portability. See also
+     *Note Fortran 2003 status::.
 
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FGET(C [, STATUS])'
@@ -4736,17 +4732,20 @@ _Description_:
      record-oriented (formatted or unformatted) I/O on the same unit;
      the results are unpredictable.
 
-     This intrinsic routine is provided for backwards compatibility with
-     `g77'.  GNU Fortran provides the Fortran 2003 Stream facility.
-     Programmers should consider the use of new stream IO feature in
-     new code for future portability. See also *Note Fortran 2003
-     status::.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
+     Note that the `FGET' intrinsic is provided for backwards
+     compatibility with `g77'.  GNU Fortran provides the Fortran 2003
+     Stream facility.  Programmers should consider the use of new
+     stream IO feature in new code for future portability. See also
+     *Note Fortran 2003 status::.
 
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FGETC(UNIT, C [, STATUS])'
@@ -4830,7 +4829,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine
 
 _Syntax_:
      `CALL FLUSH(UNIT)'
@@ -4857,7 +4856,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = FNUM(UNIT)'
@@ -4889,17 +4888,20 @@ _Description_:
      normal record-oriented (formatted or unformatted) I/O on the same
      unit; the results are unpredictable.
 
-     This intrinsic routine is provided for backwards compatibility with
-     `g77'.  GNU Fortran provides the Fortran 2003 Stream facility.
-     Programmers should consider the use of new stream IO feature in
-     new code for future portability. See also *Note Fortran 2003
-     status::.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
+     Note that the `FGET' intrinsic is provided for backwards
+     compatibility with `g77'.  GNU Fortran provides the Fortran 2003
+     Stream facility.  Programmers should consider the use of new
+     stream IO feature in new code for future portability. See also
+     *Note Fortran 2003 status::.
 
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FPUT(C [, STATUS])'
@@ -4935,17 +4937,20 @@ _Description_:
      record-oriented (formatted or unformatted) I/O on the same unit;
      the results are unpredictable.
 
-     This intrinsic routine is provided for backwards compatibility with
-     `g77'.  GNU Fortran provides the Fortran 2003 Stream facility.
-     Programmers should consider the use of new stream IO feature in
-     new code for future portability. See also *Note Fortran 2003
-     status::.
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
+     Note that the `FGET' intrinsic is provided for backwards
+     compatibility with `g77'.  GNU Fortran provides the Fortran 2003
+     Stream facility.  Programmers should consider the use of new
+     stream IO feature in new code for future portability. See also
+     *Note Fortran 2003 status::.
 
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FPUTC(UNIT, C [, STATUS])'
@@ -5087,11 +5092,14 @@ _Description_:
 
      The elements in `BUFF' are the same as described by *Note STAT::.
 
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL FSTAT(UNIT, BUFF [, STATUS])'
@@ -5329,11 +5337,14 @@ File: gfortran.info,  Node: GETCWD,  Next: GETENV,  Prev: GET_COMMAND_ARGUMENT, 
 _Description_:
      Get current working directory.
 
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine.
+     Subroutine, function
 
 _Syntax_:
      `CALL GETCWD(CWD [, STATUS])'
@@ -5443,7 +5454,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     function
+     Function
 
 _Syntax_:
      `RESULT = GETGID()'
@@ -5506,7 +5517,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     function
+     Function
 
 _Syntax_:
      `RESULT = GETPID()'
@@ -5537,7 +5548,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     function
+     Function
 
 _Syntax_:
      `RESULT = GETUID()'
@@ -5655,7 +5666,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     Elemental function
+     Inquiry function
 
 _Syntax_:
      `RESULT = HUGE(X)'
@@ -5773,7 +5784,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental Function
+     Function
 
 _Syntax_:
      `RESULT = IARGC()'
@@ -6031,7 +6042,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = IERRNO()'
@@ -6248,11 +6259,16 @@ _Description_:
      restarted by `CALL SRAND(0)'; if FLAG has any other value, it is
      used as a new seed with `SRAND'.
 
+     This intrinsic routine is provided for backwards compatibility with
+     GNU Fortran 77. It implements a simple modulo generator as provided
+     by `g77'. For new code, one should consider the use of *Note
+     RANDOM_NUMBER:: as it implements a superior algorithm.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = IRAND(FLAG)'
@@ -6286,7 +6302,7 @@ _Standard_:
      GNU extension.
 
 _Class_:
-     Non-elemental function.
+     Function
 
 _Syntax_:
      `RESULT = ISATTY(UNIT)'
@@ -6430,8 +6446,11 @@ _Standard_:
      Sends the signal specified by SIGNAL to the process PID.  See
      `kill(2)'.
 
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
 _Class_:
-     Subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL KILL(PID, SIGNAL [, STATUS])'
@@ -6675,7 +6694,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL LINK(PATH1, PATH2 [, STATUS])'
@@ -7023,11 +7042,14 @@ _Description_:
 
      The elements in `BUFF' are the same as described by *Note STAT::.
 
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL LSTAT(FILE, BUFF [, STATUS])'
@@ -7118,7 +7140,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `PTR = MALLOC(SIZE)'
@@ -7397,7 +7419,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = MCLOCK()'
@@ -7435,7 +7457,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = MCLOCK8()'
@@ -7808,10 +7830,10 @@ _Standard_:
      F95 and later
 
 _Class_:
-     Elemental function
+     Elemental subroutine
 
 _Syntax_:
-     `RESULT = MVBITS(FROM, FROMPOS, LEN, TO, TOPOS)'
+     `CALL MVBITS(FROM, FROMPOS, LEN, TO, TOPOS)'
 
 _Arguments_:
      FROM       The type shall be `INTEGER(*)'.
@@ -8027,7 +8049,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = OR(X, Y)'
@@ -8309,7 +8331,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _See also_:
      *Note RAND::, *Note RANDOM_NUMBER::
@@ -8327,11 +8349,16 @@ _Description_:
      restarted by `CALL SRAND(0)'; if FLAG has any other value, it is
      used as a new seed with `SRAND'.
 
+     This intrinsic routine is provided for backwards compatibility with
+     GNU Fortran 77. It implements a simple modulo generator as provided
+     by `g77'. For new code, one should consider the use of *Note
+     RANDOM_NUMBER:: as it implements a superior algorithm.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = RAND(FLAG)'
@@ -8365,11 +8392,30 @@ _Description_:
      Returns a single pseudorandom number or an array of pseudorandom
      numbers from the uniform distribution over the range  0 \leq x < 1.
 
+     The runtime-library implementes George Marsaglia's KISS (Keep It
+     Simple Stupid) random number generator (RNG). This RNG combines:
+       1. The congruential generator x(n) = 69069 \cdot x(n-1) +
+          1327217885 with a period of 2^32,
+
+       2. A 3-shift shift-register generator with a period of 2^32 - 1,
+
+       3. Two 16-bit multiply-with-carry generators with a period of
+          597273182964842497 > 2^59.
+          The overall period exceeds 2^123.
+
+     Please note, this RNG is thread safe if used within OpenMP
+     directives, i. e. its state will be consistent while called from
+     multiple threads.  However, the KISS generator does not create
+     random numbers in parallel from multiple sources, but in sequence
+     from a single source. If an OpenMP-enabled application heavily
+     relies on random numbers, one should consider employing a
+     dedicated parallel random number generator instead.
+
 _Standard_:
      F95 and later
 
 _Class_:
-     Elemental subroutine
+     Subroutine
 
 _Syntax_:
      `RANDOM_NUMBER(HARVEST)'
@@ -8384,16 +8430,6 @@ _Example_:
             CALL init_random_seed()         ! see example of RANDOM_SEED
             CALL RANDOM_NUMBER(r)
           end program
-
-_Note_:
-     The implemented random number generator is thread safe if used
-     within OpenMP directives, i. e. its state will be consistent while
-     called from multiple threads. Please note that the currently
-     implemented KISS generator does not create random numbers in
-     parallel from multiple sources, but in sequence from a single
-     source. If your OpenMP-enabled application heavily relies on
-     random numbers, you should consider employing a dedicated parallel
-     random number generator instead.
 
 _See also_:
      *Note RANDOM_SEED::
@@ -8559,7 +8595,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL RENAME(PATH1, PATH2 [, STATUS])'
@@ -8809,7 +8845,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = SECNDS (X)'
@@ -8852,7 +8888,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL SECOND(TIME)'
@@ -9100,7 +9136,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL SIGNAL(NUMBER, HANDLER [, STATUS])'
@@ -9439,7 +9475,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine
 
 _Syntax_:
      `CALL SRAND(SEED)'
@@ -9496,11 +9532,14 @@ _Description_:
      Not all these elements are relevant on all systems.  If an element
      is not relevant, it is returned as 0.
 
+     This intrinsic is provided in both subroutine and function forms;
+     however, only one form can be used in any given program unit.
+
 _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental subroutine
+     Subroutine, function
 
 _Syntax_:
      `CALL STAT(FILE,BUFF[,STATUS])'
@@ -9608,7 +9647,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL SYMLNK(PATH1, PATH2 [, STATUS])'
@@ -9643,7 +9682,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL SYSTEM(COMMAND [, STATUS])'
@@ -9800,7 +9839,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = TIME()'
@@ -9836,7 +9875,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = TIME8()'
@@ -9863,7 +9902,7 @@ _Standard_:
      F95 and later
 
 _Class_:
-     Elemental function
+     Inquiry function
 
 _Syntax_:
      `RESULT = TINY(X)'
@@ -10009,7 +10048,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL TTYNAM(UNIT, NAME)'
@@ -10110,7 +10149,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Subroutine, non-elemental function
+     Subroutine, function
 
 _Syntax_:
      `CALL UNLINK(PATH [, STATUS])'
@@ -10228,7 +10267,7 @@ _Standard_:
      GNU extension
 
 _Class_:
-     Non-elemental function
+     Function
 
 _Syntax_:
      `RESULT = XOR(X, Y)'
@@ -11380,32 +11419,28 @@ look up both forms.
                                                               (line  55)
 * std=STD option:                        Fortran Dialect Options.
                                                               (line 102)
-* W:                                     Error and Warning Options.
-                                                              (line 135)
-* w:                                     Error and Warning Options.
-                                                              (line  59)
 * Waliasing:                             Error and Warning Options.
-                                                              (line  68)
+                                                              (line  65)
 * Wall:                                  Error and Warning Options.
-                                                              (line  62)
+                                                              (line  59)
 * Wampersand:                            Error and Warning Options.
-                                                              (line  85)
+                                                              (line  82)
 * Wcharacter-truncation:                 Error and Warning Options.
-                                                              (line  93)
+                                                              (line  90)
 * Wconversion:                           Error and Warning Options.
-                                                              (line  96)
+                                                              (line  93)
 * Werror:                                Error and Warning Options.
-                                                              (line 132)
+                                                              (line 129)
 * Wimplicit-interface:                   Error and Warning Options.
-                                                              (line  99)
+                                                              (line  96)
 * Wnonstd-intrinsics:                    Error and Warning Options.
-                                                              (line 105)
+                                                              (line 102)
 * Wsurprising:                           Error and Warning Options.
-                                                              (line 109)
+                                                              (line 106)
 * Wtabs:                                 Error and Warning Options.
-                                                              (line 122)
+                                                              (line 119)
 * Wunderflow:                            Error and Warning Options.
-                                                              (line 128)
+                                                              (line 125)
 
 
 File: gfortran.info,  Node: Keyword Index,  Prev: Option Index,  Up: Top
@@ -11419,7 +11454,7 @@ Keyword Index
 * $:                                     Fortran Dialect Options.
                                                               (line  44)
 * &:                                     Error and Warning Options.
-                                                              (line  85)
+                                                              (line  82)
 * [...]:                                 Fortran 2003 status. (line  13)
 * ABORT:                                 ABORT.               (line   6)
 * ABS:                                   ABS.                 (line   6)
@@ -11437,10 +11472,10 @@ Keyword Index
 * AINT:                                  AINT.                (line   6)
 * ALARM:                                 ALARM.               (line   6)
 * aliasing:                              Error and Warning Options.
-                                                              (line  68)
+                                                              (line  65)
 * ALL:                                   ALL.                 (line   6)
 * all warnings:                          Error and Warning Options.
-                                                              (line  62)
+                                                              (line  59)
 * ALLOCATABLE components of derived types: Fortran 2003 status.
                                                               (line  30)
 * ALLOCATABLE dummy arguments:           Fortran 2003 status. (line  26)
@@ -11615,7 +11650,7 @@ Keyword Index
 * Contributing:                          Contributing.        (line   6)
 * Contributors:                          Contributors.        (line   6)
 * conversion:                            Error and Warning Options.
-                                                              (line  96)
+                                                              (line  93)
 * conversion, to character:              CHAR.                (line   6)
 * conversion, to complex <1>:            DCMPLX.              (line   6)
 * conversion, to complex <2>:            COMPLEX.             (line   6)
@@ -11746,8 +11781,6 @@ Keyword Index
 * exponential function, inverse <1>:     LOG10.               (line   6)
 * exponential function, inverse:         LOG.                 (line   6)
 * Extension:                             Extensions.          (line   6)
-* extra warnings:                        Error and Warning Options.
-                                                              (line 135)
 * f2c calling convention:                Code Gen Options.    (line  21)
 * FDATE:                                 FDATE.               (line   6)
 * FDL, GNU Free Documentation License:   GNU Free Documentation License.
@@ -12140,7 +12173,7 @@ Keyword Index
 * system, working directory:             CHDIR.               (line   6)
 * SYSTEM_CLOCK:                          SYSTEM_CLOCK.        (line   6)
 * tabulators:                            Error and Warning Options.
-                                                              (line 122)
+                                                              (line 119)
 * TAN:                                   TAN.                 (line   6)
 * tangent:                               TAN.                 (line   6)
 * tangent, hyperbolic:                   TANH.                (line   6)
@@ -12187,7 +12220,7 @@ Keyword Index
 * UBOUND:                                UBOUND.              (line   6)
 * UMASK:                                 UMASK.               (line   6)
 * underflow:                             Error and Warning Options.
-                                                              (line 128)
+                                                              (line 125)
 * underscore:                            Code Gen Options.    (line  50)
 * UNLINK:                                UNLINK.              (line   6)
 * UNPACK:                                UNPACK.              (line   6)
@@ -12195,33 +12228,29 @@ Keyword Index
 * vector product:                        DOT_PRODUCT.         (line   6)
 * VERIFY:                                VERIFY.              (line   6)
 * warnings, aliasing:                    Error and Warning Options.
-                                                              (line  68)
+                                                              (line  65)
 * warnings, all:                         Error and Warning Options.
-                                                              (line  62)
-* warnings, ampersand:                   Error and Warning Options.
-                                                              (line  85)
-* warnings, character truncation:        Error and Warning Options.
-                                                              (line  93)
-* warnings, conversion:                  Error and Warning Options.
-                                                              (line  96)
-* warnings, extra:                       Error and Warning Options.
-                                                              (line 135)
-* warnings, implicit interface:          Error and Warning Options.
-                                                              (line  99)
-* warnings, non-stdandard intrinsics:    Error and Warning Options.
-                                                              (line 105)
-* warnings, none:                        Error and Warning Options.
                                                               (line  59)
+* warnings, ampersand:                   Error and Warning Options.
+                                                              (line  82)
+* warnings, character truncation:        Error and Warning Options.
+                                                              (line  90)
+* warnings, conversion:                  Error and Warning Options.
+                                                              (line  93)
+* warnings, implicit interface:          Error and Warning Options.
+                                                              (line  96)
+* warnings, non-stdandard intrinsics:    Error and Warning Options.
+                                                              (line 102)
 * warnings, suppressing:                 Error and Warning Options.
                                                               (line   6)
 * warnings, suspicious code:             Error and Warning Options.
-                                                              (line 109)
+                                                              (line 106)
 * warnings, tabs:                        Error and Warning Options.
-                                                              (line 122)
+                                                              (line 119)
 * warnings, to errors:                   Error and Warning Options.
-                                                              (line 132)
+                                                              (line 129)
 * warnings, underflow:                   Error and Warning Options.
-                                                              (line 128)
+                                                              (line 125)
 * write character, stream mode <1>:      FPUTC.               (line   6)
 * write character, stream mode:          FPUT.                (line   6)
 * XOR:                                   XOR.                 (line   6)
@@ -12243,261 +12272,261 @@ Node: GNU Fortran and G779631
 Node: Project Status10182
 Node: Standards12680
 Node: Invoking GNU Fortran13337
-Node: Option Summary14931
-Node: Fortran Dialect Options17346
-Node: Error and Warning Options22397
-Node: Debugging Options28197
-Node: Directory Options29533
-Node: Runtime Options30880
-Node: Code Gen Options32335
-Node: Environment Variables40152
-Node: Runtime40755
-Node: GFORTRAN_STDIN_UNIT41764
-Node: GFORTRAN_STDOUT_UNIT42131
-Node: GFORTRAN_STDERR_UNIT42532
-Node: GFORTRAN_USE_STDERR42930
-Node: GFORTRAN_TMPDIR43375
-Node: GFORTRAN_UNBUFFERED_ALL43816
-Node: GFORTRAN_SHOW_LOCUS44294
-Node: GFORTRAN_OPTIONAL_PLUS44779
-Node: GFORTRAN_DEFAULT_RECL45254
-Node: GFORTRAN_LIST_SEPARATOR45743
-Node: GFORTRAN_CONVERT_UNIT46352
-Node: Fortran 2003 status49195
-Node: Extensions50285
-Node: Old-style kind specifications51492
-Node: Old-style variable initialization52326
-Node: Extensions to namelist53607
-Node: X format descriptor without count field55572
-Node: Commas in FORMAT specifications56068
-Node: Missing period in FORMAT specifications56554
-Node: I/O item lists57085
-Node: BOZ literal constants57443
-Node: Real array indices58953
-Node: Unary operators59219
-Node: Implicitly convert LOGICAL and INTEGER values59602
-Node: Hollerith constants support60358
-Node: Cray pointers62099
-Node: CONVERT specifier67478
-Node: OpenMP69445
-Node: Intrinsic Procedures70095
-Node: Introduction to Intrinsics82695
-Node: ABORT85008
-Node: ABS85725
-Node: ACCESS87217
-Node: ACHAR89106
-Node: ACOS90046
-Node: ACOSH90976
-Node: ADJUSTL91949
-Node: ADJUSTR92843
-Node: AIMAG93743
-Node: AINT95153
-Node: ALARM96598
-Node: ALL98232
-Node: ALLOCATED100149
-Node: AND101018
-Node: ANINT102194
-Node: ANY103532
-Node: ASIN105461
-Node: ASINH106406
-Node: ASSOCIATED107359
-Node: ATAN110184
-Node: ATAN2111018
-Node: ATANH112297
-Node: BESJ0113279
-Node: BESJ1114193
-Node: BESJN115113
-Node: BESY0116138
-Node: BESY1116996
-Node: BESYN117854
-Node: BIT_SIZE118933
-Node: BTEST119682
-Node: CEILING120525
-Node: CHAR121486
-Node: CHDIR122573
-Node: CHMOD123808
-Node: CMPLX125601
-Node: COMMAND_ARGUMENT_COUNT127140
-Node: COMPLEX128030
-Node: CONJG129185
-Node: COS130194
-Node: COSH131407
-Node: COUNT132225
-Node: CPU_TIME133759
-Node: CSHIFT134683
-Node: CTIME136326
-Node: DATE_AND_TIME137539
-Node: DBLE139902
-Node: DCMPLX140742
-Node: DFLOAT141981
-Node: DIGITS142678
-Node: DIM143622
-Node: DOT_PRODUCT144758
-Node: DPROD146188
-Node: DREAL146907
-Node: DTIME147571
-Node: EOSHIFT149865
-Node: EPSILON151926
-Node: ERF152622
-Node: ERFC153419
-Node: ETIME154234
-Node: EXIT156412
-Node: EXP157271
-Node: EXPONENT158368
-Node: FDATE159114
-Node: FLOAT160288
-Node: FGET160998
-Node: FGETC162647
-Node: FLOOR164251
-Node: FLUSH165193
-Node: FNUM165845
-Node: FPUT166581
-Node: FPUTC168018
-Node: FRACTION169594
-Node: FREE170488
-Node: FSEEK171325
-Node: FSTAT171818
-Node: FTELL172747
-Node: GERROR173726
-Node: GETARG174434
-Node: GET_COMMAND176031
-Node: GET_COMMAND_ARGUMENT176911
-Node: GETCWD178307
-Node: GETENV179111
-Node: GET_ENVIRONMENT_VARIABLE180275
-Node: GETGID181209
-Node: GETLOG181744
-Node: GETPID182500
-Node: GETUID183228
-Node: GMTIME183742
-Node: HOSTNM185297
-Node: HUGE186235
-Node: IACHAR186950
-Node: IAND187876
-Node: IARGC188864
-Node: IBCLR189892
-Node: IBITS190553
-Node: IBSET191471
-Node: ICHAR192127
-Node: IDATE193856
-Node: IEOR194872
-Node: IERRNO195751
-Node: INDEX196310
-Node: INT197404
-Node: INT2198918
-Node: INT8199698
-Node: IOR200425
-Node: IRAND201270
-Node: ISATTY202359
-Node: ISHFT203153
-Node: ISHFTC204135
-Node: ITIME205356
-Node: KILL206373
-Node: KIND207139
-Node: LBOUND207977
-Node: LEN208957
-Node: LEN_TRIM209779
-Node: LGE210491
-Node: LGT211796
-Node: LINK213066
-Node: LLE214115
-Node: LLT215412
-Node: LNBLNK216675
-Node: LOC217444
-Node: LOG218175
-Node: LOG10219377
-Node: LOGICAL220243
-Node: LONG221070
-Node: LSHIFT221841
-Node: LSTAT222804
-Node: LTIME223830
-Node: MALLOC225309
-Node: MATMUL226987
-Node: MAX228176
-Node: MAXEXPONENT229681
-Node: MAXLOC230490
-Node: MAXVAL232623
-Node: MCLOCK234415
-Node: MCLOCK8235432
-Node: MERGE236660
-Node: MIN237421
-Node: MINEXPONENT238923
-Node: MINLOC239546
-Node: MINVAL241679
-Node: MOD243445
-Node: MODULO244822
-Node: MOVE_ALLOC246029
-Node: MVBITS247087
-Node: NEAREST248271
-Node: NEW_LINE249387
-Node: NINT250172
-Node: NOT251192
-Node: NULL251774
-Node: OR252658
-Node: PACK253815
-Node: PERROR255802
-Node: PRECISION256392
-Node: PRESENT257211
-Node: PRODUCT258310
-Node: RADIX259837
-Node: RAN260607
-Node: RAND261077
-Node: RANDOM_NUMBER262153
-Node: RANDOM_SEED263482
-Node: RANGE265358
-Node: REAL265978
-Node: RENAME267479
-Node: REPEAT268512
-Node: RESHAPE269237
-Node: RRSPACING270699
-Node: RSHIFT271385
-Node: SCALE272356
-Node: SCAN273123
-Node: SECNDS274418
-Node: SECOND275520
-Node: SELECTED_INT_KIND276409
-Node: SELECTED_REAL_KIND277565
-Node: SET_EXPONENT279504
-Node: SHAPE280493
-Node: SIGN281599
-Node: SIGNAL282675
-Node: SIN284186
-Node: SINH285227
-Node: SIZE285984
-Node: SLEEP287040
-Node: SNGL287595
-Node: SPACING288259
-Node: SPREAD289267
-Node: SQRT290405
-Node: SRAND291589
-Node: STAT292762
-Node: SUM295742
-Node: SYMLNK297213
-Node: SYSTEM298359
-Node: SYSTEM_CLOCK299321
-Node: TAN300658
-Node: TANH301439
-Node: TIME302251
-Node: TIME8303369
-Node: TINY304520
-Node: TRANSFER305117
-Node: TRANSPOSE307142
-Node: TRIM307826
-Node: TTYNAM308682
-Node: UBOUND309617
-Node: UMASK310656
-Node: UNLINK311244
-Node: UNPACK312235
-Node: VERIFY313515
-Node: XOR314976
-Node: Contributing316162
-Node: Contributors317017
-Node: Projects318487
-Node: Proposed Extensions319279
-Node: Copying321477
-Node: GNU Free Documentation License340686
-Node: Funding363098
-Node: Option Index365623
-Node: Keyword Index372277
+Node: Option Summary14944
+Node: Fortran Dialect Options17364
+Node: Error and Warning Options22415
+Node: Debugging Options27997
+Node: Directory Options29333
+Node: Runtime Options30680
+Node: Code Gen Options32139
+Node: Environment Variables39956
+Node: Runtime40559
+Node: GFORTRAN_STDIN_UNIT41568
+Node: GFORTRAN_STDOUT_UNIT41935
+Node: GFORTRAN_STDERR_UNIT42336
+Node: GFORTRAN_USE_STDERR42734
+Node: GFORTRAN_TMPDIR43179
+Node: GFORTRAN_UNBUFFERED_ALL43620
+Node: GFORTRAN_SHOW_LOCUS44098
+Node: GFORTRAN_OPTIONAL_PLUS44583
+Node: GFORTRAN_DEFAULT_RECL45058
+Node: GFORTRAN_LIST_SEPARATOR45547
+Node: GFORTRAN_CONVERT_UNIT46156
+Node: Fortran 2003 status48999
+Node: Extensions50089
+Node: Old-style kind specifications51296
+Node: Old-style variable initialization52130
+Node: Extensions to namelist53411
+Node: X format descriptor without count field55376
+Node: Commas in FORMAT specifications55872
+Node: Missing period in FORMAT specifications56358
+Node: I/O item lists56889
+Node: BOZ literal constants57247
+Node: Real array indices58757
+Node: Unary operators59023
+Node: Implicitly convert LOGICAL and INTEGER values59406
+Node: Hollerith constants support60162
+Node: Cray pointers61903
+Node: CONVERT specifier67282
+Node: OpenMP69249
+Node: Intrinsic Procedures69899
+Node: Introduction to Intrinsics82499
+Node: ABORT84812
+Node: ABS85515
+Node: ACCESS87007
+Node: ACHAR88896
+Node: ACOS89836
+Node: ACOSH90766
+Node: ADJUSTL91739
+Node: ADJUSTR92633
+Node: AIMAG93533
+Node: AINT94943
+Node: ALARM96388
+Node: ALL98022
+Node: ALLOCATED99939
+Node: AND100808
+Node: ANINT101970
+Node: ANY103308
+Node: ASIN105237
+Node: ASINH106182
+Node: ASSOCIATED107135
+Node: ATAN109960
+Node: ATAN2110794
+Node: ATANH112073
+Node: BESJ0113055
+Node: BESJ1113969
+Node: BESJN114889
+Node: BESY0115914
+Node: BESY1116772
+Node: BESYN117630
+Node: BIT_SIZE118709
+Node: BTEST119458
+Node: CEILING120301
+Node: CHAR121262
+Node: CHDIR122349
+Node: CHMOD123570
+Node: CMPLX125335
+Node: COMMAND_ARGUMENT_COUNT126874
+Node: COMPLEX127764
+Node: CONJG128919
+Node: COS129928
+Node: COSH131141
+Node: COUNT131959
+Node: CPU_TIME133493
+Node: CSHIFT134417
+Node: CTIME136060
+Node: DATE_AND_TIME137283
+Node: DBLE139646
+Node: DCMPLX140486
+Node: DFLOAT141725
+Node: DIGITS142422
+Node: DIM143366
+Node: DOT_PRODUCT144502
+Node: DPROD145932
+Node: DREAL146651
+Node: DTIME147315
+Node: EOSHIFT149655
+Node: EPSILON151716
+Node: ERF152412
+Node: ERFC153209
+Node: ETIME154024
+Node: EXIT156248
+Node: EXP157107
+Node: EXPONENT158204
+Node: FDATE158950
+Node: FLOAT160170
+Node: FGET160880
+Node: FGETC162673
+Node: FLOOR164421
+Node: FLUSH165363
+Node: FNUM166001
+Node: FPUT166723
+Node: FPUTC168304
+Node: FRACTION170024
+Node: FREE170918
+Node: FSEEK171755
+Node: FSTAT172248
+Node: FTELL173312
+Node: GERROR174291
+Node: GETARG174999
+Node: GET_COMMAND176596
+Node: GET_COMMAND_ARGUMENT177476
+Node: GETCWD178872
+Node: GETENV179810
+Node: GET_ENVIRONMENT_VARIABLE180974
+Node: GETGID181908
+Node: GETLOG182443
+Node: GETPID183199
+Node: GETUID183927
+Node: GMTIME184441
+Node: HOSTNM185996
+Node: HUGE186934
+Node: IACHAR187647
+Node: IAND188573
+Node: IARGC189561
+Node: IBCLR190575
+Node: IBITS191236
+Node: IBSET192154
+Node: ICHAR192810
+Node: IDATE194539
+Node: IEOR195555
+Node: IERRNO196434
+Node: INDEX196979
+Node: INT198073
+Node: INT2199587
+Node: INT8200367
+Node: IOR201094
+Node: IRAND201939
+Node: ISATTY203287
+Node: ISHFT204066
+Node: ISHFTC205048
+Node: ITIME206269
+Node: KILL207286
+Node: KIND208201
+Node: LBOUND209039
+Node: LEN210019
+Node: LEN_TRIM210841
+Node: LGE211553
+Node: LGT212858
+Node: LINK214128
+Node: LLE215163
+Node: LLT216460
+Node: LNBLNK217723
+Node: LOC218492
+Node: LOG219223
+Node: LOG10220425
+Node: LOGICAL221291
+Node: LONG222118
+Node: LSHIFT222889
+Node: LSTAT223852
+Node: LTIME225013
+Node: MALLOC226492
+Node: MATMUL228156
+Node: MAX229345
+Node: MAXEXPONENT230850
+Node: MAXLOC231659
+Node: MAXVAL233792
+Node: MCLOCK235584
+Node: MCLOCK8236587
+Node: MERGE237801
+Node: MIN238562
+Node: MINEXPONENT240064
+Node: MINLOC240687
+Node: MINVAL242820
+Node: MOD244586
+Node: MODULO245963
+Node: MOVE_ALLOC247170
+Node: MVBITS248228
+Node: NEAREST249410
+Node: NEW_LINE250526
+Node: NINT251311
+Node: NOT252331
+Node: NULL252913
+Node: OR253797
+Node: PACK254940
+Node: PERROR256927
+Node: PRECISION257517
+Node: PRESENT258336
+Node: PRODUCT259435
+Node: RADIX260962
+Node: RAN261732
+Node: RAND262188
+Node: RANDOM_NUMBER263523
+Node: RANDOM_SEED265254
+Node: RANGE267130
+Node: REAL267750
+Node: RENAME269251
+Node: REPEAT270270
+Node: RESHAPE270995
+Node: RRSPACING272457
+Node: RSHIFT273143
+Node: SCALE274114
+Node: SCAN274881
+Node: SECNDS276176
+Node: SECOND277264
+Node: SELECTED_INT_KIND278139
+Node: SELECTED_REAL_KIND279295
+Node: SET_EXPONENT281234
+Node: SHAPE282223
+Node: SIGN283329
+Node: SIGNAL284405
+Node: SIN285902
+Node: SINH286943
+Node: SIZE287700
+Node: SLEEP288756
+Node: SNGL289311
+Node: SPACING289975
+Node: SPREAD290983
+Node: SQRT292121
+Node: SRAND293305
+Node: STAT294464
+Node: SUM297579
+Node: SYMLNK299050
+Node: SYSTEM300182
+Node: SYSTEM_CLOCK301130
+Node: TAN302467
+Node: TANH303248
+Node: TIME304060
+Node: TIME8305164
+Node: TINY306301
+Node: TRANSFER306896
+Node: TRANSPOSE308921
+Node: TRIM309605
+Node: TTYNAM310461
+Node: UBOUND311382
+Node: UMASK312421
+Node: UNLINK313009
+Node: UNPACK313986
+Node: VERIFY315266
+Node: XOR316727
+Node: Contributing317899
+Node: Contributors318754
+Node: Projects320224
+Node: Proposed Extensions321016
+Node: Copying323214
+Node: GNU Free Documentation License342423
+Node: Funding364835
+Node: Option Index367360
+Node: Keyword Index373732
 
 End Tag Table

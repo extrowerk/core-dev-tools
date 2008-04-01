@@ -14,71 +14,29 @@
                                    Questions
 
     1. [7]General information
-         1. [8]What is an open development model?
-         2. [9]How do I get a bug fixed or a feature added?
-         3. [10]Does GCC work on my platform?
-    2. [11]Installation
-         1. [12]How to install multiple versions of GCC
-         2. [13]Dynamic linker is unable to find GCC libraries
-         3. [14]libstdc++/libio tests fail badly with --enable-shared
-         4. [15]GCC can not find GNU as/GNU ld
-         5. [16]cpp: Usage:... Error
-         6. [17]Optimizing the compiler itself
-         7. [18]Why does libiconv get linked into jc1 on Solaris?
-    3. [19]Testsuite problems
-         1. [20]How do I pass flags like -fnew-abi to the testsuite?
-         2. [21]How can I run the test suite with multiple options?
-    4. [22]Miscellaneous
-         1. [23]Friend Templates
-         2. [24]dynamic_cast, throw, typeid don't work with shared libraries
-         3. [25]Why do I need autoconf, bison, xgettext, automake, etc?
-         4. [26]Why can't I build a shared library?
-         5. [27]When building C++, the linker says my constructors, destructors
+         1. [8]How do I get a bug fixed or a feature added?
+         2. [9]Does GCC work on my platform?
+    2. [10]Installation
+         1. [11]How to install multiple versions of GCC
+         2. [12]Dynamic linker is unable to find GCC libraries
+         3. [13]libstdc++/libio tests fail badly with --enable-shared
+         4. [14]GCC can not find GNU as/GNU ld
+         5. [15]cpp: Usage:... Error
+         6. [16]Optimizing the compiler itself
+         7. [17]Why does libiconv get linked into jc1 on Solaris?
+    3. [18]Testsuite problems
+         1. [19]How do I pass flags like -fnew-abi to the testsuite?
+         2. [20]How can I run the test suite with multiple options?
+    4. [21]Miscellaneous
+         1. [22]Friend Templates
+         2. [23]dynamic_cast, throw, typeid don't work with shared libraries
+         3. [24]Why do I need autoconf, bison, xgettext, automake, etc?
+         4. [25]Why can't I build a shared library?
+         5. [26]When building C++, the linker says my constructors, destructors
             or virtual tables are undefined, but I defined them
-         6. [28]Will GCC someday include an incremental linker?
      _________________________________________________________________
 
                               General information
-
-What is an open development model?
-
-   We are using a bazaar style [29][1] approach to GCC development: we make
-   snapshots publicly available to anyone who wants to try them; we welcome
-   anyone to join the development mailing list. All of the discussions on the
-   development mailing list are available via the web. We're going to be making
-   releases with a much higher frequency than they have been made in the past.
-
-   In addition to weekly snapshots of the GCC development sources, we have the
-   sources readable from an SVN server by anyone. Furthermore we are using SVN
-   to allow maintainers write access to the sources.
-
-   There  have  been  many  potential GCC developers who were not able to
-   participate in GCC development in the past. We want these people to help in
-   any way they can; we ultimately want GCC to be the best compiler in the
-   world.
-
-   A compiler is a complicated piece of software, there will still be strong
-   central maintainers who will reject patches, who will demand documentation
-   of implementations, and who will keep the level of quality as high as it is
-   today. Code that could use wider testing may be integrated--code that is
-   simply ill-conceived won't be.
-
-   GCC is not the first piece of software to use this open development process;
-   FreeBSD, the Emacs lisp repository, and the Linux kernel are a few examples
-   of the bazaar style of development.
-
-   With GCC, we are adding new features and optimizations at a rate that has
-   not been done since the creation of gcc2; these additions inevitably have a
-   temporarily  destabilizing effect. With the help of developers working
-   together with this bazaar style development, the resulting stability and
-   quality levels will be better than we've had before.
-
-     [1] We've been discussing different development models a lot over the past
-     few months. The paper which started all of this introduced two terms: A
-     cathedral development model versus a bazaar development model. The paper
-     is written by Eric S. Raymond, it is called ``The Cathedral and the
-     Bazaar''. The paper is a useful starting point for discussions.
-     _________________________________________________________________
 
 How do I get a bug fixed or a feature added?
 
@@ -92,7 +50,7 @@ How do I get a bug fixed or a feature added?
        work hard enough, but will probably take a lot of time, and, depending
        on the quality of your work and the perceived benefits of your changes,
        your code may or may not ever make it into an official release of GCC.
-     * [30]Report the problem to the GCC bug tracking system and hope that
+     * [27]Report the problem to the GCC bug tracking system and hope that
        someone will be kind enough to fix it for you. While this is certainly
        possible, and often happens, there is no guarantee that it will. You
        should not expect the same response from this method that you would see
@@ -108,8 +66,8 @@ Does GCC work on my platform?
    The host/target specific installation notes for GCC include information
    about known problems with installing or using GCC on particular platforms.
    These are included in the sources for a release in INSTALL/specific.html,
-   and the [31]latest version is always available at the GCC web site. Reports
-   of [32]successful builds for several versions of GCC are also available at
+   and the [28]latest version is always available at the GCC web site. Reports
+   of [29]successful builds for several versions of GCC are also available at
    the web site.
      _________________________________________________________________
 
@@ -154,7 +112,7 @@ How to install multiple versions of GCC
    be sure about which version you are invoking.
 
    If you use --prefix, GCC may have difficulty locating a GNU assembler or
-   linker on your system, [33]GCC can not find GNU as/GNU ld explains how to
+   linker on your system, [30]GCC can not find GNU as/GNU ld explains how to
    deal with this.
 
    Another  option  that may be easier is to use the --program-prefix= or
@@ -216,7 +174,7 @@ GCC can not find GNU as/GNU ld
    programs.
 
    To ensure that GCC finds the GNU assembler (the GNU loader), which are
-   required by [34]some configurations, you should configure these with the
+   required by [31]some configurations, you should configure these with the
    same --prefix option as you used for GCC. Then build & install GNU as (GNU
    ld) and proceed with building GCC.
 
@@ -393,7 +351,7 @@ dynamic_cast, throw, typeid don't work with shared libraries
    is a violation of the One Definition Rule (ODR) [basic.def.odr].
 
    For more details about the way that GCC implements these and other C++
-   features, please read the [35]ABI specification. Note the std::type_info
+   features, please read the [32]ABI specification. Note the std::type_info
    objects  which  must  be resolved all begin with "_ZTS". Refer to ld's
    documentation for a description of the "-E" & "-Bsymbolic" flags.
      _________________________________________________________________
@@ -421,9 +379,9 @@ Why do I need autoconf, bison, xgettext, automake, etc?
    GCC.
 
    In    general,    the   current   versions   of   these   tools   from
-   [36]ftp://ftp.gnu.org/gnu/ will work. At present, Autoconf 2.50 is not
+   [33]ftp://ftp.gnu.org/gnu/ will work. At present, Autoconf 2.50 is not
    supported, and you will need to use Autoconf 2.13; work is in progress to
-   fix this problem. Also look at [37]ftp://gcc.gnu.org/pub/gcc/infrastructure/
+   fix this problem. Also look at [34]ftp://gcc.gnu.org/pub/gcc/infrastructure/
    for any special versions of packages.
      _________________________________________________________________
 
@@ -465,14 +423,6 @@ tables are undefined, but I defined them
    The solution is to ensure that all virtual methods that are not pure are
    defined. Note that a destructor must be defined even if it is declared
    pure-virtual [class.dtor]/7.
-     _________________________________________________________________
-
-Will GCC someday include an incremental linker?
-
-   Incremental linking is part of the linker, not the compiler. As such, GCC
-   doesn't have anything to do with incremental linking. Depending on what
-   platform you use, it may be possible to tell GCC to use the platform's
-   native linker (e.g., Solaris' ild(1)).
 
 References
 
@@ -483,33 +433,30 @@ References
    5. http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html
    6. http://gcc.gnu.org/java/faq.html
    7. http://gcc.gnu.org/faq.html#general
-   8. http://gcc.gnu.org/faq.html#open-development
-   9. http://gcc.gnu.org/faq.html#support
-  10. http://gcc.gnu.org/faq.html#platforms
-  11. http://gcc.gnu.org/faq.html#installation
-  12. http://gcc.gnu.org/faq.html#multiple
+   8. http://gcc.gnu.org/faq.html#support
+   9. http://gcc.gnu.org/faq.html#platforms
+  10. http://gcc.gnu.org/faq.html#installation
+  11. http://gcc.gnu.org/faq.html#multiple
+  12. http://gcc.gnu.org/faq.html#rpath
   13. http://gcc.gnu.org/faq.html#rpath
-  14. http://gcc.gnu.org/faq.html#rpath
-  15. http://gcc.gnu.org/faq.html#gas
-  16. http://gcc.gnu.org/faq.html#environ
-  17. http://gcc.gnu.org/faq.html#optimizing
-  18. http://gcc.gnu.org/faq.html#iconv
-  19. http://gcc.gnu.org/faq.html#testsuite
-  20. http://gcc.gnu.org/faq.html#testoptions
-  21. http://gcc.gnu.org/faq.html#multipletests
-  22. http://gcc.gnu.org/faq.html#misc
-  23. http://gcc.gnu.org/faq.html#friend
-  24. http://gcc.gnu.org/faq.html#dso
-  25. http://gcc.gnu.org/faq.html#generated_files
-  26. http://gcc.gnu.org/faq.html#picflag-needed
-  27. http://gcc.gnu.org/faq.html#vtables
-  28. http://gcc.gnu.org/faq.html#incremental
-  29. http://gcc.gnu.org/faq.html#cathedral-vs-bazaar
-  30. http://gcc.gnu.org/bugs.html
+  14. http://gcc.gnu.org/faq.html#gas
+  15. http://gcc.gnu.org/faq.html#environ
+  16. http://gcc.gnu.org/faq.html#optimizing
+  17. http://gcc.gnu.org/faq.html#iconv
+  18. http://gcc.gnu.org/faq.html#testsuite
+  19. http://gcc.gnu.org/faq.html#testoptions
+  20. http://gcc.gnu.org/faq.html#multipletests
+  21. http://gcc.gnu.org/faq.html#misc
+  22. http://gcc.gnu.org/faq.html#friend
+  23. http://gcc.gnu.org/faq.html#dso
+  24. http://gcc.gnu.org/faq.html#generated_files
+  25. http://gcc.gnu.org/faq.html#picflag-needed
+  26. http://gcc.gnu.org/faq.html#vtables
+  27. http://gcc.gnu.org/bugs.html
+  28. http://gcc.gnu.org/install/specific.html
+  29. http://gcc.gnu.org/buildstat.html
+  30. http://gcc.gnu.org/faq.html#gas
   31. http://gcc.gnu.org/install/specific.html
-  32. http://gcc.gnu.org/buildstat.html
-  33. http://gcc.gnu.org/faq.html#gas
-  34. http://gcc.gnu.org/install/specific.html
-  35. http://www.codesourcery.com/cxx-abi/
-  36. ftp://ftp.gnu.org/gnu/
-  37. ftp://gcc.gnu.org/pub/gcc/infrastructure/
+  32. http://www.codesourcery.com/cxx-abi/
+  33. ftp://ftp.gnu.org/gnu/
+  34. ftp://gcc.gnu.org/pub/gcc/infrastructure/

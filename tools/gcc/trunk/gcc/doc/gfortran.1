@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GFORTRAN 1"
-.TH GFORTRAN 1 "2007-07-19" "gcc-4.2.1" "GNU"
+.TH GFORTRAN 1 "2007-10-07" "gcc-4.2.2" "GNU"
 .SH "NAME"
 gfortran \- GNU Fortran compiler
 .SH "SYNOPSIS"
@@ -179,9 +179,9 @@ by type.  Explanations are in the following sections.
 .IX Item "Error and Warning Options"
 \&\fB\-fmax\-errors=\fR\fIn\fR 
 \&\fB\-fsyntax\-only  \-pedantic  \-pedantic\-errors 
-\&\-w  \-Wall  \-Waliasing  \-Wampersand  \-Wcharacter\-truncation  \-Wconversion 
+\&\-Wall  \-Waliasing  \-Wampersand  \-Wcharacter\-truncation  \-Wconversion 
 \&\-Wimplicit\-interface  \-Wline\-truncation  \-Wnonstd\-intrinsics  \-Wsurprising 
-\&\-Wno\-tabs  \-Wunderflow  \-W\fR
+\&\-Wno\-tabs  \-Wunderflow\fR
 .IP "\fIDebugging Options\fR" 4
 .IX Item "Debugging Options"
 \&\fB\-fdump\-parse\-tree  \-ffpe\-trap=\fR\fIlist\fR
@@ -198,8 +198,8 @@ by type.  Explanations are in the following sections.
 \&\-fsecond\-underscore 
 \&\-fbounds\-check  \-fmax\-stack\-var\-size=\fR\fIn\fR 
 \&\fB\-fpack\-derived  \-frepack\-arrays  \-fshort\-enums\fR
-.Sh "Options Controlling Fortran Dialect"
-.IX Subsection "Options Controlling Fortran Dialect"
+.Sh "Options controlling Fortran dialect"
+.IX Subsection "Options controlling Fortran dialect"
 The following options control the details of the Fortran dialect
 accepted by the compiler:
 .IP "\fB\-ffree\-form\fR" 4
@@ -315,8 +315,8 @@ Fortran 2003 standards, respectively; errors are given for all
 extensions beyond the relevant language standard, and warnings are given
 for the Fortran 77 features that are permitted but obsolescent in later
 standards.
-.Sh "Options to Request or Suppress Errors and Warnings"
-.IX Subsection "Options to Request or Suppress Errors and Warnings"
+.Sh "Options to request or suppress errors and warnings"
+.IX Subsection "Options to request or suppress errors and warnings"
 Errors are diagnostic messages that report that the \s-1GNU\s0 Fortran compiler
 cannot compile the relevant piece of source code.  The compiler will
 continue to process the program in an attempt to report further errors
@@ -369,9 +369,6 @@ This should be used in conjunction with \fB\-std=f95\fR or
 .IX Item "-pedantic-errors"
 Like \fB\-pedantic\fR, except that errors are produced rather than
 warnings.
-.IP "\fB\-w\fR" 4
-.IX Item "-w"
-Inhibit all warning messages.
 .IP "\fB\-Wall\fR" 4
 .IX Item "-Wall"
 Enables commonly used warning options pertaining to usage that
@@ -452,15 +449,10 @@ encountered, which yield an \s-1UNDERFLOW\s0 during compilation.
 .IP "\fB\-Werror\fR" 4
 .IX Item "-Werror"
 Turns all warnings into errors.
-.IP "\fB\-W\fR" 4
-.IX Item "-W"
-Turns on \*(L"extra warnings\*(R" and, if optimization is specified
-via \fB\-O\fR, the \fB\-Wuninitialized\fR option.
-(This might change in future versions of \s-1GNU\s0 Fortran.)
 .PP
 Some of these have no effect when compiling programs written in Fortran.
-.Sh "Options for Debugging Your Program or \s-1GNU\s0 Fortran"
-.IX Subsection "Options for Debugging Your Program or GNU Fortran"
+.Sh "Options for debugging your program or \s-1GNU\s0 Fortran"
+.IX Subsection "Options for debugging your program or GNU Fortran"
 \&\s-1GNU\s0 Fortran has various special options that are used for debugging
 either your program or the \s-1GNU\s0 Fortran compiler.
 .IP "\fB\-fdump\-parse\-tree\fR" 4
@@ -479,8 +471,8 @@ zero), \fBoverflow\fR (overflow in a floating point operation),
 \&\fBunderflow\fR (underflow in a floating point operation),
 \&\fBprecision\fR (loss of precision during operation) and \fBdenormal\fR
 (operation produced a denormal value).
-.Sh "Options for Directory Search"
-.IX Subsection "Options for Directory Search"
+.Sh "Options for directory search"
+.IX Subsection "Options for directory search"
 These options affect how \s-1GNU\s0 Fortran searches
 for files specified by the \f(CW\*(C`INCLUDE\*(C'\fR directive and where it searches
 for previously compiled modules.
@@ -532,17 +524,17 @@ variable override the default specified by \f(BI\-fconvert\fI.\fR
 .IX Item "-frecord-marker=length"
 Specify the length of record markers for unformatted files.
 Valid values for \fIlength\fR are 4 and 8.  Default is 4.
-\&\fIThis is different from previous versions of gfortran\fR,
+\&\fIThis is different from previous versions of\fR \fBgfortran\fR,
 which specified a default record marker length of 8 on most
 systems.  If you want to read or write files compatible
-with earlier versions of gfortran, use \fB\-frecord\-marker=8\fR.
+with earlier versions of \fBgfortran\fR, use \fB\-frecord\-marker=8\fR.
 .IP "\fB\-fmax\-subrecord\-length=\fR\fIlength\fR" 4
 .IX Item "-fmax-subrecord-length=length"
 Specify the maximum length for a subrecord.  The maximum permitted
 value for length is 2147483639, which is also the default.  Only
 really useful for use by the gfortran testsuite.
-.Sh "Options for Code Generation Conventions"
-.IX Subsection "Options for Code Generation Conventions"
+.Sh "Options for code generation conventions"
+.IX Subsection "Options for code generation conventions"
 These machine-independent options control the interface conventions
 used in code generation.
 .PP

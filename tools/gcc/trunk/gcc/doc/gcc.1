@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GCC 1"
-.TH GCC 1 "2007-07-19" "gcc-4.2.1" "GNU"
+.TH GCC 1 "2007-10-07" "gcc-4.2.2" "GNU"
 .SH "NAME"
 gcc \- GNU project C and C++ compiler
 .SH "SYNOPSIS"
@@ -2635,31 +2635,31 @@ undefined signed overflow when estimating how many iterations a loop
 will require, in particular when determining whether a loop will be
 executed at all.
 .RS 4
-.IP "@option<\-Wstrict\-overflow=1>" 4
-.IX Item "@option<-Wstrict-overflow=1>"
+.IP "\fB\-Wstrict\-overflow=1\fR" 4
+.IX Item "-Wstrict-overflow=1"
 Warn about cases which are both questionable and easy to avoid.  For
 example: \f(CW\*(C`x + 1 > x\*(C'\fR; with \fB\-fstrict\-overflow\fR, the
 compiler will simplify this to \f(CW1\fR.  This level of
 \&\fB\-Wstrict\-overflow\fR is enabled by \fB\-Wall\fR; higher levels
 are not, and must be explicitly requested.
-.IP "@option<\-Wstrict\-overflow=2>" 4
-.IX Item "@option<-Wstrict-overflow=2>"
+.IP "\fB\-Wstrict\-overflow=2\fR" 4
+.IX Item "-Wstrict-overflow=2"
 Also warn about other cases where a comparison is simplified to a
 constant.  For example: \f(CW\*(C`abs (x) >= 0\*(C'\fR.  This can only be
 simplified when \fB\-fstrict\-overflow\fR is in effect, because
 \&\f(CW\*(C`abs (INT_MIN)\*(C'\fR overflows to \f(CW\*(C`INT_MIN\*(C'\fR, which is less than
 zero.  \fB\-Wstrict\-overflow\fR (with no level) is the same as
 \&\fB\-Wstrict\-overflow=2\fR.
-.IP "@option<\-Wstrict\-overflow=3>" 4
-.IX Item "@option<-Wstrict-overflow=3>"
+.IP "\fB\-Wstrict\-overflow=3\fR" 4
+.IX Item "-Wstrict-overflow=3"
 Also warn about other cases where a comparison is simplified.  For
 example: \f(CW\*(C`x + 1 > 1\*(C'\fR will be simplified to \f(CW\*(C`x > 0\*(C'\fR.
-.IP "@option<\-Wstrict\-overflow=4>" 4
-.IX Item "@option<-Wstrict-overflow=4>"
+.IP "\fB\-Wstrict\-overflow=4\fR" 4
+.IX Item "-Wstrict-overflow=4"
 Also warn about other simplifications not covered by the above cases.
 For example: \f(CW\*(C`(x * 10) / 5\*(C'\fR will be simplified to \f(CW\*(C`x * 2\*(C'\fR.
-.IP "@option<\-Wstrict\-overflow=5>" 4
-.IX Item "@option<-Wstrict-overflow=5>"
+.IP "\fB\-Wstrict\-overflow=5\fR" 4
+.IX Item "-Wstrict-overflow=5"
 Also warn about cases where the compiler reduces the magnitude of a
 constant involved in a comparison.  For example: \f(CW\*(C`x + 2 > y\*(C'\fR will
 be simplified to \f(CW\*(C`x + 1 >= y\*(C'\fR.  This is reported only at the
