@@ -712,6 +712,7 @@ proc mi_gdb_test { args } {
 	    if ![string match "" $message] then {
 		fail "$message"
 	    }
+	    verbose "\n---\n$expect_out(buffer)\n---\n"
 	    set result 1
 	}
 	 "<return>" {

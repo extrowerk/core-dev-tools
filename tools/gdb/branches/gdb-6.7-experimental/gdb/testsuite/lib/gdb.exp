@@ -27,7 +27,6 @@ if {$tool == ""} {
 }
 
 load_lib libgloss.exp
-load_lib mi-support.exp
 global GDB
 
 if [info exists TOOL_EXECUTABLE] {

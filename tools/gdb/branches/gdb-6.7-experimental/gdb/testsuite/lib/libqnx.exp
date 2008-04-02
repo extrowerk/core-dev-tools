@@ -4,6 +4,11 @@
 # Purpose:   To add qnx specific target connection functions to gdb testsuite
 
 
+set CXX_FOR_TARGET [find_g++]
+set CC_FOR_TARGET [find_gcc]
+
+
+
 # Function Name:  gdb_target_qnx
 # Purpose: To connect a local gdb to a remote qnx target for debugging.  
 # Inputs:  qnx_target - The network address to a target
