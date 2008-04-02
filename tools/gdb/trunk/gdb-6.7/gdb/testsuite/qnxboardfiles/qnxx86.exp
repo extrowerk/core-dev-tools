@@ -1,12 +1,8 @@
 load_generic_config "unix"
+load_lib "mi-support.exp"
 load_lib libqnx.exp
 
 process_multilib_options ""
-
-#set_board_info compiler  "[find_gcc]"
-
-set CXX_FOR_TARGET ntox86-gcc
-set CC_FOR_TARGET ntox86-gcc
 
 global qnx_target_host
 global qnx_target_port
