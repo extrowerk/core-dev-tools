@@ -3,11 +3,6 @@ load_lib libqnx.exp
 
 process_multilib_options ""
 
-#set_board_info compiler  "[find_gcc]"
-
-set CXX_FOR_TARGET ntosh-gcc
-set CC_FOR_TARGET ntosh-gcc
-
 global qnx_target_host
 global qnx_target_port
 set qnx_target_host tshle
