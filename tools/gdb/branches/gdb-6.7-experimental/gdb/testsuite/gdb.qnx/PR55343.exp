@@ -25,19 +25,32 @@ set timeout 60
 mi_gdb_start
 
 mi_gdb_load $binfile
-mi_gdb_test "101-break-insert -t main" "101.*{.*}" "$test: break-insert -t"
-mi_gdb_test "102-exec-run" ".*\\*stopped.*{.*}" "$test: exec-run"
-# mi_gdb_test "104 info sharedlibrary" ".*\^done" "info sharedlibrary"
-mi_gdb_test "103-break-insert $testfile.c:24" "103.*{.*}" "$test: break-insert"
-mi_gdb_test "104-exec-continue" "104.running" "$test: exec-continue"
+send_user "Run to main...\n"
+mi_gdb_test "101-break-insert -t main" "101.*{.*}" "$test: break-insert -t (@main)"
+mi_gdb_test "102-exec-run" "102.*running" "$test: exec-run"
+send_user "Wait until breakpoint hit.\n"
 gdb_expect $timeout {
-  -re ".*\\*stopped,reason=\"breakpoint-hit\",bkptno=\"2\",.*{.*}.*$mi_gdb_prompt\[ \]*$" 
+  -re ".*stopped,reason=.*"
+    { continue }
+  timeout {
+    fail "$test: Wait for breakpoint hit failed \n---\n$expect_out(buffer)\n...\n"
+  }
+}
+send_user "Set breakpoint @24.\n"
+# mi_gdb_test "104 info sharedlibrary" ".*\^done" "info sharedlibrary"
+mi_gdb_test "103-break-insert $testfile.c:24" ".*103.*{.*}" "$test: break-insert (@24)"
+send_user "Continue.\n"
+mi_gdb_test "104-exec-continue" "104.running" "$test: exec-continue"
+send_user "Wait for the breakpoint hit. (bkpt 2).\n"
+gdb_expect $timeout {
+  -re ".*\\*stopped,reason=.*" 
     {continue}
   timeout {
     fail "$test: Wait for breakpoint hit."
   }
 }
-mi_gdb_test "109-thread-select 1" "109.done,.*{.*}" "$test: thread-select 1"
+mi_gdb_test "info threads" ".*" "$test: info threads"
+mi_gdb_test "109-thread-select 1" ".*109.done,.*{.*}" "$test: thread-select 1"
 mi_gdb_test "110-stack-info-depth" "110.done,depth=\"\[0-9\]+\"" "$test: stack-info-depth"
 
 
