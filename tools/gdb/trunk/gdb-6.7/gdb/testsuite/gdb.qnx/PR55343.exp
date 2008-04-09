@@ -2,7 +2,7 @@
 #Purpose: PR:56132
 #Date: March 12,2008
 #Author: Aleksandar Ristovski
-
+load_lib "mi-support.exp"
 set test "PR55343"
 
 gdb_exit
