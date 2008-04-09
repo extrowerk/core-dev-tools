@@ -24,8 +24,11 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		host_cpu=$(uname -p)
+		if [ $host_cpu = x86 ]; then
+		  host_cpu=i386
+		fi
 
-		case "${target}" in
+		case ${host_target} in
 		nto*)   basedir=/usr
 			if [ ${host_cpu} = ${target_cpu} ]; then
 				configure_opts="${configure_opts} --host=${target}"
