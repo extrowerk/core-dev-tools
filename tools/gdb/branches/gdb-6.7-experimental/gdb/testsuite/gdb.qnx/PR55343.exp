@@ -21,26 +21,33 @@ if [get_compiler_info ${binfile}] {
 }
 
 set timeout 60
+set dec "\[0-9\]+"
+set BKPTRESP "\\^done,bkpt=\{number=\"$dec\",type=\"breakpoint\",disp=\"del\",enabled=\"y\",addr=\"$hex\",func=\".*\",file=\".*$testfile.c\",fullname=\".*$testfile.c\",line=\"$dec\",times=\"0\"\}" \
+
 
 mi_gdb_start
 
 mi_gdb_load $binfile
 send_user "Run to main...\n"
-mi_gdb_test "101-break-insert -t main" "101.*{.*}" "$test: break-insert -t (@main)"
+mi_gdb_test "101-break-insert -t main" \
+	    "101$BKPTRESP" \
+	    "$test: break-insert -t (@main)"
+send_user "Set breakpoint @24.\n"
+mi_gdb_test "222-break-insert -t  $testfile.c:24" \
+            "222$BKPTRESP" \
+            "$test: break-insert -t  operation @24 \n---\n$expect_out(buffer)\n---\n"
+
 mi_gdb_test "102-exec-run" "102.*running" "$test: exec-run"
 send_user "Wait until breakpoint hit.\n"
 gdb_expect $timeout {
-  -re ".*stopped,reason=.*"
+  -re ".*stopped,reason=.*,line=\"$dec\"\}.*$mi_gdb_prompt"
     { continue }
   timeout {
     fail "$test: Wait for breakpoint hit failed \n---\n$expect_out(buffer)\n...\n"
   }
 }
-send_user "Set breakpoint @24.\n"
-# mi_gdb_test "104 info sharedlibrary" ".*\^done" "info sharedlibrary"
-mi_gdb_test "103-break-insert $testfile.c:24" ".*103.*{.*}" "$test: break-insert (@24)"
 send_user "Continue.\n"
-mi_gdb_test "104-exec-continue" "104.running" "$test: exec-continue"
+mi_gdb_test "104-exec-continue" ".*104.running" "$test: exec-continue"
 send_user "Wait for the breakpoint hit. (bkpt 2).\n"
 gdb_expect $timeout {
   -re ".*\\*stopped,reason=.*" 
