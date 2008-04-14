@@ -1,5 +1,0 @@
-. ${srcdir}/emulparams/elf32ppc.sh
-MAXPAGESIZE=0x1000
-TEXT_START_ADDR=0x48040000
-TEXT_START_SYMBOLS='_btext = .;'
-#EXTRA_EM_FILE=nto
