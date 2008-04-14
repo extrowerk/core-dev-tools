@@ -1,5 +1,5 @@
 /* tc-s390.h -- Header file for tc-s390.c.
-   Copyright 2000, 2001, 2002, 2003, 2004, 2005
+   Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2007
    Free Software Foundation, Inc.
    Written by Martin Schwidefsky (schwidefsky@de.ibm.com).
 
@@ -7,7 +7,7 @@
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -88,7 +88,7 @@ extern void s390_md_end PARAMS ((void));
 extern void s390_cfi_frame_initial_instructions PARAMS ((void));
 
 #define tc_regname_to_dw2regnum tc_s390_regname_to_dw2regnum
-extern int tc_s390_regname_to_dw2regnum PARAMS ((const char *regname));
+extern int tc_s390_regname_to_dw2regnum PARAMS ((char *regname));
 
 extern int s390_cie_data_alignment;
 

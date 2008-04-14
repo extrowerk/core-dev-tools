@@ -1,7 +1,9 @@
-/* A Bison parser, made by GNU Bison 2.1.  */
+/* A Bison parser, made by GNU Bison 2.3.  */
 
-/* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
+/* Skeleton interface for Bison's Yacc-like parsers in C
+
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+   Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,10 +20,18 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.  */
 
-/* As a special exception, when this file is copied by Bison into a
-   Bison output file, you may use that output file without restriction.
-   This special exception was added by the Free Software Foundation
-   in version 1.24 of Bison.  */
+/* As a special exception, you may create a larger work that contains
+   part or all of the Bison parser skeleton and distribute that work
+   under terms of your choice, so long as that work isn't itself a
+   parser generator using the skeleton or a modified version thereof
+   as a parser skeleton.  Alternatively, if you modify or redistribute
+   the parser skeleton itself, you may (at your option) remove this
+   special exception, which will cause the skeleton and the resulting
+   Bison output files to be licensed under the GNU General Public
+   License without this special exception.
+
+   This special exception was added by the Free Software Foundation in
+   version 2.2 of Bison.  */
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -69,49 +79,62 @@
      IEDIT = 295,
      FONT = 296,
      ICON = 297,
-     LANGUAGE = 298,
-     CHARACTERISTICS = 299,
-     VERSIONK = 300,
-     MENU = 301,
-     MENUEX = 302,
-     MENUITEM = 303,
-     SEPARATOR = 304,
-     POPUP = 305,
-     CHECKED = 306,
-     GRAYED = 307,
-     HELP = 308,
-     INACTIVE = 309,
-     MENUBARBREAK = 310,
-     MENUBREAK = 311,
-     MESSAGETABLE = 312,
-     RCDATA = 313,
-     STRINGTABLE = 314,
-     VERSIONINFO = 315,
-     FILEVERSION = 316,
-     PRODUCTVERSION = 317,
-     FILEFLAGSMASK = 318,
-     FILEFLAGS = 319,
-     FILEOS = 320,
-     FILETYPE = 321,
-     FILESUBTYPE = 322,
-     BLOCKSTRINGFILEINFO = 323,
-     BLOCKVARFILEINFO = 324,
-     VALUE = 325,
-     BLOCK = 326,
-     MOVEABLE = 327,
-     FIXED = 328,
-     PURE = 329,
-     IMPURE = 330,
-     PRELOAD = 331,
-     LOADONCALL = 332,
-     DISCARDABLE = 333,
-     NOT = 334,
-     QUOTEDSTRING = 335,
-     STRING = 336,
-     NUMBER = 337,
-     SIZEDSTRING = 338,
-     IGNORED_TOKEN = 339,
-     NEG = 340
+     ANICURSOR = 298,
+     ANIICON = 299,
+     DLGINCLUDE = 300,
+     DLGINIT = 301,
+     FONTDIR = 302,
+     HTML = 303,
+     MANIFEST = 304,
+     PLUGPLAY = 305,
+     VXD = 306,
+     TOOLBAR = 307,
+     BUTTON = 308,
+     LANGUAGE = 309,
+     CHARACTERISTICS = 310,
+     VERSIONK = 311,
+     MENU = 312,
+     MENUEX = 313,
+     MENUITEM = 314,
+     SEPARATOR = 315,
+     POPUP = 316,
+     CHECKED = 317,
+     GRAYED = 318,
+     HELP = 319,
+     INACTIVE = 320,
+     MENUBARBREAK = 321,
+     MENUBREAK = 322,
+     MESSAGETABLE = 323,
+     RCDATA = 324,
+     STRINGTABLE = 325,
+     VERSIONINFO = 326,
+     FILEVERSION = 327,
+     PRODUCTVERSION = 328,
+     FILEFLAGSMASK = 329,
+     FILEFLAGS = 330,
+     FILEOS = 331,
+     FILETYPE = 332,
+     FILESUBTYPE = 333,
+     BLOCKSTRINGFILEINFO = 334,
+     BLOCKVARFILEINFO = 335,
+     VALUE = 336,
+     BLOCK = 337,
+     MOVEABLE = 338,
+     FIXED = 339,
+     PURE = 340,
+     IMPURE = 341,
+     PRELOAD = 342,
+     LOADONCALL = 343,
+     DISCARDABLE = 344,
+     NOT = 345,
+     QUOTEDUNISTRING = 346,
+     QUOTEDSTRING = 347,
+     STRING = 348,
+     NUMBER = 349,
+     SIZEDUNISTRING = 350,
+     SIZEDSTRING = 351,
+     IGNORED_TOKEN = 352,
+     NEG = 353
    };
 #endif
 /* Tokens.  */
@@ -155,101 +178,120 @@
 #define IEDIT 295
 #define FONT 296
 #define ICON 297
-#define LANGUAGE 298
-#define CHARACTERISTICS 299
-#define VERSIONK 300
-#define MENU 301
-#define MENUEX 302
-#define MENUITEM 303
-#define SEPARATOR 304
-#define POPUP 305
-#define CHECKED 306
-#define GRAYED 307
-#define HELP 308
-#define INACTIVE 309
-#define MENUBARBREAK 310
-#define MENUBREAK 311
-#define MESSAGETABLE 312
-#define RCDATA 313
-#define STRINGTABLE 314
-#define VERSIONINFO 315
-#define FILEVERSION 316
-#define PRODUCTVERSION 317
-#define FILEFLAGSMASK 318
-#define FILEFLAGS 319
-#define FILEOS 320
-#define FILETYPE 321
-#define FILESUBTYPE 322
-#define BLOCKSTRINGFILEINFO 323
-#define BLOCKVARFILEINFO 324
-#define VALUE 325
-#define BLOCK 326
-#define MOVEABLE 327
-#define FIXED 328
-#define PURE 329
-#define IMPURE 330
-#define PRELOAD 331
-#define LOADONCALL 332
-#define DISCARDABLE 333
-#define NOT 334
-#define QUOTEDSTRING 335
-#define STRING 336
-#define NUMBER 337
-#define SIZEDSTRING 338
-#define IGNORED_TOKEN 339
-#define NEG 340
+#define ANICURSOR 298
+#define ANIICON 299
+#define DLGINCLUDE 300
+#define DLGINIT 301
+#define FONTDIR 302
+#define HTML 303
+#define MANIFEST 304
+#define PLUGPLAY 305
+#define VXD 306
+#define TOOLBAR 307
+#define BUTTON 308
+#define LANGUAGE 309
+#define CHARACTERISTICS 310
+#define VERSIONK 311
+#define MENU 312
+#define MENUEX 313
+#define MENUITEM 314
+#define SEPARATOR 315
+#define POPUP 316
+#define CHECKED 317
+#define GRAYED 318
+#define HELP 319
+#define INACTIVE 320
+#define MENUBARBREAK 321
+#define MENUBREAK 322
+#define MESSAGETABLE 323
+#define RCDATA 324
+#define STRINGTABLE 325
+#define VERSIONINFO 326
+#define FILEVERSION 327
+#define PRODUCTVERSION 328
+#define FILEFLAGSMASK 329
+#define FILEFLAGS 330
+#define FILEOS 331
+#define FILETYPE 332
+#define FILESUBTYPE 333
+#define BLOCKSTRINGFILEINFO 334
+#define BLOCKVARFILEINFO 335
+#define VALUE 336
+#define BLOCK 337
+#define MOVEABLE 338
+#define FIXED 339
+#define PURE 340
+#define IMPURE 341
+#define PRELOAD 342
+#define LOADONCALL 343
+#define DISCARDABLE 344
+#define NOT 345
+#define QUOTEDUNISTRING 346
+#define QUOTEDSTRING 347
+#define STRING 348
+#define NUMBER 349
+#define SIZEDUNISTRING 350
+#define SIZEDSTRING 351
+#define IGNORED_TOKEN 352
+#define NEG 353
 
 
 
 
-#if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 66 "rcparse.y"
-typedef union YYSTYPE {
-  struct accelerator acc;
-  struct accelerator *pacc;
-  struct dialog_control *dialog_control;
-  struct menuitem *menuitem;
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+typedef union YYSTYPE
+#line 69 "rcparse.y"
+{
+  rc_accelerator acc;
+  rc_accelerator *pacc;
+  rc_dialog_control *dialog_control;
+  rc_menuitem *menuitem;
   struct
   {
-    struct rcdata_item *first;
-    struct rcdata_item *last;
+    rc_rcdata_item *first;
+    rc_rcdata_item *last;
   } rcdata;
-  struct rcdata_item *rcdata_item;
-  struct stringtable_data *stringtable;
-  struct fixed_versioninfo *fixver;
-  struct ver_info *verinfo;
-  struct ver_stringinfo *verstring;
-  struct ver_varinfo *vervar;
-  struct res_id id;
-  struct res_res_info res_info;
+  rc_rcdata_item *rcdata_item;
+  rc_fixed_versioninfo *fixver;
+  rc_ver_info *verinfo;
+  rc_ver_stringinfo *verstring;
+  rc_ver_varinfo *vervar;
+  rc_toolbar_item *toobar_item;
+  rc_res_id id;
+  rc_res_res_info res_info;
   struct
   {
-    unsigned short on;
-    unsigned short off;
+    rc_uint_type on;
+    rc_uint_type off;
   } memflags;
   struct
   {
-    unsigned long val;
+    rc_uint_type val;
     /* Nonzero if this number was explicitly specified as long.  */
     int dword;
   } i;
-  unsigned long il;
-  unsigned short is;
+  rc_uint_type il;
+  rc_uint_type is;
   const char *s;
   struct
   {
-    unsigned long length;
+    rc_uint_type length;
     const char *s;
   } ss;
-} YYSTYPE;
-/* Line 1447 of yacc.c.  */
-#line 247 "rcparse.h"
+  unichar *uni;
+  struct
+  {
+    rc_uint_type length;
+    const unichar *s;
+  } suni;
+}
+/* Line 1489 of yacc.c.  */
+#line 290 "rcparse.h"
+	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
 #endif
 
 extern YYSTYPE yylval;
-
-
 

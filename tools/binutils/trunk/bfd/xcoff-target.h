@@ -1,5 +1,5 @@
 /* Common definitions for backends based on IBM RS/6000 "XCOFF64" files.
-   Copyright 2000, 2001, 2002, 2004, 2005
+   Copyright 2000, 2001, 2002, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
    Contributed by Cygnus Support.
 
@@ -7,7 +7,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,7 +17,9 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
+
 
 /* Internalcoff.h and coffcode.h modify themselves based on this flag.  */
 #define RS6000COFF_C 1
@@ -125,7 +127,7 @@ extern bfd *              _bfd_xcoff_openr_next_archived_file (bfd *, bfd *);
 extern int                _bfd_xcoff_generic_stat_arch_elt (bfd *, struct stat *);
 extern bfd_boolean        _bfd_xcoff_write_armap  (bfd *, unsigned int, struct orl *, unsigned int, int);
 extern bfd_boolean        _bfd_xcoff_write_archive_contents (bfd *);
-extern int                _bfd_xcoff_sizeof_headers (bfd *, bfd_boolean);
+extern int                _bfd_xcoff_sizeof_headers (bfd *, struct bfd_link_info *);
 extern void               _bfd_xcoff_swap_sym_in (bfd *, void *, void *);
 extern unsigned int       _bfd_xcoff_swap_sym_out (bfd *, void *, void *);
 extern void               _bfd_xcoff_swap_aux_in (bfd *, void *, int, int, int, int, void *);

@@ -115,7 +115,7 @@ struct bfd
   /* Stuff only useful for archives.  */
   void *arelt_data;
   struct bfd *my_archive;      /* The containing archive BFD.  */
-  struct bfd *next;            /* The next BFD in the archive.  */
+  struct bfd *archive_next;    /* The next BFD in the archive.  */
   struct bfd *archive_head;    /* The first BFD in the archive.  */
   bfd_boolean has_armap;
 
@@ -216,6 +216,7 @@ typedef enum bfd_error
   bfd_error_bad_value,
   bfd_error_file_truncated,
   bfd_error_file_too_big,
+  bfd_error_on_input,
   bfd_error_invalid_error_code
 @}
 bfd_error_type;
@@ -234,10 +235,13 @@ Return the current BFD error condition.
 @subsubsection @code{bfd_set_error}
 @strong{Synopsis}
 @example
-void bfd_set_error (bfd_error_type error_tag);
+void bfd_set_error (bfd_error_type error_tag, ...);
 @end example
 @strong{Description}@*
 Set the BFD error condition to be @var{error_tag}.
+If @var{error_tag} is bfd_error_on_input, then this function
+takes two more parameters, the input bfd where the error
+occurred, and the bfd_error_type error.
 
 @findex bfd_errmsg
 @subsubsection @code{bfd_errmsg}
@@ -561,8 +565,8 @@ Not enough memory exists to create private data for @var{obfd}.
 @strong{Description}@*
 The following functions exist but have not yet been documented.
 @example
-#define bfd_sizeof_headers(abfd, reloc) \
-       BFD_SEND (abfd, _bfd_sizeof_headers, (abfd, reloc))
+#define bfd_sizeof_headers(abfd, info) \
+       BFD_SEND (abfd, _bfd_sizeof_headers, (abfd, info))
 
 #define bfd_find_nearest_line(abfd, sec, syms, off, file, func, line) \
        BFD_SEND (abfd, _bfd_find_nearest_line, \
@@ -718,4 +722,64 @@ void bfd_preserve_finish (bfd *, struct bfd_preserve *);
 This function should be called when the bfd state saved by
 bfd_preserve_save is no longer needed.  ie. when the back-end
 object_p function returns with success.
+
+@findex bfd_emul_get_maxpagesize
+@subsubsection @code{bfd_emul_get_maxpagesize}
+@strong{Synopsis}
+@example
+bfd_vma bfd_emul_get_maxpagesize (const char *);
+@end example
+@strong{Description}@*
+Returns the maximum page size, in bytes, as determined by
+emulation.
+
+@strong{Returns}@*
+Returns the maximum page size in bytes for ELF, abort
+otherwise.
+
+@findex bfd_emul_set_maxpagesize
+@subsubsection @code{bfd_emul_set_maxpagesize}
+@strong{Synopsis}
+@example
+void bfd_emul_set_maxpagesize (const char *, bfd_vma);
+@end example
+@strong{Description}@*
+For ELF, set the maximum page size for the emulation.  It is
+a no-op for other formats.
+
+@findex bfd_emul_get_commonpagesize
+@subsubsection @code{bfd_emul_get_commonpagesize}
+@strong{Synopsis}
+@example
+bfd_vma bfd_emul_get_commonpagesize (const char *);
+@end example
+@strong{Description}@*
+Returns the common page size, in bytes, as determined by
+emulation.
+
+@strong{Returns}@*
+Returns the common page size in bytes for ELF, abort otherwise.
+
+@findex bfd_emul_set_commonpagesize
+@subsubsection @code{bfd_emul_set_commonpagesize}
+@strong{Synopsis}
+@example
+void bfd_emul_set_commonpagesize (const char *, bfd_vma);
+@end example
+@strong{Description}@*
+For ELF, set the common page size for the emulation.  It is
+a no-op for other formats.
+
+@findex bfd_demangle
+@subsubsection @code{bfd_demangle}
+@strong{Synopsis}
+@example
+char *bfd_demangle (bfd *, const char *, int);
+@end example
+@strong{Description}@*
+Wrapper around cplus_demangle.  Strips leading underscores and
+other such chars that would otherwise confuse the demangler.
+If passed a g++ v3 ABI mangled name, returns a buffer allocated
+with malloc holding the demangled name.  Returns NULL otherwise
+and on memory alloc failure.
 

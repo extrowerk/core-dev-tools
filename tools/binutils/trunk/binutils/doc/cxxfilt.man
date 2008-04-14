@@ -128,7 +128,7 @@
 .\" ========================================================================
 .\"
 .IX Title "C++FILT 1"
-.TH C++FILT 1 "2006-06-23" "binutils-2.17" "GNU Development Tools"
+.TH C++FILT 1 "2007-08-06" "binutils-2.17.90" "GNU Development Tools"
 .SH "NAME"
 cxxfilt \- Demangle C++ and Java symbols.
 .SH "SYNOPSIS"
@@ -173,7 +173,7 @@ names from the standard input instead.  All the results are printed on
 the standard output.  The difference between reading names from the
 command line versus reading names from the standard input is that
 command line arguments are expected to be just mangled names and no
-checking is performed to seperate them from surrounding text.  Thus
+checking is performed to separate them from surrounding text.  Thus
 for example:
 .PP
 .Vb 1
@@ -327,7 +327,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 .SH "FOOTNOTES"
 .IX Header "FOOTNOTES"
 .IP "1." 4
-MS-DOS does not allow \f(CW\*(C`+\*(C'\fR characters in file names, so on 
+MS-DOS does not allow \f(CW\*(C`+\*(C'\fR characters in file names, so on
 MS-DOS this program is named \fB\s-1CXXFILT\s0\fR.
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
@@ -335,7 +335,7 @@ the Info entries for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
 Copyright (c) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

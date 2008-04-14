@@ -128,7 +128,7 @@
 .\" ========================================================================
 .\"
 .IX Title "OBJCOPY 1"
-.TH OBJCOPY 1 "2006-06-23" "binutils-2.17" "GNU Development Tools"
+.TH OBJCOPY 1 "2007-08-06" "binutils-2.17.90" "GNU Development Tools"
 .SH "NAME"
 objcopy \- copy and translate object files
 .SH "SYNOPSIS"
@@ -143,6 +143,7 @@ objcopy [\fB\-F\fR \fIbfdname\fR|\fB\-\-target=\fR\fIbfdname\fR]
         [\fB\-N\fR \fIsymbolname\fR|\fB\-\-strip\-symbol=\fR\fIsymbolname\fR]
         [\fB\-\-strip\-unneeded\-symbol=\fR\fIsymbolname\fR]
         [\fB\-G\fR \fIsymbolname\fR|\fB\-\-keep\-global\-symbol=\fR\fIsymbolname\fR]
+        [\fB\-\-localize\-hidden\fR]
         [\fB\-L\fR \fIsymbolname\fR|\fB\-\-localize\-symbol=\fR\fIsymbolname\fR]
         [\fB\-\-globalize\-symbol=\fR\fIsymbolname\fR]
         [\fB\-W\fR \fIsymbolname\fR|\fB\-\-weaken\-symbol=\fR\fIsymbolname\fR]
@@ -168,6 +169,7 @@ objcopy [\fB\-F\fR \fIbfdname\fR|\fB\-\-target=\fR\fIbfdname\fR]
         [\fB\-\-add\-section\fR \fIsectionname\fR=\fIfilename\fR]
         [\fB\-\-rename\-section\fR \fIoldname\fR=\fInewname\fR[,\fIflags\fR]]
         [\fB\-\-change\-leading\-char\fR] [\fB\-\-remove\-leading\-char\fR]
+        [\fB\-\-reverse\-bytes=\fR\fInum\fR]
         [\fB\-\-srec\-len=\fR\fIival\fR] [\fB\-\-srec\-forceS3\fR]
         [\fB\-\-redefine\-sym\fR \fIold\fR=\fInew\fR]
         [\fB\-\-redefine\-syms=\fR\fIfilename\fR]
@@ -186,12 +188,13 @@ objcopy [\fB\-F\fR \fIbfdname\fR|\fB\-\-target=\fR\fIbfdname\fR]
         [\fB\-\-add\-gnu\-debuglink=\fR\fIpath-to-file\fR]
         [\fB\-\-keep\-file\-symbols\fR]
         [\fB\-\-only\-keep\-debug\fR]
+        [\fB\-\-extract\-symbol\fR]
         [\fB\-\-writable\-text\fR]
         [\fB\-\-readonly\-text\fR]
         [\fB\-\-pure\fR]
         [\fB\-\-impure\fR]
         [\fB\-v\fR|\fB\-\-verbose\fR]
-        [\fB\-V\fR|\fB\-\-version\fR]  
+        [\fB\-V\fR|\fB\-\-version\fR]
         [\fB\-\-help\fR] [\fB\-\-info\fR]
         \fIinfile\fR [\fIoutfile\fR]
 .SH "DESCRIPTION"
@@ -230,6 +233,7 @@ Note\-\-\-\fBobjcopy\fR is not able to change the endianness of its input
 files.  If the input format has an endianness (some formats do not),
 \&\fBobjcopy\fR can only copy the inputs into file formats that have the
 same endianness or which have no endianness (e.g., \fBsrec\fR).
+(However, see the \fB\-\-reverse\-bytes\fR option.)
 .SH "OPTIONS"
 .IX Header "OPTIONS"
 .IP "\fIinfile\fR" 4
@@ -279,7 +283,7 @@ can access this binary data inside a program by referencing the special
 symbols that are created by the conversion process.  These symbols are
 called _binary_\fIobjfile\fR_start, _binary_\fIobjfile\fR_end and
 _binary_\fIobjfile\fR_size.  e.g. you can transform a picture file into
-an object file and then access it in your code using these symbols. 
+an object file and then access it in your code using these symbols.
 .IP "\fB\-j\fR \fIsectionname\fR" 4
 .IX Item "-j sectionname"
 .PD 0
@@ -344,6 +348,11 @@ by a relocation.  This option may be given more than once.
 Keep only symbol \fIsymbolname\fR global.  Make all other symbols local
 to the file, so that they are not visible externally.  This option may
 be given more than once.
+.IP "\fB\-\-localize\-hidden\fR" 4
+.IX Item "--localize-hidden"
+In an \s-1ELF\s0 object, mark all symbols that have hidden or internal visibility
+as local.  This option applies on top of symbol-specific localization options
+such as \fB\-L\fR.
 .IP "\fB\-L\fR \fIsymbolname\fR" 4
 .IX Item "-L symbolname"
 .PD 0
@@ -467,7 +476,7 @@ address, by adding \fIincr\fR.  Some object file formats do not permit
 section addresses to be changed arbitrarily.  Note that this does not
 relocate the sections; if the program expects sections to be loaded at a
 certain address, and this option is used to change the sections such
-that they are loaded at a different address, the program may fail. 
+that they are loaded at a different address, the program may fail.
 .IP "\fB\-\-change\-section\-address\fR \fIsection\fR\fB{=,+,\-}\fR\fIval\fR" 4
 .IX Item "--change-section-address section{=,+,-}val"
 .PD 0
@@ -491,7 +500,7 @@ different.  If \fB=\fR is used, the section address is set to
 \&\fIval\fR.  Otherwise, \fIval\fR is added to or subtracted from the
 section address.  See the comments under \fB\-\-change\-addresses\fR,
 above.  If \fIsection\fR does not exist in the input file, a warning
-will be issued, unless \fB\-\-no\-change\-warnings\fR is used.  
+will be issued, unless \fB\-\-no\-change\-warnings\fR is used.
 .IP "\fB\-\-change\-section\-vma\fR \fIsection\fR\fB{=,+,\-}\fR\fIval\fR" 4
 .IX Item "--change-section-vma section{=,+,-}val"
 Set or change the \s-1VMA\s0 address of the named \fIsection\fR.  The \s-1VMA\s0
@@ -504,7 +513,7 @@ is set to \fIval\fR.  Otherwise, \fIval\fR is added to or subtracted
 from the section address.  See the comments under
 \&\fB\-\-change\-addresses\fR, above.  If \fIsection\fR does not exist in
 the input file, a warning will be issued, unless
-\&\fB\-\-no\-change\-warnings\fR is used.   
+\&\fB\-\-no\-change\-warnings\fR is used.
 .IP "\fB\-\-change\-warnings\fR" 4
 .IX Item "--change-warnings"
 .PD 0
@@ -513,7 +522,7 @@ the input file, a warning will be issued, unless
 .PD
 If \fB\-\-change\-section\-address\fR or \fB\-\-change\-section\-lma\fR or
 \&\fB\-\-change\-section\-vma\fR is used, and the named section does not
-exist, issue a warning.  This is the default. 
+exist, issue a warning.  This is the default.
 .IP "\fB\-\-no\-change\-warnings\fR" 4
 .IX Item "--no-change-warnings"
 .PD 0
@@ -522,7 +531,7 @@ exist, issue a warning.  This is the default.
 .PD
 Do not issue a warning if \fB\-\-change\-section\-address\fR or
 \&\fB\-\-adjust\-section\-lma\fR or \fB\-\-adjust\-section\-vma\fR is used, even
-if the named section does not exist. 
+if the named section does not exist.
 .IP "\fB\-\-set\-section\-flags\fR \fIsection\fR\fB=\fR\fIflags\fR" 4
 .IX Item "--set-section-flags section=flags"
 Set the flags for the named section.  The \fIflags\fR argument is a
@@ -579,6 +588,30 @@ different conventions for symbol names.  This is different from
 \&\fB\-\-change\-leading\-char\fR because it always changes the symbol name
 when appropriate, regardless of the object file format of the output
 file.
+.IP "\fB\-\-reverse\-bytes=\fR\fInum\fR" 4
+.IX Item "--reverse-bytes=num"
+Reverse the bytes in a section with output contents.  A section length must
+be evenly divisible by the value given in order for the swap to be able to
+take place. Reversing takes place before the interleaving is performed.
+.Sp
+This option is used typically in generating \s-1ROM\s0 images for problematic
+target systems.  For example, on some target boards, the 32\-bit words
+fetched from 8\-bit ROMs are re-assembled in little-endian byte order
+regardless of the \s-1CPU\s0 byte order.  Depending on the programming model, the
+endianness of the \s-1ROM\s0 may need to be modified.
+.Sp
+Consider a simple file with a section containing the following eight
+bytes:  \f(CW12345678\fR.
+.Sp
+Using \fB\-\-reverse\-bytes=2\fR for the above example, the bytes in the
+output file would be ordered \f(CW21436587\fR.
+.Sp
+Using \fB\-\-reverse\-bytes=4\fR for the above example, the bytes in the
+output file would be ordered \f(CW43218765\fR.
+.Sp
+By using \fB\-\-reverse\-bytes=2\fR for the above example, followed by
+\&\fB\-\-reverse\-bytes=4\fR on the output file, the bytes in the second
+output file would be ordered \f(CW34127856\fR.
 .IP "\fB\-\-srec\-len=\fR\fIival\fR" 4
 .IX Item "--srec-len=ival"
 Meaningful only for srec output.  Set the maximum length of the Srecords
@@ -586,7 +619,7 @@ being produced to \fIival\fR.  This length covers both address, data and
 crc fields.
 .IP "\fB\-\-srec\-forceS3\fR" 4
 .IX Item "--srec-forceS3"
-Meaningful only for srec output.  Avoid generation of S1/S2 records, 
+Meaningful only for srec output.  Avoid generation of S1/S2 records,
 creating S3\-only record format.
 .IP "\fB\-\-redefine\-sym\fR \fIold\fR\fB=\fR\fInew\fR" 4
 .IX Item "--redefine-sym old=new"
@@ -651,7 +684,7 @@ This option may be given more than once.
 .IX Item "--alt-machine-code=index"
 If the output architecture has alternate machine codes, use the
 \&\fIindex\fRth code instead of the default one.  This is useful in case
-a machine is assigned an official code and the tool-chain adopts the 
+a machine is assigned an official code and the tool-chain adopts the
 new code, but other applications still depend on the original code
 being used.  For \s-1ELF\s0 based architectures if the \fIindex\fR
 alternative does not exist then the value is treated as an absolute
@@ -695,7 +728,7 @@ which would otherwise get stripped.
 .IX Item "--only-keep-debug"
 Strip a file, removing contents of any sections that would not be
 stripped by \fB\-\-strip\-debug\fR and leaving the debugging sections
-intact.
+intact.  In \s-1ELF\s0 files, this preserves all note sections in the output.
 .Sp
 The intention is that this option will be used in conjunction with
 \&\fB\-\-add\-gnu\-debuglink\fR to create a two part executable.  One a
@@ -741,9 +774,38 @@ optional.  You could instead do this:
 .RS 4
 .PD
 .Sp
-i.e. the file pointed to by the \fB\-\-add\-gnu\-debuglink\fR can be the
+i.e., the file pointed to by the \fB\-\-add\-gnu\-debuglink\fR can be the
 full executable.  It does not have to be a file created by the
 \&\fB\-\-only\-keep\-debug\fR switch.
+.Sp
+Note \- this switch is only intended for use on fully linked files.  It
+does not make sense to use it on object files where the debugging
+information may be incomplete.  Besides the gnu_debuglink feature
+currently only supports the presence of one filename containing
+debugging information, not multiple filenames on a one-per-object-file
+basis.
+.RE
+.IP "\fB\-\-extract\-symbol\fR" 4
+.IX Item "--extract-symbol"
+Keep the file's section flags and symbols but remove all section data.
+Specifically, the option:
+.RS 4
+.IP "*<sets the virtual and load addresses of every section to zero;>" 4
+.IX Item "*<sets the virtual and load addresses of every section to zero;>"
+.PD 0
+.IP "*<removes the contents of all sections;>" 4
+.IX Item "*<removes the contents of all sections;>"
+.IP "*<sets the size of every section to zero; and>" 4
+.IX Item "*<sets the size of every section to zero; and>"
+.IP "*<sets the file's start address to zero.>" 4
+.IX Item "*<sets the file's start address to zero.>"
+.RE
+.RS 4
+.PD
+.Sp
+This option is used to build a \fI.sym\fR file for a VxWorks kernel.
+It can also be a useful way of reducing the size of a \fB\-\-just\-symbols\fR
+linker input file.
 .RE
 .IP "\fB\-V\fR" 4
 .IX Item "-V"
@@ -785,7 +847,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
 Copyright (c) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

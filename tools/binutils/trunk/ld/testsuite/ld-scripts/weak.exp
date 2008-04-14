@@ -1,21 +1,24 @@
 # Test weak symbols.
 # By Ian Lance Taylor, Cygnus Solutions.
-#   Copyright 1999, 2000, 2002, 2004
+#   Copyright 1999, 2000, 2002, 2004, 2006, 2007
 #   Free Software Foundation, Inc.
 #
-# This file is free software; you can redistribute it and/or modify
+# This file is part of the GNU Binutils.
+#
+# This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
 
 set testname "weak symbols"
 
@@ -29,6 +32,7 @@ if {! [is_elf_format] && ! [is_pecoff_format]} {
 # Weak symbols are broken for non-i386 PE targets.
 if {! [istarget i?86-*-*]} {
     setup_xfail *-*-pe*
+    setup_xfail x86_64-*-mingw*
 }
 
 # hppa64 and or32 are incredibly broken
@@ -39,6 +43,12 @@ if {! [ld_assemble $as $srcdir/$subdir/weak1.s tmpdir/weak1.o]
     # It's OK if .weak doesn't work on this target.
     unresolved $testname
     return
+}
+
+global LDFLAGS
+set saved_LDFLAGS "$LDFLAGS"
+if [istarget "x86_64-*-mingw*"] then {
+  set LDFLAGS "$LDFLAGS --image-base 0"
 }
 
 set weak_regexp_big \
@@ -52,6 +62,7 @@ if {! [ld_simple_link $ld tmpdir/weak "$flags -T $srcdir/$subdir/weak.t tmpdir/w
 } else {
     if {[which $objdump] == 0} then {
 	unresolved $testname
+	set LDFLAGS "$saved_LDFLAGS"
 	return
     }
 
@@ -67,3 +78,5 @@ if {! [ld_simple_link $ld tmpdir/weak "$flags -T $srcdir/$subdir/weak.t tmpdir/w
 	fail $testname
     }
 }
+
+set LDFLAGS "$saved_LDFLAGS"

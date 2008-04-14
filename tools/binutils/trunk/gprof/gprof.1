@@ -128,7 +128,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GPROF 1"
-.TH GPROF 1 "2006-04-16" "binutils-2.16.92" "GNU"
+.TH GPROF 1 "2007-08-06" "binutils-2.17.90" "GNU"
 .SH "NAME"
 gprof \- display call graph profile data
 .SH "SYNOPSIS"
@@ -141,7 +141,7 @@ gprof [ \-[abcDhilLrsTvwxyz] ] [ \-[ACeEfFJnNOpPqQZ][\fIname\fR] ]
  [ \-\-[no\-]flat\-profile[=\fIname\fR] ] [ \-\-[no\-]graph[=\fIname\fR] ]
  [ \-\-[no\-]time=\fIname\fR] [ \-\-all\-lines ] [ \-\-brief ] 
  [ \-\-debug[=\fIlevel\fR] ] [ \-\-function\-ordering ] 
- [ \-\-file\-ordering ] [ \-\-directory\-path=\fIdirs\fR ]
+ [ \-\-file\-ordering \fImap_file\fR ] [ \-\-directory\-path=\fIdirs\fR ]
  [ \-\-display\-unused\-functions ] [ \-\-file\-format=\fIname\fR ]
  [ \-\-file\-info ] [ \-\-help ] [ \-\-line ] [ \-\-min\-count=\fIn\fR ]
  [ \-\-no\-static ] [ \-\-print\-path ] [ \-\-separate\-files ]
@@ -352,7 +352,7 @@ Normally, \f(CW\*(C`gprof\*(C'\fR prints annotated source files
 to standard\-output.  If this option is specified,
 annotated source for a file named \fIpath/\fIfilename\fI\fR
 is generated in the file \fI\fIfilename\fI\-ann\fR.  If the underlying
-filesystem would truncate \fI\fIfilename\fI\-ann\fR so that it
+file system would truncate \fI\fIfilename\fI\-ann\fR so that it
 overwrites the original \fI\fIfilename\fI\fR, \f(CW\*(C`gprof\*(C'\fR generates
 annotated source in the file \fI\fIfilename\fI.ann\fR instead (if the
 original file name has an extension, that extension is \fIreplaced\fR
@@ -480,7 +480,7 @@ The \fB\-a\fR option causes \f(CW\*(C`gprof\*(C'\fR to suppress the printing of
 statically declared (private) functions.  (These are functions whose
 names are not listed as global, and which are not visible outside the
 file/function/block where they were defined.)  Time spent in these
-functions, calls to/from them, etc, will all be attributed to the
+functions, calls to/from them, etc., will all be attributed to the
 function that was loaded directly before it in the executable file.
 This option affects both the flat profile and the call graph.
 .ie n .IP """\-c""" 4
@@ -530,7 +530,10 @@ symbols matching symspec \fIfrom\fR to those matching symspec \fIto\fR.
 .PD
 The \fB\-l\fR option enables line-by-line profiling, which causes
 histogram hits to be charged to individual source code lines,
-instead of functions.
+instead of functions.  This feature only works with programs compiled
+by older versions of the \f(CW\*(C`gcc\*(C'\fR compiler.  Newer versions of
+\&\f(CW\*(C`gcc\*(C'\fR are designed to work with the \f(CW\*(C`gcov\*(C'\fR tool instead.
+.Sp
 If the program was compiled with basic-block counting enabled,
 this option will also identify how many times each line of
 code was executed.
@@ -548,23 +551,23 @@ inaccuracies.
 .PD
 This option affects execution count output only.
 Symbols that are executed less than \fInum\fR times are suppressed.
-.ie n .IP """\-n[\f(CIsymspec\f(CW]""" 4
-.el .IP "\f(CW\-n[\f(CIsymspec\f(CW]\fR" 4
-.IX Item "-n[symspec]"
+.ie n .IP """\-n\f(CIsymspec\f(CW""" 4
+.el .IP "\f(CW\-n\f(CIsymspec\f(CW\fR" 4
+.IX Item "-nsymspec"
 .PD 0
-.ie n .IP """\-\-time[=\f(CIsymspec\f(CW]""" 4
-.el .IP "\f(CW\-\-time[=\f(CIsymspec\f(CW]\fR" 4
-.IX Item "--time[=symspec]"
+.ie n .IP """\-\-time=\f(CIsymspec\f(CW""" 4
+.el .IP "\f(CW\-\-time=\f(CIsymspec\f(CW\fR" 4
+.IX Item "--time=symspec"
 .PD
 The \fB\-n\fR option causes \f(CW\*(C`gprof\*(C'\fR, in its call graph analysis,
 to only propagate times for symbols matching \fIsymspec\fR.
-.ie n .IP """\-N[\f(CIsymspec\f(CW]""" 4
-.el .IP "\f(CW\-N[\f(CIsymspec\f(CW]\fR" 4
-.IX Item "-N[symspec]"
+.ie n .IP """\-N\f(CIsymspec\f(CW""" 4
+.el .IP "\f(CW\-N\f(CIsymspec\f(CW\fR" 4
+.IX Item "-Nsymspec"
 .PD 0
-.ie n .IP """\-\-no\-time[=\f(CIsymspec\f(CW]""" 4
-.el .IP "\f(CW\-\-no\-time[=\f(CIsymspec\f(CW]\fR" 4
-.IX Item "--no-time[=symspec]"
+.ie n .IP """\-\-no\-time=\f(CIsymspec\f(CW""" 4
+.el .IP "\f(CW\-\-no\-time=\f(CIsymspec\f(CW\fR" 4
+.IX Item "--no-time=symspec"
 .PD
 The \fB\-n\fR option causes \f(CW\*(C`gprof\*(C'\fR, in its call graph analysis,
 not to propagate times for symbols matching \fIsymspec\fR.
@@ -732,7 +735,7 @@ Proceedings of the \s-1SIGPLAN\s0 '82 Symposium on Compiler Construction,
 \&\s-1SIGPLAN\s0 Notices, Vol. 17, No  6, pp. 120\-126, June 1982.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (C) 1988, 92, 97, 98, 99, 2000, 2001, 2003 Free Software Foundation, Inc.
+Copyright (c) 1988, 92, 97, 98, 99, 2000, 2001, 2003, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

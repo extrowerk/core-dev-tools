@@ -1,10 +1,12 @@
 # Expect script for LD selective linking tests
-#   Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004
+#   Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2007
 #   Free Software Foundation, Inc.
 #
-# This file is free software; you can redistribute it and/or modify
+# This file is part of the GNU Binutils.
+#
+# This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -14,7 +16,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
 #
 # Written by Catherine Moore (clm@cygnus.com)
 # Make sure that constructors are handled correctly.
@@ -41,8 +44,8 @@ if {[istarget "alpha*-*-*"] || [istarget "ia64-*-*"]} {
 # FIXME: Instead of table, read settings from each source-file.
 set seltests {
   {selective1 C   1.c  {}       {}    {dropme1 dropme2} {}}
-  {selective2 C   2.c  {}       {}    {foo} {mips*-*}}
-  {selective3 C   2.c  {-u foo} {foo} {{foo 0}} {mips*-*}}
+  {selective2 C   2.c  {}       {}    {foo} {}}
+  {selective3 C   2.c  {-u foo} {foo} {{foo 0}} {}}
   {selective4 C++ 3.cc {}       {start a A::foo() B::foo()} {A::bar()} {mips*-*}}
   {selective5 C++ 4.cc {}       {start a A::bar()} {A::foo() B::foo()} {mips*-*}}
   {selective6 C++ 5.cc {}       {start a A::bar()}
@@ -52,6 +55,13 @@ set seltests {
 set cflags "-w -O -ffunction-sections -fdata-sections"
 set cxxflags "-fvtable-gc -fno-exceptions -fno-rtti"
 set ldflags "--gc-sections -Bstatic"
+
+if [istarget mips*-*] {
+    # MIPS16 doesn't support PIC code.
+    set cflags "-mno-abicalls $cflags"
+    # MIPS ELF uses __start by default, we override it.
+    set ldflags "-e _start $ldflags"
+}
 
 if [istarget sh64*-*-elf] {
     # This is what gcc passes to ld by default, plus switch to the

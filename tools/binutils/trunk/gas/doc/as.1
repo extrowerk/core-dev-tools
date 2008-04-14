@@ -128,12 +128,13 @@
 .\" ========================================================================
 .\"
 .IX Title "AS 1"
-.TH AS 1 "2006-06-23" "binutils-2.17" "GNU Development Tools"
+.TH AS 1 "2007-08-28" "binutils-2.18" "GNU Development Tools"
 .SH "NAME"
 AS \- the portable GNU assembler.
 .SH "SYNOPSIS"
 .IX Header "SYNOPSIS"
 as [\fB\-a\fR[\fBcdhlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
+ [\fB\-\-debug\-prefix\-map\fR \fIold\fR=\fInew\fR]
  [\fB\-\-defsym\fR \fIsym\fR=\fIval\fR] [\fB\-f\fR] [\fB\-g\fR] [\fB\-\-gstabs\fR]
  [\fB\-\-gstabs+\fR] [\fB\-\-gdwarf\-2\fR] [\fB\-\-help\fR] [\fB\-I\fR \fIdir\fR] [\fB\-J\fR]
  [\fB\-K\fR] [\fB\-L\fR] [\fB\-\-listing\-lhs\-width\fR=\fI\s-1NUM\s0\fR]
@@ -181,6 +182,7 @@ as [\fB\-a\fR[\fBcdhlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
 .PP
 \&\fITarget i386 options:\fR
    [\fB\-\-32\fR|\fB\-\-64\fR] [\fB\-n\fR]
+   [\fB\-march\fR=\fI\s-1CPU\s0\fR] [\fB\-mtune\fR=\fI\s-1CPU\s0\fR] 
 .PP
 \&\fITarget i960 options:\fR
    [\fB\-ACA\fR|\fB\-ACA_A\fR|\fB\-ACB\fR|\fB\-ACC\fR|\fB\-AKA\fR|\fB\-AKB\fR|
@@ -213,7 +215,7 @@ as [\fB\-a\fR[\fBcdhlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
    [\fB\-m68hc11\fR|\fB\-m68hc12\fR|\fB\-m68hcs12\fR]
    [\fB\-mshort\fR|\fB\-mlong\fR]
    [\fB\-mshort\-double\fR|\fB\-mlong\-double\fR]
-   [\fB\-\-force\-long\-branchs\fR] [\fB\-\-short\-branchs\fR]
+   [\fB\-\-force\-long\-branches\fR] [\fB\-\-short\-branches\fR]
    [\fB\-\-strict\-direct\-mode\fR] [\fB\-\-print\-insn\-syntax\fR]
    [\fB\-\-print\-opcodes\fR] [\fB\-\-generate\-example\fR]
 .PP
@@ -224,7 +226,7 @@ as [\fB\-a\fR[\fBcdhlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
 \&\fITarget \s-1MIPS\s0 options:\fR
    [\fB\-nocpp\fR] [\fB\-EL\fR] [\fB\-EB\fR] [\fB\-O\fR[\fIoptimization level\fR]]
    [\fB\-g\fR[\fIdebug level\fR]] [\fB\-G\fR \fInum\fR] [\fB\-KPIC\fR] [\fB\-call_shared\fR]
-   [\fB\-non_shared\fR] [\fB\-xgot\fR]
+   [\fB\-non_shared\fR] [\fB\-xgot\fR [\fB\-mvxworks\-pic\fR]
    [\fB\-mabi\fR=\fI\s-1ABI\s0\fR] [\fB\-32\fR] [\fB\-n32\fR] [\fB\-64\fR] [\fB\-mfp32\fR] [\fB\-mgp32\fR]
    [\fB\-march\fR=\fI\s-1CPU\s0\fR] [\fB\-mtune\fR=\fI\s-1CPU\s0\fR] [\fB\-mips1\fR] [\fB\-mips2\fR]
    [\fB\-mips3\fR] [\fB\-mips4\fR] [\fB\-mips5\fR] [\fB\-mips32\fR] [\fB\-mips32r2\fR]
@@ -233,9 +235,11 @@ as [\fB\-a\fR[\fBcdhlns\fR][=\fIfile\fR]] [\fB\-\-alternate\fR] [\fB\-D\fR]
    [\fB\-trap\fR] [\fB\-no\-break\fR] [\fB\-break\fR] [\fB\-no\-trap\fR]
    [\fB\-mfix7000\fR] [\fB\-mno\-fix7000\fR]
    [\fB\-mips16\fR] [\fB\-no\-mips16\fR]
+   [\fB\-msmartmips\fR] [\fB\-mno\-smartmips\fR]
    [\fB\-mips3d\fR] [\fB\-no\-mips3d\fR]
    [\fB\-mdmx\fR] [\fB\-no\-mdmx\fR]
    [\fB\-mdsp\fR] [\fB\-mno\-dsp\fR]
+   [\fB\-mdspr2\fR] [\fB\-mno\-dspr2\fR]
    [\fB\-mmt\fR] [\fB\-mno\-mt\fR]
    [\fB\-mdebug\fR] [\fB\-no\-mdebug\fR]
    [\fB\-mpdr\fR] [\fB\-mno\-pdr\fR]
@@ -403,16 +407,22 @@ the last one.  By itself, \fB\-a\fR defaults to \fB\-ahls\fR.
 .RE
 .IP "\fB\-\-alternate\fR" 4
 .IX Item "--alternate"
-Begin in alternate macro mode, see \fBAltmacro,,\f(CB\*(C`.altmacro\*(C'\fB\fR.
+Begin in alternate macro mode.
 .IP "\fB\-D\fR" 4
 .IX Item "-D"
 Ignored.  This option is accepted for script compatibility with calls to
 other assemblers.
+.IP "\fB\-\-debug\-prefix\-map\fR \fIold\fR\fB=\fR\fInew\fR" 4
+.IX Item "--debug-prefix-map old=new"
+When assembling files in directory \fI\fIold\fI\fR, record debugging
+information describing them as in \fI\fInew\fI\fR instead.
 .IP "\fB\-\-defsym\fR \fIsym\fR\fB=\fR\fIvalue\fR" 4
 .IX Item "--defsym sym=value"
 Define the symbol \fIsym\fR to be \fIvalue\fR before assembling the input file.
 \&\fIvalue\fR must be an integer constant.  As in C, a leading \fB0x\fR
-indicates a hexadecimal value, and a leading \fB0\fR indicates an octal value.
+indicates a hexadecimal value, and a leading \fB0\fR indicates an octal
+value.  The value of the symbol can be overridden inside a source file via the
+use of a \f(CW\*(C`.set\*(C'\fR pseudo\-op.
 .IP "\fB\-f\fR" 4
 .IX Item "-f"
 \&\*(L"fast\*(R"\-\-\-skip whitespace and comment preprocessing (assume source is
@@ -463,9 +473,9 @@ Issue warnings when difference tables altered for long displacements.
 .IP "\fB\-\-keep\-locals\fR" 4
 .IX Item "--keep-locals"
 .PD
-Keep (in the symbol table) local symbols.  On traditional a.out systems
-these start with \fBL\fR, but different systems have different local
-label prefixes.
+Keep (in the symbol table) local symbols.  These symbols start with
+system-specific local label prefixes, typically \fB.L\fR for \s-1ELF\s0 systems
+or \fBL\fR for traditional a.out systems.
 .IP "\fB\-\-listing\-lhs\-width=\fR\fInumber\fR" 4
 .IX Item "--listing-lhs-width=number"
 Set the maximum width, in words, of the output data column for an assembler
@@ -731,14 +741,14 @@ Specify to use the 32\-bit double \s-1ABI\s0.
 .IP "\fB\-mlong\-double\fR" 4
 .IX Item "-mlong-double"
 Specify to use the 64\-bit double \s-1ABI\s0.  
-.IP "\fB\-\-force\-long\-branchs\fR" 4
-.IX Item "--force-long-branchs"
+.IP "\fB\-\-force\-long\-branches\fR" 4
+.IX Item "--force-long-branches"
 Relative branches are turned into absolute ones. This concerns
 conditional branches, unconditional branches and branches to a
 sub routine.
-.IP "\fB\-S | \-\-short\-branchs\fR" 4
-.IX Item "-S | --short-branchs"
-Do not turn relative branchs into absolute ones
+.IP "\fB\-S | \-\-short\-branches\fR" 4
+.IX Item "-S | --short-branches"
+Do not turn relative branches into absolute ones
 when the offset is out of range.
 .IP "\fB\-\-strict\-direct\-mode\fR" 4
 .IX Item "--strict-direct-mode"
@@ -883,6 +893,15 @@ and \fB\-mfp32\fR controls the size of floating-point registers.
 Generate code for the \s-1MIPS\s0 16 processor.  This is equivalent to putting
 \&\f(CW\*(C`.set mips16\*(C'\fR at the start of the assembly file.  \fB\-no\-mips16\fR
 turns off this option.
+.IP "\fB\-msmartmips\fR" 4
+.IX Item "-msmartmips"
+.PD 0
+.IP "\fB\-mno\-smartmips\fR" 4
+.IX Item "-mno-smartmips"
+.PD
+Enables the SmartMIPS extension to the \s-1MIPS32\s0 instruction set. This is
+equivalent to putting \f(CW\*(C`.set smartmips\*(C'\fR at the start of the assembly file.
+\&\fB\-mno\-smartmips\fR turns off this option.
 .IP "\fB\-mips3d\fR" 4
 .IX Item "-mips3d"
 .PD 0
@@ -907,9 +926,19 @@ This tells the assembler to accept \s-1MDMX\s0 instructions.
 .IP "\fB\-mno\-dsp\fR" 4
 .IX Item "-mno-dsp"
 .PD
-Generate code for the \s-1DSP\s0 Application Specific Extension.
-This tells the assembler to accept \s-1DSP\s0 instructions.
+Generate code for the \s-1DSP\s0 Release 1 Application Specific Extension.
+This tells the assembler to accept \s-1DSP\s0 Release 1 instructions.
 \&\fB\-mno\-dsp\fR turns off this option.
+.IP "\fB\-mdspr2\fR" 4
+.IX Item "-mdspr2"
+.PD 0
+.IP "\fB\-mno\-dspr2\fR" 4
+.IX Item "-mno-dspr2"
+.PD
+Generate code for the \s-1DSP\s0 Release 2 Application Specific Extension.
+This option implies \-mdsp.
+This tells the assembler to accept \s-1DSP\s0 Release 2 instructions.
+\&\fB\-mno\-dspr2\fR turns off this option.
 .IP "\fB\-mmt\fR" 4
 .IX Item "-mmt"
 .PD 0
@@ -1079,7 +1108,7 @@ Issue a warning for undocumented Z80 instructions that also work on R800.
 .IP "\fB\-Wup\fR" 4
 .IX Item "-Wup"
 .PD
-Issue a warning for undocumented Z80 instructions that do notwork on R800.  
+Issue a warning for undocumented Z80 instructions that do not work on R800.  
 .IP "\fB\-forbid\-undocumented\-instructions\fR" 4
 .IX Item "-forbid-undocumented-instructions"
 .PD 0
@@ -1093,13 +1122,14 @@ Treat all undocumented instructions as errors.
 .IP "\fB\-Fup\fR" 4
 .IX Item "-Fup"
 .PD
-Treat undocumented Z80 intructions that do notwork on R800 as errors.
+Treat undocumented Z80 instructions that do not work on R800 as errors.
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
 \&\fIgcc\fR\|(1), \fIld\fR\|(1), and the Info entries for \fIbinutils\fR and \fIld\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
-Copyright (C) 1991, 92, 93, 94, 95, 96, 97, 98, 99, 2000, 2001, 2002 Free Software Foundation, Inc.
+Copyright (c) 1991, 92, 93, 94, 95, 96, 97, 98, 99, 2000, 2001, 2002,
+2006, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

@@ -1,12 +1,12 @@
 /* bfin-lex.l  ADI Blackfin lexer
-   Copyright 2005
+   Copyright 2005, 2006, 2007
    Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -20,11 +20,9 @@
    02110-1301, USA.  */
 %{
 
-#include <stdlib.h>
-#include <string.h>
+#include "as.h"
 #include "bfin-defs.h"
 #include "bfin-parse.h"
-#include "as.h"
 
 static long parse_int (char **end);
 static int parse_halfreg (Register *r, int cl, char *hr);

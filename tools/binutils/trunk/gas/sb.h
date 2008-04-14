@@ -1,5 +1,5 @@
 /* sb.h - header file for string buffer manipulation routines
-   Copyright 1994, 1995, 2000, 2003 Free Software Foundation, Inc.
+   Copyright 1994, 1995, 2000, 2003, 2006, 2007 Free Software Foundation, Inc.
 
    Written by Steve and Judy Chamberlain of Cygnus Support,
       sac@cygnus.com
@@ -8,7 +8,7 @@
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -24,9 +24,6 @@
 #ifndef SB_H
 
 #define SB_H
-
-#include <stdio.h>
-#include "ansidecl.h"
 
 /* String blocks
 
@@ -69,14 +66,6 @@ typedef struct le
   char data[1];
 }
 sb_element;
-
-/* The free list.  */
-
-typedef struct
-{
-  sb_element *size[sb_max_power_two];
-}
-sb_list_vector;
 
 extern void sb_new (sb *);
 extern void sb_kill (sb *);

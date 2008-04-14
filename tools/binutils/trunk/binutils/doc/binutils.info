@@ -1,7 +1,5 @@
-This is
-/home/ryan/cvs-scratch/rmansfield/binutils-2.17/nto-x86-o-ntomips/../binutils/doc/binutils.info,
-produced by makeinfo version 4.8 from
-/home/ryan/cvs-scratch/rmansfield/binutils-2.17/nto-x86-o-ntomips/../binutils/doc/binutils.texi.
+This is binutils.info, produced by makeinfo version 4.8 from
+binutils.texi.
 
 START-INFO-DIR-ENTRY
 * Binutils: (binutils).         The GNU binary utilities.
@@ -19,11 +17,13 @@ START-INFO-DIR-ENTRY
 * addr2line: (binutils)addr2line. Convert addresses to file and line
 * nlmconv: (binutils)nlmconv.     Converts object code into an NLM
 * windres: (binutils)windres.	  Manipulate Windows resources
+* windmc: (binutils)windmc.	  Generator for Windows message resources
 * dlltool: (binutils)dlltool.	  Create files needed to build and use DLLs
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software
+Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.1 or
@@ -39,7 +39,7 @@ Introduction
 ************
 
 This brief manual contains documentation for the GNU binary utilities
-(collectively version 2.17):
+(GNU Binutils) version 2.17.90:
 
    This document is distributed under the terms of the GNU Free
 Documentation License.  A copy of the license is included in the
@@ -61,12 +61,13 @@ section entitled "GNU Free Documentation License".
 * addr2line::			Convert addresses to file and line
 * nlmconv::                     Converts object code into an NLM
 * windres::			Manipulate Windows resources
+* windmc::			Generator for Windows message resources
 * dlltool::			Create files needed to build and use DLLs
 * Common Options::              Command-line options for all utilities
 * Selecting The Target System:: How these utilities determine the target.
 * Reporting Bugs::              Reporting Bugs
 * GNU Free Documentation License::  GNU Free Documentation License
-* Index::                       Index
+* Binutils Index::                       Binutils Index
 
 
 File: binutils.info,  Node: ar,  Next: nm,  Prev: Top,  Up: Top
@@ -667,7 +668,7 @@ equivalent.
      These symbols are usually used by the target for some special
      processing and are not normally helpful when included included in
      the normal symbol lists.  For example for ARM targets this option
-     would skip the mapping symbols used to mark transistions between
+     would skip the mapping symbols used to mark transitions between
      ARM code, THUMB code and data.
 
 `-t RADIX'
@@ -716,6 +717,7 @@ File: binutils.info,  Node: objcopy,  Next: objdump,  Prev: nm,  Up: Top
              [`-N' SYMBOLNAME|`--strip-symbol='SYMBOLNAME]
              [`--strip-unneeded-symbol='SYMBOLNAME]
              [`-G' SYMBOLNAME|`--keep-global-symbol='SYMBOLNAME]
+             [`--localize-hidden']
              [`-L' SYMBOLNAME|`--localize-symbol='SYMBOLNAME]
              [`--globalize-symbol='SYMBOLNAME]
              [`-W' SYMBOLNAME|`--weaken-symbol='SYMBOLNAME]
@@ -741,6 +743,7 @@ File: binutils.info,  Node: objcopy,  Next: objdump,  Prev: nm,  Up: Top
              [`--add-section' SECTIONNAME=FILENAME]
              [`--rename-section' OLDNAME=NEWNAME[,FLAGS]]
              [`--change-leading-char'] [`--remove-leading-char']
+             [`--reverse-bytes='NUM]
              [`--srec-len='IVAL] [`--srec-forceS3']
              [`--redefine-sym' OLD=NEW]
              [`--redefine-syms='FILENAME]
@@ -759,6 +762,7 @@ File: binutils.info,  Node: objcopy,  Next: objdump,  Prev: nm,  Up: Top
              [`--add-gnu-debuglink='PATH-TO-FILE]
              [`--keep-file-symbols']
              [`--only-keep-debug']
+             [`--extract-symbol']
              [`--writable-text']
              [`--readonly-text']
              [`--pure']
@@ -801,7 +805,8 @@ information that is not needed by the binary file.
    Note--`objcopy' is not able to change the endianness of its input
 files.  If the input format has an endianness (some formats do not),
 `objcopy' can only copy the inputs into file formats that have the same
-endianness or which have no endianness (e.g., `srec').
+endianness or which have no endianness (e.g., `srec').  (However, see
+the `--reverse-bytes' option.)
 
 `INFILE'
 `OUTFILE'
@@ -880,6 +885,11 @@ endianness or which have no endianness (e.g., `srec').
      Keep only symbol SYMBOLNAME global.  Make all other symbols local
      to the file, so that they are not visible externally.  This option
      may be given more than once.
+
+`--localize-hidden'
+     In an ELF object, mark all symbols that have hidden or internal
+     visibility as local.  This option applies on top of
+     symbol-specific localization options such as `-L'.
 
 `-L SYMBOLNAME'
 `--localize-symbol=SYMBOLNAME'
@@ -1075,6 +1085,32 @@ endianness or which have no endianness (e.g., `srec').
      because it always changes the symbol name when appropriate,
      regardless of the object file format of the output file.
 
+`--reverse-bytes=NUM'
+     Reverse the bytes in a section with output contents.  A section
+     length must be evenly divisible by the value given in order for
+     the swap to be able to take place. Reversing takes place before
+     the interleaving is performed.
+
+     This option is used typically in generating ROM images for
+     problematic target systems.  For example, on some target boards,
+     the 32-bit words fetched from 8-bit ROMs are re-assembled in
+     little-endian byte order regardless of the CPU byte order.
+     Depending on the programming model, the endianness of the ROM may
+     need to be modified.
+
+     Consider a simple file with a section containing the following
+     eight bytes:  `12345678'.
+
+     Using `--reverse-bytes=2' for the above example, the bytes in the
+     output file would be ordered `21436587'.
+
+     Using `--reverse-bytes=4' for the above example, the bytes in the
+     output file would be ordered `43218765'.
+
+     By using `--reverse-bytes=2' for the above example, followed by
+     `--reverse-bytes=4' on the output file, the bytes in the second
+     output file would be ordered `34127856'.
+
 `--srec-len=IVAL'
      Meaningful only for srec output.  Set the maximum length of the
      Srecords being produced to IVAL.  This length covers both address,
@@ -1191,7 +1227,8 @@ endianness or which have no endianness (e.g., `srec').
 `--only-keep-debug'
      Strip a file, removing contents of any sections that would not be
      stripped by `--strip-debug' and leaving the debugging sections
-     intact.
+     intact.  In ELF files, this preserves all note sections in the
+     output.
 
      The intention is that this option will be used in conjunction with
      `--add-gnu-debuglink' to create a two part executable.  One a
@@ -1224,9 +1261,32 @@ endianness or which have no endianness (e.g., `srec').
 
        4. Run `objcopy --add-gnu-debuglink=foo.full foo'
 
-     i.e. the file pointed to by the `--add-gnu-debuglink' can be the
+     i.e., the file pointed to by the `--add-gnu-debuglink' can be the
      full executable.  It does not have to be a file created by the
      `--only-keep-debug' switch.
+
+     Note - this switch is only intended for use on fully linked files.
+     It does not make sense to use it on object files where the
+     debugging information may be incomplete.  Besides the
+     gnu_debuglink feature currently only supports the presence of one
+     filename containing debugging information, not multiple filenames
+     on a one-per-object-file basis.
+
+`--extract-symbol'
+     Keep the file's section flags and symbols but remove all section
+     data.  Specifically, the option:
+
+        * sets the virtual and load addresses of every section to zero;
+
+        * removes the contents of all sections;
+
+        * sets the size of every section to zero; and
+
+        * sets the file's start address to zero.
+
+     This option is used to build a `.sym' file for a VxWorks kernel.
+     It can also be a useful way of reducing the size of a
+     `--just-symbols' linker input file.
 
 `-V'
 `--version'
@@ -1459,26 +1519,26 @@ equivalent.  At least one option from the list
      the following may be specified as a comma separated string.
      `x86-64', `i386' and `i8086' select disassembly for the given
      architecture.  `intel' and `att' select between intel syntax mode
-     and AT&T syntax mode.  `addr32', `addr16', `data32' and `data16'
-     specify the default address size and operand size.  These four
-     options will be overridden if `x86-64', `i386' or `i8086' appear
-     later in the option string.  Lastly, `suffix', when in AT&T mode,
-     instructs the disassembler to print a mnemonic suffix even when the
-     suffix could be inferred by the operands.
+     and AT&T syntax mode.  `addr64', `addr32', `addr16', `data32' and
+     `data16' specify the default address size and operand size.  These
+     four options will be overridden if `x86-64', `i386' or `i8086'
+     appear later in the option string.  Lastly, `suffix', when in AT&T
+     mode, instructs the disassembler to print a mnemonic suffix even
+     when the suffix could be inferred by the operands.
 
      For PPC, `booke', `booke32' and `booke64' select disassembly of
      BookE instructions.  `32' and `64' select PowerPC and PowerPC64
      disassembly, respectively.  `e300' selects disassembly for the
-     e300 family.
+     e300 family.  `440' selects disassembly for the PowerPC 440.
 
-     For MIPS, this option controls the printing of instruction
-     mneumonic names and register names in disassembled instructions.
-     Multiple selections from the following may be specified as a comma
-     separated string, and invalid options are ignored:
+     For MIPS, this option controls the printing of instruction mnemonic
+     names and register names in disassembled instructions.  Multiple
+     selections from the following may be specified as a comma separated
+     string, and invalid options are ignored:
 
     `no-aliases'
-          Print the 'raw' instruction mneumonic instead of some pseudo
-          instruction mneumonic.  I.E. print 'daddu' or 'or' instead of
+          Print the 'raw' instruction mnemonic instead of some pseudo
+          instruction mnemonic.  I.e., print 'daddu' or 'or' instead of
           'move', 'sll' instead of 'nop', etc.
 
     `gpr-names=ABI'
@@ -1522,7 +1582,7 @@ equivalent.  At least one option from the list
      disassemble VAX binary files that don't contain symbol tables (like
      ROM dumps).  In these cases, the function entry mask would
      otherwise be decoded as VAX instructions, which would probably
-     lead the the rest of the function being wrongly disassembled.
+     lead the rest of the function being wrongly disassembled.
 
 `-p'
 `--private-headers'
@@ -1659,6 +1719,7 @@ File: binutils.info,  Node: size,  Next: strings,  Prev: readelf,  Up: Top
      size [`-A'|`-B'|`--format='COMPATIBILITY]
           [`--help']
           [`-d'|`-o'|`-x'|`--radix='NUMBER]
+          [`--common']
           [`-t'|`--totals']
           [`--target='BFDNAME] [`-V'|`--version']
           [OBJFILE...]
@@ -1723,6 +1784,10 @@ specified, the file `a.out' will be used.
      and hexadecimal for `-d' or `-x' output, or octal and hexadecimal
      if you're using `-o'.
 
+`--common'
+     Print total size of common symbols in each file.  When using
+     Berkeley format these are included in the bss size.
+
 `-t'
 `--totals'
      Show totals of all objects listed (Berkeley format listing mode
@@ -1748,7 +1813,7 @@ File: binutils.info,  Node: strings,  Next: strip,  Prev: size,  Up: Top
              [`-t' RADIX] [`--radix='RADIX]
              [`-e' ENCODING] [`--encoding='ENCODING]
              [`-'] [`--all'] [`--print-file-name']
-             [`--target='BFDNAME]
+             [`-T' BFDNAME] [`--target='BFDNAME]
              [`--help'] [`--version'] FILE...
 
    For each FILE given, GNU `strings' prints the printable character
@@ -1801,6 +1866,7 @@ files.
      littleendian, `B' = 32-bit bigendian, `L' = 32-bit littleendian.
      Useful for finding wide character strings.
 
+`-T BFDNAME'
 `--target=BFDNAME'
      Specify an object code format other than your system's default
      format.  *Note Target Selection::, for more information.
@@ -1930,8 +1996,10 @@ writing modified copies under different names.
      names, which would otherwise get stripped.
 
 `--only-keep-debug'
-     Strip a file, removing any sections that would be stripped by
-     `--strip-debug' and leaving the debugging sections.
+     Strip a file, removing contents of any sections that would not be
+     stripped by `--strip-debug' and leaving the debugging sections
+     intact.  In ELF files, this preserves all note sections in the
+     output.
 
      The intention is that this option will be used in conjunction with
      `--add-gnu-debuglink' to create a two part executable.  One a
@@ -1967,6 +2035,13 @@ writing modified copies under different names.
      ie the file pointed to by the `--add-gnu-debuglink' can be the
      full executable.  It does not have to be a file created by the
      `--only-keep-debug' switch.
+
+     Note - this switch is only intended for use on fully linked files.
+     It does not make sense to use it on object files where the
+     debugging information may be incomplete.  Besides the
+     gnu_debuglink feature currently only supports the presence of one
+     filename containing debugging information, not multiple filenames
+     on a one-per-object-file basis.
 
 `-V'
 `--version'
@@ -2018,7 +2093,7 @@ the standard input instead.  All the results are printed on the
 standard output.  The difference between reading names from the command
 line versus reading names from the standard input is that command line
 arguments are expected to be just mangled names and no checking is
-performed to seperate them from surrounding text.  Thus for example:
+performed to separate them from surrounding text.  Thus for example:
 
      c++filt -n _Z1fv
 
@@ -2115,8 +2190,8 @@ after a mangled name.  eg:
 
      _Warning:_ `c++filt' is a new utility, and the details of its user
      interface are subject to change in future releases.  In particular,
-     a command-line option may be required in the the future to decode
-     a name passed as an argument on the command line; in other words,
+     a command-line option may be required in the future to decode a
+     name passed as an argument on the command line; in other words,
 
           c++filt SYMBOL
 
@@ -2292,9 +2367,149 @@ In this case, `nlmconv' calls the linker for you.
      Prints the version number for `nlmconv'.
 
 
-File: binutils.info,  Node: windres,  Next: dlltool,  Prev: nlmconv,  Up: Top
+File: binutils.info,  Node: windmc,  Next: dlltool,  Prev: windres,  Up: Top
 
-12 windres
+12 windmc
+*********
+
+`windmc' may be used to generator Windows message resources.
+
+     _Warning:_ `windmc' is not always built as part of the binary
+     utilities, since it is only useful for Windows targets.
+
+     windmc [options] input-file
+
+   `windmc' reads message definitions from an input file (.mc) and
+translate them into a set of output files.  The output files may be of
+four kinds:
+
+`h'
+     A C header file containing the message definitions.
+
+`rc'
+     A resource file compilable by the `windres' tool.
+
+`bin'
+     One or more binary files containing the resource data for a
+     specific message language.
+
+`dbg'
+     A C include file that maps message id's to their symbolic name.
+
+   The exact description of these different formats is available in
+documentation from Microsoft.
+
+   When `windmc' converts from the `mc' format to the `bin' format,
+`rc', `h', and optional `dbg' it is acting like the Windows Message
+Compiler.
+
+`-a'
+`--ascii_in'
+     Specifies that the input file specified is ANSI. This is the
+     default behaviour.
+
+`-A'
+`--ascii_out'
+     Specifies that messages in the output `bin' files should be in ANSI
+     format.
+
+`-b'
+`--binprefix'
+     Specifies that `bin' filenames should have to be prefixed by the
+     basename of the source file.
+
+`-c'
+`--customflag'
+     Sets the customer bit in all message id's.
+
+`-C CODEPAGE'
+`--codepage_in CODEPAGE'
+     Sets the default codepage to be used to convert input file to
+     UTF16. The default is ocdepage 1252.
+
+`-d'
+`--decimal_values'
+     Outputs the constants in the header file in decimal. Default is
+     using hexadecimal output.
+
+`-e EXT'
+`--extension EXT'
+     The extension for the header file. The default is .h extension.
+
+`-F TARGET'
+`--target TARGET'
+     Specify the BFD format to use for a bin file as output.  This is a
+     BFD target name; you can use the `--help' option to see a list of
+     supported targets.  Normally `windmc' will use the default format,
+     which is the first one listed by the `--help' option.  *Note
+     Target Selection::.
+
+`-h PATH'
+`--headerdir PATH'
+     The target directory of the generated header file. The default is
+     the current directory.
+
+`-H'
+`--help'
+     Displays a list of command line options and then exits.
+
+`-m CHARACTERS'
+`--maxlength CHARACTERS'
+     Instructs `windmc' to generate a warning if the length of any
+     message exceeds the number specified.
+
+`-n'
+`--nullterminate'
+     Terminate message text in `bin' files by zero. By default they are
+     terminated by CR/LF.
+
+`-o'
+`--hresult_use'
+     Not yet implemented. Instructs `windmc' to generate an OLE2 header
+     file, using HRESULT definitions. Status codes are used if the flag
+     is not specified.
+
+`-O CODEPAGE'
+`--codepage_out CODEPAGE'
+     Sets the default codepage to be used to output text files. The
+     default is ocdepage 1252.
+
+`-r PATH'
+`--rcdir PATH'
+     The target directory for the generated `rc' script and the
+     generated `bin' files that the resource compiler script includes.
+     The default is the current directory.
+
+`-u'
+`--unicode_in'
+     Specifies that the input file is UTF16.
+
+`-U'
+`--unicode_out'
+     Specifies that messages in the output `bin' file should be in UTF16
+     format. This is the default behaviour.
+
+`-v'
+
+`--verbose'
+     Enable verbose mode.  This tells you what the preprocessor is if
+     you didn't specify one.
+
+`-V'
+
+`--version'
+     Prints the version number for `windres'.
+
+`-x PATH'
+`--xdgb PATH'
+     The path of the `dbg' C include file that maps message id's to the
+     symbolic name. No such file is generated without specifying the
+     switch.
+
+
+File: binutils.info,  Node: windres,  Next: windmc,  Prev: nlmconv,  Up: Top
+
+13 windres
 **********
 
 `windres' may be used to manipulate Windows resources.
@@ -2358,7 +2573,7 @@ available to Windows.
      for the input file name, as the output file name.  If there is no
      non-option argument, then `windres' will write to standard output.
      `windres' can not write a COFF file to standard output.  Note, for
-     compatability with `rc' the option `-fo' is also accepted, but its
+     compatibility with `rc' the option `-fo' is also accepted, but its
      use is not recommended.
 
 `-J FORMAT'
@@ -2393,7 +2608,7 @@ available to Windows.
      `windres' will pass this to the preprocessor as an `-I' option.
      `windres' will also search this directory when looking for files
      named in the `rc' file.  If the argument passed to this command
-     matches any of the supported FORMATS (as descrived in the `-J'
+     matches any of the supported FORMATS (as described in the `-J'
      option), it will issue a deprecation warning, and behave just like
      the `-J' option.  New programs should not use this behaviour.  If a
      directory happens to match a FORMAT, simple prefix it with `./' to
@@ -2415,6 +2630,14 @@ available to Windows.
 `-v'
      Enable verbose mode.  This tells you what the preprocessor is if
      you didn't specify one.
+
+`-c VAL'
+
+`--codepage VAL'
+     Specify the default codepage to use when reading an `rc' file.
+     VAL should be a hexadecimal prefixed by `0x' or decimal codepage
+     code. The valid range is from zero up to 0xffff, but the validity
+     of the codepage is host and configuration dependent.
 
 `-l VAL'
 
@@ -2449,9 +2672,9 @@ available to Windows.
      turn on parser debugging.
 
 
-File: binutils.info,  Node: dlltool,  Next: Common Options,  Prev: windres,  Up: Top
+File: binutils.info,  Node: dlltool,  Next: Common Options,  Prev: windmc,  Up: Top
 
-13 dlltool
+14 dlltool
 **********
 
 `dlltool' is used to create the files needed to create dynamic link
@@ -2721,7 +2944,7 @@ uses that DLL:
 
 File: binutils.info,  Node: def file format,  Up: dlltool
 
-13.1 The format of the `dlltool' `.def' file
+14.1 The format of the `dlltool' `.def' file
 ============================================
 
 A `.def' file contains any number of the following commands:
@@ -2768,7 +2991,7 @@ A `.def' file contains any number of the following commands:
 
 File: binutils.info,  Node: readelf,  Next: size,  Prev: ranlib,  Up: Top
 
-14 readelf
+15 readelf
 **********
 
      readelf [`-a'|`--all']
@@ -2810,7 +3033,7 @@ equivalent.  At least one option besides `-v' or `-H' must be given.
 
 `-a'
 `--all'
-     Equivalent to specifiying `--file-header', `--program-headers',
+     Equivalent to specifying `--file-header', `--program-headers',
      `--sections', `--symbols', `--relocs', `--dynamic', `--notes' and
      `--version-info'.
 
@@ -2925,7 +3148,7 @@ equivalent.  At least one option besides `-v' or `-H' must be given.
 
 File: binutils.info,  Node: Common Options,  Next: Selecting The Target System,  Prev: dlltool,  Up: Top
 
-15 Common Options
+16 Common Options
 *****************
 
 The following command-line options are supported by all of the programs
@@ -2955,7 +3178,7 @@ described in this manual.
 
 File: binutils.info,  Node: Selecting The Target System,  Next: Reporting Bugs,  Prev: Common Options,  Up: Top
 
-16 Selecting the Target System
+17 Selecting the Target System
 ******************************
 
 You can specify two aspects of the target system to the GNU binary file
@@ -2984,7 +3207,7 @@ same type as the target system).
 
 File: binutils.info,  Node: Target Selection,  Next: Architecture Selection,  Up: Selecting The Target System
 
-16.1 Target Selection
+17.1 Target Selection
 =====================
 
 A "target" is an object file format.  A given target may be supported
@@ -3059,7 +3282,7 @@ Ways to specify:
 
 File: binutils.info,  Node: Architecture Selection,  Prev: Target Selection,  Up: Selecting The Target System
 
-16.2 Architecture Selection
+17.2 Architecture Selection
 ===========================
 
 An "architecture" is a type of CPU on which an object file is to run.
@@ -3090,7 +3313,7 @@ Ways to specify:
 
 File: binutils.info,  Node: Reporting Bugs,  Next: GNU Free Documentation License,  Prev: Selecting The Target System,  Up: Top
 
-17 Reporting Bugs
+18 Reporting Bugs
 *****************
 
 Your bug reports play an essential role in making the binary utilities
@@ -3113,7 +3336,7 @@ information that enables us to fix the bug.
 
 File: binutils.info,  Node: Bug Criteria,  Next: Bug Reporting,  Up: Reporting Bugs
 
-17.1 Have You Found a Bug?
+18.1 Have You Found a Bug?
 ==========================
 
 If you are not sure whether you have found a bug, here are some
@@ -3131,7 +3354,7 @@ guidelines:
 
 File: binutils.info,  Node: Bug Reporting,  Prev: Bug Criteria,  Up: Reporting Bugs
 
-17.2 How to Report Bugs
+18.2 How to Report Bugs
 =======================
 
 A number of companies and individuals offer support for GNU products.
@@ -3142,7 +3365,7 @@ recommend you contact that organization first.
 individuals in the file `etc/SERVICE' in the GNU Emacs distribution.
 
    In any event, we also recommend that you send bug reports for the
-binary utilities to `bug-binutils@gnu.org'.
+binary utilities to `http://www.sourceware.org/bugzilla/'.
 
    The fundamental principle of reporting bugs usefully is this:
 *report all the facts*.  If you are not sure whether to state a fact or
@@ -3194,11 +3417,7 @@ might as well expedite matters by sending them to begin with.
 
    * A complete input file, or set of input files, that will reproduce
      the bug.  If the utility is reading an object file or files, then
-     it is generally most helpful to send the actual object files,
-     uuencoded if necessary to get them through the mail system.  Note
-     that `bug-binutils@gnu.org' is a mailing list, so you should avoid
-     sending very large files to it.  Making the files available for
-     anonymous FTP is OK.
+     it is generally most helpful to send the actual object files.
 
      If the source files were produced exclusively using GNU programs
      (e.g., `gcc', `gas', and/or the GNU `ld'), then it may be OK to
@@ -3217,7 +3436,7 @@ might as well expedite matters by sending them to begin with.
 
      Even if the problem you experience is a fatal signal, you should
      still say so explicitly.  Suppose something strange is going on,
-     such as your copy of the utility is out of synch, or you have
+     such as your copy of the utility is out of sync, or you have
      encountered a bug in the C library on your system.  (This has
      happened!)  Your copy might crash and ours would not.  If you told
      us to expect a crash, then when ours fails to crash, we would know
@@ -3281,7 +3500,7 @@ might as well expedite matters by sending them to begin with.
      such things without first using the debugger to find the facts.
 
 
-File: binutils.info,  Node: GNU Free Documentation License,  Next: Index,  Prev: Reporting Bugs,  Up: Top
+File: binutils.info,  Node: GNU Free Documentation License,  Next: Binutils Index,  Prev: Reporting Bugs,  Up: Top
 
 Appendix A GNU Free Documentation License
 *****************************************
@@ -3656,10 +3875,10 @@ free software license, such as the GNU General Public License, to
 permit their use in free software.
 
 
-File: binutils.info,  Node: Index,  Prev: GNU Free Documentation License,  Up: Top
+File: binutils.info,  Node: Binutils Index,  Prev: GNU Free Documentation License,  Up: Top
 
-Index
-*****
+Binutils Index
+**************
 
  [index ]
 * Menu:
@@ -3681,11 +3900,11 @@ Index
 * bugs:                                  Reporting Bugs.      (line   6)
 * bugs, reporting:                       Bug Reporting.       (line   6)
 * c++filt:                               c++filt.             (line   6)
-* changing object addresses:             objcopy.             (line 266)
-* changing section address:              objcopy.             (line 276)
-* changing section LMA:                  objcopy.             (line 284)
-* changing section VMA:                  objcopy.             (line 297)
-* changing start address:                objcopy.             (line 261)
+* changing object addresses:             objcopy.             (line 275)
+* changing section address:              objcopy.             (line 285)
+* changing section LMA:                  objcopy.             (line 293)
+* changing section VMA:                  objcopy.             (line 306)
+* changing start address:                objcopy.             (line 270)
 * collections of files:                  ar.                  (line   6)
 * compatibility, ar:                     ar.                  (line  40)
 * contents of archive:                   ar cmdline.          (line  88)
@@ -3698,8 +3917,8 @@ Index
 * deleting from archive:                 ar cmdline.          (line  26)
 * demangling C++ symbols:                c++filt.             (line   6)
 * demangling in nm:                      nm.                  (line 124)
-* demangling in objdump <1>:             objdump.             (line  88)
-* demangling in objdump:                 addr2line.           (line  55)
+* demangling in objdump <1>:             addr2line.           (line  55)
+* demangling in objdump:                 objdump.             (line  88)
 * disassembling object code:             objdump.             (line 110)
 * disassembly architecture:              objdump.             (line 176)
 * disassembly endianness:                objdump.             (line 126)
@@ -3725,7 +3944,7 @@ Index
 * ELF version sections informations:     readelf.             (line 106)
 * endianness:                            objdump.             (line 126)
 * error on valid input:                  Bug Criteria.        (line  12)
-* external symbols:                      nm.                  (line 217)
+* external symbols:                      nm.                  (line 148)
 * extract from archive:                  ar cmdline.          (line 103)
 * fatal signal:                          Bug Criteria.        (line   9)
 * file name:                             nm.                  (line 110)
@@ -3740,13 +3959,13 @@ Index
 * name duplication in archive:           ar cmdline.          (line  97)
 * name length:                           ar.                  (line  18)
 * nm:                                    nm.                  (line   6)
-* nm compatibility:                      nm.                  (line 142)
-* nm format:                             nm.                  (line 142)
+* nm compatibility:                      nm.                  (line 120)
+* nm format:                             nm.                  (line 120)
 * not writing archive index:             ar cmdline.          (line 173)
 * objdump:                               objdump.             (line   6)
 * object code format <1>:                addr2line.           (line  50)
-* object code format <2>:                size.                (line  79)
-* object code format <3>:                strings.             (line  65)
+* object code format <2>:                strings.             (line  66)
+* object code format <3>:                size.                (line  84)
 * object code format <4>:                objdump.             (line  74)
 * object code format:                    nm.                  (line 212)
 * object file header:                    objdump.             (line 132)
@@ -3757,7 +3976,7 @@ Index
 * printing from archive:                 ar cmdline.          (line  46)
 * printing strings:                      strings.             (line   6)
 * quick append to archive:               ar cmdline.          (line  54)
-* radix for section sizes:               size.                (line  65)
+* radix for section sizes:               size.                (line  66)
 * ranlib:                                ranlib.              (line   6)
 * readelf:                               readelf.             (line   6)
 * relative placement in archive:         ar cmdline.          (line 115)
@@ -3773,8 +3992,8 @@ Index
 * section sizes:                         size.                (line   6)
 * sections, full contents:               objdump.             (line 300)
 * size:                                  size.                (line   6)
-* size display format:                   size.                (line  26)
-* size number format:                    size.                (line  65)
+* size display format:                   size.                (line  27)
+* size number format:                    size.                (line  66)
 * sorting symbols:                       nm.                  (line 167)
 * source code context:                   objdump.             (line 136)
 * source disassembly:                    objdump.             (line 305)
@@ -3805,33 +4024,34 @@ Index
 
 
 Tag Table:
-Node: Top1873
-Node: ar3426
-Node: ar cmdline5604
-Node: ar scripts13747
-Node: nm19435
-Node: objcopy27631
-Node: objdump50683
-Node: ranlib65596
-Node: size66351
-Node: strings69198
-Node: strip71548
-Node: c++filt77027
-Ref: c++filt-Footnote-181955
-Node: addr2line82061
-Node: nlmconv85332
-Node: windres87938
-Node: dlltool93671
-Node: def file format104509
-Node: readelf106247
-Node: Common Options110955
-Node: Selecting The Target System111995
-Node: Target Selection112927
-Node: Architecture Selection114909
-Node: Reporting Bugs115737
-Node: Bug Criteria116516
-Node: Bug Reporting117069
-Node: GNU Free Documentation License124163
-Node: Index143895
+Node: Top1785
+Node: ar3412
+Node: ar cmdline5590
+Node: ar scripts13733
+Node: nm19421
+Node: objcopy27616
+Node: objdump53142
+Node: ranlib68108
+Node: size68863
+Node: strings71868
+Node: strip74246
+Node: c++filt80196
+Ref: c++filt-Footnote-185120
+Node: addr2line85226
+Node: nlmconv88497
+Node: windmc91103
+Node: windres94824
+Node: dlltool100851
+Node: def file format111688
+Node: readelf113426
+Node: Common Options118133
+Node: Selecting The Target System119173
+Node: Target Selection120105
+Node: Architecture Selection122087
+Node: Reporting Bugs122915
+Node: Bug Criteria123694
+Node: Bug Reporting124247
+Node: GNU Free Documentation License131117
+Node: Binutils Index150858
 
 End Tag Table

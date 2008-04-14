@@ -1,12 +1,12 @@
 /* tc-z80.c -- Assemble code for the Zilog Z80 and ASCII R800
-   Copyright 2005 Free Software Foundation, Inc.
+   Copyright 2005, 2006, 2007 Free Software Foundation, Inc.
    Contributed by Arnold Metselaar <arnold_m@operamail.com>
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -20,12 +20,8 @@
    02110-1301, USA.  */
 
 #include "as.h"
-#include "listing.h"
-#include "bfd.h"
 #include "safe-ctype.h"
 #include "subsegs.h"
-#include "symbols.h"
-#include "libiberty.h"
 
 /* Exported constants.  */
 const char comment_chars[] = ";\0";

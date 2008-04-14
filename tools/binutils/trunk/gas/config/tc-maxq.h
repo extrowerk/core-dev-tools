@@ -1,6 +1,6 @@
-/* tc-maxq.h -- Header file for the asssembler(MAXQ)
+/* tc-maxq.h -- Header file for the assembler(MAXQ)
 
-   Copyright 2004, 2005  Free Software Foundation, Inc.
+   Copyright 2004, 2005, 2007  Free Software Foundation, Inc.
 
    Contributed by HCL Technologies Pvt. Ltd.
 
@@ -11,7 +11,7 @@
 
    GAS is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
-   Foundation; either version 2, or (at your option) any later version.
+   Foundation; either version 3, or (at your option) any later version.
 
    GAS is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -116,10 +116,10 @@ extern void maxq20_cons_fix_new (fragS *, unsigned int, unsigned int, expression
 extern void maxq_number_to_chars (char *, valueT, int);
 
 /* If this macro is defined, it is a pointer to a NULL terminated list of
-   chracters which may appear in an operand. GAS already assumes that all
-   alphanumeric chracters, and '$', '.', and '_' may appear in an
+   characters which may appear in an operand. GAS already assumes that all
+   alphanumeric characters, and '$', '.', and '_' may appear in an
    operand("symbol_char"in app.c). This macro may be defined to treat
-   additional chracters as appearing in an operand. This affects the way in
+   additional characters as appearing in an operand. This affects the way in
    which GAS removes whitespaces before passing the string to md_assemble.  */
 #define tc_symbol_chars_extra_symbol_chars
 

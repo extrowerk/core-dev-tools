@@ -1,11 +1,11 @@
 # This shell script emits a C file. -*- C -*-
-#   Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+#   Copyright 2001, 2002, 2003, 2004, 2006, 2007 Free Software Foundation, Inc.
 #
-# This file is part of GLD, the Gnu Linker.
+# This file is part of the GNU Binutils.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -15,22 +15,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
 #
 
-# This file is sourced from elf32.em and mmo.em, used to define
-# linker MMIX-specifics common to ELF and MMO.
+# This file is sourced from generic.em.
 
-cat >>e${EMULATION_NAME}.c <<EOF
-/* Need to have this define before mmix-elfnmmo, which includes
-   needrelax.em which uses this name for the before_allocation function,
-   normally defined in elf32.em.  */
+fragment <<EOF
+/* Need to have this macro defined before mmix-elfnmmo, which uses the
+   name for the before_allocation function, defined in ldemul.c (for
+   the mmo "emulation") or in elf32.em (for the elf64mmix
+   "emulation").  */
 #define gldmmo_before_allocation before_allocation_default
+
+/* We include this header *not* because we expect to handle ELF here
+   but because we re-use the map_segments function in elf-generic.em,
+   a file which is rightly somewhat ELF-centric.  But this is only to
+   get a weird testcase right; ld-mmix/bpo-22, forcing ELF to be
+   output from the mmo emulation: -m mmo --oformat elf64-mmix!  */
+#include "elf-bfd.h"
 EOF
 
-. ${srcdir}/emultempl/mmix-elfnmmo.em
+source_em ${srcdir}/emultempl/elf-generic.em
+source_em ${srcdir}/emultempl/mmix-elfnmmo.em
 
-cat >>e${EMULATION_NAME}.c <<EOF
+fragment <<EOF
 
 /* Place an orphan section.  We use this to put random SEC_CODE or
    SEC_READONLY sections right after MMO_TEXT_SECTION_NAME.  Much borrowed
@@ -112,6 +121,7 @@ static void
 mmo_finish (void)
 {
   bfd_map_over_sections (output_bfd, mmo_wipe_sec_reloc_flag, NULL);
+  gld${EMULATION_NAME}_map_segments (FALSE);
   finish_default ();
 }
 
