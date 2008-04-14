@@ -323,7 +323,8 @@ mips*vr5000el-*-elf*)	targ_emul=elf32l4300 ;;
 mips*vr5000-*-elf*)	targ_emul=elf32b4300 ;;
 mips*el-*-elf*)		targ_emul=elf32elmip ;;
 mips*-*-elf*)		targ_emul=elf32ebmip ;;
-mips*-*-nto*)  		targ_emul=elf32lmipnto ;;
+mips*-*-nto*)  		targ_emul=elf32lmipnto 
+                   	targ_extra_emuls="elf32bmipnto" ;;
 mips*eb*-*-nto*) 	targ_emul=elf32bmipnto
                    	targ_extra_emuls="elf32lmipnto"
          		;;
