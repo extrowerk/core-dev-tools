@@ -1,5 +1,5 @@
 /* tc-crx.c -- Assembler code for the CRX CPU core.
-   Copyright 2004 Free Software Foundation, Inc.
+   Copyright 2004, 2007 Free Software Foundation, Inc.
 
    Contributed by Tomer Levi, NSC, Israel.
    Originally written for GAS 2.12 by Tomer Levi, NSC, Israel.
@@ -9,7 +9,7 @@
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -1271,7 +1271,7 @@ print_constant (int nbits, int shift, argument *arg)
       /* When instruction size is 3 and 'shift' is 16, a 16-bit constant is 
 	 always filling the upper part of output_opcode[1]. If we mistakenly 
 	 write it to output_opcode[0], the constant prefix (that is, 'match')
-	 will be overriden.
+	 will be overridden.
 		 0	   1	     2	       3
 	    +---------+---------+---------+---------+
 	    | 'match' |         | X X X X |	    |

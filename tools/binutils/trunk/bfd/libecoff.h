@@ -1,13 +1,13 @@
 /* BFD ECOFF object file private structure.
    Copyright 1993, 1994, 1995, 1996, 1999, 2001, 2002, 2003, 2004,
-   2005 Free Software Foundation, Inc.
+   2005, 2006, 2007 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,7 +17,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 #include "bfdlink.h"
 
@@ -301,7 +302,7 @@ extern bfd_boolean _bfd_ecoff_set_arch_mach
 extern bfd_boolean _bfd_ecoff_set_section_contents
   (bfd *, asection *, const void * location, file_ptr, bfd_size_type);
 
-extern int _bfd_ecoff_sizeof_headers (bfd *, bfd_boolean);
+extern int _bfd_ecoff_sizeof_headers (bfd *, struct bfd_link_info *);
 /* ecoff_bfd_get_relocated_section_contents defined by backend.  */
 /* ecoff_bfd_relax_section defined by backend.  */
 extern struct bfd_link_hash_table *_bfd_ecoff_bfd_link_hash_table_create

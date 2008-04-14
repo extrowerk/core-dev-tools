@@ -128,7 +128,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DLLTOOL 1"
-.TH DLLTOOL 1 "2006-06-23" "binutils-2.17" "GNU Development Tools"
+.TH DLLTOOL 1 "2007-08-06" "binutils-2.17.90" "GNU Development Tools"
 .SH "NAME"
 dlltool \- Create files needed to build and use DLLs.
 .SH "SYNOPSIS"
@@ -137,7 +137,7 @@ dlltool [\fB\-d\fR|\fB\-\-input\-def\fR \fIdef-file-name\fR]
         [\fB\-b\fR|\fB\-\-base\-file\fR \fIbase-file-name\fR]
         [\fB\-e\fR|\fB\-\-output\-exp\fR \fIexports-file-name\fR]
         [\fB\-z\fR|\fB\-\-output\-def\fR \fIdef-file-name\fR]
-        [\fB\-l\fR|\fB\-\-output\-lib\fR \fIlibrary-file-name\fR]        
+        [\fB\-l\fR|\fB\-\-output\-lib\fR \fIlibrary-file-name\fR]
         [\fB\-\-export\-all\-symbols\fR] [\fB\-\-no\-export\-all\-symbols\fR]
         [\fB\-\-exclude\-symbols\fR \fIlist\fR]
         [\fB\-\-no\-default\-excludes\fR]
@@ -149,7 +149,7 @@ dlltool [\fB\-d\fR|\fB\-\-input\-def\fR \fIdef-file-name\fR]
         [\fB\-p\fR|\fB\-\-ext\-prefix\-alias\fR \fIprefix\fR]
         [\fB\-x\fR|\fB\-\-no\-idata4\fR] [\fB\-c\fR|\fB\-\-no\-idata5\fR] [\fB\-i\fR|\fB\-\-interwork\fR]
         [\fB\-n\fR|\fB\-\-nodelete\fR] [\fB\-t\fR|\fB\-\-temp\-prefix\fR \fIprefix\fR]
-        [\fB\-v\fR|\fB\-\-verbose\fR] 
+        [\fB\-v\fR|\fB\-\-verbose\fR]
         [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR]
         [object\-file ...]
 .SH "DESCRIPTION"
@@ -159,8 +159,8 @@ dlltool [\fB\-d\fR|\fB\-\-input\-def\fR \fIdef-file-name\fR]
 line.  It then processes these inputs and if the \fB\-e\fR option has
 been specified it creates a exports file.  If the \fB\-l\fR option
 has been specified it creates a library file and if the \fB\-z\fR option
-has been specified it creates a def file.  Any or all of the \fB\-e\fR, 
-\&\fB\-l\fR and \fB\-z\fR options can be present in one invocation of 
+has been specified it creates a def file.  Any or all of the \fB\-e\fR,
+\&\fB\-l\fR and \fB\-z\fR options can be present in one invocation of
 dlltool.
 .PP
 When creating a \s-1DLL\s0, along with the source for the \s-1DLL\s0, it is necessary
@@ -181,7 +181,7 @@ section of the object file.  This can be done in C by using the
 \&\fIasm()\fR operator:
 .PP
 .Vb 2
-\&          asm (".section .drectve");  
+\&          asm (".section .drectve");
 \&          asm (".ascii \e"\-export:my_func\e"");
 .Ve
 .PP
@@ -193,7 +193,7 @@ The second file needed for \s-1DLL\s0 creation is an exports file.  This file
 is linked with the object files that make up the body of the \s-1DLL\s0 and it
 handles the interface between the \s-1DLL\s0 and the outside world.  This is a
 binary file and it can be created by giving the \fB\-e\fR option to
-\&\fBdlltool\fR when it is creating or reading in a \fI.def\fR file. 
+\&\fBdlltool\fR when it is creating or reading in a \fI.def\fR file.
 .PP
 The third file needed for \s-1DLL\s0 creation is the library file that programs
 will link with in order to access the functions in the \s-1DLL\s0.  This file
@@ -338,7 +338,7 @@ contents of the \s-1DLL\s0 are actually encode using Thumb instructions.
 Specifies that when \fBdlltool\fR is creating the exports file it
 should add a section which allows the exported functions to be
 referenced without using the import library.  Whatever the hell that
-means! 
+means!
 .IP "\fB\-U\fR" 4
 .IX Item "-U"
 .PD 0
@@ -346,7 +346,7 @@ means!
 .IX Item "--add-underscore"
 .PD
 Specifies that when \fBdlltool\fR is creating the exports file it
-should prepend an underscore to the names of \fIall\fR exported symbols. 
+should prepend an underscore to the names of \fIall\fR exported symbols.
 .IP "\fB\-\-add\-stdcall\-underscore\fR" 4
 .IX Item "--add-stdcall-underscore"
 Specifies that when \fBdlltool\fR is creating the exports file it
@@ -427,7 +427,7 @@ file.
 .PD
 Makes \fBdlltool\fR use \fIprefix\fR when constructing the names of
 temporary assembler and object files.  By default, the temp file prefix
-is generated from the pid.  
+is generated from the pid.
 .IP "\fB\-v\fR" 4
 .IX Item "-v"
 .PD 0
@@ -468,7 +468,7 @@ The Info pages for \fIbinutils\fR.
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
 Copyright (c) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

@@ -1,6 +1,6 @@
 /* pe.h  -  PE COFF header information 
 
-   Copyright 1999, 2000, 2001, 2003, 2004 Free Software Foundation, Inc.
+   Copyright 1999, 2000, 2001, 2003, 2004, 2006 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -66,13 +66,29 @@
 #define IMAGE_SCN_MEM_LOCKED                 0x00040000
 #define IMAGE_SCN_MEM_PRELOAD                0x00080000
 
-#define IMAGE_SCN_ALIGN_1BYTES               0x00100000
-#define IMAGE_SCN_ALIGN_2BYTES               0x00200000
-#define IMAGE_SCN_ALIGN_4BYTES               0x00300000
-#define IMAGE_SCN_ALIGN_8BYTES               0x00400000
-#define IMAGE_SCN_ALIGN_16BYTES              0x00500000  /* Default alignment if no others are specified. */
-#define IMAGE_SCN_ALIGN_32BYTES              0x00600000
-#define IMAGE_SCN_ALIGN_64BYTES              0x00700000
+/* Bit position in the s_flags field where the alignment values start. */
+#define IMAGE_SCN_ALIGN_POWER_BIT_POS	     20
+#define IMAGE_SCN_ALIGN_POWER_BIT_MASK	     0x00f00000
+#define IMAGE_SCN_ALIGN_POWER_NUM(val)	     \
+  (((val) >> IMAGE_SCN_ALIGN_POWER_BIT_POS) - 1)
+#define IMAGE_SCN_ALIGN_POWER_CONST(val)     \
+  (((val) + 1) << IMAGE_SCN_ALIGN_POWER_BIT_POS)
+
+#define IMAGE_SCN_ALIGN_1BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (0)
+#define IMAGE_SCN_ALIGN_2BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (1)
+#define IMAGE_SCN_ALIGN_4BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (2)
+#define IMAGE_SCN_ALIGN_8BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (3)
+/* Default alignment if no others are specified. */
+#define IMAGE_SCN_ALIGN_16BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (4)
+#define IMAGE_SCN_ALIGN_32BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (5)
+#define IMAGE_SCN_ALIGN_64BYTES		     IMAGE_SCN_ALIGN_POWER_CONST (6)
+#define IMAGE_SCN_ALIGN_128BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (7)
+#define IMAGE_SCN_ALIGN_256BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (8)
+#define IMAGE_SCN_ALIGN_512BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (9)
+#define IMAGE_SCN_ALIGN_1024BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (10)
+#define IMAGE_SCN_ALIGN_2048BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (11)
+#define IMAGE_SCN_ALIGN_4096BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (12)
+#define IMAGE_SCN_ALIGN_8192BYTES	     IMAGE_SCN_ALIGN_POWER_CONST (13)
 
 #define IMAGE_SCN_LNK_NRELOC_OVFL            0x01000000  /* Section contains extended relocations. */
 #define IMAGE_SCN_MEM_NOT_CACHED             0x04000000  /* Section is not cachable.               */
@@ -119,6 +135,7 @@
 #define IMAGE_FILE_MACHINE_THUMB             0x01c2
 #define IMAGE_FILE_MACHINE_TRICORE           0x0520
 #define IMAGE_FILE_MACHINE_WCEMIPSV2         0x0169
+#define IMAGE_FILE_MACHINE_AMD64             0x8664
 
 #define IMAGE_SUBSYSTEM_UNKNOWN			 0
 #define IMAGE_SUBSYSTEM_NATIVE			 1
@@ -129,6 +146,8 @@
 #define IMAGE_SUBSYSTEM_EFI_APPLICATION		10
 #define IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER	11
 #define IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER	12
+#define IMAGE_SUBSYSTEM_EFI_ROM			13
+#define IMAGE_SUBSYSTEM_XBOX			14
   
 /* Magic values that are true for all dos/nt implementations.  */
 #define DOSMAGIC       0x5a4d  
@@ -259,6 +278,7 @@ typedef struct
   /* IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];  */
   char  DataDirectory[16][2][4]; /* 16 entries, 2 elements/entry, 4 chars.  */
 } PEAOUTHDR;
+
 #undef AOUTSZ
 #define AOUTSZ (AOUTHDRSZ + 196)
 
@@ -267,8 +287,11 @@ typedef struct
    of just 4 bytes long.  */
 typedef struct 
 {
+#ifdef AOUTHDRSZ64
+  AOUTHDR64 standard;
+#else
   AOUTHDR standard;
-
+#endif
   /* NT extra fields; see internal.h for descriptions.  */
   char  ImageBase[8];
   char  SectionAlignment[4];
@@ -294,7 +317,12 @@ typedef struct
   /* IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];  */
   char  DataDirectory[16][2][4]; /* 16 entries, 2 elements/entry, 4 chars.  */
 } PEPAOUTHDR;
+
+#ifdef AOUTHDRSZ64
+#define PEPAOUTSZ	(AOUTHDRSZ64 + 196 + 5 * 4) /* = 240 */
+#else
 #define PEPAOUTSZ	240
+#endif
   
 #undef  E_FILNMLEN
 #define E_FILNMLEN	18	/* # characters in a file name.  */

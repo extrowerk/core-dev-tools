@@ -1,5 +1,6 @@
 /* Assembly backend for the OpenRISC 1000.
-   Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2005, 2007
+   Free Software Foundation, Inc.
    Contributed by Damjan Lampret <lampret@opencores.org>.
    Modified bu Johan Rydberg, <johan.rydberg@netinsight.se>.
    Based upon a29k port.
@@ -8,7 +9,7 @@
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -615,9 +616,6 @@ md_apply_fix (fixS * fixP, valueT * val, segT seg ATTRIBUTE_UNUSED)
 #endif
 
   fixP->fx_addnumber = t_val; /* Remember value for emit_reloc.  */
-
-  know (fixP->fx_size == 4);
-  know (fixP->fx_r_type < BFD_RELOC_NONE);
 
   switch (fixP->fx_r_type)
     {

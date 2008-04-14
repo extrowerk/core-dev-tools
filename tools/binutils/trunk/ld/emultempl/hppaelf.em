@@ -1,12 +1,12 @@
 # This shell script emits a C file. -*- C -*-
 #   Copyright 1991, 1993, 1994, 1997, 1999, 2000, 2001, 2002, 2003, 2004,
-#   2005 Free Software Foundation, Inc.
+#   2005, 2007 Free Software Foundation, Inc.
 #
-# This file is part of GLD, the Gnu Linker.
+# This file is part of the GNU Binutils.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -16,13 +16,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
 #
 
 # This file is sourced from elf32.em, and defines extra hppa-elf
 # specific routines.
 #
-cat >>e${EMULATION_NAME}.c <<EOF
+fragment <<EOF
 
 #include "ldctor.h"
 #include "elf32-hppa.h"
@@ -220,9 +221,8 @@ hppaelf_layout_sections_again (void)
   /* If we have changed sizes of the stub sections, then we need
      to recalculate all the section offsets.  This may mean we need to
      add even more stubs.  */
-  need_laying_out = 0;
-
-  gld${EMULATION_NAME}_layout_sections_again ();
+  gld${EMULATION_NAME}_map_segments (TRUE);
+  need_laying_out = -1;
 }
 
 
@@ -248,7 +248,7 @@ build_section_lists (lang_statement_union_type *statement)
    to build linker stubs.  */
 
 static void
-hppaelf_finish (void)
+gld${EMULATION_NAME}_finish (void)
 {
   /* bfd_elf_discard_info just plays with debugging sections,
      ie. doesn't affect any code, so we can delay resizing the
@@ -288,8 +288,8 @@ hppaelf_finish (void)
 	}
     }
 
-  if (need_laying_out)
-    hppaelf_layout_sections_again ();
+  if (need_laying_out != -1)
+    gld${EMULATION_NAME}_map_segments (need_laying_out);
 
   if (! link_info.relocatable)
     {
@@ -381,5 +381,5 @@ PARSE_AND_LIST_ARGS_CASES='
 # Put these extra hppaelf routines in ld_${EMULATION_NAME}_emulation
 #
 LDEMUL_AFTER_PARSE=hppaelf_after_parse
-LDEMUL_FINISH=hppaelf_finish
+LDEMUL_FINISH=gld${EMULATION_NAME}_finish
 LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=hppaelf_create_output_section_statements

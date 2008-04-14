@@ -1,6 +1,7 @@
 /* ELF executable support for BFD.
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
+   2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
 
    Written by Fred Fish @ Cygnus Support, from information published
    in "UNIX System V Release 4, Programmers Guide: ANSI C and
@@ -14,21 +15,23 @@
    Meissner (Open Software Foundation), and Peter Hoogenboom (University
    of Utah) to finish and extend this.
 
-This file is part of BFD, the Binary File Descriptor library.
+   This file is part of BFD, the Binary File Descriptor library.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
+
 
 /* Problems and other issues to resolve.
 
@@ -64,8 +67,8 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 	it's cast in stone.
  */
 
-#include "bfd.h"
 #include "sysdep.h"
+#include "bfd.h"
 #include "libiberty.h"
 #include "bfdlink.h"
 #include "libbfd.h"
@@ -119,6 +122,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #define elf_find_section		NAME(bfd_elf,find_section)
 #define elf_write_shdrs_and_ehdr	NAME(bfd_elf,write_shdrs_and_ehdr)
 #define elf_write_out_phdrs		NAME(bfd_elf,write_out_phdrs)
+#define elf_checksum_contents		NAME(bfd_elf,checksum_contents)
 #define elf_write_relocs		NAME(bfd_elf,write_relocs)
 #define elf_slurp_reloc_table		NAME(bfd_elf,slurp_reloc_table)
 
@@ -139,10 +143,11 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #define LOG_FILE_ALIGN	2
 #endif
 
-#ifdef DEBUG
+#if DEBUG & 2
 static void elf_debug_section (int, Elf_Internal_Shdr *);
+#endif
+#if DEBUG & 1
 static void elf_debug_file (Elf_Internal_Ehdr *);
-static char *elf_symbol_flags (flagword);
 #endif
 
 /* Structure swapping routines */
@@ -165,7 +170,7 @@ static char *elf_symbol_flags (flagword);
 /* Translate an ELF symbol in external format into an ELF symbol in internal
    format.  */
 
-void
+bfd_boolean
 elf_swap_symbol_in (bfd *abfd,
 		    const void *psrc,
 		    const void *pshn,
@@ -187,9 +192,10 @@ elf_swap_symbol_in (bfd *abfd,
   if (dst->st_shndx == SHN_XINDEX)
     {
       if (shndx == NULL)
-	abort ();
+	return FALSE;
       dst->st_shndx = H_GET_32 (abfd, shndx->est_shndx);
     }
+  return TRUE;
 }
 
 /* Translate an ELF symbol in internal format into an ELF symbol in external
@@ -466,7 +472,7 @@ valid_section_index_p (unsigned index, unsigned num_sections)
   /* Note: We allow SHN_UNDEF as a valid section index.  */
   if (index < SHN_LORESERVE || index > SHN_HIRESERVE)
     return index < num_sections;
-  
+
   /* We disallow the use of reserved indcies, except for those
      with OS or Application specific meaning.  The test make use
      of the knowledge that:
@@ -498,6 +504,8 @@ elf_object_p (bfd *abfd)
   struct bfd_preserve preserve;
   asection *s;
   bfd_size_type amt;
+  const bfd_target *target;
+  const bfd_target * const *target_ptr;
 
   preserve.marker = NULL;
 
@@ -541,10 +549,12 @@ elf_object_p (bfd *abfd)
   if (!bfd_preserve_save (abfd, &preserve))
     goto got_no_match;
 
+  target = abfd->xvec;
+
   /* Allocate an instance of the elf_obj_tdata structure and hook it up to
      the tdata pointer in the bfd.  */
 
-  if (! (*abfd->xvec->_bfd_set_format[bfd_object]) (abfd))
+  if (! (*target->_bfd_set_format[bfd_object]) (abfd))
     goto got_no_match;
   preserve.marker = elf_tdata (abfd);
 
@@ -584,8 +594,6 @@ elf_object_p (bfd *abfd)
       && (ebd->elf_machine_alt2 == 0
 	  || i_ehdrp->e_machine != ebd->elf_machine_alt2))
     {
-      const bfd_target * const *target_ptr;
-
       if (ebd->elf_machine_code != EM_NONE)
 	goto got_wrong_format_error;
 
@@ -597,7 +605,7 @@ elf_object_p (bfd *abfd)
 
 	  if ((*target_ptr)->flavour != bfd_target_elf_flavour)
 	    continue;
-	  back = (const struct elf_backend_data *) (*target_ptr)->backend_data;
+	  back = xvec_get_elf_backend_data (*target_ptr);
 	  if (back->elf_machine_code == i_ehdrp->e_machine
 	      || (back->elf_machine_alt1 != 0
 		  && back->elf_machine_alt1 == i_ehdrp->e_machine)
@@ -624,6 +632,45 @@ elf_object_p (bfd *abfd)
       /* It's OK if this fails for the generic target.  */
       if (ebd->elf_machine_code != EM_NONE)
 	goto got_no_match;
+    }
+
+  if (ebd->elf_machine_code != EM_NONE
+      && i_ehdrp->e_ident[EI_OSABI] != ebd->elf_osabi)
+    {
+      if (ebd->elf_osabi != ELFOSABI_NONE)
+	goto got_wrong_format_error;
+
+      /* This is an ELFOSABI_NONE ELF target.  Let it match any ELF
+	 target of the compatible machine for which we do not have a
+	 backend with matching ELFOSABI.  */
+      for (target_ptr = bfd_target_vector;
+	   *target_ptr != NULL;
+	   target_ptr++)
+	{
+	  const struct elf_backend_data *back;
+
+	  /* Skip this target and targets with incompatible byte
+	     order.  */
+	  if (*target_ptr == target
+	      || (*target_ptr)->flavour != bfd_target_elf_flavour
+	      || (*target_ptr)->byteorder != target->byteorder
+	      || ((*target_ptr)->header_byteorder
+		  != target->header_byteorder))
+	    continue;
+
+	  back = xvec_get_elf_backend_data (*target_ptr);
+	  if (back->elf_osabi == i_ehdrp->e_ident[EI_OSABI]
+	      && (back->elf_machine_code == i_ehdrp->e_machine
+		  || (back->elf_machine_alt1 != 0
+		      && back->elf_machine_alt1 == i_ehdrp->e_machine)
+		  || (back->elf_machine_alt2 != 0
+		      && back->elf_machine_alt2 == i_ehdrp->e_machine)))
+	    {
+	      /* target_ptr is an ELF backend which matches this
+		 object file, so reject the ELFOSABI_NONE ELF target.  */
+	      goto got_wrong_format_error;
+	    }
+	}
     }
 
   if (i_ehdrp->e_shoff != 0)
@@ -846,7 +893,7 @@ elf_object_p (bfd *abfd)
     }
 
   bfd_preserve_finish (abfd, &preserve);
-  return abfd->xvec;
+  return target;
 
  got_wrong_format_error:
   /* There is way too much undoing of half-known state here.  The caller,
@@ -1059,6 +1106,53 @@ elf_write_shdrs_and_ehdr (bfd *abfd)
   return TRUE;
 }
 
+bfd_boolean
+elf_checksum_contents (bfd *abfd,
+		       void (*process) (const void *, size_t, void *),
+		       void *arg)
+{
+  Elf_Internal_Ehdr *i_ehdrp = elf_elfheader (abfd);
+  Elf_Internal_Shdr **i_shdrp = elf_elfsections (abfd);
+  Elf_Internal_Phdr *i_phdrp = elf_tdata (abfd)->phdr;
+  unsigned int count, num;
+
+  {
+    Elf_External_Ehdr x_ehdr;
+    Elf_Internal_Ehdr i_ehdr;
+
+    i_ehdr = *i_ehdrp;
+    i_ehdr.e_phoff = i_ehdr.e_shoff = 0;
+    elf_swap_ehdr_out (abfd, &i_ehdr, &x_ehdr);
+    (*process) (&x_ehdr, sizeof x_ehdr, arg);
+  }
+
+  num = i_ehdrp->e_phnum;
+  for (count = 0; count < num; count++)
+    {
+      Elf_External_Phdr x_phdr;
+      elf_swap_phdr_out (abfd, &i_phdrp[count], &x_phdr);
+      (*process) (&x_phdr, sizeof x_phdr, arg);
+    }
+
+  num = elf_numsections (abfd);
+  for (count = 0; count < num; count++)
+    {
+      Elf_Internal_Shdr i_shdr;
+      Elf_External_Shdr x_shdr;
+
+      i_shdr = *i_shdrp[count];
+      i_shdr.sh_offset = 0;
+
+      elf_swap_shdr_out (abfd, &i_shdr, &x_shdr);
+      (*process) (&x_shdr, sizeof x_shdr, arg);
+
+      if (i_shdr.contents)
+	(*process) (i_shdr.contents, i_shdr.sh_size, arg);
+    }
+
+  return TRUE;
+}
+
 long
 elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
 {
@@ -1234,6 +1328,12 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
 	      break;
 	    case STT_TLS:
 	      sym->symbol.flags |= BSF_THREAD_LOCAL;
+	      break;
+	    case STT_RELC:
+	      sym->symbol.flags |= BSF_RELC;
+	      break;
+	    case STT_SRELC:
+	      sym->symbol.flags |= BSF_SRELC;
 	      break;
 	    }
 
@@ -1462,7 +1562,7 @@ elf_slurp_reloc_table (bfd *abfd,
   return TRUE;
 }
 
-#ifdef DEBUG
+#if DEBUG & 2
 static void
 elf_debug_section (int num, Elf_Internal_Shdr *hdr)
 {
@@ -1488,7 +1588,9 @@ elf_debug_section (int num, Elf_Internal_Shdr *hdr)
 	   (long) hdr->sh_entsize);
   fflush (stderr);
 }
+#endif
 
+#if DEBUG & 1
 static void
 elf_debug_file (Elf_Internal_Ehdr *ehdrp)
 {
@@ -1499,77 +1601,6 @@ elf_debug_file (Elf_Internal_Ehdr *ehdrp)
   fprintf (stderr, "e_shoff      = %ld\n", (long) ehdrp->e_shoff);
   fprintf (stderr, "e_shnum      = %ld\n", (long) ehdrp->e_shnum);
   fprintf (stderr, "e_shentsize  = %ld\n", (long) ehdrp->e_shentsize);
-}
-
-static char *
-elf_symbol_flags (flagword flags)
-{
-  static char buffer[1024];
-
-  buffer[0] = '\0';
-  if (flags & BSF_LOCAL)
-    strcat (buffer, " local");
-
-  if (flags & BSF_GLOBAL)
-    strcat (buffer, " global");
-
-  if (flags & BSF_DEBUGGING)
-    strcat (buffer, " debug");
-
-  if (flags & BSF_FUNCTION)
-    strcat (buffer, " function");
-
-  if (flags & BSF_KEEP)
-    strcat (buffer, " keep");
-
-  if (flags & BSF_KEEP_G)
-    strcat (buffer, " keep_g");
-
-  if (flags & BSF_WEAK)
-    strcat (buffer, " weak");
-
-  if (flags & BSF_SECTION_SYM)
-    strcat (buffer, " section-sym");
-
-  if (flags & BSF_OLD_COMMON)
-    strcat (buffer, " old-common");
-
-  if (flags & BSF_NOT_AT_END)
-    strcat (buffer, " not-at-end");
-
-  if (flags & BSF_CONSTRUCTOR)
-    strcat (buffer, " constructor");
-
-  if (flags & BSF_WARNING)
-    strcat (buffer, " warning");
-
-  if (flags & BSF_INDIRECT)
-    strcat (buffer, " indirect");
-
-  if (flags & BSF_FILE)
-    strcat (buffer, " file");
-
-  if (flags & DYNAMIC)
-    strcat (buffer, " dynamic");
-
-  if (flags & ~(BSF_LOCAL
-		| BSF_GLOBAL
-		| BSF_DEBUGGING
-		| BSF_FUNCTION
-		| BSF_KEEP
-		| BSF_KEEP_G
-		| BSF_WEAK
-		| BSF_SECTION_SYM
-		| BSF_OLD_COMMON
-		| BSF_NOT_AT_END
-		| BSF_CONSTRUCTOR
-		| BSF_WARNING
-		| BSF_INDIRECT
-		| BSF_FILE
-		| BSF_DYNAMIC))
-    strcat (buffer, " unknown-bits");
-
-  return buffer;
 }
 #endif
 
@@ -1820,6 +1851,7 @@ const struct elf_size_info NAME(_bfd_elf,size_info) = {
   ELFCLASS, EV_CURRENT,
   elf_write_out_phdrs,
   elf_write_shdrs_and_ehdr,
+  elf_checksum_contents,
   elf_write_relocs,
   elf_swap_symbol_in,
   elf_swap_symbol_out,

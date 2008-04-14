@@ -1,6 +1,6 @@
 /* BFD back-end for Renesas H8/300 COFF binaries.
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
    Written by Steve Chamberlain, <sac@cygnus.com>.
 
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,10 +18,11 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
-#include "bfd.h"
 #include "sysdep.h"
+#include "bfd.h"
 #include "libbfd.h"
 #include "bfdlink.h"
 #include "genlink.h"
@@ -1276,12 +1277,12 @@ h8300_bfd_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
       /* Make sure the appropriate flags are set, including SEC_IN_MEMORY.  */
       flags = (SEC_ALLOC | SEC_LOAD
 	       | SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_READONLY);
-      htab->vectors_sec = bfd_make_section (abfd, ".vectors");
+      htab->vectors_sec = bfd_make_section_with_flags (abfd, ".vectors",
+						       flags);
 
       /* If the section wasn't created, or we couldn't set the flags,
 	 quit quickly now, rather than dying a painful death later.  */
-      if (!htab->vectors_sec
-	  || !bfd_set_section_flags (abfd, htab->vectors_sec, flags))
+      if (!htab->vectors_sec)
 	return FALSE;
 
       /* Also create the vector hash table.  */

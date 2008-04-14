@@ -1,12 +1,12 @@
 /* tc-openrisc.c -- Assembler for the OpenRISC family.
-   Copyright 2001, 2002, 2003, 2005 Free Software Foundation.
+   Copyright 2001, 2002, 2003, 2005, 2006, 2007 Free Software Foundation.
    Contributed by Johan Rydberg, jrydberg@opencores.org
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -19,7 +19,6 @@
    the Free Software Foundation, 51 Franklin Street - Fifth Floor,
    Boston, MA 02110-1301, USA.  */
 
-#include <stdio.h>
 #include "as.h"
 #include "subsegs.h"
 #include "symcat.h"

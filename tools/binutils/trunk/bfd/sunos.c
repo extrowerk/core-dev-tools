@@ -1,13 +1,13 @@
 /* BFD backend for SunOS binaries.
    Copyright 1990, 1991, 1992, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+   2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,7 +17,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 #define TARGETNAME "a.out-sunos-big"
 
@@ -745,57 +746,50 @@ sunos_create_dynamic_sections (bfd *abfd,
       /* The .dynamic section holds the basic dynamic information: the
 	 sun4_dynamic structure, the dynamic debugger information, and
 	 the sun4_dynamic_link structure.  */
-      s = bfd_make_section (abfd, ".dynamic");
+      s = bfd_make_section_with_flags (abfd, ".dynamic", flags);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .got section holds the global offset table.  The address
 	 is put in the ld_got field.  */
-      s = bfd_make_section (abfd, ".got");
+      s = bfd_make_section_with_flags (abfd, ".got", flags);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .plt section holds the procedure linkage table.  The
 	 address is put in the ld_plt field.  */
-      s = bfd_make_section (abfd, ".plt");
+      s = bfd_make_section_with_flags (abfd, ".plt", flags | SEC_CODE);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags | SEC_CODE)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .dynrel section holds the dynamic relocs.  The address is
 	 put in the ld_rel field.  */
-      s = bfd_make_section (abfd, ".dynrel");
+      s = bfd_make_section_with_flags (abfd, ".dynrel", flags | SEC_READONLY);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags | SEC_READONLY)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .hash section holds the dynamic hash table.  The address
 	 is put in the ld_hash field.  */
-      s = bfd_make_section (abfd, ".hash");
+      s = bfd_make_section_with_flags (abfd, ".hash", flags | SEC_READONLY);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags | SEC_READONLY)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .dynsym section holds the dynamic symbols.  The address
 	 is put in the ld_stab field.  */
-      s = bfd_make_section (abfd, ".dynsym");
+      s = bfd_make_section_with_flags (abfd, ".dynsym", flags | SEC_READONLY);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags | SEC_READONLY)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
       /* The .dynstr section holds the dynamic symbol string table.
 	 The address is put in the ld_symbols field.  */
-      s = bfd_make_section (abfd, ".dynstr");
+      s = bfd_make_section_with_flags (abfd, ".dynstr", flags | SEC_READONLY);
       if (s == NULL
-	  || ! bfd_set_section_flags (abfd, s, flags | SEC_READONLY)
 	  || ! bfd_set_section_alignment (abfd, s, 2))
 	return FALSE;
 
@@ -890,14 +884,10 @@ sunos_add_dynamic_symbols (bfd *abfd,
       /* The .need section holds the list of names of shared objets
 	 which must be included at runtime.  The address of this
 	 section is put in the ld_need field.  */
-      asection *s = bfd_make_section (dynobj, ".need");
+      flagword flags = (SEC_ALLOC | SEC_LOAD | SEC_HAS_CONTENTS
+			| SEC_IN_MEMORY | SEC_READONLY);
+      asection *s = bfd_make_section_with_flags (dynobj, ".need", flags);
       if (s == NULL
-	  || ! bfd_set_section_flags (dynobj, s,
-				      (SEC_ALLOC
-				       | SEC_LOAD
-				       | SEC_HAS_CONTENTS
-				       | SEC_IN_MEMORY
-				       | SEC_READONLY))
 	  || ! bfd_set_section_alignment (dynobj, s, 2))
 	return FALSE;
     }
@@ -907,14 +897,10 @@ sunos_add_dynamic_symbols (bfd *abfd,
       /* The .rules section holds the path to search for shared
 	 objects.  The address of this section is put in the ld_rules
 	 field.  */
-      asection *s = bfd_make_section (dynobj, ".rules");
+      flagword flags = (SEC_ALLOC | SEC_LOAD | SEC_HAS_CONTENTS
+			| SEC_IN_MEMORY | SEC_READONLY);
+      asection *s = bfd_make_section_with_flags (dynobj, ".rules", flags);
       if (s == NULL
-	  || ! bfd_set_section_flags (dynobj, s,
-				      (SEC_ALLOC
-				       | SEC_LOAD
-				       | SEC_HAS_CONTENTS
-				       | SEC_IN_MEMORY
-				       | SEC_READONLY))
 	  || ! bfd_set_section_alignment (dynobj, s, 2))
 	return FALSE;
     }

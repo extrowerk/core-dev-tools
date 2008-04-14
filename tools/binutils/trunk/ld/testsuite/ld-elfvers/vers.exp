@@ -1,20 +1,23 @@
 # Expect script for ld-version tests
-#   Copyright 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005
+#   Copyright 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005, 2007
 #   Free Software Foundation, Inc.
 #
-# This file is free software; you can redistribute it and/or modify
+# This file is part of the GNU Binutils.
+#
+# This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
 #
 # Written by Eric Youngdale (eric@andante.jic.com)
 
@@ -460,44 +463,33 @@ proc objdump_versionstuff { objdump object expectfile } {
 
 	# It's OK if there are extra lines in the actual output; they
 	# may come from version information in libc.  We require that
-	# every line in EXPECTFILE appear in the output in order.
+	# every line in EXPECTFILE appear in the output in any order.
 
-	set f1 [open $tmpdir/objdump.out r]
 	set f2 [open $expectfile r]
 	while { [gets $f2 l2] != -1 } {
 	    if { ![regexp "^#.*$" $l2] } then {
-		break
-	    }
-	} 
-	while { [gets $f1 l1] != -1 } {
-	    if { [string match $l2 $l1] } then {
-		if { [gets $f2 l2] == -1 } then {
+		set f1 [open $tmpdir/objdump.out r]
+		while { [gets $f1 l1] != -1 } {
+		    if { [string match $l2 $l1] } then {
+			break
+		    }
+		}
+		close $f1
+
+		if { ![string match $l2 $l1] } then {
+		    verbose -log "Did not find \"$l2\""
+		    set f1 [open $tmpdir/objdump.out r]
+		    while { [gets $f1 l1] != -1 } {
+			verbose -log $l1
+		    }
 		    close $f1
 		    close $f2
-		    return 1
+		    return 0
 		}
 	    }
 	}
-
-	# We reached the end of the output without seeing the line we
-	# expected.  This is a test failure.
-
-	close $f1
 	close $f2
-
-	# Support empty expected file.
-	if [string match "" $l2] then {
-	    return 1
-	}
-
-	verbose -log "Did not find \"$l2\""
-	set f1 [open $tmpdir/objdump.out r]
-	while { [gets $f1 l1] != -1 } {
-	    verbose -log $l1
-	}
-
-	verbose -log "$exec_output"
-	return 0
+	return 1
     } else {
 	verbose -log "$exec_output"
 	return 0
@@ -999,3 +991,9 @@ build_vers_lib_pic "vers30" vers30.c vers30 "" vers30.map vers30.ver vers30.dsym
 
 # Test #31 -- quoted strings in version sections.
 build_vers_lib_pic "vers31" vers31.c vers31 "" vers31.map vers31.ver vers31.dsym ""
+
+# Test #32 -- linker --defsym
+build_vers_lib_pic "vers32a" vers32a.c vers32a "" vers32.map vers32a.ver vers32a.dsym ""
+build_vers_lib_pic_flags "vers32b" vers32b.c vers32b "vers32a.so" vers32.map vers32b.ver vers32b.dsym "" "--defsym foo=0"
+build_vers_lib_pic_flags "vers32c" vers32a.c vers32c "vers32a.so" vers32.map vers32c.ver vers32c.dsym "" "--defsym foo=0"
+build_vers_lib_pic_flags "vers32d" vers32a.c vers32d "" vers32.map vers32d.ver vers32c.dsym "" "--defsym foo=0"

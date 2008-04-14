@@ -1,12 +1,12 @@
 /* This file is debug.c
-   Copyright 1987, 1988, 1989, 1990, 1991, 1992, 2000
+   Copyright 1987, 1988, 1989, 1990, 1991, 1992, 2000, 2006, 2007
    Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -25,26 +25,28 @@
 
 dmp_frags ()
 {
+  asection *s;
   frchainS *chp;
   char *p;
 
-  for (chp = frchain_root; chp; chp = chp->frch_next)
-    {
-      switch (chp->frch_seg)
-	{
-	case SEG_DATA:
-	  p = "Data";
-	  break;
-	case SEG_TEXT:
-	  p = "Text";
-	  break;
-	default:
-	  p = "???";
-	  break;
-	}
-      printf ("\nSEGMENT %s %d\n", p, chp->frch_subseg);
-      dmp_frag (chp->frch_root, "\t");
-    }
+  for (s = stdoutput->sections; s; s = s->next)
+    for (chp = seg_info (s)->frchainP; chp; chp = chp->frch_next)
+      {
+	switch (s)
+	  {
+	  case SEG_DATA:
+	    p = "Data";
+	    break;
+	  case SEG_TEXT:
+	    p = "Text";
+	    break;
+	  default:
+	    p = "???";
+	    break;
+	  }
+	printf ("\nSEGMENT %s %d\n", p, chp->frch_subseg);
+	dmp_frag (chp->frch_root, "\t");
+      }
 }
 
 dmp_frag (fp, indent)

@@ -1,12 +1,12 @@
 /* SuperH SH64-specific support for 32-bit ELF
-   Copyright 2000, 2001, 2002, 2003, 2004, 2005
+   Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -16,12 +16,13 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 #define SH64_ELF
 
-#include "bfd.h"
 #include "sysdep.h"
+#include "bfd.h"
 #include "elf-bfd.h"
 #include "../opcodes/sh64-opc.h"
 #include "elf32-sh64.h"
@@ -115,13 +116,16 @@ static void sh64_find_section_for_address
 static bfd_boolean
 sh64_elf_new_section_hook (bfd *abfd, asection *sec)
 {
-  struct _sh64_elf_section_data *sdata;
-  bfd_size_type amt = sizeof (*sdata);
+  if (!sec->used_by_bfd)
+    {
+      struct _sh64_elf_section_data *sdata;
+      bfd_size_type amt = sizeof (*sdata);
 
-  sdata = (struct _sh64_elf_section_data *) bfd_zalloc (abfd, amt);
-  if (sdata == NULL)
-    return FALSE;
-  sec->used_by_bfd = sdata;
+      sdata = bfd_zalloc (abfd, amt);
+      if (sdata == NULL)
+	return FALSE;
+      sec->used_by_bfd = sdata;
+    }
 
   return _bfd_elf_new_section_hook (abfd, sec);
 }
@@ -739,9 +743,9 @@ static void
 sh64_elf_merge_symbol_attribute (struct elf_link_hash_entry *h,
 				 const Elf_Internal_Sym *isym,
 				 bfd_boolean definition,
-				 bfd_boolean dynamic)
+				 bfd_boolean dynamic ATTRIBUTE_UNUSED)
 {
-  if (isym->st_other != 0 && dynamic)
+  if ((isym->st_other & ~ELF_ST_VISIBILITY (-1)) != 0)
     {
       unsigned char other;
 
@@ -756,8 +760,8 @@ sh64_elf_merge_symbol_attribute (struct elf_link_hash_entry *h,
 
 static const struct bfd_elf_special_section sh64_elf_special_sections[] =
 {
-  { ".cranges", 8, 0, SHT_PROGBITS, 0 },
-  { NULL,       0, 0, 0,            0 }
+  { STRING_COMMA_LEN (".cranges"), 0, SHT_PROGBITS, 0 },
+  { NULL,                       0, 0, 0,            0 }
 };
 
 #undef	TARGET_BIG_SYM
@@ -782,6 +786,7 @@ static const struct bfd_elf_special_section sh64_elf_special_sections[] =
 #define	TARGET_LITTLE_NAME	"elf32-sh64l-nbsd"
 #undef	ELF_MAXPAGESIZE
 #define	ELF_MAXPAGESIZE		0x10000
+#undef	ELF_COMMONPAGESIZE
 #undef	elf_symbol_leading_char
 #define	elf_symbol_leading_char	0
 #undef	elf32_bed
@@ -800,6 +805,8 @@ static const struct bfd_elf_special_section sh64_elf_special_sections[] =
 #define	TARGET_LITTLE_NAME	"elf32-sh64-linux"
 #undef	elf32_bed
 #define	elf32_bed		elf32_sh64_lin_bed
+#undef	ELF_COMMONPAGESIZE
+#define	ELF_COMMONPAGESIZE	0x1000
 
 #include "elf32-target.h"
 

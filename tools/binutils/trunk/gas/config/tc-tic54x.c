@@ -1,5 +1,5 @@
 /* tc-tic54x.c -- Assembly code for the Texas Instruments TMS320C54X
-   Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+   Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
    Contributed by Timothy Wall (twall@cygnus.com)
 
@@ -7,7 +7,7 @@
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -45,9 +45,7 @@
    COFF1 limits section names to 8 characters.
    Some of the default behavior changed from COFF1 to COFF2.  */
 
-#include <stdlib.h>
 #include <limits.h>
-#include <errno.h>
 #include "as.h"
 #include "safe-ctype.h"
 #include "sb.h"
@@ -2514,8 +2512,8 @@ tic54x_mlib (ignore)
   abfd = bfd_openr (path, NULL);
   if (!abfd)
     {
-      as_bad (_("Can't open macro library file '%s' for reading."), path);
-      as_perror ("%s", path);
+      as_bad (_("can't open macro library file '%s' for reading: %s"),
+	      path, bfd_errmsg (bfd_get_error ()));
       ignore_rest_of_line ();
       return;
     }

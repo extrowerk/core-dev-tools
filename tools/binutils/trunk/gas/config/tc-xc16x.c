@@ -1,12 +1,12 @@
 /* tc-xc16x.c -- Assembler for the Infineon XC16X.
-   Copyright 2006 Free Software Foundation, Inc.
+   Copyright 2006, 2007 Free Software Foundation, Inc.
    Contributed by KPIT Cummins Infosystems 
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -20,7 +20,6 @@
    02110-1301, USA.  */
 
 
-#include <stdio.h>
 #include "as.h"
 #include "safe-ctype.h"
 #include "subsegs.h"
@@ -28,7 +27,6 @@
 #include "opcodes/xc16x-desc.h"
 #include "opcodes/xc16x-opc.h"
 #include "cgen.h"
-#include "bfd.h"
 #include "dwarf2dbg.h"
 
 

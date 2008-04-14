@@ -373,7 +373,8 @@ BFD_JUMP_TABLE macros.
 #define BFD_JUMP_TABLE_RELOCS(NAME) \
   NAME##_get_reloc_upper_bound, \
   NAME##_canonicalize_reloc, \
-  NAME##_bfd_reloc_type_lookup
+  NAME##_bfd_reloc_type_lookup, \
+  NAME##_bfd_reloc_name_lookup
 
   long        (*_get_reloc_upper_bound) (bfd *, sec_ptr);
   long        (*_bfd_canonicalize_reloc)
@@ -381,6 +382,9 @@ BFD_JUMP_TABLE macros.
   /* See documentation on reloc types.  */
   reloc_howto_type *
               (*reloc_type_lookup) (bfd *, bfd_reloc_code_real_type);
+  reloc_howto_type *
+              (*reloc_name_lookup) (bfd *, const char *);
+
 
   /* Routines used when writing an object file.  */
 #define BFD_JUMP_TABLE_WRITE(NAME) \
@@ -409,7 +413,7 @@ BFD_JUMP_TABLE macros.
   NAME##_bfd_discard_group, \
   NAME##_section_already_linked \
 
-  int         (*_bfd_sizeof_headers) (bfd *, bfd_boolean);
+  int         (*_bfd_sizeof_headers) (bfd *, struct bfd_link_info *);
   bfd_byte *  (*_bfd_get_relocated_section_contents)
     (bfd *, struct bfd_link_info *, struct bfd_link_order *,
      bfd_byte *, bfd_boolean, struct bfd_symbol **);
@@ -452,7 +456,8 @@ BFD_JUMP_TABLE macros.
 
   /* Check if SEC has been already linked during a reloceatable or
      final link.  */
-  void (*_section_already_linked) (bfd *, struct bfd_section *);
+  void (*_section_already_linked) (bfd *, struct bfd_section *,
+                                   struct bfd_link_info *);
 
   /* Routines to handle dynamic symbols and relocs.  */
 #define BFD_JUMP_TABLE_DYNAMIC(NAME) \
@@ -514,14 +519,15 @@ const bfd_target *bfd_find_target (const char *target_name, bfd *abfd);
 @end example
 @strong{Description}@*
 Return a pointer to the transfer vector for the object target
-named @var{target_name}.  If @var{target_name} is @code{NULL}, choose the
-one in the environment variable @code{GNUTARGET}; if that is null or not
-defined, then choose the first entry in the target list.
-Passing in the string "default" or setting the environment
-variable to "default" will cause the first entry in the target
-list to be returned, and "target_defaulted" will be set in the
-BFD.  This causes @code{bfd_check_format} to loop over all the
-targets to find the one that matches the file being read.
+named @var{target_name}.  If @var{target_name} is @code{NULL},
+choose the one in the environment variable @code{GNUTARGET}; if
+that is null or not defined, then choose the first entry in the
+target list.  Passing in the string "default" or setting the
+environment variable to "default" will cause the first entry in
+the target list to be returned, and "target_defaulted" will be
+set in the BFD if @var{abfd} isn't @code{NULL}.  This causes
+@code{bfd_check_format} to loop over all the targets to find the
+one that matches the file being read.
 
 @findex bfd_target_list
 @subsubsection @code{bfd_target_list}

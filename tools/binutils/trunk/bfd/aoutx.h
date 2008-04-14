@@ -1,6 +1,6 @@
 /* BFD semi-generic back-end for a.out binaries.
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
    Written by Cygnus Support.
 
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,7 +18,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 /*
 SECTION
@@ -118,8 +119,8 @@ DESCRIPTION
 
 #define KEEPIT udata.i
 
-#include "bfd.h"
 #include "sysdep.h"
+#include "bfd.h"
 #include "safe-ctype.h"
 #include "bfdlink.h"
 
@@ -128,8 +129,6 @@ DESCRIPTION
 #include "aout/aout64.h"
 #include "aout/stab_gnu.h"
 #include "aout/ar.h"
-
-reloc_howto_type * NAME (aout, reloc_type_lookup)  (bfd *, bfd_reloc_code_real_type);
 
 /*
 SUBSECTION
@@ -317,6 +316,31 @@ NAME (aout, reloc_type_lookup) (bfd *abfd, bfd_reloc_code_real_type code)
       default:
 	return NULL;
       }
+}
+
+reloc_howto_type *
+NAME (aout, reloc_name_lookup) (bfd *abfd, const char *r_name)
+{
+  unsigned int i, size;
+  reloc_howto_type *howto_table;
+
+  if (obj_reloc_entry_size (abfd) == RELOC_EXT_SIZE)
+    {
+      howto_table = howto_table_ext;
+      size = sizeof (howto_table_ext) / sizeof (howto_table_ext[0]);
+    }
+  else
+    {
+      howto_table = howto_table_std;
+      size = sizeof (howto_table_std) / sizeof (howto_table_std[0]);
+    }
+
+  for (i = 0; i < size; i++)
+    if (howto_table[i].name != NULL
+	&& strcasecmp (howto_table[i].name, r_name) == 0)
+      return &howto_table[i];
+
+  return NULL;
 }
 
 /*
@@ -1193,26 +1217,21 @@ NAME (aout, new_section_hook) (bfd *abfd, asection *newsect)
 	{
 	  obj_textsec (abfd)= newsect;
 	  newsect->target_index = N_TEXT;
-	  return TRUE;
 	}
-
-      if (obj_datasec (abfd) == NULL && !strcmp (newsect->name, ".data"))
+      else if (obj_datasec (abfd) == NULL && !strcmp (newsect->name, ".data"))
 	{
 	  obj_datasec (abfd) = newsect;
 	  newsect->target_index = N_DATA;
-	  return TRUE;
 	}
-
-      if (obj_bsssec (abfd) == NULL && !strcmp (newsect->name, ".bss"))
+      else if (obj_bsssec (abfd) == NULL && !strcmp (newsect->name, ".bss"))
 	{
 	  obj_bsssec (abfd) = newsect;
 	  newsect->target_index = N_BSS;
-	  return TRUE;
 	}
     }
 
   /* We allow more than three sections internally.  */
-  return TRUE;
+  return _bfd_generic_new_section_hook (abfd, newsect);
 }
 
 bfd_boolean
@@ -1720,9 +1739,12 @@ NAME (aout, slurp_symbol_table) (bfd *abfd)
     return FALSE;
 
   cached_size = obj_aout_external_sym_count (abfd);
+  if (cached_size == 0)
+    return TRUE;		/* Nothing to do.  */
+
   cached_size *= sizeof (aout_symbol_type);
   cached = bfd_zmalloc (cached_size);
-  if (cached == NULL && cached_size != 0)
+  if (cached == NULL)
     return FALSE;
 
   /* Convert from external symbol information to internal.  */
@@ -1934,7 +1956,10 @@ NAME (aout, swap_std_reloc_out) (bfd *abfd,
 
   if (bfd_is_com_section (output_section)
       || bfd_is_abs_section (output_section)
-      || bfd_is_und_section (output_section))
+      || bfd_is_und_section (output_section)
+      /* PR gas/3041  a.out relocs against weak symbols
+	 must be treated as if they were against externs.  */
+      || (sym->flags & BSF_WEAK))
     {
       if (bfd_abs_section_ptr->symbol == sym)
 	{
@@ -2137,7 +2162,10 @@ NAME (aout, swap_ext_reloc_in) (bfd *abfd,
 		>> RELOC_EXT_BITS_TYPE_SH_LITTLE);
     }
 
-  cache_ptr->howto =  howto_table_ext + r_type;
+  if (r_type < TABLE_SIZE (howto_table_ext))
+    cache_ptr->howto = howto_table_ext + r_type;
+  else
+    cache_ptr->howto = NULL;
 
   /* Base relative relocs are always against the symbol table,
      regardless of the setting of r_extern.  r_extern just reflects
@@ -2205,9 +2233,14 @@ NAME (aout, swap_std_reloc_in) (bfd *abfd,
 
   howto_idx = (r_length + 4 * r_pcrel + 8 * r_baserel
 	       + 16 * r_jmptable + 32 * r_relative);
-  BFD_ASSERT (howto_idx < TABLE_SIZE (howto_table_std));
-  cache_ptr->howto =  howto_table_std + howto_idx;
-  BFD_ASSERT (cache_ptr->howto->type != (unsigned int) -1);
+  if (howto_idx < TABLE_SIZE (howto_table_std))
+    {
+      cache_ptr->howto = howto_table_std + howto_idx;
+      if (cache_ptr->howto->type == (unsigned int) -1)
+	cache_ptr->howto = NULL;
+    }
+  else
+    cache_ptr->howto = NULL;
 
   /* Base relative relocs are always against the symbol table,
      regardless of the setting of r_extern.  r_extern just reflects
@@ -2258,20 +2291,25 @@ NAME (aout, slurp_reloc_table) (bfd *abfd, sec_ptr asect, asymbol **symbols)
       return FALSE;
     }
 
+  if (reloc_size == 0)
+    return TRUE;		/* Nothing to be done.  */
+
   if (bfd_seek (abfd, asect->rel_filepos, SEEK_SET) != 0)
     return FALSE;
 
   each_size = obj_reloc_entry_size (abfd);
 
   count = reloc_size / each_size;
+  if (count == 0)
+    return TRUE;		/* Nothing to be done.  */
 
   amt = count * sizeof (arelent);
   reloc_cache = bfd_zmalloc (amt);
-  if (reloc_cache == NULL && count != 0)
+  if (reloc_cache == NULL)
     return FALSE;
 
   relocs = bfd_malloc (reloc_size);
-  if (relocs == NULL && reloc_size != 0)
+  if (relocs == NULL)
     {
       free (reloc_cache);
       return FALSE;
@@ -2785,7 +2823,8 @@ NAME (aout, find_nearest_line) (bfd *abfd,
 }
 
 int
-NAME (aout, sizeof_headers) (bfd *abfd, bfd_boolean execable ATTRIBUTE_UNUSED)
+NAME (aout, sizeof_headers) (bfd *abfd,
+			     struct bfd_link_info *info ATTRIBUTE_UNUSED)
 {
   return adata (abfd).exec_bytes_size;
 }
@@ -2920,13 +2959,16 @@ aout_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
 	return FALSE;
     }
 
+  if (sym_count == 0)
+    return TRUE;		/* Nothing to do.  */
+
   /* We keep a list of the linker hash table entries that correspond
      to particular symbols.  We could just look them up in the hash
      table, but keeping the list is more efficient.  Perhaps this
      should be conditional on info->keep_memory.  */
   amt = sym_count * sizeof (struct aout_link_hash_entry *);
   sym_hash = bfd_alloc (abfd, amt);
-  if (sym_hash == NULL && sym_count != 0)
+  if (sym_hash == NULL)
     return FALSE;
   obj_aout_sym_hashes (abfd) = sym_hash;
 
@@ -3932,10 +3974,20 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 
 	howto_idx = (r_length + 4 * r_pcrel + 8 * r_baserel
 		     + 16 * r_jmptable + 32 * r_relative);
-	BFD_ASSERT (howto_idx < TABLE_SIZE (howto_table_std));
-	howto = howto_table_std + howto_idx;
+	if (howto_idx < TABLE_SIZE (howto_table_std))
+	  howto = howto_table_std + howto_idx;
+	else
+	  howto = NULL;
       }
 #endif
+
+      if (howto == NULL)
+	{
+	  (*finfo->info->callbacks->einfo)
+	    (_("%P: %B: unexpected relocation type\n"), input_bfd);
+	  bfd_set_error (bfd_error_bad_value);
+	  return FALSE;
+	}
 
       if (relocatable)
 	{
@@ -4255,7 +4307,13 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 
       r_addend = GET_SWORD (input_bfd, rel->r_addend);
 
-      BFD_ASSERT (r_type < TABLE_SIZE (howto_table_ext));
+      if (r_type >= TABLE_SIZE (howto_table_ext))
+	{
+	  (*finfo->info->callbacks->einfo)
+	    (_("%P: %B: unexpected relocation type\n"), input_bfd);
+	  bfd_set_error (bfd_error_bad_value);
+	  return FALSE;
+	}
 
       if (relocatable)
 	{
@@ -5526,22 +5584,19 @@ NAME (aout, final_link) (bfd *abfd,
     exec_hdr (abfd)->a_drsize / obj_reloc_entry_size (abfd);
 
   /* Write out the string table, unless there are no symbols.  */
+  if (bfd_seek (abfd, obj_str_filepos (abfd), SEEK_SET) != 0)
+    goto error_return;
   if (abfd->symcount > 0)
     {
-      if (bfd_seek (abfd, obj_str_filepos (abfd), SEEK_SET) != 0
-	  || ! emit_stringtab (abfd, aout_info.strtab))
+      if (!emit_stringtab (abfd, aout_info.strtab))
 	goto error_return;
     }
-  else if (obj_textsec (abfd)->reloc_count == 0
-	   && obj_datasec (abfd)->reloc_count == 0)
+  else
     {
-      bfd_byte b;
-      file_ptr pos;
+      bfd_byte b[BYTES_IN_WORD];
 
-      b = 0;
-      pos = obj_datasec (abfd)->filepos + exec_hdr (abfd)->a_data - 1;
-      if (bfd_seek (abfd, pos, SEEK_SET) != 0
-	  || bfd_bwrite (&b, (bfd_size_type) 1, abfd) != 1)
+      memset (b, 0, BYTES_IN_WORD);
+      if (bfd_bwrite (b, (bfd_size_type) BYTES_IN_WORD, abfd) != BYTES_IN_WORD)
 	goto error_return;
     }
 

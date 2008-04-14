@@ -1,19 +1,20 @@
 /* Disassembler code for CRIS.
-   Copyright 2000, 2001, 2002, 2004, 2005 Free Software Foundation, Inc.
+   Copyright 2000, 2001, 2002, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
    Contributed by Axis Communications AB, Lund, Sweden.
    Written by Hans-Peter Nilsson.
 
-   This file is part of the GNU binutils and GDB, the GNU debugger.
+   This file is part of the GNU opcodes library.
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the
-   Free Software Foundation; either version 2, or (at your option) any later
-   version.
+   This library is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
 
-   This program is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-   more details.
+   It is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
@@ -783,7 +784,7 @@ print_with_operands (const struct cris_opcode *opcodep,
      better way).  */
   if (opcodep->name[0] == 'j')
     {
-      if (strncmp (opcodep->name, "jsr", 3) == 0)
+      if (CONST_STRNEQ (opcodep->name, "jsr"))
 	/* It's "jsr" or "jsrc".  */
 	info->insn_type = dis_jsr;
       else
@@ -1360,16 +1361,16 @@ print_with_operands (const struct cris_opcode *opcodep,
      itself or in a "move.d const,rN, sub.d rN,rM"-like sequence.  */
   if (TRACE_CASE && case_offset_counter == 0)
     {
-      if (strncmp (opcodep->name, "sub", 3) == 0)
+      if (CONST_STRNEQ (opcodep->name, "sub"))
 	case_offset = last_immediate;
 
       /* It could also be an "add", if there are negative case-values.  */
-      else if (strncmp (opcodep->name, "add", 3) == 0)
+      else if (CONST_STRNEQ (opcodep->name, "add"))
 	/* The first case is the negated operand to the add.  */
 	case_offset = -last_immediate;
 
       /* A bound insn will tell us the number of cases.  */
-      else if (strncmp (opcodep->name, "bound", 5) == 0)
+      else if (CONST_STRNEQ (opcodep->name, "bound"))
 	no_of_case_offsets = last_immediate + 1;
 
       /* A jump or jsr or branch breaks the chain of insns for a

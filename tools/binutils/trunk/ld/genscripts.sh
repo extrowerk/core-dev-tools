@@ -1,5 +1,23 @@
 #!/bin/sh
 # genscripts.sh - generate the ld-emulation-target specific files
+# Copyright 2007 Free Software Foundation, Inc.
+#
+# This file is part of the Gnu Linker.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GLD; see the file COPYING.  If not, write to the Free
+# Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
+# 02110-1301, USA.
 #
 # Usage: genscripts_extra.sh \
 #          srcdir \
@@ -189,6 +207,14 @@ if [ "x${use_sysroot}" != "xyes" ] ; then
   ::) LIB_PATH=${tool_lib} ;;
   *) LIB_PATH=${tool_lib}:${LIB_PATH} ;;
   esac
+  # For multilib targets, search both $tool_lib dirs
+  if [ "x${LIBPATH_SUFFIX}" != "x" ] ; then
+    case :${LIB_PATH}: in
+      ::: | *:${tool_lib}${LIBPATH_SUFFIX}:*) ;;
+      ::) LIB_PATH=${tool_lib}${LIBPATH_SUFFIX} ;;
+      *) LIB_PATH=${tool_lib}${LIBPATH_SUFFIX}:${LIB_PATH} ;;
+    esac
+  fi
 fi
 
 LIB_SEARCH_DIRS=`echo ${LIB_PATH} | sed -e 's/:/ /g' -e 's/\([^ ][^ ]*\)/SEARCH_DIR(\\"\1\\");/g'`
@@ -263,7 +289,6 @@ RELOCATING=" "
 
 LD_FLAG=n
 DATA_ALIGNMENT=${DATA_ALIGNMENT_n}
-TEXT_START_ADDR=${NONPAGED_TEXT_START_ADDR-${TEXT_START_ADDR}}
 ( echo "/* Script for -n: mix text and data on same page */"
   . ${CUSTOMIZER_SCRIPT} ${EMULATION_NAME}
   . ${srcdir}/scripttempl/${SCRIPT_NAME}.sc
@@ -301,7 +326,6 @@ if test -n "$GENERATE_SHLIB_SCRIPT"; then
   LD_FLAG=shared
   DATA_ALIGNMENT=${DATA_ALIGNMENT_s-${DATA_ALIGNMENT_}}
   CREATE_SHLIB=" "
-  # Note that TEXT_START_ADDR is set to NONPAGED_TEXT_START_ADDR.
   (
     echo "/* Script for ld --shared: link shared library */"
     . ${CUSTOMIZER_SCRIPT} ${EMULATION_NAME}
@@ -334,7 +358,6 @@ if test -n "$GENERATE_PIE_SCRIPT"; then
   LD_FLAG=pie
   DATA_ALIGNMENT=${DATA_ALIGNMENT_s-${DATA_ALIGNMENT_}}
   CREATE_PIE=" "
-  # Note that TEXT_START_ADDR is set to NONPAGED_TEXT_START_ADDR.
   (
     echo "/* Script for ld -pie: link position independent executable */"
     . ${CUSTOMIZER_SCRIPT} ${EMULATION_NAME}
@@ -367,5 +390,33 @@ case " $EMULATION_LIBPATH " in
     *" ${EMULATION_NAME} "*) COMPILE_IN=true;;
 esac
 
+if test -n "${BASH+set}"; then
+  source_em()
+  {
+    local current_script="$em_script"
+    em_script=$1
+    . $em_script
+    em_script=$current_script
+  }
+  fragment()
+  {
+    local lineno=$[${BASH_LINENO[0]} + 1]
+    echo >> e${EMULATION_NAME}.c "#line $lineno \"$em_script\""
+    cat >> e${EMULATION_NAME}.c
+  }
+else
+  source_em()
+  {
+    . $1
+  }
+  fragment()
+  {
+    cat >> e${EMULATION_NAME}.c
+  }
+fi
+
 # Generate e${EMULATION_NAME}.c.
-. ${srcdir}/emultempl/${TEMPLATE_NAME-generic}.em
+# Start with an empty file, then the sourced .em script
+# can use the "fragment" function to append.
+> e${EMULATION_NAME}.c
+source_em ${srcdir}/emultempl/${TEMPLATE_NAME-generic}.em

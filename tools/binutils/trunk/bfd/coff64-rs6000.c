@@ -1,5 +1,5 @@
 /* BFD back-end for IBM RS/6000 "XCOFF64" files.
-   Copyright 2000, 2001, 2002, 2003, 2004, 2005
+   Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
    Written Clinton Popetz.
    Contributed by Cygnus Support.
@@ -8,7 +8,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,10 +18,11 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
-#include "bfd.h"
 #include "sysdep.h"
+#include "bfd.h"
 #include "bfdlink.h"
 #include "libbfd.h"
 #include "coff/internal.h"
@@ -127,7 +128,7 @@ extern bfd_boolean _bfd_xcoff_write_armap
 extern bfd_boolean _bfd_xcoff_write_archive_contents
   PARAMS ((bfd *));
 extern int _bfd_xcoff_sizeof_headers
-  PARAMS ((bfd *, bfd_boolean));
+  PARAMS ((bfd *, struct bfd_link_info *));
 extern void _bfd_xcoff_swap_sym_in
   PARAMS ((bfd *, PTR, PTR));
 extern unsigned int _bfd_xcoff_swap_sym_out
@@ -161,7 +162,7 @@ static const bfd_target *xcoff64_archive_p
 static bfd *xcoff64_openr_next_archived_file
   PARAMS ((bfd *, bfd *));
 static int xcoff64_sizeof_headers
-  PARAMS ((bfd *, bfd_boolean));
+  PARAMS ((bfd *, struct bfd_link_info *));
 static asection *xcoff64_create_csect_from_smclas
   PARAMS ((bfd *, union internal_auxent *, const char *));
 static bfd_boolean xcoff64_is_lineno_count_overflow
@@ -237,6 +238,7 @@ bfd_boolean (*xcoff64_calculate_relocation[XCOFF_MAX_CALCULATE_RELOCATION])
 #define coff_bfd_copy_private_bfd_data _bfd_xcoff_copy_private_bfd_data
 #define coff_bfd_is_local_label_name _bfd_xcoff_is_local_label_name
 #define coff_bfd_reloc_type_lookup xcoff64_reloc_type_lookup
+#define coff_bfd_reloc_name_lookup xcoff64_reloc_name_lookup
 #ifdef AIX_CORE
 extern const bfd_target * rs6000coff_core_p
   PARAMS ((bfd *abfd));
@@ -1843,6 +1845,22 @@ xcoff64_reloc_type_lookup (abfd, code)
     }
 }
 
+static reloc_howto_type *
+xcoff64_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
+			   const char *r_name)
+{
+  unsigned int i;
+
+  for (i = 0;
+       i < sizeof (xcoff64_howto_table) / sizeof (xcoff64_howto_table[0]);
+       i++)
+    if (xcoff64_howto_table[i].name != NULL
+	&& strcasecmp (xcoff64_howto_table[i].name, r_name) == 0)
+      return &xcoff64_howto_table[i];
+
+  return NULL;
+}
+
 /* Read in the armap of an XCOFF archive.  */
 
 static bfd_boolean
@@ -2056,9 +2074,8 @@ xcoff64_openr_next_archived_file (archive, last_file)
    always uses an a.out header.  */
 
 static int
-xcoff64_sizeof_headers (abfd, reloc)
-     bfd *abfd;
-     bfd_boolean reloc ATTRIBUTE_UNUSED;
+xcoff64_sizeof_headers (bfd *abfd,
+			struct bfd_link_info *info ATTRIBUTE_UNUSED)
 {
   int size;
 
@@ -2726,6 +2743,7 @@ const bfd_target rs6000coff64_vec =
     coff_get_reloc_upper_bound,
     coff_canonicalize_reloc,
     xcoff64_reloc_type_lookup,
+    xcoff64_reloc_name_lookup,
 
     /* Write */
     coff_set_arch_mach,
@@ -2977,6 +2995,7 @@ const bfd_target aix5coff64_vec =
     coff_get_reloc_upper_bound,
     coff_canonicalize_reloc,
     xcoff64_reloc_type_lookup,
+    xcoff64_reloc_name_lookup,
 
     /* Write */
     coff_set_arch_mach,

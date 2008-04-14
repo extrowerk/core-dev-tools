@@ -1,11 +1,11 @@
 /* tc-dlx.h -- Assemble for the DLX
-   Copyright 2002, 2003, 2005 Free Software Foundation, Inc.
+   Copyright 2002, 2003, 2005, 2006, 2007 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
    GAS is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS is distributed in the hope that it will be useful,
@@ -21,10 +21,6 @@
 /* Initially created by Kuang Hwa Lin, 3/20/2002.  */
 
 #define TC_DLX
-
-#ifndef  __BFD_H_SEEN__
-#include "bfd.h"
-#endif
 
 /* The target BFD architecture.  */
 #define TARGET_ARCH              bfd_arch_dlx
@@ -47,10 +43,6 @@ extern bfd_boolean md_dlx_fix_adjustable  (struct fix *);
 			(as_fatal ("estimate_size_before_relax called"),1)
 
 #define tc_unrecognized_line(c) dlx_unrecognized_line (c)
-
-#define tc_coff_symbol_emit_hook(a)	;	/* Not used.  */
-
-#define COFF_MAGIC DLXMAGIC
 
 /* No shared lib support, so we don't need to ensure externally
    visible symbols can be overridden.  */

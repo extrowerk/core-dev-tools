@@ -128,7 +128,7 @@
 .\" ========================================================================
 .\"
 .IX Title "OBJDUMP 1"
-.TH OBJDUMP 1 "2006-06-23" "binutils-2.17" "GNU Development Tools"
+.TH OBJDUMP 1 "2007-08-06" "binutils-2.17.90" "GNU Development Tools"
 .SH "NAME"
 objdump \- display information from object files.
 .SH "SYNOPSIS"
@@ -232,7 +232,7 @@ formats available with the \fB\-i\fR option.
 Decode (\fIdemangle\fR) low-level symbol names into user-level names.
 Besides removing any initial underscore prepended by the system, this
 makes \*(C+ function names readable.  Different compilers have different
-mangling styles. The optional demangling style argument can be used to 
+mangling styles. The optional demangling style argument can be used to
 choose an appropriate demangling style for your compiler. 
 .IP "\fB\-g\fR" 4
 .IX Item "-g"
@@ -393,7 +393,7 @@ switch, but allow finer grained control.  Multiple selections from the
 following may be specified as a comma separated string.
 \&\fBx86\-64\fR, \fBi386\fR and \fBi8086\fR select disassembly for
 the given architecture.  \fBintel\fR and \fBatt\fR select between
-intel syntax mode and \s-1AT&T\s0 syntax mode.  \fBaddr32\fR,
+intel syntax mode and \s-1AT&T\s0 syntax mode.  \fBaddr64\fR, \fBaddr32\fR,
 \&\fBaddr16\fR, \fBdata32\fR and \fBdata16\fR specify the default
 address size and operand size.  These four options will be overridden if
 \&\fBx86\-64\fR, \fBi386\fR or \fBi8086\fR appear later in the
@@ -404,9 +404,10 @@ suffix could be inferred by the operands.
 For \s-1PPC\s0, \fBbooke\fR, \fBbooke32\fR and \fBbooke64\fR select
 disassembly of BookE instructions.  \fB32\fR and \fB64\fR select
 PowerPC and PowerPC64 disassembly, respectively.  \fBe300\fR selects
-disassembly for the e300 family.
+disassembly for the e300 family.  \fB440\fR selects disassembly for
+the PowerPC 440.
 .Sp
-For \s-1MIPS\s0, this option controls the printing of instruction mneumonic
+For \s-1MIPS\s0, this option controls the printing of instruction mnemonic
 names and register names in disassembled instructions.  Multiple
 selections from the following may be specified as a comma separated
 string, and invalid options are ignored:
@@ -414,8 +415,8 @@ string, and invalid options are ignored:
 .ie n .IP """no\-aliases""" 4
 .el .IP "\f(CWno\-aliases\fR" 4
 .IX Item "no-aliases"
-Print the 'raw' instruction mneumonic instead of some pseudo
-instruction mneumonic.  I.E. print 'daddu' or 'or' instead of 'move',
+Print the 'raw' instruction mnemonic instead of some pseudo
+instruction mnemonic.  I.e., print 'daddu' or 'or' instead of 'move',
 \&'sll' instead of 'nop', etc.
 .ie n .IP """gpr\-names=\f(CI\s-1ABI\s0\f(CW""" 4
 .el .IP "\f(CWgpr\-names=\f(CI\s-1ABI\s0\f(CW\fR" 4
@@ -465,7 +466,7 @@ For \s-1VAX\s0, you can specify function entry addresses with \fB\-M
 entry:0xf00ba\fR.  You can use this multiple times to properly
 disassemble \s-1VAX\s0 binary files that don't contain symbol tables (like
 \&\s-1ROM\s0 dumps).  In these cases, the function entry mask would otherwise
-be decoded as \s-1VAX\s0 instructions, which would probably lead the the rest
+be decoded as \s-1VAX\s0 instructions, which would probably lead the rest
 of the function being wrongly disassembled.
 .RE
 .IP "\fB\-p\fR" 4
@@ -624,7 +625,7 @@ with a backslash.  The \fIfile\fR may itself contain additional
 .SH "COPYRIGHT"
 .IX Header "COPYRIGHT"
 Copyright (c) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
 .PP
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the \s-1GNU\s0 Free Documentation License, Version 1.1

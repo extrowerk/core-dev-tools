@@ -1,12 +1,12 @@
 /* srconv.c -- Sysroff conversion program
    Copyright 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005 Free Software Foundation, Inc.
+   2005, 2007 Free Software Foundation, Inc.
 
    This file is part of GNU Binutils.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -26,6 +26,7 @@
 
    All debugging information is preserved */
 
+#include "sysdep.h"
 #include "bfd.h"
 #include "bucomm.h"
 #include "sysroff.h"
@@ -45,7 +46,7 @@ static char **rnames;
 static int get_member_id (int);
 static int get_ordinary_id (int);
 static char *section_translate (char *);
-static char *strip_suffix (char *);
+static char *strip_suffix (const char *);
 static void checksum (FILE *, unsigned char *, int, int);
 static void writeINT (int, unsigned char *, int *, int, FILE *);
 static void writeBITS (int, unsigned char *, int *, int);
@@ -141,9 +142,8 @@ section_translate (char *n)
 
 #define DATE "940201073000";	/* Just a time on my birthday */
 
-static
-char *
-strip_suffix (char *name)
+static char *
+strip_suffix (const char *name)
 {
   int i;
   char *res;
@@ -704,6 +704,7 @@ walk_tree_type_1 (struct coff_sfile *sfile, struct coff_symbol *symbol,
       {
 	struct IT_dpt dpt;
 
+	dpt.dunno = 0;
 	walk_tree_type_1 (sfile, symbol, type->u.pointer.points_to, nest + 1);
 	dpt.neg = 0x1001;
 	sysroff_swap_dpt_out (file, &dpt);
@@ -1728,7 +1729,7 @@ show_usage (FILE *file, int status)
   -h --help        Display this information\n\
   -v --version     Print the program's version number\n"));
 
-  if (status == 0)
+  if (REPORT_BUGS_TO[0] && status == 0)
     fprintf (file, _("Report bugs to %s\n"), REPORT_BUGS_TO);
   exit (status);
 }
