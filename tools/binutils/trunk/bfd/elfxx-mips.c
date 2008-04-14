@@ -7804,9 +7804,6 @@ dynobj = elf_hash_table (info)->dynobj;
 	{
 	  if (mips_elf_rel_dyn_section (info, FALSE))
 	    {
-              if (QNX_COMPAT(dynobj) && !(bfd_get_section_by_name (dyno
-		return FALSE; 
-
 	      if (! MIPS_ELF_ADD_DYNAMIC_ENTRY (info, DT_REL, 0))
 		return FALSE;
 
