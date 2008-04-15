@@ -5080,7 +5080,7 @@
                 UNSPEC_LOAD_CALL))
    (set (reg:P FAKE_CALL_REGNO)
       (unspec:P [(match_dup 2)] UNSPEC_LOAD_CALL))]
-  "TARGET_ABICALLS"
+  "TARGET_ABICALLS || TARGET_QNXPIC"
   "<load>\t%0,%R2(%1)"
   [(set_attr "type" "load")
    (set_attr "mode" "<MODE>")
