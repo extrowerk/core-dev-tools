@@ -2,6 +2,7 @@ target=${PWD##*-}
 target_cpu=${target#nto*}
 srcdir=${PWD}/..
 qnx_target_version=6.3.0
+qnx_install_version=qnx630
 host_target=${PWD##*/}
 host_cpu=${host_target#*-}
 host_cpu=${host_cpu%%-*}
@@ -59,19 +60,26 @@ function hook_preconfigure {
         if [ ${host_target%%-*} != ${SYSNAME} ]; then
 	  case $host_target in
 		nto*)
-	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.3.0"
+	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx${qnx_target_version}"
+                  if [ $SYSNAME != "nto" ]; then
+                      if [ x$INSTALL_ROOT = x ]; then
+                         INSTALL_ROOT=/usr/$qnx_install_version/host
+                      fi
+                   fi
+
   		  ;;
 		linux*) 
 		  # basedir=${INSTALL_ROOT_linux}/${SYSNAME}/${host_cpu}/usr
 		  # /opt/QNXsdk/host/linux/${host_cpu}/usr
 		  # execdir=/opt/qnx630/host/linux/${host_cpu}/usr
+                  INSTALL_ROOT=/opt/$qnx_install_version/host
 		  ;;
 		win32*)
 		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
-		  execdir=/c/qnx630/host/win32/x86/usr
+		  #execdir=/c/qnx630/host/win32/x86/usr
                   if [ $SYSNAME != "win32" ]; then
                      if [ x$INSTALL_ROOT = x ]; then
-                        INSTALL_ROOT=/c/qnx630/host
+                        INSTALL_ROOT=/c/$qnx_install_version/host
                      fi
                   fi
 		;;
@@ -90,8 +98,13 @@ function hook_preconfigure {
 		;;
 	esac
 
-	basedir=${INSTALL_ROOT}/${host_target%%-*}/${host_cpu}/usr
-	if [ x$INSTALL_ROOT = x ]; then
+       if [ ${host_target%%-*} = nto ]; then
+          basedir=${INSTALL_ROOT}/qnx6/${host_cpu}/usr
+       else
+          basedir=${INSTALL_ROOT}/${host_target%%-*}/${host_cpu}/usr
+       fi
+
+       if [ x$INSTALL_ROOT = x ]; then
 	  echo "Using QNX_HOST as install dir: ${QNX_HOST}"
 	  basedir=${QNX_HOST}/usr
 	fi
