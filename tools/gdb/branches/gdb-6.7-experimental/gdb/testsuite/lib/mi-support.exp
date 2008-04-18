@@ -712,7 +712,7 @@ proc mi_gdb_test { args } {
 	    if ![string match "" $message] then {
 		fail "$message"
 	    }
-	    verbose "\n---\n$expect_out(buffer)\n---\n"
+	    verbose "\n***\n$string_regex\n***\n+++\n$pattern\n+++\n---\n$expect_out(buffer)\n---\n"
 	    set result 1
 	}
 	 "<return>" {
@@ -895,15 +895,17 @@ proc mi_runto_helper {func run_or_continue} {
   }
 
   gdb_expect {
-    -re ".*000\\*stopped,reason=.*thread-id=\"$decimal\",frame=\{addr=\"$hex\",func=\"$func\",args=\(\\\[.*\\\]\|\{.*\}\),file=\".*\",fullname=\"${fullname_syntax}.*\",line=\"\[0-9\]*\"\}\r\n$mi_gdb_prompt$" {
+    -re ".*000\\*stopped,reason=\"breakpoint-hit\",disp=\"del\",bkptno=\"$decimal\",thread-id=\"$decimal\",frame=\{addr=\"$hex\",func=\"$func\",args=\(\\\[.*\\\]\|\{.*\}\),file=\".*\",fullname=\"${fullname_syntax}.*\",line=\"\[0-9\]*\"\}\r\n$mi_gdb_prompt$" {
       pass "$test"
       return 0
     }
     -re ".*$mi_gdb_prompt$" {
       fail "$test (2)"
+      verbose "\n---\n$expect_out(buffer)\n---\n"
     }
     timeout {
       fail "$test (timeout)"
+      verbose "\n---\n$expect_out(buffer)\n---\n"
       return -1
     }
   }
@@ -1013,7 +1015,7 @@ proc mi0_finish_to { func args file line result ret test } {
 }
 
 proc mi0_continue_to { bkptno func args file line test } {
-    mi0_execute_to "exec-continue" "breakpoint-hit\",bkptno=\"$bkptno" \
+    mi0_execute_to "exec-continue" "breakpoint-hit\",disp=\".*\",bkptno=\"$bkptno" \
 	"$func" "$args" "$file" "$line" "" "$test"
 }
 

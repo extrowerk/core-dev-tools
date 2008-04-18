@@ -109,12 +109,6 @@ nto_node (void)
   return (node);
 }
 
-static enum gdb_osabi
-procfs_is_nto_target (bfd *abfd)
-{
-  return GDB_OSABI_QNXNTO;
-}
-
 /* This is called when we call 'target procfs <arg>' from the (gdb) prompt.
    For QNX6 (nto), the only valid arg will be a QNX node string, 
    eg: "/net/some_node".  If arg is not a valid QNX node, we will
@@ -129,8 +123,6 @@ procfs_open (char *arg, int from_tty)
   procfs_sysinfo *sysinfo;
 
   nto_trace (0) ("%s (arg=%s, from_tty=%d)\n", __func__, arg, from_tty);
-
-  nto_is_nto_target = procfs_is_nto_target;
 
   /* Set the default node used for spawning to this one,
      and only override it if there is a valid arg.  */
@@ -1407,8 +1399,6 @@ _initialize_procfs (void)
 
   add_info ("pidlist", procfs_pidlist, _("pidlist"));
   add_info ("meminfo", procfs_meminfo, _("memory information"));
-
-  nto_is_nto_target = procfs_is_nto_target;
 }
 
 
