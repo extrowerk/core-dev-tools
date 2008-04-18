@@ -63,13 +63,16 @@
 #include <time.h>
 
 #include "nto-share/dsmsgs.h"
-#include "nto-share/debug.h"
 #include "nto-tdep.h"
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
 
+#ifdef __MINGW32__
+#define	ENOTCONN	57		/* Socket is not connected */
+#endif
+#
 #ifndef EOK
 #define EOK 0
 #endif
@@ -1095,108 +1098,12 @@ nto_semi_init (void)
     }
 }
 
-static void
-nto_sniff_abi_note_section (bfd *abfd, asection *sect, void *obj)
-{
-  const char *sectname;
-  unsigned int sectsize;
-  char *note; // buffer holding the section contents
-  unsigned int namelen, type;
-  const char *name;
-
-  sectname = bfd_get_section_name (abfd, sect);
-  sectsize = bfd_section_size (abfd, sect);
-
-  nto_trace (3) ("%s sectname=%s size=%d\n", __func__, sectname, sectsize);
-
-  //TODO: limit the note size here, for now limit is 128 bytes
-  // (enough to check the name and type).
-  if (sectsize > 128)
-    sectsize = 128;
-
-  if (sectname == strstr(sectname, "note")) 
-    {
-      note = alloca (sectsize); // 128 bytes from the stack
-
-      bfd_get_section_contents (abfd, sect, note, 0, sectsize);
-
-      namelen = (unsigned int) bfd_h_get_32 (abfd, note);
-      name = note + 12;
-
-      if (namelen != strlen (QNX_NOTE_NAME) + 1 ||
-          0 != strcmp (name, QNX_NOTE_NAME)) 
-        {
-	  nto_trace (0) ("Section name starts with 'note', but our name not found (%s)\n", name);
-	  goto not_ours;
-	}
-
-      type = (unsigned int) bfd_h_get_32 (abfd, note + 8);
-
-      nto_trace (1) ("Note type: %d\n", type);
-
-      switch (type)
-        {
-	  case QNT_NULL:
-	    nto_trace (0) ("Type QNT_NULL not expected\n");
-	    gdb_assert (0);
-	    break;
-	  case QNT_CORE_SYSINFO:
-	    nto_trace (0) ("Type QNT_CORE_SYSINFO\n");
-	    *(enum gdb_osabi *) obj = GDB_OSABI_QNXNTO;
-	    break;
-	  case QNT_CORE_INFO:
-	    nto_trace (0) ("Type QNT_CORE_INFO\n");
-	    break;
-	  default:
-	    nto_trace (0) ("Type not expected \n");
-        }
-
-not_ours:
-       {} 
-    }
-}
-
-static enum gdb_osabi
-nto_is_remote_target (bfd *abfd)
-{
-  unsigned int elfosabi;
-  unsigned int elftype;
-  enum gdb_osabi osabi = GDB_OSABI_UNKNOWN;
-
-  /* Note: if we ever get to sign our binaries, we should
-     really check if the OSABI matches. But untill then, just
-     hope the user knows what they are doing and are really opening
-     QNXNTO binary.  */
-
-  nto_trace (0) ("nto_is_remote_target\n");
-
-  elftype = elf_elfheader (abfd)->e_type;
-
-  if (elftype == ET_CORE)
-      /* We do properly mark our core files, get the OSABI from
-         core note section.  */
-      bfd_map_over_sections (abfd,
-			     nto_sniff_abi_note_section, 
-			     &osabi);
-  else
-  /* Note: if we ever get to sign our binaries, we should
-     really check if the OSABI matches. But untill then, just
-     hope the user knows what they are doing and are really opening
-     QNXNTO binary.  */
-    osabi = GDB_OSABI_QNXNTO;
-
-  if (nto_internal_debugging)
-    gdb_assert (osabi == GDB_OSABI_QNXNTO);
-  return osabi;
-}
-
 /* Open a connection to a remote debugger.
    NAME is the filename used for communication.  */
 static void
 nto_open (char *name, int from_tty)
 {
   int tries = 0;
-  nto_is_nto_target = nto_is_remote_target;
   nto_trace (0) ("nto_open(name '%s', from_tty %d)\n", name,
 			 from_tty);
 
@@ -3187,7 +3094,4 @@ will not change."),
 
   add_info ("pidlist", nto_pidlist, "pidlist");
   add_info ("meminfo", nto_meminfo, "memory information");
-  /* Allows nto-procfs.c to be default.  */
-  if (!nto_is_nto_target)
-    nto_is_nto_target = nto_is_remote_target;
 }

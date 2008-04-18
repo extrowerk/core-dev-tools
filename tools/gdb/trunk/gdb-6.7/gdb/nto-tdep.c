@@ -39,12 +39,22 @@
 #include "safe-ctype.h"
 #include "elf-bfd.h"
 
-#include "nto-share/debug.h"
 #include "nto-tdep.h"
+
+#ifdef __QNX__
+#include <sys/debug.h>
+#include <sys/elf_notes.h>
+typedef debug_thread_t nto_procfs_status;
+#else
+#include "nto-share/debug.h"
+#endif
+
+#define QNX_NOTE_NAME	"QNX"
 
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
+
 
 /* The following define does a cast to const gdb_byte * type.  */
 
@@ -398,12 +408,97 @@ nto_dummy_supply_regset (struct regcache *regcache, char *regs)
   /* Do nothing.  */
 }
 
+static void
+nto_sniff_abi_note_section (bfd *abfd, asection *sect, void *obj)
+{
+  const char *sectname;
+  unsigned int sectsize;
+  char *note; // buffer holding the section contents
+  unsigned int namelen, type;
+  const char *name;
+
+  sectname = bfd_get_section_name (abfd, sect);
+  sectsize = bfd_section_size (abfd, sect);
+
+  nto_trace (3) ("%s sectname=%s size=%d\n", __func__, sectname, sectsize);
+
+  /* TODO: limit the note size here, for now limit is 128 bytes
+     (enough to check the name and type).  */
+  if (sectsize > 128)
+    sectsize = 128;
+
+  if (sectname == strstr(sectname, "note")) 
+    {
+      note = alloca (sectsize); 
+      bfd_get_section_contents (abfd, sect, note, 0, sectsize);
+      namelen = (unsigned int) bfd_h_get_32 (abfd, note);
+      name = note + 12;
+
+      if (namelen != strlen (QNX_NOTE_NAME) + 1 
+	  || 0 != strcmp (name, QNX_NOTE_NAME)) 
+        {
+	  nto_trace (0) (
+	    "Section name starts with 'note', but our name not found (%s)\n", 
+	    name);
+	  goto not_ours;
+	}
+
+      type = (unsigned int) bfd_h_get_32 (abfd, note + 8);
+
+      switch (type)
+        {
+	  case QNT_NULL:
+	    nto_trace (0) ("Type QNT_NULL not expected\n");
+	    gdb_assert (0);
+	    break;
+	  case QNT_CORE_SYSINFO:
+	    nto_trace (0) ("Type QNT_CORE_SYSINFO\n");
+	    *(enum gdb_osabi *) obj = GDB_OSABI_QNXNTO;
+	    break;
+	  case QNT_CORE_INFO:
+	    nto_trace (0) ("Type QNT_CORE_INFO\n");
+	    break;
+	  default:
+	    {
+	      nto_trace (0) ("Note type not expected (%d).\n", type);
+	    }
+        }
+
+not_ours:
+       { /* We do nothing here.  */ } 
+    }
+}
+
 enum gdb_osabi
 nto_elf_osabi_sniffer (bfd *abfd)
 {
-  if (nto_is_nto_target)
-    return nto_is_nto_target (abfd);
-  return GDB_OSABI_UNKNOWN;
+  unsigned int elfosabi;
+  unsigned int elftype;
+  enum gdb_osabi osabi = GDB_OSABI_UNKNOWN;
+
+  /* Note: if we ever get to sign our binaries, we should
+     really check if the OSABI matches. But untill then, just
+     hope the user knows what they are doing and are really opening
+     QNXNTO binary.  */
+
+  elftype = elf_elfheader (abfd)->e_type;
+
+  if (elftype == ET_CORE)
+      /* We do properly mark our core files, get the OSABI from
+         core note section.  */
+      bfd_map_over_sections (abfd,
+			     nto_sniff_abi_note_section, 
+			     &osabi);
+  else
+  /* Note: if we ever get to sign our binaries, we should
+     really check if the OSABI matches. But untill then, just
+     hope the user knows what they are doing and are really opening
+     QNXNTO binary.  */
+    osabi = GDB_OSABI_QNXNTO;
+
+  if (nto_internal_debugging)
+    gdb_assert (osabi == GDB_OSABI_QNXNTO);
+  return osabi;
 }
 
 char *
@@ -911,4 +1006,6 @@ for different positive values."),
 			    &maintenance_show_cmdlist);
 
   add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
+
+  nto_is_nto_target = nto_elf_osabi_sniffer;
 }

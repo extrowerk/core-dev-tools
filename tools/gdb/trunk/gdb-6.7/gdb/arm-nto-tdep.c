@@ -29,7 +29,6 @@
 #include "arm-tdep.h"
 #include "nto-tdep.h"
 #include "osabi.h"
-#include "nto-share/debug.h"
 
 #include "trad-frame.h"
 #include "tramp-frame.h"

@@ -35,10 +35,7 @@
 #include <time.h>
 #endif
 
-#define QNX_NOTE_NAME	"QNX"
-
 #ifdef __MINGW32__
-#define	ENOTCONN	57		/* Socket is not connected */
 #ifndef uid_t
 typedef int uid_t;
 #endif
