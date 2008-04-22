@@ -820,7 +820,7 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   //struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   nto_trace (0) ("%s ()\n", __func__);
   /* Deal with our strange signals.  */
-  nto_initialize_signals();
+  nto_initialize_signals(gdbarch);
 
   /* Neutrino rewinds to look more normal.  */
   set_gdbarch_decr_pc_after_break (gdbarch, 0);
@@ -848,8 +848,6 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   set_gdbarch_regset_from_core_section
     (gdbarch, ppcnto_regset_from_core_section);
-
-  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
 
   //frame_unwind_append_sniffer (gdbarch, ppc_nto_sigtramp_sniffer);
   init_ppcnto_ops ();

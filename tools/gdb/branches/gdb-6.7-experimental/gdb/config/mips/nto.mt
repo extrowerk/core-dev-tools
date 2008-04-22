@@ -7,4 +7,4 @@ mips-nto-tdep.o: mips-nto-tdep.c $(defs_h) $(frame_h) $(target_h) \
 	$(tramp_frame_h) $(gdbcore_h)
 
 TDEPFILES= mips-tdep.o corelow.o solib.o solib-svr4.o \
-	mips-nto-tdep.o nto-tdep.o remote-nto.o
+	mips-nto-tdep.o $(NTO_TDEPFILES)

@@ -247,7 +247,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Deal with our strange signals.  */
-  nto_initialize_signals ();
+  nto_initialize_signals (gdbarch);
 
   /* NTO uses ELF.  */
   i386_elf_init_abi (info, gdbarch);
@@ -280,7 +280,6 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Our linker code is in libc.  */
   TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
 
-  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
 }
 
 void

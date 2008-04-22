@@ -6,4 +6,4 @@ arm-nto-tdep.o: arm-nto-tdep.c $(defs_h) $(frame_h) $(target_h) $(regcache_h) \
 	$(trad_frame_h) $(tramp_frame_h) $(gdbcore_h)
 
 TDEPFILES= corelow.o solib.o solib-svr4.o \
-	arm-nto-tdep.o nto-tdep.o arm-tdep.o remote-nto.o
+	arm-nto-tdep.o arm-tdep.o $(NTO_TDEPFILES)

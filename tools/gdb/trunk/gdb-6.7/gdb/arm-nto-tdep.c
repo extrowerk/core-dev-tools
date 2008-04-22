@@ -309,7 +309,7 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Deal with our strange signals.  */
-  nto_initialize_signals();
+  nto_initialize_signals(gdbarch);
 
   set_solib_svr4_fetch_link_map_offsets (gdbarch,
 					 nto_generic_svr4_fetch_link_map_offsets);
@@ -330,8 +330,6 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Signal trampoline */
   tramp_frame_prepend_unwinder (gdbarch,
 				&arm_nto_sighandler_tramp_frame);
-
-  set_gdbarch_target_signal_from_target (gdbarch, target_signal_from_nto);
 
   init_armnto_ops ();
 }

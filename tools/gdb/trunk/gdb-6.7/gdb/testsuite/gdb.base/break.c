@@ -65,6 +65,16 @@ extern void marker3 ();
 extern void marker4 ();
 #endif
 
+
+int multi_line_if_conditional (int a, int b, int c);
+int multi_line_while_conditional (int a, int b, int c);
+
+int callem ()
+{
+multi_line_if_conditional (1, 1, 1);
+multi_line_while_conditional (2, 2, 2);
+}
+
 /*
  *	This simple classical example of recursion is useful for
  *	testing stack backtraces and such.
@@ -101,6 +111,8 @@ char *argv[], **envp;
     (void)malloc (1);
 
     argc = (argc == 12345); /* This is silly, but we can step off of it */ /* set breakpoint 2 here */
+    if (argc == 222333444)
+      callem ();
     return argc;  /* set breakpoint 10 here */
 } /* set breakpoint 10a here */
 

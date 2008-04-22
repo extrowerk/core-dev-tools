@@ -658,16 +658,6 @@ typedef LONGEST (gdbarch_core_xfer_shared_libraries_ftype) (struct gdbarch *gdba
 extern LONGEST gdbarch_core_xfer_shared_libraries (struct gdbarch *gdbarch, gdb_byte *readbuf, ULONGEST offset, LONGEST len);
 extern void set_gdbarch_core_xfer_shared_libraries (struct gdbarch *gdbarch, gdbarch_core_xfer_shared_libraries_ftype *core_xfer_shared_libraries);
 
-/* Name rationale: 'target_signal' comes from 'enum target_signal',
-     'from_target' means from target as in inferior. */
-
-extern int gdbarch_target_signal_from_target_p (struct gdbarch *gdbarch);
-
-typedef enum target_signal (gdbarch_target_signal_from_target_ftype) (int signo);
-extern enum target_signal gdbarch_target_signal_from_target (struct gdbarch *gdbarch, int signo);
-extern void set_gdbarch_target_signal_from_target (struct gdbarch *gdbarch, gdbarch_target_signal_from_target_ftype *target_signal_from_target);
-
-
 /* If the elements of C++ vtables are in-place function descriptors rather
    than normal function pointers (which may point to code or a descriptor),
    set this to one. */
@@ -696,6 +686,20 @@ extern int gdbarch_overlay_update_p (struct gdbarch *gdbarch);
 typedef void (gdbarch_overlay_update_ftype) (struct obj_section *osect);
 extern void gdbarch_overlay_update (struct gdbarch *gdbarch, struct obj_section *osect);
 extern void set_gdbarch_overlay_update (struct gdbarch *gdbarch, gdbarch_overlay_update_ftype *overlay_update);
+
+/* Signal translation: translate inferior's signal (host's) number into
+   GDB's representation. */
+
+typedef enum target_signal (gdbarch_target_signal_from_host_ftype) (struct gdbarch *gdbarch, int signo);
+extern enum target_signal gdbarch_target_signal_from_host (struct gdbarch *gdbarch, int signo);
+extern void set_gdbarch_target_signal_from_host (struct gdbarch *gdbarch, gdbarch_target_signal_from_host_ftype *target_signal_from_host);
+
+/* Signal translation: translate GDB's signal number into inferior's host
+   signal number. */
+
+typedef int (gdbarch_target_signal_to_host_ftype) (struct gdbarch *gdbarch, enum target_signal ts);
+extern int gdbarch_target_signal_to_host (struct gdbarch *gdbarch, enum target_signal ts);
+extern void set_gdbarch_target_signal_to_host (struct gdbarch *gdbarch, gdbarch_target_signal_to_host_ftype *target_signal_to_host);
 
 extern struct gdbarch_tdep *gdbarch_tdep (struct gdbarch *gdbarch);
 

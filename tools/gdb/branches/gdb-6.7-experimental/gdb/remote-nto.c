@@ -1277,7 +1277,7 @@ nto_detach (char *args, int from_tty)
     }
   if (args)
     {
-      int sig = target_signal_to_nto (atoi (args));
+      int sig = target_signal_to_nto (current_gdbarch, atoi (args));
 
       nto_send_init (DStMsg_kill, 0, SET_CHANNEL_DEBUG);
       tran.pkt.kill.signo = EXTRACT_SIGNED_INTEGER (&sig, 4);
@@ -1308,7 +1308,7 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
 
   nto_trace (0) ("nto_resume(pid %d, tid %ld, step %d, sig %d)\n",
 			 PIDGET (ptid), TIDGET (ptid),
-			 step, target_signal_to_nto (sig));
+			 step, target_signal_to_nto (current_gdbarch, sig));
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -1325,14 +1325,17 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
      The handlesig msg sends the signal to pass, and a char array
      'signals', which is the list of signals to notice.  */
   nto_send_init (DStMsg_handlesig, 0, SET_CHANNEL_DEBUG);
-  tran.pkt.handlesig.sig_to_pass = target_signal_to_nto (sig);
+  tran.pkt.handlesig.sig_to_pass = target_signal_to_nto (current_gdbarch, sig);
   tran.pkt.handlesig.sig_to_pass =
     EXTRACT_SIGNED_INTEGER (&tran.pkt.handlesig.sig_to_pass, 4);
   for (signo = 0; signo < QNXNTO_NSIG; signo++)
     {
-      if (signal_stop_state (target_signal_from_nto (signo)) == 0 &&
-	  signal_print_state (target_signal_from_nto (signo)) == 0 &&
-	  signal_pass_state (target_signal_from_nto (signo)) == 1)
+      if (signal_stop_state (target_signal_from_nto (current_gdbarch, 
+						     signo)) == 0 
+	  && signal_print_state (target_signal_from_nto (current_gdbarch,
+							 signo)) == 0 
+	  && signal_pass_state (target_signal_from_nto (current_gdbarch,
+						        signo)) == 1)
 	{
 	  tran.pkt.handlesig.signals[signo] = 0;
 	}
@@ -1346,7 +1349,7 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
     if (sig != TARGET_SIGNAL_0)
       {
 	nto_send_init (DStMsg_kill, 0, SET_CHANNEL_DEBUG);
-	tran.pkt.kill.signo = target_signal_to_nto (sig);
+	tran.pkt.kill.signo = target_signal_to_nto (current_gdbarch, sig);
 	tran.pkt.kill.signo =
 	  EXTRACT_SIGNED_INTEGER (&tran.pkt.kill.signo, 4);
 	nto_send (sizeof (tran.pkt.kill), 1);
@@ -1620,7 +1623,7 @@ nto_parse_notify (struct target_waitstatus *status)
 	  if (recv.pkt.notify.un.pidunload_v3.faulted)
 	    {
 	      status->value.integer =
-		target_signal_from_nto (EXTRACT_SIGNED_INTEGER
+		target_signal_from_nto (current_gdbarch, EXTRACT_SIGNED_INTEGER
 					 (&recv.pkt.notify.un.pidunload_v3.
 					  status, 4));
 	      if (status->value.integer)
@@ -1639,7 +1642,7 @@ nto_parse_notify (struct target_waitstatus *status)
       else
 	{
 	  status->value.integer =
-	    target_signal_from_nto (EXTRACT_SIGNED_INTEGER
+	    target_signal_from_nto (current_gdbarch, EXTRACT_SIGNED_INTEGER
 				     (&recv.pkt.notify.un.pidunload.status,
 				      4));
 	  if (status->value.integer)
@@ -1661,7 +1664,7 @@ nto_parse_notify (struct target_waitstatus *status)
     case DSMSG_NOTIFY_SIGEV:
       status->kind = TARGET_WAITKIND_STOPPED;
       status->value.sig =
-	target_signal_from_nto (EXTRACT_SIGNED_INTEGER
+	target_signal_from_nto (current_gdbarch, EXTRACT_SIGNED_INTEGER
 				 (&recv.pkt.notify.un.sigev.signo, 4));
       break;
     case DSMSG_NOTIFY_PIDLOAD:
@@ -1997,7 +2000,8 @@ nto_kill ()
   while (steps--)
     {
       get_last_target_status (&ptid, &wstatus);
-      nto_trace (0) ("last_target_status: %s\n", target_signal_to_string (wstatus.value.sig));
+      nto_trace (0) ("last_target_status: %s\n", 
+		     target_signal_to_string (wstatus.value.sig));
       if (wstatus.value.sig == TARGET_SIGNAL_KILL)
         {
 	  execute_command (cmd, 0);
