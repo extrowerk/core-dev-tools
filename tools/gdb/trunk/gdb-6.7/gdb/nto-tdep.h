@@ -181,7 +181,7 @@ int nto_find_and_open_solib (char *, unsigned, char **);
 
 enum gdb_osabi nto_elf_osabi_sniffer (bfd *abfd);
 
-void nto_initialize_signals (void);
+void nto_initialize_signals (struct gdbarch *);
 
 void nto_generic_supply_gpregset (const struct regset *, struct regcache *,
 				  int, const void *, size_t);
@@ -203,8 +203,8 @@ char *nto_target_extra_thread_info (struct thread_info *);
 struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 
 /* needed for remote protocol and for core files */
-enum target_signal target_signal_from_nto (int sig);
-int target_signal_to_nto(enum target_signal sig);
+enum target_signal target_signal_from_nto (struct gdbarch *, int sig);
+int target_signal_to_nto(struct gdbarch *, enum target_signal sig);
 
 int qnx_is_absolute_path (const char *path);
 

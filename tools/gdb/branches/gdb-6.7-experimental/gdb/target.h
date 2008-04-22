@@ -1236,16 +1236,6 @@ extern int remote_timeout;
 /* This is for native targets which use a unix/POSIX-style waitstatus.  */
 extern void store_waitstatus (struct target_waitstatus *, int);
 
-/* Predicate to target_signal_to_host(). Return non-zero if the enum
-   targ_signal SIGNO has an equivalent ``host'' representation.  */
-/* FIXME: cagney/1999-11-22: The name below was chosen in preference
-   to the shorter target_signal_p() because it is far less ambigious.
-   In this context ``target_signal'' refers to GDB's internal
-   representation of the target's set of signals while ``host signal''
-   refers to the target operating system's signal.  Confused?  */
-
-extern int target_signal_to_host_p (enum target_signal signo);
-
 /* Convert between host signal numbers and enum target_signal's.
    target_signal_to_host() returns 0 and prints a warning() on GDB's
    console if SIGNO has no equivalent host representation.  */
@@ -1257,6 +1247,10 @@ extern int target_signal_to_host_p (enum target_signal signo);
 
 extern enum target_signal target_signal_from_host (int);
 extern int target_signal_to_host (enum target_signal);
+extern enum target_signal default_target_signal_from_host (struct gdbarch *,
+							   int);
+extern int default_target_signal_to_host (struct gdbarch *, 
+					  enum target_signal);
 
 /* Convert from a number used in a GDB command to an enum target_signal.  */
 extern enum target_signal target_signal_from_command (int);

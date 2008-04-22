@@ -369,8 +369,8 @@ core_open (char *filename, int from_tty)
     {
       enum target_signal gdb_sig;
 
-      if (core_gdbarch && gdbarch_target_signal_from_target_p (core_gdbarch))
-        gdb_sig = gdbarch_target_signal_from_target (core_gdbarch, siggy);
+      if (core_gdbarch)
+        gdb_sig = gdbarch_target_signal_from_host (core_gdbarch, siggy);
       else
         gdb_sig = target_signal_from_host (siggy);
       /* NOTE: target_signal_from_host() converts a target signal value

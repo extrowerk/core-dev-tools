@@ -8,4 +8,4 @@ ppc-nto-tdep.o: ppc-nto-tdep.c $(defs_h) $(gdbtypes_h) $(osabi_h) $(frame_h) \
 	$(osabi_h) $(trad_frame_h) $(frame_undwind_h) $(objfiles_h)
 
 TDEPFILES= rs6000-tdep.o ppc-sysv-tdep.o corelow.o solib.o solib-svr4.o \
-	ppc-nto-tdep.o nto-tdep.o remote-nto.o
+	ppc-nto-tdep.o $(NTO_TDEPFILES)

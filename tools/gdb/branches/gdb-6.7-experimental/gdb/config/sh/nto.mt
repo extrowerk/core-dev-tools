@@ -6,4 +6,4 @@ sh-nto-tdep.o: sh-nto-tdep.c $(defs_h) $(frame_h) $(target_h) $(regcache_h) \
 	$(trad_frame_h) $(tramp_frame_h)
 
 TDEPFILES= sh-tdep.o corelow.o solib.o solib-svr4.o \
-	remote-nto.o nto-tdep.o sh-nto-tdep.o sh64-tdep.o
+	sh-nto-tdep.o sh64-tdep.o $(NTO_TDEPFILES)

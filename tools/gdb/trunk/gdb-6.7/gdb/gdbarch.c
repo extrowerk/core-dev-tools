@@ -226,11 +226,12 @@ struct gdbarch
   gdbarch_fetch_pointer_argument_ftype *fetch_pointer_argument;
   gdbarch_regset_from_core_section_ftype *regset_from_core_section;
   gdbarch_core_xfer_shared_libraries_ftype *core_xfer_shared_libraries;
-  gdbarch_target_signal_from_target_ftype *target_signal_from_target;
   int vtable_function_descriptors;
   int vbit_in_delta;
   gdbarch_skip_permanent_breakpoint_ftype *skip_permanent_breakpoint;
   gdbarch_overlay_update_ftype *overlay_update;
+  gdbarch_target_signal_from_host_ftype *target_signal_from_host;
+  gdbarch_target_signal_to_host_ftype *target_signal_to_host;
 };
 
 
@@ -349,11 +350,12 @@ struct gdbarch startup_gdbarch =
   0,  /* fetch_pointer_argument */
   0,  /* regset_from_core_section */
   0,  /* core_xfer_shared_libraries */
-  target_signal_from_host, /* target_signal_from_target */
   0,  /* vtable_function_descriptors */
   0,  /* vbit_in_delta */
   0,  /* skip_permanent_breakpoint */
   0,  /* overlay_update */
+  default_target_signal_from_host,  /* target_signal_from_host */
+  default_target_signal_to_host,  /* target_signal_to_host */
   /* startup_gdbarch() */
 };
 
@@ -440,6 +442,8 @@ gdbarch_alloc (const struct gdbarch_info *info,
   current_gdbarch->coff_make_msymbol_special = default_coff_make_msymbol_special;
   current_gdbarch->name_of_malloc = "malloc";
   current_gdbarch->register_reggroup_p = default_register_reggroup_p;
+  current_gdbarch->target_signal_from_host = default_target_signal_from_host;
+  current_gdbarch->target_signal_to_host = default_target_signal_to_host;
   /* gdbarch_alloc() */
 
   return current_gdbarch;
@@ -597,11 +601,12 @@ verify_gdbarch (struct gdbarch *current_gdbarch)
   /* Skip verify of fetch_pointer_argument, has predicate */
   /* Skip verify of regset_from_core_section, has predicate */
   /* Skip verify of core_xfer_shared_libraries, has predicate */
-  /* Skip verify of target_signal_from_target, has predicate */
   /* Skip verify of vtable_function_descriptors, invalid_p == 0 */
   /* Skip verify of vbit_in_delta, invalid_p == 0 */
   /* Skip verify of skip_permanent_breakpoint, has predicate */
   /* Skip verify of overlay_update, has predicate */
+  /* Skip verify of target_signal_from_host, invalid_p == 0 */
+  /* Skip verify of target_signal_to_host, invalid_p == 0 */
   buf = ui_file_xstrdup (log, &dummy);
   make_cleanup (xfree, buf);
   if (strlen (buf) > 0)
@@ -722,12 +727,6 @@ gdbarch_dump (struct gdbarch *current_gdbarch, struct ui_file *file)
   fprintf_unfiltered (file,
                       "gdbarch_dump: core_xfer_shared_libraries = <0x%lx>\n",
                       (long) current_gdbarch->core_xfer_shared_libraries);
-  fprintf_unfiltered (file,
-                      "gdbarch_dump: gdbarch_target_signal_from_target_p() = %d\n",
-		      gdbarch_target_signal_from_target_p (current_gdbarch));
-  fprintf_unfiltered (file,
-                      "gdbarch_dump: target_signal_from_target = <0x%lx>\n",
-                      (long) current_gdbarch->target_signal_from_target);
   fprintf_unfiltered (file,
                       "gdbarch_dump: decr_pc_after_break = 0x%s\n",
                       paddr_nz (current_gdbarch->decr_pc_after_break));
@@ -1013,6 +1012,12 @@ gdbarch_dump (struct gdbarch *current_gdbarch, struct ui_file *file)
   fprintf_unfiltered (file,
                       "gdbarch_dump: target_desc = %s\n",
                       paddr_d ((long) current_gdbarch->target_desc));
+  fprintf_unfiltered (file,
+                      "gdbarch_dump: target_signal_from_host = <0x%lx>\n",
+                      (long) current_gdbarch->target_signal_from_host);
+  fprintf_unfiltered (file,
+                      "gdbarch_dump: target_signal_to_host = <0x%lx>\n",
+                      (long) current_gdbarch->target_signal_to_host);
   fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_unwind_dummy_id_p() = %d\n",
                       gdbarch_unwind_dummy_id_p (current_gdbarch));
@@ -2929,34 +2934,6 @@ set_gdbarch_core_xfer_shared_libraries (struct gdbarch *gdbarch,
 }
 
 int
-gdbarch_target_signal_from_target_p (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  return (gdbarch->target_signal_from_target != NULL);
-}
-
-enum target_signal
-gdbarch_target_signal_from_target (struct gdbarch *gdbarch, int signo)
-{
-  gdb_assert (gdbarch != NULL);
-  if (gdbarch_debug >= 2)
-    fprintf_unfiltered (gdb_stdlog, 
-                        "gdbarch_target_signal_from_target called\n");
-  gdb_assert (gdbarch_target_signal_from_target_p (gdbarch));
-  return gdbarch->target_signal_from_target (signo);
-}
-
-void
-set_gdbarch_target_signal_from_target (struct gdbarch *gdbarch, 
-           gdbarch_target_signal_from_target_ftype target_signal_from_target)
-{
-  gdbarch->target_signal_from_target = target_signal_from_target;
-}
-
-
-
-
-int
 gdbarch_vtable_function_descriptors (struct gdbarch *gdbarch)
 {
   gdb_assert (gdbarch != NULL);
@@ -3036,6 +3013,40 @@ set_gdbarch_overlay_update (struct gdbarch *gdbarch,
                             gdbarch_overlay_update_ftype overlay_update)
 {
   gdbarch->overlay_update = overlay_update;
+}
+
+enum target_signal
+gdbarch_target_signal_from_host (struct gdbarch *gdbarch, int signo)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->target_signal_from_host != NULL);
+  if (gdbarch_debug >= 2)
+    fprintf_unfiltered (gdb_stdlog, "gdbarch_target_signal_from_host called\n");
+  return gdbarch->target_signal_from_host (gdbarch, signo);
+}
+
+void
+set_gdbarch_target_signal_from_host (struct gdbarch *gdbarch,
+                                     gdbarch_target_signal_from_host_ftype target_signal_from_host)
+{
+  gdbarch->target_signal_from_host = target_signal_from_host;
+}
+
+int
+gdbarch_target_signal_to_host (struct gdbarch *gdbarch, enum target_signal ts)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->target_signal_to_host != NULL);
+  if (gdbarch_debug >= 2)
+    fprintf_unfiltered (gdb_stdlog, "gdbarch_target_signal_to_host called\n");
+  return gdbarch->target_signal_to_host (gdbarch, ts);
+}
+
+void
+set_gdbarch_target_signal_to_host (struct gdbarch *gdbarch,
+                                   gdbarch_target_signal_to_host_ftype target_signal_to_host)
+{
+  gdbarch->target_signal_to_host = target_signal_to_host;
 }
 
 
@@ -3406,13 +3417,7 @@ find_arch_by_info (struct gdbarch_info info)
   new_gdbarch->initialized_p = 1;
 
   if (gdbarch_debug)
-    {
-      //FIXME: dirty hack to have debug info
-      struct gdbarch *old_gdbarch = current_gdbarch;
-      current_gdbarch = new_gdbarch;
-      gdbarch_dump (new_gdbarch, gdb_stdlog);
-      current_gdbarch = old_gdbarch;
-    }
+    gdbarch_dump (new_gdbarch, gdb_stdlog);
 
   return new_gdbarch;
 }
