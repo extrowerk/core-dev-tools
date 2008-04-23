@@ -7167,14 +7167,6 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
        srel->rawsize += sizeof (Elf32_External_Rel);
        srel->size += sizeof (Elf32_External_Rel);
        h->needs_copy = 1;
-       if ( sreldyn != NULL )
-       {
-         sreldyn->rawsize -= hmips->possibly_dynamic_relocs * sizeof (Elf32_External_Rel);
-         if ( sreldyn->rawsize == sizeof(Elf32_External_Rel) ) {
-           sreldyn->reloc_count--;
-           sreldyn->rawsize = 0;
-         }
-       }
      }
 
    /* We need to figure out the alignment required for this symbol.  I
@@ -8681,7 +8673,7 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
 
         /* Set up the copy reloc */
         BFD_ASSERT (h->dynindx != -1);
-        s = mips_elf_rel_dyn_section (info, FALSE);
+        s = bfd_get_section_by_name (h->root.u.def.section->owner, ".rel.bss");
         BFD_ASSERT (s != NULL);
 
         rel.r_offset = (h->root.u.def.value
