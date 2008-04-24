@@ -573,12 +573,13 @@ nto_print_tidinfo_callback (struct thread_info *tp, void *data)
 static void 
 nto_info_tidinfo_command (char *args, int from_tty)
 {
+  char *execfile = get_exec_file (0);
   nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, 
 		  args ? args : "(null)", from_tty);
 
   target_find_new_threads ();
   printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n", 
-		  ptid_get_pid (inferior_ptid), get_exec_file (0));
+		  ptid_get_pid (inferior_ptid), execfile ? execfile : "");
   
   iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
