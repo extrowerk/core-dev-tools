@@ -254,6 +254,9 @@ procfs_find_new_threads (void)
   procfs_status status;
   pid_t pid;
   ptid_t ptid;
+  pthread_t tid;
+  struct private_thread_info *pti;
+  struct thread_info *new_thread;
 
   nto_trace (0) ("%s ()\n", __func__);
 
@@ -262,14 +265,38 @@ procfs_find_new_threads (void)
 
   pid = ptid_get_pid (inferior_ptid);
 
-  for (status.tid = 1;; ++status.tid)
+  status.tid = 1;
+
+  for (tid = 1;; ++tid)
     {
-      if (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
-	  != EOK && status.tid != 0)
+      if (status.tid == tid 
+	  && (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
+	      != EOK))
 	break;
-      ptid = ptid_build (pid, 0, status.tid);
-      if (!in_thread_list (ptid))
-	add_thread (ptid);
+      ptid = ptid_build (pid, 0, tid);
+      if (status.tid != tid)
+	{
+	/* The reason why this would not be equal is that devctl might have 
+	   returned different tid, meaning the requested tid no longer exists
+	   (e.g. thread exited).  */
+	  /* if (in_thread_list (ptid))
+	    delete_thread (ptid);  */
+	  continue;
+	}
+      new_thread = find_thread_pid (ptid);
+      if (!new_thread)
+	new_thread = add_thread (ptid);
+      if (!new_thread->private)
+	{
+	  new_thread->private = xmalloc (sizeof (struct private_thread_info));
+  	  new_thread->private->name[0] = '\0';
+	}
+      pti = (struct private_thread_info *) new_thread->private;
+      pti->tid = tid;
+      pti->state = status.state;
+      pti->flags = 0;
+      pti->name[0] = '\0';
+      status.tid++;  
     }
   return;
 }
