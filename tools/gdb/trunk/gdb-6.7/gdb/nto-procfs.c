@@ -248,6 +248,71 @@ procfs_thread_alive (ptid_t ptid)
   return (status.tid == tid) && (status.state != STATE_DEAD);
 }
 
+static void
+update_thread_private_data_name (struct thread_info *new_thread,
+				 const char *newname)
+{
+  int newnamelen;
+  struct private_thread_info *pti;
+  gdb_assert (newname != NULL);
+  gdb_assert (new_thread != NULL);
+
+  newnamelen = strlen (newname);
+
+  if (!new_thread->private)
+    {
+      new_thread->private = xmalloc (sizeof (struct private_thread_info)
+				     + newnamelen + 1);
+      memcpy (new_thread->private->name, newname, newnamelen + 1);
+    }
+  else if (strcmp (newname, new_thread->private->name) != 0)
+    {
+      /* Reallocate if neccessary.  */
+      int oldnamelen = strlen (new_thread->private->name);
+      if (oldnamelen < newnamelen)
+	new_thread->private = xrealloc (new_thread->private,
+					sizeof (struct private_thread_info)
+					+ newnamelen + 1);
+      memcpy (new_thread->private->name, newname, newnamelen + 1);
+    }
+}
+
+static void 
+update_thread_private_data (struct thread_info *new_thread, 
+			    pthread_t tid, int state, int flags)
+{
+  struct private_thread_info *pti;
+  procfs_info pidinfo;
+  struct _thread_name *tn;
+  procfs_threadctl tctl;
+
+  gdb_assert (new_thread != NULL);
+
+  if (devctl (ctl_fd, DCMD_PROC_INFO, &pidinfo,
+	      sizeof(pidinfo), 0) != EOK)
+    return;
+
+  memset (&tctl, 0, sizeof (tctl));
+  tctl.cmd = _NTO_TCTL_NAME;
+  tn = (struct _thread_name *) (&tctl.data);
+
+  /* Fetch name for the given thread.  */
+  tctl.tid = tid;
+  tn->name_buf_len = sizeof (tctl.data) - sizeof (*tn);
+  tn->new_name_len = -1; /* Getting, not setting.  */
+  if (devctl (ctl_fd, DCMD_PROC_THREADCTL, &tctl, sizeof (tctl), NULL) != EOK)
+    tn->name_buf[0] = '\0';
+
+  tn->name_buf[_NTO_THREAD_NAME_MAX] = '\0';
+
+  update_thread_private_data_name (new_thread, tn->name_buf);
+
+  pti = (struct private_thread_info *) new_thread->private;
+  pti->tid = tid;
+  pti->state = state;
+  pti->flags = flags;
+}
+
 void
 procfs_find_new_threads (void)
 {
@@ -255,7 +320,6 @@ procfs_find_new_threads (void)
   pid_t pid;
   ptid_t ptid;
   pthread_t tid;
-  struct private_thread_info *pti;
   struct thread_info *new_thread;
 
   nto_trace (0) ("%s ()\n", __func__);
@@ -286,17 +350,8 @@ procfs_find_new_threads (void)
       new_thread = find_thread_pid (ptid);
       if (!new_thread)
 	new_thread = add_thread (ptid);
-      if (!new_thread->private)
-	{
-	  new_thread->private = xmalloc (sizeof (struct private_thread_info));
-  	  new_thread->private->name[0] = '\0';
-	}
-      pti = (struct private_thread_info *) new_thread->private;
-      pti->tid = tid;
-      pti->state = status.state;
-      pti->flags = 0;
-      pti->name[0] = '\0';
-      status.tid++;  
+      update_thread_private_data (new_thread, tid, status.state, 0);
+      status.tid++;
     }
   return;
 }
@@ -624,6 +679,7 @@ do_attach (ptid_t ptid)
       && status.flags & _DEBUG_FLAG_STOPPED)
     SignalKill (nto_node (), PIDGET (ptid), 0, SIGCONT, 0, 0);
   attach_flag = 1;
+  ptid.tid = status.tid;
   nto_init_solib_absolute_prefix ();
   return ptid;
 }
@@ -763,6 +819,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 	}
     }
 
+  inferior_ptid.tid = status.tid;
   return inferior_ptid;
 }
 
@@ -1399,6 +1456,7 @@ init_procfs_ops (void)
   procfs_ops.to_has_execution = 1;
   procfs_ops.to_magic = OPS_MAGIC;
   procfs_ops.to_have_continuable_watchpoint = 1;
+  procfs_ops.to_extra_thread_info = nto_target_extra_thread_info;
 }
 
 #define OSTYPE_NTO 1
