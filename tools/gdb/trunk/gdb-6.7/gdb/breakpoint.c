@@ -90,7 +90,9 @@ static void watch_command (char *, int);
 
 static int can_use_hardware_watchpoint (struct value *);
 
-static int break_command_1 (char *, int, int, struct breakpoint *);
+static int break_command_1 (char *, int, int, struct breakpoint *, 
+			    struct breakpoint_ops *,
+			    enum auto_boolean);
 
 static void mention (struct breakpoint *);
 
@@ -4433,7 +4435,8 @@ resolve_pending_breakpoint (struct breakpoint *b)
   
   set_language (b->language);
   input_radix = b->input_radix;
-  rc = break_command_1 (b->addr_string, b->flag, b->from_tty, b);
+  rc = break_command_1 (b->addr_string, b->flag, b->from_tty, b, b->ops,
+			pending_break_support);
   
   if (rc == GDB_RC_OK)
     /* Pending breakpoint has been resolved.  */
@@ -5012,7 +5015,8 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 		    struct expression **cond, char **cond_string,
 		    enum bptype type, enum bpdisp disposition,
 		    int thread, int ignore_count, int from_tty,
-		    struct breakpoint *pending_bp)
+		    struct breakpoint *pending_bp,
+		    struct breakpoint_ops *ops)
 {
   if (type == bp_hardware_breakpoint)
     {
@@ -5076,6 +5080,7 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 	    b->ignore_count = pending_bp->ignore_count;
 	    b->thread = pending_bp->thread;
 	  }
+	b->ops = ops;
 	mention (b);
       }
   }    
@@ -5208,7 +5213,10 @@ do_captured_parse_breakpoint (struct ui_out *ui, void *data)
    a pending breakpoint.  */
 
 static int
-break_command_1 (char *arg, int flag, int from_tty, struct breakpoint *pending_bp)
+break_command_1 (char *arg, int flag, int from_tty, 
+		 struct breakpoint *pending_bp,
+		 struct breakpoint_ops *ops,
+		 enum auto_boolean pending_break_support)
 {
   struct gdb_exception e;
   int tempflag, hardwareflag;
@@ -5390,7 +5398,7 @@ break_command_1 (char *arg, int flag, int from_tty, struct breakpoint *pending_b
 			  : bp_breakpoint,
 			  tempflag ? disp_del : disp_donttouch,
 			  thread, ignore_count, from_tty,
-			  pending_bp);
+			  pending_bp, ops);
     }
   else
     {
@@ -5415,6 +5423,7 @@ break_command_1 (char *arg, int flag, int from_tty, struct breakpoint *pending_b
       b->disposition = tempflag ? disp_del : disp_donttouch;
       b->from_tty = from_tty;
       b->flag = flag;
+      b->ops = ops;
       mention (b);
     }
   
@@ -5529,7 +5538,7 @@ do_captured_breakpoint (struct ui_out *uiout, void *data)
 		      args->hardwareflag ? bp_hardware_breakpoint : bp_breakpoint,
 		      args->tempflag ? disp_del : disp_donttouch,
 		      args->thread, args->ignore_count, 0/*from-tty*/, 
-		      NULL/*pending_bp*/);
+		      NULL/*pending_bp*/, NULL/*ops*/);
 
   /* That's it. Discard the cleanups for data inserted into the
      breakpoint. */
@@ -5612,25 +5621,28 @@ resolve_sal_pc (struct symtab_and_line *sal)
 void
 break_command (char *arg, int from_tty)
 {
-  break_command_1 (arg, 0, from_tty, NULL);
+  break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
 }
 
 void
 tbreak_command (char *arg, int from_tty)
 {
-  break_command_1 (arg, BP_TEMPFLAG, from_tty, NULL);
+  break_command_1 (arg, BP_TEMPFLAG, from_tty, NULL, NULL, 
+		   pending_break_support);
 }
 
 static void
 hbreak_command (char *arg, int from_tty)
 {
-  break_command_1 (arg, BP_HARDWAREFLAG, from_tty, NULL);
+  break_command_1 (arg, BP_HARDWAREFLAG, from_tty, NULL, NULL, 
+		   pending_break_support);
 }
 
 static void
 thbreak_command (char *arg, int from_tty)
 {
-  break_command_1 (arg, (BP_TEMPFLAG | BP_HARDWAREFLAG), from_tty, NULL);
+  break_command_1 (arg, (BP_TEMPFLAG | BP_HARDWAREFLAG), from_tty, NULL, NULL,
+		   pending_break_support);
 }
 
 static void
@@ -5671,7 +5683,7 @@ stopin_command (char *arg, int from_tty)
   if (badInput)
     printf_filtered (_("Usage: stop in <function | address>\n"));
   else
-    break_command_1 (arg, 0, from_tty, NULL);
+    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
 }
 
 static void
@@ -5703,7 +5715,7 @@ stopat_command (char *arg, int from_tty)
   if (badInput)
     printf_filtered (_("Usage: stop at <line>\n"));
   else
-    break_command_1 (arg, 0, from_tty, NULL);
+    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
 }
 
 /* accessflag:  hw_write:  watch write, 
@@ -6390,10 +6402,14 @@ print_one_exception_catchpoint (struct breakpoint *b, CORE_ADDR *last_addr)
   if (addressprint)
     {
       annotate_field (4);
-      ui_out_field_core_addr (uiout, "addr", b->loc->address);
+      if (b->loc && b->loc->address)
+	ui_out_field_core_addr (uiout, "addr", b->loc->address);
+      else
+	ui_out_field_string (uiout, "addr", "<PENDING>");
     }
   annotate_field (5);
-  *last_addr = b->loc->address;
+  if (b->loc)
+    *last_addr = b->loc->address;
   if (strstr (b->addr_string, "throw") != NULL)
     ui_out_field_string (uiout, "what", "exception throw");
   else
@@ -6419,37 +6435,16 @@ static int
 handle_gnu_v3_exceptions (int tempflag, char *cond_string,
 			  enum exception_event_kind ex_event, int from_tty)
 {
-  char *trigger_func_name, *nameptr;
-  struct symtabs_and_lines sals;
-  struct breakpoint *b;
+  char *trigger_func_name;
 
   if (ex_event == EX_EVENT_CATCH)
-    trigger_func_name = xstrdup ("__cxa_begin_catch");
+    trigger_func_name = "__cxa_begin_catch";
   else
-    trigger_func_name = xstrdup ("__cxa_throw");
+    trigger_func_name = "__cxa_throw";
 
-  nameptr = trigger_func_name;
-  sals = decode_line_1 (&nameptr, 1, NULL, 0, NULL, NULL);
-  if (sals.nelts == 0)
-    {
-      xfree (trigger_func_name);
-      return 0;
-    }
-
-  b = set_raw_breakpoint (sals.sals[0], bp_breakpoint);
-  set_breakpoint_count (breakpoint_count + 1);
-  b->number = breakpoint_count;
-  b->cond = NULL;
-  b->cond_string = (cond_string == NULL) ? 
-    NULL : savestring (cond_string, strlen (cond_string));
-  b->thread = -1;
-  b->addr_string = trigger_func_name;
-  b->enable_state = bp_enabled;
-  b->disposition = tempflag ? disp_del : disp_donttouch;
-  b->ops = &gnu_v3_exception_catchpoint_ops;
-
-  xfree (sals.sals);
-  mention (b);
+  break_command_1 (trigger_func_name, 0, from_tty, NULL, 
+		   &gnu_v3_exception_catchpoint_ops,
+		   AUTO_BOOLEAN_TRUE);
   return 1;
 }
 
