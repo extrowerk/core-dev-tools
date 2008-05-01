@@ -67,57 +67,68 @@ gdb_start
 gdb_reinitialize_dir $srcdir/$subdir
 gdb_load ${binfile}
 
-if ![runto_main] then {
-    perror "couldn't run to breakpoint"
-    continue
-}
-
-# As I said before, this test script is not ready yet!
-
-continue
-
 # Set a catch catchpoint
 
-gdb_test "catch catch" "Catchpoint \[0-9\]+ \\(catch\\)"
+gdb_test "catch catch" "Catchpoint \[0-9\]+ \\(catch\\)" \
+    "catch catch (static executable)"
 
 # Set a throw catchpoint
 
 gdb_test "catch throw" "Catchpoint \[0-9\]+ \\(throw\\)" \
     "catch throw (static executable)"
 
-# The catchpoints should be listed in the list of breakpoints.
 
+# The catchpoints should be listed in the list of breakpoints.
+set addr "<PENDING>"
 set re_head	"Num${ws}Type${ws}Disp${ws}Enb${ws}Address${ws}What"
-set re_1_main   "1${ws}breakpoint${ws}keep${ws}y${ws}$hex${ws}in main.*breakpoint already hit.*"
-set re_2_catch	"2${ws}catch catch${ws}keep${ws}y${ws}$hex${ws}exception catch"
-set re_3_catch	"3${ws}catch throw${ws}keep${ws}y${ws}$hex${ws}exception throw"
-set re_2_bp	"2${ws}breakpoint${ws}keep${ws}y${ws}$hex${ws}exception catch"
-set re_3_bp	"3${ws}breakpoint${ws}keep${ws}y${ws}$hex${ws}exception throw"
+set re_2_bp	"1${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception catch"
+set re_3_bp	"2${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception throw"
+
+set name "info breakpoints (pending)"
+gdb_test_multiple "info breakpoints" $name {
+    -re "$re_head${ws}$re_2_bp${ws}$re_3_bp\r\n$gdb_prompt $" {
+	pass $name
+    }
+    -re ".*$gdb_prompt $"
+      {
+	fail $name
+      }
+}
+
+gdb_test "tbreak main" "Temporary breakpoint 3.*" \
+    "Set temporary breakpoint at main"
+
+gdb_test "run" "Temporary breakpoint 3,.*" "Run to main"
+
+set addr "$hex"
+set re_head	"Num${ws}Type${ws}Disp${ws}Enb${ws}Address${ws}What"
+set re_2_bp	"1${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception catch"
+set re_3_bp	"2${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception throw"
 
 set name "info breakpoints"
 gdb_test_multiple "info breakpoints" $name {
-    -re "$re_head${ws}$re_1_main${ws}$re_2_catch${ws}$re_3_catch\r\n$gdb_prompt $" {
+    -re "$re_head${ws}$re_2_bp${ws}$re_3_bp\r\n$gdb_prompt $" {
 	pass $name
     }
-    -re "$re_head${ws}$re_1_main${ws}$re_2_bp${ws}$re_3_bp\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
-    }
+    -re ".*$gdb_prompt $"
+      {
+	fail $name
+      }
 }
 
 # Some targets support "info catch".
 # Some do not.
 
-set name "info catch"
-gdb_test_multiple "info catch" $name {
-    -re "Info catch not supported with this target/compiler combination.\r\n$gdb_prompt $" {
-	unsupported $name
-    }
-    -re "No catches.\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
-    }
-}
+#set name "info catch"
+#gdb_test_multiple "info catch" $name {
+#    -re "Info catch not supported with this target/compiler combination.\r\n$gdb_prompt $" {
+#	unsupported $name
+#    }
+#    -re "No catches.\r\n$gdb_prompt $" {
+#	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
+#	unresolved $name
+#    }
+#}
 
 # Get the first exception thrown
        
@@ -127,8 +138,7 @@ gdb_test_multiple "continue" $name {
 	pass $name
     }
     -re "Continuing.${ws}Catchpoint \[0-9\]+ \\(exception thrown\\)\r\n.*\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
+	pass $name
     }
 }
 
@@ -137,7 +147,7 @@ gdb_test_multiple "continue" $name {
 
 set name "backtrace after first throw"
 gdb_test_multiple "backtrace" $name {
-    -re ".*#\[0-9\]+${ws}$hex in foo \\(i=20\\) at .*${srcfile}:30\r\n#\[0-9\]+${ws}$hex in main \\((void|)\\) at .*${srcfile}:48\r\n$gdb_prompt $" {
+    -re ".*#\[0-9\]+${ws}$hex in __cxa_throw.*#\[0-9\]+${ws}$hex in foo \\(i=20\\) at .*${srcfile}:\[0-9\]+\r\n#\[0-9\]+${ws}$hex in main \\(.*\\) at .*${srcfile}:\[0-9\]+\r\n$gdb_prompt $" {
 	pass $name
     }
 }
@@ -150,8 +160,7 @@ gdb_test_multiple "continue" $name {
 	pass $name
     }
     -re "Continuing.${ws}Catchpoint \[0-9\]+ \\(exception caught\\)\r\n.*\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
+	pass $name
     }
 }
 
@@ -160,7 +169,7 @@ gdb_test_multiple "continue" $name {
 
 set name "backtrace after first catch"
 gdb_test_multiple "backtrace" $name {
-    -re ".*#\[0-9\]+${ws}$hex in main \\((void|)\\) at .*$srcfile:50\r\n$gdb_prompt $" {
+    -re ".*#\[0-9\]+${ws}$hex in __cxa_begin_catch.*#\[0-9\]+${ws}$hex in main \\(.*\\) at .*$srcfile:\[0-9\]+\r\n$gdb_prompt $" {
 	pass $name
     }
 }
@@ -173,8 +182,7 @@ gdb_test_multiple "continue" $name {
 	pass $name
     }
     -re "Continuing.${ws}Got an except 13${ws}Catchpoint \[0-9\]+ \\(exception thrown\\)\r\n.*\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
+	pass $name
     }
 }
 
@@ -183,7 +191,7 @@ gdb_test_multiple "continue" $name {
 
 set name "backtrace after second throw"
 gdb_test_multiple "backtrace" $name {
-    -re ".*#\[0-9\]+${ws}$hex in foo \\(i=20\\) at .*${srcfile}:30\r\n#\[0-9\]+${ws}$hex in main \\((void|)\\) at .*${srcfile}:56\r\n$gdb_prompt $" {
+    -re ".*#\[0-9\]+${ws}$hex in __cxa_throw.*#\[0-9\]+${ws}$hex in foo \\(i=20\\) at .*${srcfile}:\[0-9\]+\r\n#\[0-9\]+${ws}$hex in main \\(.*\\) at .*${srcfile}:\[0-9\]+\r\n$gdb_prompt $" {
 	pass $name
     }
 }
@@ -196,8 +204,7 @@ gdb_test_multiple "continue" $name {
 	pass $name
     }
     -re "Continuing.${ws}Catchpoint \[0-9\]+ \\(exception caught\\)\r\n.*\r\n$gdb_prompt $" {
-	# TODO: gdb HEAD 2004-01-08 does this.  Is this okay?
-	unresolved $name
+	pass $name
     }
 }
 
@@ -206,7 +213,7 @@ gdb_test_multiple "continue" $name {
 
 set name "backtrace after second catch"
 gdb_test_multiple "backtrace" $name {
-    -re ".*#\[0-9\]+${ws}$hex in main \\((void|)\\) at .*$srcfile:58\r\n$gdb_prompt $" {
+    -re ".*#\[0-9\]+${ws}$hex in __cxa_begin_catch.*#\[0-9\]+${ws}$hex in main \\(.*\\) at .*$srcfile:\[0-9\]+\r\n$gdb_prompt $" {
 	pass $name
     }
 }

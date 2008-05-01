@@ -5033,6 +5033,7 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
   /* Now set all the breakpoints.  */
   {
     int i;
+    int bpno;
     for (i = 0; i < sals.nelts; i++)
       {
 	struct breakpoint *b;
@@ -5079,6 +5080,9 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 	    /* We have to copy over the ignore_count and thread as well.  */
 	    b->ignore_count = pending_bp->ignore_count;
 	    b->thread = pending_bp->thread;
+	    bpno = b->number;
+	    b->number = pending_bp->number;
+	    pending_bp->number = bpno;
 	  }
 	b->ops = ops;
 	mention (b);
@@ -6384,14 +6388,34 @@ create_exception_catchpoint (int tempflag, char *cond_string,
 static enum print_stop_action
 print_exception_catchpoint (struct breakpoint *b)
 {
+  int bp_temp;
+  char msg[160];
+  const char * msgspec;
+  const char * const msgfmt = "\n%s %d (exception %s)\n";
+
   annotate_catchpoint (b->number);
 
   if (strstr (b->addr_string, "throw") != NULL)
-    printf_filtered (_("\nCatchpoint %d (exception thrown)\n"),
-		     b->number);
+    msgspec = "thrown";
   else
-    printf_filtered (_("\nCatchpoint %d (exception caught)\n"),
-		     b->number);
+    msgspec = "caught";
+  if (b->loc->address != b->loc->requested_address)
+    breakpoint_adjustment_warning (b->loc->requested_address,
+	                           b->loc->address,
+				   b->number, 1);
+  bp_temp = b->loc->owner->disposition == disp_del;
+  sprintf (msg, msgfmt, 
+	   bp_temp ? "Temporary catchpoint" : "Catchpoint", 
+	   b->number, msgspec);
+  ui_out_text (uiout, msg);
+  if (ui_out_is_mi_like_p (uiout))
+    {
+      ui_out_field_string (uiout, "reason", 
+			   async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+      ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));
+    }
+  ui_out_field_int (uiout, "bkptno", b->number);
+  ui_out_text (uiout, ", ");
 
   return PRINT_SRC_AND_LOC;
 }
