@@ -172,7 +172,7 @@
 ;; abicalls because they first load the target address into $25.
 (define_attr "jal_macro" "no,yes"
   (cond [(eq_attr "jal" "direct")
-	 (symbol_ref "(TARGET_ABICALLS)
+	 (symbol_ref "(TARGET_ABICALLS || TARGET_QNXPIC)
 		      && (TARGET_OLDABI || !TARGET_ABSOLUTE_ABICALLS)")
 	 (eq_attr "jal" "indirect")
 	 (symbol_ref "(TARGET_ABICALLS || TARGET_QNXPIC) && TARGET_OLDABI")]
