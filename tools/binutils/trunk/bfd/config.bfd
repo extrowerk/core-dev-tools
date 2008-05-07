@@ -1275,7 +1275,6 @@ case "${targ}" in
     targ_defvec=shcoff_vec
     targ_selvecs="shcoff_vec shlcoff_vec shcoff_small_vec shlcoff_small_vec"
     targ_underscore=yes
-    targ_cflags=-D__QNXTARGET__
     ;;
 
 #ifdef BFD64
@@ -1291,6 +1290,7 @@ case "${targ}" in
     targ_defvec=bfd_elf32_sh_vec
     targ_selvecs="bfd_elf32_shl_vec shcoff_vec shlcoff_vec shcoff_small_vec shlcoff_small_vec"
     targ_underscore=yes
+    targ_cflags=-D__QNXTARGET__
     ;;
   sh*-*-openbsd*)
     targ_defvec=bfd_elf32_shlnbsd_vec
