@@ -359,6 +359,12 @@ V_IDENTIFIER [*?.$_a-zA-Z\[\]\-\!\^\\]([*?.$_a-zA-Z0-9\[\]\-\!\^\\]|::)*
 				  return NAME;
 				}
 
+<MRI>\"[^"\n]*\"	{	
+			/* quoted Filename  */
+			yylval.name = xstrdup(yytext+1); /* skip first quote */
+			yylval.name[yyleng-2] = 0; /* smash last quote */
+			return NAME;
+			}
 
 <BOTH>{FILENAMECHAR1}{FILENAMECHAR}*	{
 				 yylval.name = xstrdup (yytext);
