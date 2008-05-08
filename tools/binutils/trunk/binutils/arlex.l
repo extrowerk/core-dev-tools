@@ -75,9 +75,15 @@ int linenumber;
 "("             { return '('; }
 ")"             { return ')'; }
 ","             { return ','; }
-[A-Za-z0-9/\\$:.\-\_]+  { 	
+[A-Za-z0-9/\\$:.\-\_\~]+  { 	
 		yylval.name =  xstrdup (yytext);
 		return FILENAME;
+		}
+\"[^"\n]*\"	{
+		/* quoted file name with whitespaces */
+		yylval.name = xstrdup(yytext+1); /* skip first quote */
+		yylval.name[yyleng-2] = 0; /* smash last quote */
+		return FILENAME; 
 		}
 "*".* 		{ }
 ";".* 		{ }
