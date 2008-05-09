@@ -1107,19 +1107,25 @@ enable_break (void)
 	    break;
 	}
 
-      if (sym_addr != 0)
-	/* Convert 'sym_addr' from a function pointer to an address.
-	   Because we pass tmp_bfd_target instead of the current
-	   target, this will always produce an unrelocated value.  */
-	sym_addr = gdbarch_convert_from_func_ptr_addr (current_gdbarch,
-						       sym_addr,
-						       tmp_bfd_target);
+      if (strcmp (core_ops.to_shortname, current_target.to_shortname) != 0)
+	{
+	  if (sym_addr != 0)
+	  /* Convert 'sym_addr' from a function pointer to an address.
+	     Because we pass tmp_bfd_target instead of the current
+	     target, this will always produce an unrelocated value.  */
+	    sym_addr = gdbarch_convert_from_func_ptr_addr (current_gdbarch,
+							   sym_addr,
+							   tmp_bfd_target);
 
-	if(sym_addr != 0) {
-		if(cmp_host_to_target_word(tmp_bfd, sym_addr, sym_addr+load_addr) != 0) {
-			warning("Host file %s does not match target file %s", tmp_pathname, buf);
-			//sym_addr=0;
-		}
+	  if (sym_addr != 0
+	      && cmp_host_to_target_word (tmp_bfd, sym_addr, 
+					  sym_addr+load_addr) != 0)
+	    {
+	      warning ("Host file %s does not match target file %s", 
+		       tmp_pathname, buf);
+	      /* We could do this: sym_addr=0 but we decide to continue
+	         anyway, maybe the libraries do not differ "that much".  */
+	    }
 	}
 
       /* We're done with both the temporary bfd and target.  Remember,
