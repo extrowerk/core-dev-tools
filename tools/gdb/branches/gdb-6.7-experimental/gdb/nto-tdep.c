@@ -886,8 +886,8 @@ displayed. Different information is displayed\n\
 for different positive values."),
 			    NULL,
 			    show_nto_debug,
-			    &maintenance_set_cmdlist,
-			    &maintenance_show_cmdlist);
+			    &setdebuglist,
+			    &showdebuglist);
 
   add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
 
