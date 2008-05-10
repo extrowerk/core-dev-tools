@@ -6122,6 +6122,8 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
             || ! bfd_set_section_alignment (abfd, s, 3))
           return FALSE;
       }
+    }
+
     /* We also make a .bss and .sbss section here. This is needed in
        case we have copy relocs, but didn't have a bss section in
        from the normal symbols. */
@@ -6145,7 +6147,7 @@ _bfd_mips_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
             || ! bfd_set_section_alignment (abfd, s, 3))
           return FALSE;
       }
-  }
+
   if (htab->is_vxworks)
     {
       /* Create the .plt, .rela.plt, .dynbss and .rela.bss sections.
@@ -7176,7 +7178,7 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
      power_of_two = 3;
 
    /* Apply the required alignment.  */
-   s->size = BFD_ALIGN (s->size,
+   s->rawsize = BFD_ALIGN (s->rawsize,
                              (bfd_size_type) (1 << power_of_two));
    if (power_of_two > bfd_get_section_alignment (dynobj, s)
        && ! bfd_set_section_alignment (dynobj, s, power_of_two))
@@ -7187,8 +7189,11 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
    h->root.u.def.value = s->rawsize;
 
    /* Increment the section size to make room for the symbol.  */
-   s->size += h->size;
+   s->rawsize += h->size;
+   /* Work around bug in sbss handling */
+   s->size = s->rawsize;
    }
+
   return TRUE;
 }
 
