@@ -3083,6 +3083,12 @@ start_psymtab_common (struct objfile *objfile,
   return (psymtab);
 }
 
+/* Helper function, initialises partial symbol structure and stashes 
+   it into objfile's bcache.  Note that our caching mechanism will
+   use all fields of struct partial_symbol to determine hash value of the
+   structure.  In other words, having two symbols with the same name but
+   different domain (or address) is possible and correct.  */
+
 static struct partial_symbol *
 add_psymbol_to_bcache (char *name, int namelength, domain_enum domain,
 		       enum address_class class,
@@ -3122,18 +3128,19 @@ add_psymbol_to_bcache (char *name, int namelength, domain_enum domain,
 
   /* Stash the partial symbol away in the cache */
   return bcache_added (&psymbol, sizeof (struct partial_symbol),
-			    objfile->psymbol_cache, added);
+		       objfile->psymbol_cache, added);
 }
+
+/* Helper function, adds partial symbol to the given partial symbol
+   list.  */
 
 static void
 append_psymbol_to_list (struct psymbol_allocation_list *list,
 			struct partial_symbol *psym,
 			struct objfile *objfile)
 {
-if (list->next >= list->list + list->size)
-    {
-      extend_psymbol_list (list, objfile);
-    }
+  if (list->next >= list->list + list->size)
+    extend_psymbol_list (list, objfile);
   *list->next++ = psym;
   OBJSTAT (objfile, n_psyms++);
 }
@@ -3156,43 +3163,26 @@ if (list->next >= list->list + list->size)
 const struct partial_symbol *
 add_psymbol_to_list (char *name, int namelength, domain_enum domain,
 		     enum address_class class,
-		     struct psymbol_allocation_list *list, long val,	/* Value as a long */
-		     CORE_ADDR coreaddr,	/* Value as a CORE_ADDR */
-		     enum language language, struct objfile *objfile)
-{
-  struct partial_symbol *psym;
-  /* Stash the partial symbol away in the cache */
-  psym = add_psymbol_to_bcache (name, namelength, domain, class,
-				val, coreaddr, language, objfile, NULL);
-
-  /* Save pointer to partial symbol in psymtab, growing symtab if needed. */
-  append_psymbol_to_list (list, psym, objfile);
-  return psym;
-}
-
-/* This function should be called only for those types (and for supporting
-   languages) that do not need duplicate global type information. For C++,
-   and java these partial symbol types are: 
-   namespace, class_type, interface_type.  */
-
-const struct partial_symbol *
-add_psymbol_to_global_list (char *name, int namelength, domain_enum domain,
-		     enum address_class class,
+		     struct psymbol_allocation_list *list, 
 		     long val,	/* Value as a long */
 		     CORE_ADDR coreaddr,	/* Value as a CORE_ADDR */
 		     enum language language, struct objfile *objfile)
 {
   struct partial_symbol *psym;
-  int added;
-  
-  psym = add_psymbol_to_bcache (name, namelength, domain, class, val,
-			        coreaddr, language, objfile, &added);
 
-  if (!added)
+  int added;
+
+  /* Stash the partial symbol away in the cache */
+  psym = add_psymbol_to_bcache (name, namelength, domain, class,
+				val, coreaddr, language, objfile, &added);
+
+  /* Do not duplicate global partial symbols.  */
+  if (list == &objfile->global_psymbols
+      && !added)
     return psym;
 
   /* Save pointer to partial symbol in psymtab, growing symtab if needed. */
-  append_psymbol_to_list (&objfile->global_psymbols, psym, objfile);
+  append_psymbol_to_list (list, psym, objfile);
   return psym;
 }
 

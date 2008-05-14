@@ -206,8 +206,6 @@ struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 enum target_signal target_signal_from_nto (struct gdbarch *, int sig);
 int target_signal_to_nto(struct gdbarch *, enum target_signal sig);
 
-int qnx_is_absolute_path (const char *path);
-
 int qnx_filename_cmp (const char *s1, const char *s2);
 
 

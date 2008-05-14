@@ -3983,7 +3983,8 @@ ada_lookup_partial_symbol (struct partial_symtab *pst, const char *name,
         {
           struct partial_symbol *psym = start[i];
 
-          if (SYMBOL_DOMAIN (psym) == namespace
+          if (symbol_matches_domain (SYMBOL_LANGUAGE (psym),
+                                     SYMBOL_DOMAIN (psym), namespace)
               && wild_match (name, name_len, SYMBOL_LINKAGE_NAME (psym)))
             return psym;
         }
@@ -4017,7 +4018,8 @@ ada_lookup_partial_symbol (struct partial_symtab *pst, const char *name,
         {
           struct partial_symbol *psym = start[i];
 
-          if (SYMBOL_DOMAIN (psym) == namespace)
+          if (symbol_matches_domain (SYMBOL_LANGUAGE (psym),
+                                     SYMBOL_DOMAIN (psym), namespace))
             {
               int cmp = strncmp (name, SYMBOL_LINKAGE_NAME (psym), name_len);
 
@@ -4060,7 +4062,8 @@ ada_lookup_partial_symbol (struct partial_symtab *pst, const char *name,
         {
           struct partial_symbol *psym = start[i];
 
-          if (SYMBOL_DOMAIN (psym) == namespace)
+          if (symbol_matches_domain (SYMBOL_LANGUAGE (psym),
+                                     SYMBOL_DOMAIN (psym), namespace))
             {
               int cmp;
 
@@ -4989,7 +4992,8 @@ ada_add_block_symbols (struct obstack *obstackp,
       struct symbol *sym;
       ALL_BLOCK_SYMBOLS (block, iter, sym)
       {
-        if (SYMBOL_DOMAIN (sym) == domain
+        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
+                                   SYMBOL_DOMAIN (sym), domain)
             && wild_match (name, name_len, SYMBOL_LINKAGE_NAME (sym)))
           {
             switch (SYMBOL_CLASS (sym))
@@ -5019,7 +5023,8 @@ ada_add_block_symbols (struct obstack *obstackp,
     {
       ALL_BLOCK_SYMBOLS (block, iter, sym)
       {
-        if (SYMBOL_DOMAIN (sym) == domain)
+        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
+                                   SYMBOL_DOMAIN (sym), domain))
           {
             int cmp = strncmp (name, SYMBOL_LINKAGE_NAME (sym), name_len);
             if (cmp == 0
@@ -5064,7 +5069,8 @@ ada_add_block_symbols (struct obstack *obstackp,
 
       ALL_BLOCK_SYMBOLS (block, iter, sym)
       {
-        if (SYMBOL_DOMAIN (sym) == domain)
+        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
+                                   SYMBOL_DOMAIN (sym), domain))
           {
             int cmp;
 

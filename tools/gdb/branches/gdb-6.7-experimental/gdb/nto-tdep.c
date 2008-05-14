@@ -20,9 +20,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdb_assert.h"
 #include "gdb_stat.h"
 #include "gdb_string.h"
+#include "nto-tdep.h"
 #include "top.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-cmds.h"
@@ -37,9 +37,7 @@
 
 #include "gdbcmd.h"
 #include "safe-ctype.h"
-#include "elf-bfd.h"
-
-#include "nto-tdep.h"
+#include "gdb_assert.h"
 
 #ifdef __QNX__
 #include <sys/debug.h>
@@ -584,30 +582,11 @@ nto_info_tidinfo_command (char *args, int from_tty)
   iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
 
-/* Utility functions. Handle paths for qnx.  */
-int
-qnx_is_absolute_path (const char *path)
-{
- /* char *rwpath = rewrite_source_path (path);
-
-  if (rwpath == NULL)
-    rwpath = (char *) path;
-  else
-    make_cleanup (xfree, rwpath);
-*/
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-//  return IS_ABSOLUTE_PATH_DOS (rwpath);
-#else
-//  return IS_ABSOLUTE_PATH_POSIX (rwpath);
-#endif
-  return IS_ABSOLUTE_PATH (path);
-}
-
 int
 qnx_filename_cmp (const char *s1, const char *s2)
 {
   int c1, c2;
-
+nto_trace (0) ("%s(%s,%s)\n", __func__, s1, s2);
   gdb_assert (s1 != NULL);
   gdb_assert (s2 != NULL);
 
@@ -642,113 +621,6 @@ qnx_filename_cmp (const char *s1, const char *s2)
       s2++;
     }
 }
-
-
-/* Normalize_path does lightweight path clean-up. It removes './' 
- elements and resolves '../' elements by removing previous entry if any.
- If FILENAME starts with '../', then '../' does not get removed.  
-
- Examples:
- ../main.c   -->    ../main.c
- ./main.c    -->    main.c
- /main.c     -->    /main.c
- /foo/./bar/././main.c  -->   /foo/bar/main.c
- C:/Temp/Debug/../main.c  -->  C:/Temp/main.c
-  */
-
-const char *
-normalize_path (const char *filename)
-{
-  char *p;
-  char *pi;
-  int len;
-# if defined (PATH_MAX)
-  char buf[PATH_MAX];
-#  define USE_REALPATH
-# elif defined (MAXPATHLEN)
-  char buf[MAXPATHLEN];
-# endif
-  char *retval;
-
-  gdb_assert (filename != NULL);
-  printf_unfiltered ("normalize_path: %s\n", filename);
-
-  strncpy (buf, filename, sizeof (buf));
-  buf[sizeof (buf) - 1] = '\0';
-
-  p = buf;
-
-  while ((pi = strstr (p, "./")))
-    {
-      if (pi == p) /* FILENAME starts with './'. Remove it.  */
-	  p += 2;
-      else
-	break;
-    }
-
-  if (p != buf)
-      strncpy (buf, filename + (p - buf), sizeof (buf));
- 
-  len = strlen (buf);
-
-  /* Remove all double '//' except the leading occurence.  */
-  p = buf + 1;
-  while (p < buf + len)
-    {
-      if (p[0] == '/' && p[1] == '/')
-	{
-	  memmove (p, p+1, buf + len - p);
-	  len--;
-	}
-      p++;
-    }
-
-  /* Replace all other occurences of '/./' with '/'.  */
-  p = buf;
-  while ((pi = strstr (p, "/./")))
-    {
-      p = pi + 3;
-      memmove (pi, p, buf + len  - p);
-      len -= 3;
-      memset (buf + len, 0, 3);
-    }
-
-  /* Remove trailing '/.'.  */
-  while (buf[len-2] == '/' && buf[len-1] == '.')
-    {
-      len -= 2;
-      buf[len] = '\0';
-      buf[len+1] = '\0';
-    }
-
-  /* Deal with '../' sequences.  */
-  p = buf + 1; /* In an odd case that path begins with '/../' we don't want
-		to know.  */
-  while ((pi = strstr (p, "/..")))
-    {
-      p = pi;
-      /* Reverse find '/'.  */
-      pi = p - 1;
-      while (pi > buf && *pi != '/')
-	pi--;
-
-      if (pi != p)
-	{
-	  p += 3;
-	  memmove (pi, p, buf + len - p);
-	  len -= (p - pi);
-	  memset (buf + len, 0, p - pi);
-	}
-      else
-	p++;
-    }
-
-  retval = xstrdup (buf);
-  make_cleanup (xfree, retval);
-  return retval;
-}
-
-
 
 /* NOTE: this function basically overrides libiberty's implementation.  */
 int
