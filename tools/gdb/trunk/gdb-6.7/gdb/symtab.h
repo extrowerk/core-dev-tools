@@ -1002,6 +1002,10 @@ extern int asm_demangle;
 
 /* symtab.c lookup functions */
 
+int symbol_matches_domain (enum language symbol_language, 
+			   domain_enum symbol_domain,
+			   domain_enum domain);
+
 /* lookup a symbol table by source file name */
 
 extern struct symtab *lookup_symtab (const char *);

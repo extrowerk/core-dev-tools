@@ -245,6 +245,12 @@ bcache_data (const void *addr, int length, struct bcache *bcache)
   }
 }
 
+/* Find a copy of the LENGTH bytes at ADDR in BCACHE.  If BCACHE has
+   never seen those bytes before, add a copy of them to BCACHE.  In
+   either case, return a pointer to BCACHE's copy of that string.  If
+   optional ADDED is not NULL, return 1 in case of new entry or 0 if
+   returning an old entry.  */
+
 void *
 deprecated_bcache (const void *addr, int length, struct bcache *bcache)
 {

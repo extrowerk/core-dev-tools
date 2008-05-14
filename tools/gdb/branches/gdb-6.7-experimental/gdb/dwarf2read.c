@@ -82,15 +82,6 @@ _COMP_UNIT_HEADER;
 #define _ACTUAL_COMP_UNIT_HEADER_SIZE 11
 #endif
 
-#ifdef __QNXTARGET__
-extern const char *normalize_path (const char *path);
-#else /* not __QNXTARGET__ */
-static const char *normalize_path (const char *path)
-{
-  return path;
-}
-#endif /* not __QNXTARGET__ */
-
 /* .debug_pubnames header
    Because of alignment constraints, this structure has padding and cannot
    be mapped directly onto the beginning of the .debug_info section.  */
@@ -865,15 +856,10 @@ static struct line_header *(dwarf_decode_line_header
                             (unsigned int offset,
                              bfd *abfd, struct dwarf2_cu *cu));
 
-static char **dwarf_build_subfile_names (struct line_header *lh,
-					char *cu_file_name, char *comp_dir);
-
-static void dwarf_free_subfile_names (void *names);
-
-//static void dwarf2_start_subfile (char *, char *, char *);
-static void dwarf_decode_lines (struct line_header *, char *, char *, bfd *,
+static void dwarf_decode_lines (struct line_header *, char *, bfd *,
 				struct dwarf2_cu *, struct partial_symtab *);
 
+static void dwarf2_start_subfile (char *, char *, char *);
 
 static struct symbol *new_symbol (struct die_info *, struct type *,
 				  struct dwarf2_cu *);
@@ -1240,7 +1226,6 @@ dwarf2_build_psymtabs (struct objfile *objfile, int mainline)
   else
     dwarf2_per_objfile->loc_buffer = NULL;
 
-
   if (mainline
       || (objfile->global_psymbols.size == 0
 	  && objfile->static_psymbols.size == 0))
@@ -1414,7 +1399,7 @@ dwarf2_build_include_psymtabs (struct dwarf2_cu *cu,
   if (lh == NULL)
     return;  /* No linetable, so no includes.  */
 
-  dwarf_decode_lines (lh, NULL, NULL, abfd, cu, pst);
+  dwarf_decode_lines (lh, NULL, abfd, cu, pst);
 
   free_line_header (lh);
 }
@@ -1993,8 +1978,9 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 			   0, (CORE_ADDR) 0, cu->language, objfile);
       break;
     case DW_TAG_namespace:
-      add_psymbol_to_global_list (actual_name, strlen (actual_name),
+      add_psymbol_to_list (actual_name, strlen (actual_name),
 			   VAR_DOMAIN, LOC_TYPEDEF,
+			   &objfile->global_psymbols,
 			   0, (CORE_ADDR) 0, cu->language, objfile);
       break;
     case DW_TAG_class_type:
@@ -2015,35 +2001,17 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 
       /* NOTE: carlton/2003-10-07: See comment in new_symbol about
 	 static vs. global.  */
-      if (cu->language == language_cplus
-	|| cu->language == language_java)
-	add_psymbol_to_global_list (actual_name, strlen (actual_name),
-				  STRUCT_DOMAIN, LOC_TYPEDEF,
-				  0, (CORE_ADDR) 0, cu->language, objfile);
-      else
-	add_psymbol_to_list (actual_name, strlen (actual_name),
-			     STRUCT_DOMAIN, LOC_TYPEDEF,
-			     &objfile->static_psymbols,
-			     0, (CORE_ADDR) 0, cu->language, objfile);
+      add_psymbol_to_list (actual_name, strlen (actual_name),
+			   STRUCT_DOMAIN, LOC_TYPEDEF,
+			   (cu->language == language_cplus
+			    || cu->language == language_java)
+			   ? &objfile->global_psymbols
+			   : &objfile->static_psymbols,
+			   0, (CORE_ADDR) 0, cu->language, objfile);
 
-      if (cu->language == language_ada)
-	{
-	  /* FIXME: Check if Ada really
-	     needs to implicitly set typedef.  */
-	  add_psymbol_to_list (actual_name, strlen (actual_name),
-			       VAR_DOMAIN, LOC_TYPEDEF,
-			       &objfile->global_psymbols,
-			       0, (CORE_ADDR) 0, cu->language, objfile);
-	}
       break;
     case DW_TAG_enumerator:
-      if (cu->language == language_cplus
-	  || cu->language == language_java)
-	add_psymbol_to_global_list (actual_name, strlen (actual_name),
-				    VAR_DOMAIN, LOC_CONST,
-				    0, (CORE_ADDR) 0, cu->language, objfile);
-      else
-	add_psymbol_to_list (actual_name, strlen (actual_name),
+      add_psymbol_to_list (actual_name, strlen (actual_name),
 			   VAR_DOMAIN, LOC_CONST,
 			   (cu->language == language_cplus
 			    || cu->language == language_java)
@@ -2825,17 +2793,12 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   attr = dwarf2_attr (die, DW_AT_name, cu);
   if (attr)
     {
-      char *p;
       name = DW_STRING (attr);
-      /* TODO: QNX: deal with dir. delimiters.  */
     }
 
   attr = dwarf2_attr (die, DW_AT_comp_dir, cu);
   if (attr)
-    {
-      comp_dir = DW_STRING (attr);
-      /* TODO: QNX: deal with dir. delimiters.  */
-    }
+    comp_dir = DW_STRING (attr);
   else if (name != NULL && IS_ABSOLUTE_PATH (name))
     {
       comp_dir = ldirname (name);
@@ -2890,7 +2853,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
         {
           cu->line_header = line_header;
           make_cleanup (free_cu_line_header, cu);
-          dwarf_decode_lines (line_header, name, comp_dir, abfd, cu, NULL);
+          dwarf_decode_lines (line_header, comp_dir, abfd, cu, NULL);
         }
     }
 
@@ -5147,6 +5110,7 @@ dwarf2_read_section (struct objfile *objfile, asection *sectp)
 
   if (size == 0)
     return NULL;
+
   buf = obstack_alloc (&objfile->objfile_obstack, size);
   retbuf = symfile_relocate_debug_section (abfd, sectp, buf);
   if (retbuf != NULL)
@@ -5578,17 +5542,11 @@ read_partial_die (struct partial_die_info *part_die,
 
 	  /* Prefer DW_AT_MIPS_linkage_name over DW_AT_name.  */
 	  if (part_die->name == NULL)
-	    {
-	      part_die->name = DW_STRING (&attr);
-	      /* TODO: QNX: deal with dir. delimiters.  */
-	    }
+	    part_die->name = DW_STRING (&attr);
 	  break;
 	case DW_AT_comp_dir:
-	  if (part_die->dirname == NULL) 
-	    {
-	      part_die->dirname = DW_STRING (&attr);
-	      /* TODO: QNX: deal with dir. delimiters.  */
-	    }
+	  if (part_die->dirname == NULL)
+	    part_die->dirname = DW_STRING (&attr);
 	  break;
 	case DW_AT_MIPS_linkage_name:
 	  part_die->name = DW_STRING (&attr);
@@ -6681,172 +6639,6 @@ check_cu_functions (CORE_ADDR address, struct dwarf2_cu *cu)
   return fn->lowpc;
 }
 
-static char **
-dwarf_build_subfile_names (struct line_header *lh,
-			   char *cu_file_name, char *comp_dir) {
-  /* This is the result.  */
-  char **names = (char **) xzalloc ((lh->num_file_names + 1) * sizeof (char*));
-  /* 1 for each entry whose basename matches but isn't a perfect match.  */
-  char *base_matches = (char *) xzalloc (lh->num_file_names * sizeof (char));
-  const char *cu_file_basename = lbasename (cu_file_name);
-  char *cu_file_fullname;
-  /* Set to 1 if an exact match is found.  */
-  int exact_match_found = 0;
-  /* For non-exact matches, the number of basename matches.  */
-  int nr_basename_matches = 0;
-  int i;
-
-  cu_file_fullname = cu_file_name;
-  if (! IS_ABSOLUTE_PATH (cu_file_fullname))
-    cu_file_fullname = concat (comp_dir, SLASH_STRING, 
- cu_file_fullname, NULL);
-
-  /* Steps:
-     1) If we find an exact match with DW_AT_comp_dir/DW_AT_name use that.
-     2) If not, look for files with the same base name.  If we find exactly
-     one match use that.  [For completeness sake, if we find zero
-     matches then punt.]
-     3) If not, canonicalize all path names and pick the first match.
-     [For completeness sake, if that fails then punt.]
-
-     We loop over the table twice.  The first pass handles exact matches and
-     files that can't match (different basename).  It also watches for files
-     that may match.  The second pass handles files we couldn't in the first
-     loop.  */
-
-  for (i = 0; i < lh->num_file_names; ++i)
-    {
-      struct file_entry *fe = &lh->file_names[i];
-      char *fname = fe->name;
-      const char *bname = lbasename (fname);
-      /* The directory entry from .debug_line or NULL if not specified.  */
-      char *dir;
-      /* fname with dir prepended if necessary */
-      char *fname_with_dir;
-      /* fname_with_dir with comp_dir prepended if necessary */
-      char *fullname;
-
-      /* A directory index of 0 means use comp_dir.
-	 Otherwise it is an origin-1 based index into INCLUDE_DIRS.
-	 start_subfile will prepend comp_dir so we don't need to do that
-	 here (and if both file and comp_dir are relative paths we
-	 mustn't!).  */
-      dir = NULL;
-      if (fe->dir_index)
-	dir = lh->include_dirs[fe->dir_index - 1];
-
-      if (! IS_ABSOLUTE_PATH (fname) && dir != NULL)
-	fname_with_dir = concat (dir, SLASH_STRING, fname, NULL);
-      else
-	fname_with_dir = xstrdup (fname);
-
-      if (! IS_ABSOLUTE_PATH (fname_with_dir))
-	fullname = concat (comp_dir, SLASH_STRING, fname_with_dir, NULL);
-      else
-	fullname = xstrdup (fname_with_dir);
-
-      if (FILENAME_CMP (fullname, cu_file_fullname) == 0)
-	{
-	  /* NOTE: If there are multiple exact matches, so be it, not much else
-	     we can do.  */
-	  exact_match_found = 1;
-	  /* We don't record the full path name on purpose, and instead
-	     let start_subfile prepend comp_dir for consistency.  */
-	  names[i] = xstrdup (cu_file_name);
-	  xfree (fname_with_dir);
-	}
-      else if (strcmp (bname, cu_file_basename) == 0)
-	{
-	  /* This is the tricky case.  Record fname_with_dir for later use in
-	     the second pass.  This is also the value we want to return if we
-	     do find an exact match in another file.  */
-	  ++nr_basename_matches;
-	  base_matches[i] = 1;
-	  names[i] = fname_with_dir;
-	}
-      else /* can't match so use as is */
-	{
-	  names[i] = fname_with_dir;
-	}
-
-      xfree (fullname);
-    }
-
-  /* Second pass.
-     If we didn't find an exact match, but there are partial matches,
-     try to find an acceptable match.  */
-
-  if (! exact_match_found && nr_basename_matches > 0)
-    {
-      /* Set to 1 when a canonical match is found.  */
-      int canonical_match_found = 0;
-      const char *cu_file_canonicalname = NULL;
-
-      if (nr_basename_matches > 1)
-	cu_file_canonicalname = normalize_path (cu_file_fullname);
-
-      for (i = 0; i < lh->num_file_names; ++i)
-	{
-	  if (base_matches[i])
-	    {
-	      if (nr_basename_matches == 1)
-		{
-		  xfree (names[i]);
-		  names[i] = xstrdup (cu_file_name);
-		}
-	      else /* unlucky day */
-		{
-		  /* Here is where we have to get into heuristics.
-		     Pick the first whose canonical path name matches.  */
-		  if (! canonical_match_found)
-		    {
-		      char *fullname;
-		      const char *cname;
-
-		      fullname = names[i];
-		      if (! IS_ABSOLUTE_PATH (fullname))
-			fullname = concat (comp_dir, SLASH_STRING, fullname, NULL);
-		      cname = normalize_path (fullname);
-		      if (fullname != names[i])
-			xfree (fullname);
-		      if (FILENAME_CMP (cu_file_canonicalname, cname) == 0)
-			{
-			  canonical_match_found = 1;
-			  xfree (names[i]);
-			  names[i] = xstrdup (cu_file_name);
-			}
-		    }
-		}
-	    }
-	}
-    }
-
-  /* There's no real need to do this, the array is allocated with xzalloc.
-     This is here for documentation.  */  names[lh->num_file_names] = NULL;
-
-  xfree (base_matches);
-
-  if (cu_file_fullname != cu_file_name)
-    xfree (cu_file_fullname);
-
-  return names;
-}
-
-/* Utility to free the result of dwarf_build_subfile_names.
-   VNAMES is a void* because this function is an argument to make_cleanup.
-   ??? We could just arrange to use free_argv.  Too much of a hack?  */
-
-static void
-dwarf_free_subfile_names (void *vnames) {
-  int i;
-  char **names = (char **) vnames;
-
-  for (i = 0; names[i] != NULL; ++i)
-    xfree (names[i]);
-  xfree (names);
-}
-
-
 /* Decode the Line Number Program (LNP) for the given line_header
    structure and CU.  The actual information extracted and the type
    of structures created from the LNP depends on the value of PST.
@@ -6866,7 +6658,7 @@ dwarf_free_subfile_names (void *vnames) {
       symbtab having a different fullname -).  */
 
 static void
-dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, bfd *abfd,
+dwarf_decode_lines (struct line_header *lh, char *comp_dir, bfd *abfd,
 		    struct dwarf2_cu *cu, struct partial_symtab *pst)
 {
   gdb_byte *line_ptr, *extended_end;
@@ -6877,14 +6669,6 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
   struct objfile *objfile = cu->objfile;
   const int decode_for_pst_p = (pst != NULL);
   struct subfile *last_subfile = NULL, *first_subfile = current_subfile;
-  char **subfile_names = NULL;
-
-  /* Build table of names to pass to start_subfile.  */
-  if (!decode_for_pst_p)
-    {
-      subfile_names = dwarf_build_subfile_names (lh, cu_file_name, comp_dir);
-      make_cleanup (dwarf_free_subfile_names, subfile_names);
-    }
 
   baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
 
@@ -6906,9 +6690,16 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
       if (!decode_for_pst_p && lh->num_file_names >= file)
 	{
           /* Start a subfile for the current file of the state machine.  */
-	  /* File numbers in the statement program are 1-based.  */
-	  char *fname = subfile_names[file - 1];
-	  start_subfile (fname, comp_dir);
+	  /* lh->include_dirs and lh->file_names are 0-based, but the
+	     directory and file name numbers in the statement program
+	     are 1-based.  */
+          struct file_entry *fe = &lh->file_names[file - 1];
+          char *dir = NULL;
+
+          if (fe->dir_index)
+            dir = lh->include_dirs[fe->dir_index - 1];
+
+	  dwarf2_start_subfile (fe->name, dir, comp_dir);
 	}
 
       /* Decode the table.  */
@@ -6988,16 +6779,7 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
                       read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
                     line_ptr += bytes_read;
                     add_file_name (lh, cur_file, dir_index, mod_time, length);
-		    if (!decode_for_pst_p)
-		      {
-			/* Re-create subfile_names. We created it initially
-			   assuming lh->file_names is final, but now that
-			   it changed, we need to rebuild.  */
-			subfile_names = dwarf_build_subfile_names (
-						  lh, cu_file_name, comp_dir);
-			make_cleanup (dwarf_free_subfile_names, subfile_names);
-		      }
-		  }
+                  }
 		  break;
 		default:
 		  complaint (&symfile_complaints,
@@ -7045,17 +6827,27 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
 	      break;
 	    case DW_LNS_set_file:
               {
+                /* The arrays lh->include_dirs and lh->file_names are
+                   0-based, but the directory and file name numbers in
+                   the statement program are 1-based.  */
+                struct file_entry *fe;
+                char *dir = NULL;
+
                 file = read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
                 line_ptr += bytes_read;
                 if (lh->num_file_names < file)
                   dwarf2_debug_line_missing_file_complaint ();
-		else if (!decode_for_pst_p)
-		  {
-		    /* File numbers in the statement program are 1-based.  */
-		    char *fname = subfile_names[file - 1];
-		    last_subfile = current_subfile;
-		    start_subfile (fname, comp_dir);
-		  }
+                else
+                  {
+                    fe = &lh->file_names[file - 1];
+                    if (fe->dir_index)
+                      dir = lh->include_dirs[fe->dir_index - 1];
+                    if (!decode_for_pst_p)
+                      {
+                        last_subfile = current_subfile;
+                        dwarf2_start_subfile (fe->name, dir, comp_dir);
+                      }
+                  }
               }
 	      break;
 	    case DW_LNS_set_column:
@@ -7138,12 +6930,15 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
 	 line numbers).  */
 
       int i;
+      struct file_entry *fe;
 
       for (i = 0; i < lh->num_file_names; i++)
 	{
-	  struct file_entry *fe = &lh->file_names[i];
-
-	  start_subfile (subfile_names[i], comp_dir);
+	  char *dir = NULL;
+	  fe = &lh->file_names[i];
+	  if (fe->dir_index)
+	    dir = lh->include_dirs[fe->dir_index - 1];
+	  dwarf2_start_subfile (fe->name, dir, comp_dir);
 
 	  /* Skip the main file; we don't need it, and it must be
 	     allocated last, so that it will show up before the
@@ -7159,6 +6954,55 @@ dwarf_decode_lines (struct line_header *lh, char *cu_file_name, char *comp_dir, 
     }
 }
 
+/* Start a subfile for DWARF.  FILENAME is the name of the file and
+   DIRNAME the name of the source directory which contains FILENAME
+   or NULL if not known.  COMP_DIR is the compilation directory for the
+   linetable's compilation unit or NULL if not known.
+   This routine tries to keep line numbers from identical absolute and
+   relative file names in a common subfile.
+
+   Using the `list' example from the GDB testsuite, which resides in
+   /srcdir and compiling it with Irix6.2 cc in /compdir using a filename
+   of /srcdir/list0.c yields the following debugging information for list0.c:
+
+   DW_AT_name:          /srcdir/list0.c
+   DW_AT_comp_dir:              /compdir
+   files.files[0].name: list0.h
+   files.files[0].dir:  /srcdir
+   files.files[1].name: list0.c
+   files.files[1].dir:  /srcdir
+
+   The line number information for list0.c has to end up in a single
+   subfile, so that `break /srcdir/list0.c:1' works as expected.
+   start_subfile will ensure that this happens provided that we pass the
+   concatenation of files.files[1].dir and files.files[1].name as the
+   subfile's name.  */
+
+static void
+dwarf2_start_subfile (char *filename, char *dirname, char *comp_dir)
+{
+  char *fullname;
+
+  /* While reading the DIEs, we call start_symtab(DW_AT_name, DW_AT_comp_dir).
+     `start_symtab' will always pass the contents of DW_AT_comp_dir as
+     second argument to start_subfile.  To be consistent, we do the
+     same here.  In order not to lose the line information directory,
+     we concatenate it to the filename when it makes sense.
+     Note that the Dwarf3 standard says (speaking of filenames in line
+     information): ``The directory index is ignored for file names
+     that represent full path names''.  Thus ignoring dirname in the
+     `else' branch below isn't an issue.  */
+
+  if (!IS_ABSOLUTE_PATH (filename) && dirname != NULL)
+    fullname = concat (dirname, SLASH_STRING, filename, (char *)NULL);
+  else
+    fullname = filename;
+
+  start_subfile (fullname, comp_dir);
+
+  if (fullname != filename)
+    xfree (fullname);
+}
 
 static void
 var_decode_location (struct attribute *attr, struct symbol *sym,
@@ -7418,7 +7262,10 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
 			   ? &global_symbols : cu->list_in_scope);
 	  
 	    add_symbol_to_list (sym, list_to_add);
-	    
+
+	    /* The semantics of C++ state that "struct foo { ... }" also
+	       defines a typedef for "foo".  A Java class declaration also
+	       defines a typedef for the class.  */
 	    if (cu->language == language_cplus
 		|| cu->language == language_java
 		|| cu->language == language_ada)
@@ -7428,19 +7275,6 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
 		   the type.  */
 		if (TYPE_NAME (SYMBOL_TYPE (sym)) == 0)
 		  TYPE_NAME (SYMBOL_TYPE (sym)) = SYMBOL_SEARCH_NAME (sym);
-	      }
- 
-	    /* FIXME: Check if ada really needs to synthesize the typedef
-	       or it can, as cplus and java, reuse STRUCT_DOMAIN in
-	       lookup_ functions.  */
-	    if (cu->language == language_ada)
-	      {
-		struct symbol *typedef_sym = (struct symbol *)
-		  obstack_alloc (&objfile->objfile_obstack,
-				 sizeof (struct symbol));
-		*typedef_sym = *sym;
-		SYMBOL_DOMAIN (typedef_sym) = VAR_DOMAIN;
-		add_symbol_to_list (typedef_sym, list_to_add);
 	      }
 	  }
 	  break;

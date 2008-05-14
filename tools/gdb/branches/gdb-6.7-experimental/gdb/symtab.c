@@ -1553,15 +1553,17 @@ lookup_symbol_global (const char *name,
 				     domain, symtab);
 }
 
-static int
+int
 symbol_matches_domain (enum language symbol_language, 
-		      domain_enum symbol_domain,
-		      domain_enum domain)
+		       domain_enum symbol_domain,
+		       domain_enum domain)
 {
-  /* For c++ "struct foo { ... }" also defines a typedef for "foo".  
-     A Java class declaration also defines a typedef for the class.  */
+  /* For C++ "struct foo { ... }" also defines a typedef for "foo".  
+     A Java class declaration also defines a typedef for the class.
+     Similarly, any Ada type declaration implicitly defines a typedef.  */
   if (symbol_language == language_cplus
-      || symbol_language  == language_java)
+      || symbol_language == language_java
+      || symbol_language == language_ada)
     {
       if ((domain == VAR_DOMAIN || domain == STRUCT_DOMAIN)
 	  && symbol_domain == STRUCT_DOMAIN)
