@@ -1922,22 +1922,28 @@ nto_read_bytes (CORE_ADDR memaddr, char *myaddr, int len)
    nonzero.  Returns length of data written or read; 0 for error.  */
 static int
 nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int should_write,
-		 struct mem_attrib *attrib, struct target_ops *ignore)
+		 struct mem_attrib *attrib, struct target_ops *ops)
 {
   int res;
   if (remote_debug)
     {
       printf_unfiltered
 	("nto_xfer_memory(memaddr %s, myaddr %p, len %d, should_write %d, target %p)\n",
-	 paddr (memaddr), myaddr, len, should_write, ignore);
+	 paddr (memaddr), myaddr, len, should_write, ops);
     }
   if (ptid_equal (inferior_ptid, null_ptid))
     {
       /* Pretend to read if no inferior but fail on write.  */
       if (should_write)
 	return 0;
-      memset (myaddr, 0, len);
-      return len;
+      if (ops->beneath != NULL)
+	return xfer_memory (memaddr, myaddr, len, should_write, attrib,
+			    ops->beneath);
+      else
+	{
+	  memset (myaddr, 0, len);
+	  return len;
+	}
     }
   if (should_write)
     res = nto_write_bytes (memaddr, myaddr, len);
