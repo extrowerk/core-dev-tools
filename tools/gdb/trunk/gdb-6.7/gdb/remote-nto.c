@@ -983,6 +983,11 @@ nto_close (int quitting)
     }
 }
 
+/* This is a 'hack' to reset internal state maintained by gdb. It is 
+   unclear why it doesn't do it automatically, but the same hack can be
+   seen in linux, so I guess it is o.k. to use it here too.  */
+extern void nullify_last_target_wait_ptid (void);
+
 static int
 nto_start_remote (char *dummy)
 {
@@ -1064,6 +1069,12 @@ nto_start_remote (char *dummy)
 
   nto_send_init (DStMsg_cpuinfo, 0, SET_CHANNEL_DEBUG);
   nto_send (sizeof (tran.pkt.cpuinfo), 1);
+  /* If we had an inferior running previously, gdb will have some internal
+     states which we need to clear to start fresh.  */
+  registers_changed ();
+  init_thread_list ();
+  nullify_last_target_wait_ptid ();
+  inferior_ptid = null_ptid;
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       nto_cpuinfo_valid = 0;
