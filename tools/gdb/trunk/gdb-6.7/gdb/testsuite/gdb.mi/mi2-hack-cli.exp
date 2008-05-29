@@ -19,7 +19,7 @@
 
 # Some basic checks for the CLI.
 
-
+load_lib mi-support.exp
 set MIFLAGS "-i=mi2"
 
 gdb_exit

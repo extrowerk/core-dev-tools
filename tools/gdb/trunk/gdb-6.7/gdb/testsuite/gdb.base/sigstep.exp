@@ -1,4 +1,4 @@
-# Copyright 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+# Copyright 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,10 +69,12 @@ gdb_expect_list "backtrace for nexti" ".*$gdb_prompt $" {
     "\[\r\n\]+.2 \[^\r\n\]* main .*"
 }
 
+send_user "Done break handler, doing continue...\n"
+
 proc advance { i } {
     global gdb_prompt
     set prefix "$i from handler"
-
+send_user "advance\n"
     # Get us back into the handler
     gdb_test "continue" ".* handler .*" "$prefix; continue to handler"
 
@@ -110,7 +112,7 @@ proc advancei { i } {
     global gdb_prompt
     set prefix "$i from handleri"
     set program_exited 0
-
+send_user "advancei\n"
     # Get us back into the handler
     gdb_test "continue" ".* handler .*" "$prefix; continue to handler"
 
@@ -344,7 +346,6 @@ proc breakpoint_to_handler { i } {
     # Make the signal pending
     sleep 1
     
-    setup_kfail "i*86-*-*" gdb/1738
     gdb_test "$i" " handler .*" "$prefix; performing $i"
     gdb_test "clear $infinite_loop" "" "$prefix; clear infinite loop"
     gdb_test "clear handler" "" "$prefix; clear handler"
@@ -389,7 +390,6 @@ proc breakpoint_to_handler_entry { i } {
     # Make the signal pending
     sleep 1
     
-    setup_kfail "i*86-*-*" gdb/1738
     gdb_test "$i" " handler .*" "$prefix; performing $i"
     gdb_test "clear $infinite_loop" "" "$prefix; clear infinite loop"
     gdb_test "clear *handler" "" "$prefix; clear handler"

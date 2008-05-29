@@ -341,10 +341,10 @@ proc gdb_breakpoint { function args } {
     send_gdb "$break_command $function\n"
     # The first two regexps are what we get with -g, the third is without -g.
     gdb_expect 30 {
-	-re "Breakpoint \[0-9\]* at .*: file .*, line $decimal.\r\n$gdb_prompt $" {}
-	-re "Breakpoint \[0-9\]*: file .*, line $decimal.\r\n$gdb_prompt $" {}
-	-re "Breakpoint \[0-9\]* at .*$gdb_prompt $" {}
-	-re "Breakpoint \[0-9\]* \\(.*\\) pending.*$gdb_prompt $" {
+	-re "(Temporary b|B)reakpoint \[0-9\]* at .*: file .*, line $decimal.\r\n$gdb_prompt $" {}
+	-re "(Temporary b|B)reakpoint \[0-9\]*: file .*, line $decimal.\r\n$gdb_prompt $" {}
+	-re "(Temporary b|B)reakpoint \[0-9\]* at .*$gdb_prompt $" {}
+	-re "(Temporary b|B)reakpoint \[0-9\]* \\(.*\\) pending.*$gdb_prompt $" {
 		if {$pending_response == "n"} {
 			fail "setting breakpoint at $function"
 			return 0
@@ -382,13 +382,16 @@ proc runto { function args } {
     # the "at foo.c:36" output we get with -g.
     # the "in func" output we get without -g.
     gdb_expect 30 {
-	-re "Break.* at .*:$decimal.*$gdb_prompt $" {
+	-re "(Temporary b|B)reak.* at .*:$decimal.*$gdb_prompt $" {
 	    return 1
 	}
-	-re "Breakpoint \[0-9\]*, \[0-9xa-f\]* in .*$gdb_prompt $" { 
+	-re "(Temporary b|B)reakpoint \[0-9\]*, \[0-9xa-f\]* in .*$gdb_prompt $" { 
 	    return 1
 	}
 	-re "$gdb_prompt $" { 
+	    if $verbose>0 then {
+	      send_user "\n---\n$expect_out(buffer)\n---\n"
+	    }
 	    fail "running to $function in runto"
 	    return 0
 	}
@@ -724,6 +727,9 @@ proc gdb_test_multiple { command message user_code } {
 	}
 	 -re "\r\n$gdb_prompt $" {
 	    if ![string match "" $message] then {
+	        if $verbose>0 then {
+		  send_user "\n---\n$expect_out(buffer)\n---\n"
+		}
 		fail "$message"
 	    }
 	    set result 1
@@ -2357,14 +2363,14 @@ proc gdb_continue_to_end {mssg} {
     if {![gdb_breakpoint "exit"]} {
       return 0
     }
-    gdb_test "continue" "Continuing..*Breakpoint .*exit.*" \
+    gdb_test "continue" "Continuing..*(Breakpoint|Temporary breakpoint).*exit.*" \
       "continue until exit at $mssg"
   } else {
     # Continue until we exit.  Should not stop again.
     # Don't bother to check the output of the program, that may be
     # extremely tough for some remote systems.
     gdb_test "continue"\
-      "Continuing.\[\r\n0-9\]+(... EXIT code 0\[\r\n\]+|Program exited normally\\.).*"\
+      "Continuing.\[\r\n0-9\]+(... EXIT code 0\[\r\n\]+|.*Program exited normally\\.).*"\
       "continue until exit at $mssg"
   }
 }

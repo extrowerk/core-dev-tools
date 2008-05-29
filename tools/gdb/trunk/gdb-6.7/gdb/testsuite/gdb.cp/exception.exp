@@ -79,7 +79,7 @@ gdb_test "catch throw" "Catchpoint \[0-9\]+ \\(throw\\)" \
 
 
 # The catchpoints should be listed in the list of breakpoints.
-set addr "<PENDING>"
+set addr "(<PENDING>|$hex)"
 set re_head	"Num${ws}Type${ws}Disp${ws}Enb${ws}Address${ws}What"
 set re_2_bp	"1${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception catch"
 set re_3_bp	"2${ws}breakpoint${ws}keep${ws}y${ws}$addr${ws}exception throw"

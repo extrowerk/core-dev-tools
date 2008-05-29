@@ -22,7 +22,7 @@
 
 if { [skip_cplus_tests] } { continue }
 
-
+load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit
