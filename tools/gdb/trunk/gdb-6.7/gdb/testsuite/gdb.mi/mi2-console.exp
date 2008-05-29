@@ -32,7 +32,7 @@
 # through GDB.  Check that we're either talking to a simulator or a
 # remote target.
 
-
+load_lib mi-support.exp
 set MIFLAGS "-i=mi2"
 
 gdb_exit

@@ -27,7 +27,7 @@ if {![isnative]} {
   return
 }
 
-
+load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

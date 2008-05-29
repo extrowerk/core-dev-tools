@@ -44,7 +44,7 @@ if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {deb
 
 gdb_start
 
-
+send_user "gdb started...\n"
 if ![file exists $binfile] then {
     perror "$binfile does not exist."
     return 0
@@ -52,15 +52,22 @@ if ![file exists $binfile] then {
     gdb_reinitialize_dir $srcdir/$subdir
     gdb_load $binfile
     # Hope this is unix :-)
+    send_user "doing shell stty intr '^C'\n"
     gdb_test "shell stty intr '^C'" "" \
 	"set interrupt character in interrupt.exp"
+    send_user "... ok.\n"
     if [runto_main] then {
+      send_user "stopped in main\n"
 	send_gdb "continue\n"
-	gdb_expect {
-	    -re "\r\ntalk to me baby\r\n$" {
+	send_user "now continued...\n"
+	gdb_expect 5 {
+	    -re ".*talk to me baby.*" {
+	      send_user "ok, this is what I got: \n---\n$expect_out(buffer)\n---\n"
 		pass "child process is alive"
 	    }
-	    timeout { fail "run (timeout)" }
+	    timeout {
+	      fail "run (timeout)"
+	    }
 	    eof { fail "run (eof)" }
 	}
 	# This should appear twice, once for the echo and once for the
@@ -77,7 +84,7 @@ if ![file exists $binfile] then {
 	}
 	# Wait until the program is in the read system call again.
 	sleep 2
-
+send_user "I'm here now.\n"
 	# Cntrl-c may fail for simulator targets running on a BSD host.
 	# This is the result of a combination of the read syscall
 	# being restarted and gdb capturing the cntrl-c signal.
@@ -95,7 +102,7 @@ if ![file exists $binfile] then {
 	    timeout { fail "send_gdb control C (timeout)" }
 	    eof { fail "send_gdb control C (eof)" }
 	}
-
+send_user "so far so good...\n"
 	send_gdb "p func1 ()\n"
 	gdb_expect {
 	    -re " = 4.*$gdb_prompt $" { pass "call function when asleep" }
