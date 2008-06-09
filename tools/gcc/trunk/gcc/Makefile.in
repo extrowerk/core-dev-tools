@@ -2,8 +2,8 @@
 # Run 'configure' to generate Makefile from Makefile.in
 
 # Copyright (C) 1987, 1988, 1990, 1991, 1992, 1993, 1994, 1995, 1996,
-# 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
-# Free Software Foundation, Inc.
+# 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
+# 2008 Free Software Foundation, Inc.
 
 #This file is part of GCC.
 
@@ -275,6 +275,10 @@ POD2MAN = pod2man --center="GNU" --release="gcc-$(version)"
 # do not correctly set the timestamp due to buggy versions of `utime'
 # in the kernel.  So, we use `echo' instead.
 STAMP = echo timestamp >
+# If necessary (e.g., when using the MSYS shell on Microsoft Windows)
+# translate the shell's notion of absolute pathnames to the native
+# spelling.
+build_file_translate = @build_file_translate@
 
 # Make sure the $(MAKE) variable is defined.
 @SET_MAKE@
@@ -3372,7 +3376,7 @@ TEXI_CPP_FILES = cpp.texi fdl.texi cppenv.texi cppopts.texi		\
 TEXI_GCC_FILES = gcc.texi gcc-common.texi gcc-vers.texi frontends.texi	\
 	 standards.texi invoke.texi extend.texi md.texi objc.texi	\
 	 gcov.texi trouble.texi bugreport.texi service.texi		\
-	 contribute.texi compat.texi funding.texi gnu.texi gpl.texi	\
+	 contribute.texi compat.texi funding.texi gnu.texi gpl_v3.texi	\
 	 fdl.texi contrib.texi cppenv.texi cppopts.texi			\
 	 implement-c.texi
 
@@ -3381,7 +3385,7 @@ TEXI_GCCINT_FILES = gccint.texi gcc-common.texi gcc-vers.texi		\
 	 portability.texi interface.texi passes.texi c-tree.texi	\
 	 rtl.texi md.texi tm.texi hostconfig.texi fragments.texi	\
 	 configfiles.texi collect2.texi headerdirs.texi funding.texi	\
-	 gnu.texi gpl.texi fdl.texi contrib.texi languages.texi		\
+	 gnu.texi gpl_v3.texi fdl.texi contrib.texi languages.texi	\
 	 sourcebuild.texi gty.texi libgcc.texi cfg.texi tree-ssa.texi	\
 	 loop.texi
 
@@ -3397,7 +3401,7 @@ gcc-vers.texi: $(BASEVER) $(DEVPHASE)
 	 then echo "@set DEVELOPMENT"; \
 	 else echo "@clear DEVELOPMENT"; \
 	 fi) > $@T
-	echo "@set srcdir $(srcdir)" >> $@T
+	$(build_file_translate) echo @set srcdir $(abs_srcdir) >> $@T
 	mv -f $@T $@
 
 
@@ -3522,6 +3526,9 @@ gfdl.pod: fdl.texi
 	$(STAMP) $@
 	-$(TEXI2POD) $< > $@
 fsf-funding.pod: funding.texi
+	$(STAMP) $@
+	-$(TEXI2POD) $< > $@
+gpl.pod: gpl_v3.texi
 	$(STAMP) $@
 	-$(TEXI2POD) $< > $@
 

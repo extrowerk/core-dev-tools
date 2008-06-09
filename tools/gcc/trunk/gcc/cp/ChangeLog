@@ -1,3 +1,57 @@
+2008-05-19  Release Manager
+
+	* GCC 4.2.4 released.
+
+2008-05-11  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* parser.c (cp_parser_omp_clause_reduction): Add missing "expected"
+	in error message.
+	(cp_parser_omp_clause_schedule): Remove superfluous "expected"
+	in error message.
+
+	PR c++/35578
+	* parser.c (cp_parser_decl_specifier_seq): Add location to error
+	message.
+
+2008-04-17  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* parser.c (cp_parser_asm_specification_opt): Print CPP_CLOSE_PAREN
+	as `)', not as `('.
+
+2008-02-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/34950
+	* pt.c (resolve_overloaded_unification): Set processing_template_decl
+	while we look for possible bindings.
+
+2008-02-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/34774
+	* pt.c (value_dependent_expression_p): Look into DECL_INITIAL
+	of enumerators, too.
+
+2008-02-12  Jason Merrill  <jason@redhat.com>
+
+	PR c++/34094
+	* decl2.c (cp_write_global_declarations): Don't write out static 
+	data members with DECL_IN_AGGR_P set.
+
+	PR c++/33916
+	* Revert:
+	2006-10-17  Mark Mitchell  <mark@codesourcery.com>
+	PR c++/29039
+	* typeck2.c (build_functional_cast): Don't zero-initialize
+	non-PODs; instead, call their constructors.
+
+2008-02-05  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-01-16  Richard Guenther  <rguenther@suse.de>
+
+	PR c++/33819
+	* typeck.c (is_bitfield_expr_with_lowered_type): Recurse
+	for conversions to type variants.
+
 2008-02-01  Release Manager
 
 	* GCC 4.2.3 released.

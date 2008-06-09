@@ -74,7 +74,7 @@
 
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 30 "/scratch/joseph/4.2.3/gcc-4.2.3/gcc-4.2.3/gcc/gengtype-yacc.y"
+#line 30 "/scratch/joseph/4.2.4/gcc-4.2.4/gcc-4.2.4/gcc/gengtype-yacc.y"
 typedef union YYSTYPE {
   type_p t;
   pair_p p;
