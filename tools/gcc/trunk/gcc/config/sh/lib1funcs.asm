@@ -3356,6 +3356,7 @@ LOCAL(div_r8_2):
 	/* This is link-compatible with a GLOBAL(sdivsi3) call,
 	   but we effectively clobber only r1.  */
 GLOBAL(sdivsi3_i4i):
+	error
 	mov.l r4,@-r15
 	cmp/pz r5
 	mov.w LOCAL(c128_w), r1

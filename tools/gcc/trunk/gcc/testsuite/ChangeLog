@@ -1,3 +1,158 @@
+2008-05-19  Release Manager
+
+	* GCC 4.2.4 released.
+
+2008-05-12  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.dg/strict-overflow-6.c: New.
+	* gcc.dg/no-strict-overflow-7.c: New.
+	* gcc.dg/Wstrict-overflow-22.c: New.
+	* gcc.c-torture/compile/20080419-1.c: New.
+	* gcc.dg/tree-ssa/loop-17.c: Use -O2.
+
+2008-05-11  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	PR c++/35578
+	* g++.dg/parse/friend8.C: New test.
+
+2008-05-01  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36093
+	* gcc.c-torture/execute/pr36093.c: New testcase.
+
+2008-04-17  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	PR c/35744
+	* gcc.dg/attr-error-1.c: New test.
+
+	PR c/35436
+	* gcc.dg/format/gcc_gfc-2.c: New test.
+
+2008-04-08  Richard Guenther  <rguenther@suse.de>
+
+	* gcc.c-torture/execute/20080408-1.c: New testcase.
+
+2008-04-01  Laurent GUERBY  <laurent@guerby.net>
+
+	* ada/acats/norun.lst: Add c9a011b.
+	
+2008-03-25  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Backport from mainline:
+	2008-01-26  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	PR middle-end/34688
+	* gcc.c-torture/compile/pr34688: New test.
+
+2008-03-25  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-02-12  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35163
+	* gcc.c-torture/execute/pr35163.c: New testcase.
+
+2008-03-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/frame_overflow.adb: Improve portability.
+
+2008-03-06  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* gcc.c-torture/execute/20080222-1.c: New test.
+
+2008-03-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/vect/vect-99.c: Include stdlib.h and tree-vect.h.
+	(main): Call check_vect and foo.  Check array values after
+	the call to foo.
+
+2008-02-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/sse-18.c: Pass if CPU has no SSE2 support.
+
+2008-02-20  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35265
+	* gcc.dg/builtins-66.c: New testcase.
+
+2008-02-15  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* g++.dg/tree-ssa/ivopts-1.C: Remove x86 XFAILs.
+
+2008-02-12  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* obj-c++.dg/bitfield-1.mm: Expect failures.
+	* obj-c++.dg/bitfield-4.mm: Likewise.
+	* obj-c++.dg/cxx-ivars-2.mm: Likewise.
+	* obj-c++.dg/encode-8.mm: Likewise.
+	* obj-c++.dg/isa-field-1.mm: Likewise.
+	* obj-c++.dg/layout-1.mm: Likewise.
+	* obj-c++.dg/lookup-2.mm: Likewise.
+	* obj-c++.dg/try-catch-2.mm: Likewise.
+	* obj-c++.dg/try-catch-9.mm: Likewise.
+
+2008-02-12  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	PR objc++/34193
+	* obj-c++.dg/gnu-runtime-2.mm: Fix signature of function main().
+
+2008-02-12  Jason Merrill  <jason@redhat.com>
+
+	* g++.dg/init/ctor8.C: Remove.
+
+2008-02-06  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* g++.dg/tree-ssa/ivopts-1.C: Remove xfails for hppa*-*-*.
+
+2008-02-05  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-01-17  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/34825
+	* gcc.dg/pr34825.c: New testcase.
+
+2008-02-05  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-01-16  Richard Guenther  <rguenther@suse.de>
+
+	PR c/34768
+	* gcc.c-torture/execute/pr34768-1.c: New testcase.
+	* gcc.c-torture/execute/pr34768-2.c: Likewise.
+
+2008-02-04  Daniel Franke  <franke.daniel@gmail.com>
+
+	* gfortran.dg/where_operator_assign_4.f90: Fix typo in error message
+	to match.
+
+2008-02-04  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/33631
+	* gcc.c-torture/execute/pr33631.c: New testcase.
+
+2008-02-04  Daniel Franke  <franke.daniel@gmail.com>
+
+	PR fortran/34661
+	* gfortran.dg/where_operator_assign_4.f90: New test.
+
+2008-02-04  Andreas Krebbel  <krebbel1@de.ibm.com>
+
+	* gcc.dg/tf_to_di-1.c: New testcase.
+
+2008-02-02  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/34981
+	* gcc.target/mips/lazy-binding-1.c: New test.
+	* gcc.target/mips/mips.exp (setup_mips_tests): Set mips_abi,
+	mips_forced_gp, mips_forced_no_abicalls, mips_forced_no_shared
+	and mips_forced_no_er.
+	(dg-mips-options): Avoid using -mips16 -mhard-float for ABIs
+	other than o32 and o64.  Avoid using -mabicalls with an implicit
+	-mabi=eabi.  Avoid using small data with -mabicalls.  Skip
+	-mabi=*, -G*, -mabicalls, -mshared and -mexplicit-relocs tests
+	if the multilib forces the an incompatible option.
+
 2008-02-01  Release Manager
 
 	* GCC 4.2.3 released.
@@ -1478,8 +1633,8 @@
 
 2007-02-13  Richard Henderson  <rth@redhat.com>
 
-        * gcc.c-torture/execute/ieee/pr29302-1.c: Moved from...
-        * gcc.c-torture/execute/pr29302-1.c: ... here.
+	* gcc.c-torture/execute/ieee/pr29302-1.c: Moved from...
+	* gcc.c-torture/execute/pr29302-1.c: ... here.
 
 2007-02-12  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -1529,7 +1684,7 @@
 	PR debug/30189
 	* gcc.dg/pr30189.c: New test.
 
-2007-02-05      Dwarakanath Rajagopal <dwarak.rajagopal@amd.com>
+2007-02-05  Dwarakanath Rajagopal <dwarak.rajagopal@amd.com>
 
 	* gcc.dg/i386-cpuid.h: Test whether SSE4A is supported
 	for running tests.
@@ -1920,8 +2075,8 @@
 
 2006-12-21  Steven G. Kargl  <kargl@gcc.gnu.org>
 
-        PR fortran/30207
-        * gfortran.fortran-torture/execute/where21.f90: New test.
+	PR fortran/30207
+	* gfortran.fortran-torture/execute/where21.f90: New test.
 
 2006-12-21  Paul Thomas  <pault@gcc.gnu.org>
 	    Tobias Burnus  <burnus@gcc.gnu.org>
@@ -2083,10 +2238,10 @@
 
 2006-12-07  Lee Millward  <lee.millward@codesourcery.com>
 
-        PR c++/29980
-        * g++.dg/ext/attrib27.C: New test.
-        * g++.dg/parse/struct-as-enum1.C: Adjust error markers.
-        * g++.dg/parse/typedef5.C: Likewise.
+	PR c++/29980
+	* g++.dg/ext/attrib27.C: New test.
+	* g++.dg/parse/struct-as-enum1.C: Adjust error markers.
+	* g++.dg/parse/typedef5.C: Likewise.
 
 2006-12-07  Mark Mitchell  <mark@codesourcery.com>
 
@@ -2139,7 +2294,7 @@
 	* g++.dg/template/error23.C: New test.
 
 2006-12-04  Richard Henderson  <rth@redhat.com>
-            Andrew Pinski  <pinskia@gmail.com>
+	    Andrew Pinski  <pinskia@gmail.com>
 
 	PR C++/14329
 	* g++.dg/warn/unit-1.C: New test.
@@ -2208,7 +2363,7 @@
 	* gfortran.dg/interface_3.f90: Modify errors.
 
 2006-11-27  Michael Matz  <matz@suse.de>
-            Andreas Krebbel  <krebbel1@de.ibm.com>
+	    Andreas Krebbel  <krebbel1@de.ibm.com>
 
 	PR target/29319
 	* gcc.dg/20061127-1.c: New testcase.
@@ -2514,7 +2669,7 @@
 	* gcc.c-torture/execute/20061031-1.c: New test.
 
 2006-10-31  Joseph Myers  <joseph@codesourcery.com>
-            Richard Sandiford  <richard@codesourcery.com>
+	    Richard Sandiford  <richard@codesourcery.com>
 
 	* lib/target-supports.exp (get_compiler_messages): Append options
 	as a single list element.
@@ -2523,9 +2678,9 @@
 
 2006-10-30  Tobias Burnus  <burnus@net-b.de>
 
-       PR fortran/29452
-       * gfortran.dg/write_check.f90: Check run-time keyword checking.
-       * gfortran.dg/write_check2.f90: Check compile-time keyword checking.
+	PR fortran/29452
+	* gfortran.dg/write_check.f90: Check run-time keyword checking.
+	* gfortran.dg/write_check2.f90: Check compile-time keyword checking.
 
 2006-10-30  Joseph Myers  <joseph@codesourcery.com>
 
@@ -2567,9 +2722,9 @@
 
 2006-10-20  Lee Millward  <lee.millward@codesourcery.com>
 
-        PR c++/28053
-        * g++.dg/parse/bitfield1.C: Adjust error markers.
-        * g++.dg/parse/bitfield2.C: New test.
+	PR c++/28053
+	* g++.dg/parse/bitfield1.C: Adjust error markers.
+	* g++.dg/parse/bitfield2.C: New test.
 
 2006-10-20  Adam Nemet  <anemet@caviumnetworks.com>
 

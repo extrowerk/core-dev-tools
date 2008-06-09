@@ -1,3 +1,336 @@
+2008-05-19  Release Manager
+
+	* GCC 4.2.4 released.
+
+2008-05-12  Ian Lance Taylor  <iant@google.com>
+
+	* flags.h (POINTER_TYPE_OVERFLOW_UNDEFINED): Define.
+	* fold-const.c (fold_overflow_warning): Remove assertion.
+	(pointer_may_wrap_p): New static function.
+	(fold_comparison): If appropriate, test
+	POINTER_TYPE_OVERFLOW_UNDEFINED, and issue an overflow warning.
+	(fold_binary): Test POINTER_TYPE_OVERFLOW_UNDEFINED when
+	reassociating a pointer type.
+	* doc/invoke.texi (Optimize Options): Document that
+	-fstrict-overflow applies to pointer wraparound.
+
+2008-05-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/35169
+	* optc-gen.awk: Work around HP-UX/IA awk bug.
+
+2008-05-01  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36093
+	Backport from mainline
+	2007-04-12  Richard Guenther  <rguenther@suse.de>
+
+        * gimplify.c (canonicalize_addr_expr): To be consistent with
+        gimplify_compound_lval only set operands two and three of
+        ARRAY_REFs if they are not gimple_min_invariant.  This makes
+        it never at this place.
+        * tree-ssa-ccp.c (maybe_fold_offset_to_array_ref): Likewise.
+
+2008-04-17  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	PR c/35744
+	* attribs.c (decl_attributes): Return early on errorneous node.
+
+	PR c/35436
+	* c-format.c (init_dynamic_gfc_info): Ignore invalid locus type.
+
+2008-04-08  Richard Guenther  <rguenther@suse.de>
+
+	* fold-const.c (fold_widened_comparison): Do not allow
+	sign-changes that change the result.
+
+2008-04-03  Bob Wilson  <bob.wilson@acm.org>
+
+	* config/xtensa/xtensa.c (xtensa_secondary_reload_class): Use a
+	secondary input reload for subword loads from the constant pool.
+
+2008-04-01  Joseph Myers  <joseph@codesourcery.com>
+
+	* doc/include/gpl_v3.texi: Copy from trunk.
+	* doc/gcc.texi, doc/gccint.texi: Include gpl_v3.texi instead of
+	gpl.texi.
+	* doc/sourcebuild.texi: Document gpl_v3.texi as well as gpl.texi.
+	* Makefile.in (TEXI_GCC_FILES, TEXI_GCCINT_FILES): Include
+	gpl_v3.texi instead of gpl.texi.
+	(gpl.pod): New.
+
+2008-03-31  Andreas Krebbel  <krebbel1@de.ibm.com>
+
+	* config/s390/s390.c (s390_O_constraint_str): Limit the range
+	for 'On' to -4G+1..-1.
+	* config/s390/constraints.md: Adjust comment accordingly.
+
+2008-03-25  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Backport from mainline:
+	2008-01-26  Maxim Kuvyrkov  <maxim@codesourcery.com>
+	
+	PR middle-end/34688
+	* final.c (output_addr_const): Handle TRUNCATE.
+
+2008-03-25  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-02-12  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35163
+	* fold-const.c (fold_widened_comparison): Use get_unwidened in
+	value-preserving mode.  Disallow final truncation.
+
+2008-03-13  David Edelsohn  <edelsohn@gnu.org>
+
+	Backport from mainline:
+	2008-01-26  David Edelsohn  <edelsohn@gnu.org>
+
+	PR target/34794
+	* config.gcc: Separate AIX 5.[23] from AIX 6.1.
+	* config/rs6000/rs6000-c.c (rs6000_cpu_cpp_builtins): Define
+	__LONGDOUBLE128 too.
+	* config/rs6000/aix61.h: New file.
+
+2008-03-11  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR target/35222
+	* configure.ac (CONFIG_SJLJ_EXCEPTIONS): Force SJLJ exceptions
+	on hpux10.
+	* configure: Rebuilt.
+
+2008-03-09  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline:
+	PR target/35225
+	* config/sh/sh.c (find_barrier): Don't go past 'from' argument.
+
+2008-03-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* doc/include/texinfo.tex: Update to version 2008-03-07.10.
+
+2008-03-06  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* expmed.c (extract_bit_field): Always use adjust_address for MEM.
+
+2008-03-05  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport:
+	2007-09-27  Matthias Klose  <doko@ubuntu.com>
+
+	* config/i386/t-linux64 (MULTILIB_OSDIRNAMES): Use ../lib32 as the
+	multilib osdirname if it exists.
+	* config/rs6000/t-linux64 (MULTILIB_OSDIRNAMES): Likewise.
+
+2008-02-25  Jan Beulich  <jbeulich@novell.com>
+
+	* config/i386/netware-libgcc.exp: Add _Unwind_GetIPInfo.
+
+2008-02-21  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/35273
+	* config.build (build_file_translate): Set to `CMD //c' only if
+	it works.
+	* Makefile.in (build_file_translate): Improve comment.
+
+2008-02-20  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35265
+	* builtins.c (validate_arg): If we want an INTEGER_TYPE,
+	be happy with INTEGRAL_TYPE_P.
+
+2008-02-19  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/35218
+	* Makefile.in (build_file_translate): New.
+	(gcc-vers.texi): Use it for translating $(abs_srcdir).
+	* config.build (build_file_translate): Set to `CMD //c' on MinGW.
+	* configure.ac (build_file_translate): Substitute it.
+	* configure: Regenerate.
+
+2008-02-16  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	PR c/28368
+	* doc/invoke.texi (-std): Clarify description of -std= and -ansi.
+
+2008-02-14  Alan Modra  <amodra@bigpond.net.au>
+
+	PR target/34393
+	* config/rs6000/rs6000.md (restore_stack_block): Force operands[1]
+	to a reg.
+
+2008-02-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR other/35148
+	* Makefile.in (gcc-vers.texi): Use abs_srcdir for the value of
+	srcdir.
+
+2008-02-13  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+        PR 29673
+	* doc/invoke.texi (Debugging Options): Remove -fdump-tree-inlined.
+	Add -fdump-ipa-inline.
+	
+2008-02-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2007-08-06  H.J. Lu  <hongjiu.lu@intel.com>
+		    Daniel Jacobowitz  <dan@codesourcery.com>
+
+	PR target/31868
+	* config.gcc (x86_64-*-freebsd*): Add i386/t-crtstuff to
+	tmake_file.
+	(x86_64-*-netbsd*): Likewise.
+	(x86_64-*-linux*): Likewise.
+	(x86_64-*-kfreebsd*-gnu): Likewise.
+	(x86_64-*-knetbsd*-gnu): Likewise.
+	(i[34567]86-*-solaris2.1[0-9]*): Likewise.
+
+	* config/i386/t-linux64 (CRTSTUFF_T_CFLAGS): Removed.
+
+	* config/i386/t-crtstuff (CRTSTUFF_T_CFLAGS): Update comments.
+	Add -fno-asynchronous-unwind-tables.
+
+	* config/t-freebsd (CRTSTUFF_T_CFLAGS_S): Add $(CRTSTUFF_T_CFLAGS).
+	* config/t-libc-ok (CRTSTUFF_T_CFLAGS_S): Likewise.
+	* config/t-lynx (CRTSTUFF_T_CFLAGS_S): Likewise.
+	* config/t-netbsd (CRTSTUFF_T_CFLAGS_S): Likewise.
+	* config/t-svr4 (CRTSTUFF_T_CFLAGS_S): Likewise.
+
+2008-02-09  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR middle_end/34150
+	* pa.c (legitimize_pic_address): Add REG_EQUAL note on sets with a
+	pic_label_operand source.  Similarly, add a REG_LABEL note and
+	update LABEL_NUSES during and after reload.
+
+2008-02-08  Steven Bosscher  <stevenb.gcc@gmail.com>
+
+	PR middle-end/34627
+	* combine.c (simplify_if_then_else): Make sure the comparison is
+	against const0_rtx when simplifying to (abs x) or (neg (abs X)).
+
+2008-07-07  Richard Henderson  <rth@redhat.com>
+
+	PR rtl-opt/33410
+	* config/alpha/alpha.c (alpha_emit_xfloating_compare): Use an
+	EXPR_LIST for the REG_EQUAL instead of a comparison with a 
+	funny mode.
+
+2008-02-07  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	PR other/32754
+	* doc/options.texi (Options): Replace references to opts.sh with
+	optc-gen.awk.
+	* opts-common.c: Likewise.
+	* optc-gen.awk: Likewise.
+	* opth-gen.awk: Replace reference to opts.sh with
+	opth-gen.awk.
+	
+2008-02-07  Ralf Corsepius  <ralf.corsepius@rtems.org>
+
+	* config/m68k/t-rtems (MULTILIB_OPTIONS, MULTILIB_EXCEPTIONS,
+	MULTILIB_MATCHES): Add -m528x, -m5307, -m5407, -mcfv4e multilibs.
+
+2008-02-06  Ralf Corsepius  <ralf.corsepius@rtems.org>
+
+	* config/arm/rtems-elf.h (TARGET_OS_CPP_BUILTINS): Add 
+	builtin_define ("__USE_INIT_FINI__").
+	* config/h8300/t-rtems (MULTILIB_OPTIONS, MULTILIB_DIRNAMES): Add
+	-msx multilibs.
+	* gthr-rtems.h: Remove __GTHREAD_MUTEX_INIT.
+
+2008-02-05  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-01-17  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/34825
+	* tree-ssa-math-opts.c (is_division_by): Do not recognize
+	x / x as division to handle.
+
+2008-02-05  Joseph Myers  <joseph@codesourcery.com>
+
+	* doc/include/texinfo.tex: Update to version 2008-02-04.16.
+
+2008-02-04  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/33631
+	* expr.c (count_type_elements): Give for unions instead of
+	guessing.
+
+2008-02-04  Andreas Krebbel  <krebbel1@de.ibm.com>
+
+	* config/s390/fixdfdi.h (__fixunstfdi, __fixtfdi): Rearrange
+	the overflow check to make it easier to read.
+	(__fixtfdi): Change the type of the ll member in union
+	long_double to UDItype_x.
+
+2008-02-02  Richard Henderson  <rth@redhat.com>
+
+	PR c/34993
+	* tree.c (build_type_attribute_qual_variant): Skip TYPE_DOMAIN
+	for unbounded arrays.
+
+2008-02-02  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/34981
+	* config/mips/mips-protos.h (mips_expand_call): Return an rtx.
+	(build_mips16_call_stub): Likewise.
+	* config/mips/mips.h (FIRST_PSEUDO_REGISTER): Rename FAKE_CALL_REGNO
+	to GOT_VERSION_REGNUM.
+	(CALL_REALLY_USED_REGISTERS): Set the GOT_VERSION_REGNUM entry to 0.
+	(EPILOGUE_USES): Include GOT_VERSION_REGNUM if TARGET_ABICALLS.
+	* config/mips/mips.c (mips_emit_call_insn): New function.
+	(mips_call_tls_get_addr): Call mips_expand_call directly.
+	(mips_expand_call): Update the call to build_mips16_call_stub
+	and remove a redundant condition.  Assert that MIPS16 stubs do not
+	use lazy binding.  Use mips_emit_call_insn and return the call insn.
+	(override_options): Allow SImode for GOT_VERSION_REGNUM.
+	(build_mips16_call_stub): Use mips_emit_call_insn rather than
+	emit_call_insn.  Return the call insn or null.
+	(mips_avoid_hazard): Remove hazard_set handling.
+	(mips_extra_live_on_entry): Include GOT_VERSION_REGNUM if
+	TARGET_ABICALLS.
+	* config/mips/mips.md (UNSPEC_EH_RECEIVER): Rename to...
+	(UNSPEC_RESTORE_GP): ...this.
+	(UNSPEC_SET_GOT_VERSION, UNSPEC_UPDATE_GOT_VERSION): New constants.
+	(FAKE_CALL_REGNO): Rename to...
+	(GOT_VERSION_REGNUM): ...this.
+	(type): Add "ghost" value.  Add an associated insn reservation.
+	(hazard_set): Remove.
+	(exception_receiver): Rename to...
+	(restore_gp): ...this and update the unspec identifier accordingly.
+	(exception_receiver, nonlocal_got_receiver): New expanders.
+	(load_call<mode>): Use GOT_VERSION_REGNUM.  Don't set
+	FAKE_CALL_REGNO.  Remove hazard_set attribute.
+	(set_got_version, update_got_version): New patterns.
+
+2008-02-02  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/31388
+	PR target/34900
+	* config/mips/mips.md (load_const_gp_<mode>): New insns.
+	* config/mips/mips.c (gen_load_const_gp): New function.
+	(mips_split_symbol): Avoid using or creating the MIPS16 GP
+	pseudo register if no_new_pseudos.
+	(mips16_gp_pseudo_reg): Use gen_load_const_gp.
+
+2008-02-01  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport:
+	2007-08-02  Nathan Froyd  <froydnj@codesourcery.com>
+
+	PR middle-end/25445
+	* varasm.c (default_binds_local_p_1): Consult flag_whole_program
+	if we are compiling with -fPIC.
+
+2008-02-01  Joseph Myers  <joseph@codesourcery.com>
+
+	* BASE-VER: Bump.
+	* DEV-PHASE: Mark as prerelease.
+
 2008-02-01  Release Manager
 
 	* GCC 4.2.3 released.
@@ -45,6 +378,23 @@
 	functions from being marked as pure or const.
 	* ipa-utils (searchc): Fixed comment.
 	
+2008-01-24  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR middle-end/34931
+	Backport:
+	2007-01-25  Steve Ellcey  <sje@cup.hp.com>
+
+	PR other/30182
+	* config/pa/pa.c (pa_init_builtins): Set asm names for finite routines.
+	* config/ia64/ia64.c (ia64_init_builtins):  Ditto.
+
+	2007-01-26  Steve Ellcey  <sje@cup.hp.com>
+
+	PR other/30182
+	* config/pa/pa.h (TARGET_HPUX_11): New.
+	* config/pa/pa-hpux11.h (TARGET_HPUX_11): New.
+	* config/pa/pa.c (pa_init_builtins): Use TARGET_HPUX_11.
+
 2008-01-24  Richard Guenther  <rguenther@suse.de>
 
 	PR middle-end/34953
@@ -392,25 +742,25 @@
 
 2007-10-18  Chen liqin  <liqin@sunnorth.com.cn>
 
-        * config.gcc : update score-*-elf(extra_objs).
-        * config/score/mac.md : Remove.
-        * config/score/misc.md : Remove.
-        * config/score/score7.md : Remove.
-        * config/score/score-mdaux.h : Remove.
-        * config/score/score-mdaux.c : Remove.
-        * config/score/score-version.h : Remove.
-        * config/score/score-generic.md : New.
-        * config/score/score3.h : New.
-        * config/score/score3.c : New.
-        * config/score/score7.h : New.
-        * config/score/score7.c : New.
-        * config/score/mul-div.S : add flush_cache score3 support.
-        * config/score/elf.h : Fix some typos.
-        * config/score/score.md : merge score3 and score7 pattern.
-        * config/score/score.c : use to seperate which target it used.
-        * config/score/score.h : use to seperate the target macro.
-        * config/score/score.opt : remove -mmac option , add -mscore3,
-        -mscore3d and -march OPTION support.
+	* config.gcc : update score-*-elf(extra_objs).
+	* config/score/mac.md : Remove.
+	* config/score/misc.md : Remove.
+	* config/score/score7.md : Remove.
+	* config/score/score-mdaux.h : Remove.
+	* config/score/score-mdaux.c : Remove.
+	* config/score/score-version.h : Remove.
+	* config/score/score-generic.md : New.
+	* config/score/score3.h : New.
+	* config/score/score3.c : New.
+	* config/score/score7.h : New.
+	* config/score/score7.c : New.
+	* config/score/mul-div.S : add flush_cache score3 support.
+	* config/score/elf.h : Fix some typos.
+	* config/score/score.md : merge score3 and score7 pattern.
+	* config/score/score.c : use to seperate which target it used.
+	* config/score/score.h : use to seperate the target macro.
+	* config/score/score.opt : remove -mmac option , add -mscore3,
+	-mscore3d and -march OPTION support.
 
 2007-10-12  Zdenek Dvorak <ook@ucw.cz>
 
@@ -889,12 +1239,12 @@
 
 2007-08-17  Chen liqin  <liqin@sunnorth.com.cn>
 
-        * config/score/score.md : Update pattern tablejump.
-        * config/score/score.c : Update score_initialize_trampoline 
-        function.
-        * config/score/score.h (TRAMPOLINE_TEMPLATE): Added macro.
-        (TRAMPOLINE_INSNS, TRAMPOLINE_SIZE) Update macro.
-        * doc/contrib.texi: Add my entry.
+	* config/score/score.md : Update pattern tablejump.
+	* config/score/score.c : Update score_initialize_trampoline 
+	function.
+	* config/score/score.h (TRAMPOLINE_TEMPLATE): Added macro.
+	(TRAMPOLINE_INSNS, TRAMPOLINE_SIZE) Update macro.
+	* doc/contrib.texi: Add my entry.
 
 2007-08-02  Andreas Krebbel  <krebbel1@de.ibm.com>
 
@@ -946,15 +1296,15 @@
 	Backport from mainline:
 	2007-03-09  Daniel Berlin  <dberlin@dberlin.org>
 
-        * tree-ssa-structalias.c (shared_bitmap_info_t): New structure.
-        (shared_bitmap_table): New variable.
-        (shared_bitmap_hash): New function.
-        (shared_bitmap_eq): Ditto
-        (shared_bitmap_lookup): Ditto.
-        (shared_bitmap_add): Ditto.
-        (find_what_p_points_to): Rewrite to use shared bitmap hashtable.
-        (init_alias_vars): Init shared bitmap hashtable.
-        (delete_points_to_sets): Delete shared bitmap hashtable.
+	* tree-ssa-structalias.c (shared_bitmap_info_t): New structure.
+	(shared_bitmap_table): New variable.
+	(shared_bitmap_hash): New function.
+	(shared_bitmap_eq): Ditto
+	(shared_bitmap_lookup): Ditto.
+	(shared_bitmap_add): Ditto.
+	(find_what_p_points_to): Rewrite to use shared bitmap hashtable.
+	(init_alias_vars): Init shared bitmap hashtable.
+	(delete_points_to_sets): Delete shared bitmap hashtable.
 
 2007-07-23  Bernd Schmidt  <bernd.schmidt@analog.com>
 
@@ -1477,7 +1827,7 @@
  	* config/avr/avr.h (ASM_OUTPUT_ALIGN): Redefine.
 
 2007-04-24  Andrew Pinski  <andrew_pinski@playstation.sony.com>
-            Roger Sayle  <roger@eyesopen.com>
+	    Roger Sayle  <roger@eyesopen.com>
 
 	PR middle-end/30222
 	* expmed.c (make_tree): Use the correct type, i.e. the inner

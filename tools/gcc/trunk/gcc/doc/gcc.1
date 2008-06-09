@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GCC 1"
-.TH GCC 1 "2008-02-01" "gcc-4.2.3" "GNU"
+.TH GCC 1 "2008-05-19" "gcc-4.2.4" "GNU"
 .SH "NAME"
 gcc \- GNU project C and C++ compiler
 .SH "SYNOPSIS"
@@ -284,11 +284,10 @@ in the following sections.
 \&\fB\-d\fR\fIletters\fR  \fB\-dumpspecs  \-dumpmachine  \-dumpversion 
 \&\-fdump\-noaddr \-fdump\-unnumbered  \-fdump\-translation\-unit\fR[\fB\-\fR\fIn\fR] 
 \&\fB\-fdump\-class\-hierarchy\fR[\fB\-\fR\fIn\fR] 
-\&\fB\-fdump\-ipa\-all \-fdump\-ipa\-cgraph 
+\&\fB\-fdump\-ipa\-all \-fdump\-ipa\-cgraph \-fdump\-ipa\-inline 
 \&\-fdump\-tree\-all 
 \&\-fdump\-tree\-original\fR[\fB\-\fR\fIn\fR]  
 \&\fB\-fdump\-tree\-optimized\fR[\fB\-\fR\fIn\fR] 
-\&\fB\-fdump\-tree\-inlined\fR[\fB\-\fR\fIn\fR] 
 \&\fB\-fdump\-tree\-cfg \-fdump\-tree\-vcg \-fdump\-tree\-alias 
 \&\-fdump\-tree\-ch 
 \&\-fdump\-tree\-ssa\fR[\fB\-\fR\fIn\fR] \fB\-fdump\-tree\-pre\fR[\fB\-\fR\fIn\fR] 
@@ -1139,6 +1138,24 @@ functions when \fB\-ansi\fR is used.
 Determine the language standard.   This option
 is currently only supported when compiling C or \*(C+. 
 .Sp
+The compiler can accept several base standards, such as \fBc89\fR or
+\&\fBc++98\fR, and \s-1GNU\s0 dialects of those standards, such as
+\&\fBgnu89\fR or \fBgnu++98\fR.  By specifing a base standard, the
+compiler will accept all programs following that standard and those
+using \s-1GNU\s0 extensions that do not contradict it.  For example,
+\&\fB\-std=c89\fR turns off certain features of \s-1GCC\s0 that are
+incompatible with \s-1ISO\s0 C90, such as the \f(CW\*(C`asm\*(C'\fR and \f(CW\*(C`typeof\*(C'\fR
+keywords, but not other \s-1GNU\s0 extensions that do not have a meaning in
+\&\s-1ISO\s0 C90, such as omitting the middle term of a \f(CW\*(C`?:\*(C'\fR
+expression. On the other hand, by specifing a \s-1GNU\s0 dialect of a
+standard, all features the compiler support are enabled, even when
+those features change the meaning of the base standard and some
+strict-conforming programs may be rejected.  The particular standard
+is used by \fB\-pedantic\fR to identify which features are \s-1GNU\s0
+extensions given that version of the standard. For example
+\&\fB\-std=gnu89 \-pedantic\fR would warn about \*(C+ style \fB//\fR
+comments, while \fB\-std=gnu99 \-pedantic\fR would not.
+.Sp
 A value for this option must be provided; possible values are
 .RS 4
 .IP "\fBc89\fR" 4
@@ -1147,7 +1164,8 @@ A value for this option must be provided; possible values are
 .IP "\fBiso9899:1990\fR" 4
 .IX Item "iso9899:1990"
 .PD
-\&\s-1ISO\s0 C90 (same as \fB\-ansi\fR).
+Support all \s-1ISO\s0 C90 programs (certain \s-1GNU\s0 extensions that conflict
+with \s-1ISO\s0 C90 are disabled). Same as \fB\-ansi\fR for C code.
 .IP "\fBiso9899:199409\fR" 4
 .IX Item "iso9899:199409"
 \&\s-1ISO\s0 C90 as modified in amendment 1.
@@ -1166,34 +1184,26 @@ A value for this option must be provided; possible values are
 names \fBc9x\fR and \fBiso9899:199x\fR are deprecated.
 .IP "\fBgnu89\fR" 4
 .IX Item "gnu89"
-Default, \s-1ISO\s0 C90 plus \s-1GNU\s0 extensions (including some C99 features).
+\&\s-1GNU\s0 dialect of \s-1ISO\s0 C90 (including some C99 features). This
+is the default for C code.
 .IP "\fBgnu99\fR" 4
 .IX Item "gnu99"
 .PD 0
 .IP "\fBgnu9x\fR" 4
 .IX Item "gnu9x"
 .PD
-\&\s-1ISO\s0 C99 plus \s-1GNU\s0 extensions.  When \s-1ISO\s0 C99 is fully implemented in \s-1GCC\s0,
+\&\s-1GNU\s0 dialect of \s-1ISO\s0 C99.  When \s-1ISO\s0 C99 is fully implemented in \s-1GCC\s0,
 this will become the default.  The name \fBgnu9x\fR is deprecated.
 .IP "\fBc++98\fR" 4
 .IX Item "c++98"
-The 1998 \s-1ISO\s0 \*(C+ standard plus amendments.
+The 1998 \s-1ISO\s0 \*(C+ standard plus amendments. Same as \fB\-ansi\fR for
+\&\*(C+ code.
 .IP "\fBgnu++98\fR" 4
 .IX Item "gnu++98"
-The same as \fB\-std=c++98\fR plus \s-1GNU\s0 extensions.  This is the
-default for \*(C+ code.
+\&\s-1GNU\s0 dialect of \fB\-std=c++98\fR.  This is the default for
+\&\*(C+ code.
 .RE
 .RS 4
-.Sp
-Even when this option is not specified, you can still use some of the
-features of newer standards in so far as they do not conflict with
-previous C standards.  For example, you may use \f(CW\*(C`_\|_restrict_\|_\*(C'\fR even
-when \fB\-std=c99\fR is not specified.
-.Sp
-The \fB\-std\fR options specifying some version of \s-1ISO\s0 C have the same
-effects as \fB\-ansi\fR, except that features that were not in \s-1ISO\s0 C90
-but are in the specified version (for example, \fB//\fR comments and
-the \f(CW\*(C`inline\*(C'\fR keyword in \s-1ISO\s0 C99) are not disabled.
 .RE
 .IP "\fB\-fgnu89\-inline\fR" 4
 .IX Item "-fgnu89-inline"
@@ -3820,12 +3830,14 @@ specific suffix to the source file name.  The following dumps are possible:
 .RS 4
 .IP "\fBall\fR" 4
 .IX Item "all"
-Enables all inter-procedural analysis dumps; currently the only produced
-dump is the \fBcgraph\fR dump.
+Enables all inter-procedural analysis dumps.
 .IP "\fBcgraph\fR" 4
 .IX Item "cgraph"
 Dumps information about call-graph optimization, unused function removal,
 and inlining decisions.
+.IP "\fBinline\fR" 4
+.IX Item "inline"
+Dump after function inlining.
 .RE
 .RS 4
 .RE
@@ -3890,9 +3902,6 @@ Dump before any tree based optimization, to \fI\fIfile\fI.original\fR.
 .IP "\fBoptimized\fR" 4
 .IX Item "optimized"
 Dump after all tree based optimization, to \fI\fIfile\fI.optimized\fR.
-.IP "\fBinlined\fR" 4
-.IX Item "inlined"
-Dump after function inlining, to \fI\fIfile\fI.inlined\fR.
 .IP "\fBgimple\fR" 4
 .IX Item "gimple"
 Dump each function before and after the gimplification pass to a file.  The
@@ -5051,13 +5060,22 @@ using twos complement arithmetic.  When this option is in effect any
 attempt to determine whether an operation on signed numbers will
 overflow must be written carefully to not actually involve overflow.
 .Sp
+This option also allows the compiler to assume strict pointer
+semantics: given a pointer to an object, if adding an offset to that
+pointer does not produce a pointer to the same object, the addition is
+undefined.  This permits the compiler to conclude that \f(CW\*(C`p + u >
+p\*(C'\fR is always true for a pointer \f(CW\*(C`p\*(C'\fR and unsigned integer
+\&\f(CW\*(C`u\*(C'\fR.  This assumption is only valid because pointer wraparound is
+undefined, as the expression is false if \f(CW\*(C`p + u\*(C'\fR overflows using
+twos complement arithmetic.
+.Sp
 See also the \fB\-fwrapv\fR option.  Using \fB\-fwrapv\fR means
-that signed overflow is fully defined: it wraps.  When
+that integer signed overflow is fully defined: it wraps.  When
 \&\fB\-fwrapv\fR is used, there is no difference between
-\&\fB\-fstrict\-overflow\fR and \fB\-fno\-strict\-overflow\fR.  With
-\&\fB\-fwrapv\fR certain types of overflow are permitted.  For
-example, if the compiler gets an overflow when doing arithmetic on
-constants, the overflowed value can still be used with
+\&\fB\-fstrict\-overflow\fR and \fB\-fno\-strict\-overflow\fR for
+integers.  With \fB\-fwrapv\fR certain types of overflow are
+permitted.  For example, if the compiler gets an overflow when doing
+arithmetic on constants, the overflowed value can still be used with
 \&\fB\-fwrapv\fR, but not otherwise.
 .Sp
 The \fB\-fstrict\-overflow\fR option is enabled at levels
