@@ -6391,7 +6391,7 @@ print_exception_catchpoint (struct breakpoint *b)
   int bp_temp;
   char msg[160];
   const char * msgspec;
-  const char * const msgfmt = "\n%s %d (exception %s)\n";
+  const char msgfmt[] = "\n%s %d (exception %s)\n";
 
   annotate_catchpoint (b->number);
 
@@ -6466,7 +6466,7 @@ handle_gnu_v3_exceptions (int tempflag, char *cond_string,
   else
     trigger_func_name = "__cxa_throw";
 
-  break_command_1 (trigger_func_name, 0, from_tty, NULL, 
+  break_command_1 (trigger_func_name, tempflag, from_tty, NULL, 
 		   &gnu_v3_exception_catchpoint_ops,
 		   AUTO_BOOLEAN_TRUE);
   return 1;
