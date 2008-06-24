@@ -2899,7 +2899,7 @@ dump_bfd (bfd *abfd)
     {
       void *dhandle;
 
-      dhandle = read_debugging_info (abfd, syms, symcount);
+      dhandle = read_debugging_info (abfd, syms, symcount, TRUE);
       if (dhandle != NULL)
 	{
 	  if (!print_debugging_info (stdout, dhandle, abfd, syms,
@@ -2910,6 +2910,12 @@ dump_bfd (bfd *abfd)
 			 bfd_get_filename (abfd));
 	      exit_status = 1;
 	    }
+	}
+      /* PR 6483: If there was no STABS or IEEE debug
+	 info in the file, try DWARF instead.  */
+      else if (! dump_dwarf_section_info)
+	{
+	  dump_dwarf (abfd);
 	}
     }
 
