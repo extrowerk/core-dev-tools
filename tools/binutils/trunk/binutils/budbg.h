@@ -26,7 +26,7 @@
 
 /* Routine used to read generic debugging information.  */
 
-extern void *read_debugging_info (bfd *, asymbol **, long);
+extern void *read_debugging_info (bfd *, asymbol **, long, bfd_boolean);
 
 /* Routine used to print generic debugging information.  */
 
