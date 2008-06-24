@@ -285,7 +285,7 @@ update_thread_private_data (struct thread_info *new_thread,
   procfs_info pidinfo;
   struct _thread_name *tn;
   procfs_threadctl tctl;
-
+#if _NTO_VERSION > 630
   gdb_assert (new_thread != NULL);
 
   if (devctl (ctl_fd, DCMD_PROC_INFO, &pidinfo,
@@ -311,6 +311,7 @@ update_thread_private_data (struct thread_info *new_thread,
   pti->tid = tid;
   pti->state = state;
   pti->flags = flags;
+#endif /* _NTO_VERSION */
 }
 
 void
