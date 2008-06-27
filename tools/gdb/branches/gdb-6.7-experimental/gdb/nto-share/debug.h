@@ -239,6 +239,33 @@ typedef struct _debug_thread_info
   qnx_64 reserved2[8];
 } nto_procfs_status;
 
+/* From debug.h to interpret ldd events. 
+   _r_debug global variable of this type exists in libc. We read it to 
+   figure out what the event is about.  */
+#define	R_DEBUG_VERSION	2
+
+/* The following is to satisfy things we do not currently use.  */
+#define Link_map void
+typedef void (*_Uintptrt)(void); 
+
+typedef enum {
+  RT_CONSISTENT,	/* link_maps are consistent */
+  RT_ADD,		/* Adding to link_map */
+  RT_DELETE		/* Removeing a link_map */
+} r_state_e;
+
+typedef enum {
+  RD_FL_NONE =	0,
+  RD_FL_DBG =	(1<<1)	/* process may be being debugged */
+} rd_flags_e;
+
+typedef enum {
+  RD_NONE = 0,
+  RD_PREINIT,	/* Before .init() */
+  RD_POSTINIT,	/* After .init() */
+  RD_DLACTIVITY	/* dlopen() or dlclose() occured */
+} rd_event_e;
+
 #ifdef __QNX__
 #include <_packpop.h>
 

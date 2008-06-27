@@ -1527,6 +1527,10 @@ svr4_ilp32_fetch_link_map_offsets (void)
 
       lmo.r_version_offset = 0;
       lmo.r_version_size = 4;
+      lmo.r_state_offset = 0;
+      lmo.r_state_size = 0;
+      lmo.r_rdevent_offset = 0;
+      lmo.r_rdevent_offset = 0;
       lmo.r_map_offset = 4;
       lmo.r_ldsomap_offset = 20;
 
@@ -1591,6 +1595,12 @@ elf_lookup_lib_symbol (const struct objfile *objfile,
 
   return lookup_global_symbol_from_objfile
 		(objfile, name, linkage_name, domain, symtab);
+}
+
+CORE_ADDR
+svr4_fetch_r_debug (void)
+{
+  return locate_base ();
 }
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */

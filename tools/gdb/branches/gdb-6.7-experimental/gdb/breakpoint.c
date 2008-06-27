@@ -92,7 +92,8 @@ static int can_use_hardware_watchpoint (struct value *);
 
 static int break_command_1 (char *, int, int, struct breakpoint *, 
 			    struct breakpoint_ops *,
-			    enum auto_boolean);
+			    enum auto_boolean,
+			    enum bptype type);
 
 static void mention (struct breakpoint *);
 
@@ -344,21 +345,75 @@ static struct exception_event_record *current_exception_event;
 /* This function is called by the "catch load" command.  It allows the
    debugger to be notified by the dynamic linker when a specified
    library file (or any library file, if filename is NULL) is loaded.  */
-
+#ifndef __QNXTARGET__
 #ifndef SOLIB_CREATE_CATCH_LOAD_HOOK
 #define SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string) \
    error (_("catch of library loads not yet implemented on this platform"))
 #endif
+#else /* __QNXTARGET__ */
+#define SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string) \
+  nto_SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string, \
+				   from_tty);
+#endif /* __QNXTARGET__ */
 
 /* This function is called by the "catch unload" command.  It allows
    the debugger to be notified by the dynamic linker when a specified
    library file (or any library file, if filename is NULL) is
    unloaded.  */
 
+#ifndef __QNXTARGET__
 #ifndef SOLIB_CREATE_CATCH_UNLOAD_HOOK
 #define SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string) \
    error (_("catch of library unloads not yet implemented on this platform"))
 #endif
+#else /* __QNXTARGET__ */
+#define SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string) \
+  nto_SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string, \
+				     from_tty);
+#endif /* __QNXTARGET__ */
+
+#ifdef __QNXTARGET__
+static void
+nto_SOLIB_CREATE_CATCH_LOAD_HOOK (int pid, int tempflag, 
+				  const char *filename, 
+				  const char *cond_string,
+				  int from_tty)
+{
+  if (GDB_RC_OK 
+      == break_command_1 ("_dl_debug_state", tempflag, from_tty,
+			  NULL,
+			  NULL,
+			  AUTO_BOOLEAN_TRUE,
+			  bp_catch_load))
+    {
+      /* TODO: Add filename support. */
+    }
+}
+
+static void
+nto_SOLIB_CREATE_CATCH_UNLOAD_HOOK (int pid, int tempflag, 
+				   const char *filename, 
+				   const char *cond_string,
+				   int from_tty)
+{	
+  if (GDB_RC_OK
+      == break_command_1 ("_dl_debug_state", tempflag, from_tty,
+			  NULL,
+			  NULL,
+			  AUTO_BOOLEAN_TRUE,
+			  bp_catch_unload))
+    {
+      /* TODO: Add filename support. */
+    }
+}
+
+extern int nto_break_on_this_solib_event (enum bptype type);
+
+#define SOLIB_HAVE_LOAD_EVENT(pid) \
+	nto_break_on_this_solib_event (bp_catch_load)
+#define SOLIB_HAVE_UNLOAD_EVENT(pid) \
+	nto_break_on_this_solib_event (bp_catch_unload)
+#endif /* __QNXTARGET__ */
 
 /* Return whether a breakpoint is an active enabled breakpoint.  */
 static int
@@ -4436,8 +4491,8 @@ resolve_pending_breakpoint (struct breakpoint *b)
   set_language (b->language);
   input_radix = b->input_radix;
   rc = break_command_1 (b->addr_string, b->flag, b->from_tty, b, b->ops,
-			pending_break_support);
-  
+			pending_break_support, bp_none);
+
   if (rc == GDB_RC_OK)
     /* Pending breakpoint has been resolved.  */
     printf_filtered (_("Pending breakpoint \"%s\" resolved\n"), b->addr_string);
@@ -5083,6 +5138,7 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 	    bpno = b->number;
 	    b->number = pending_bp->number;
 	    pending_bp->number = bpno;
+	    b->type = pending_bp->type;
 	  }
 	b->ops = ops;
 	mention (b);
@@ -5220,7 +5276,8 @@ static int
 break_command_1 (char *arg, int flag, int from_tty, 
 		 struct breakpoint *pending_bp,
 		 struct breakpoint_ops *ops,
-		 enum auto_boolean pending_break_support)
+		 enum auto_boolean pending_break_support,
+		 enum bptype type)
 {
   struct gdb_exception e;
   int tempflag, hardwareflag;
@@ -5243,6 +5300,8 @@ break_command_1 (char *arg, int flag, int from_tty,
 
   hardwareflag = flag & BP_HARDWAREFLAG;
   tempflag = flag & BP_TEMPFLAG;
+  if (type == bp_none)
+    type = hardwareflag ? bp_hardware_breakpoint : bp_breakpoint;
 
   sals.sals = NULL;
   sals.nelts = 0;
@@ -5398,8 +5457,7 @@ break_command_1 (char *arg, int flag, int from_tty,
 	    }
 	}
       create_breakpoints (sals, addr_string, cond, cond_string,
-			  hardwareflag ? bp_hardware_breakpoint 
-			  : bp_breakpoint,
+			  type,
 			  tempflag ? disp_del : disp_donttouch,
 			  thread, ignore_count, from_tty,
 			  pending_bp, ops);
@@ -5414,8 +5472,7 @@ break_command_1 (char *arg, int flag, int from_tty,
 
       make_cleanup (xfree, copy_arg);
 
-      b = set_raw_breakpoint (sal, hardwareflag ? bp_hardware_breakpoint 
-		              : bp_breakpoint);
+      b = set_raw_breakpoint (sal, type);      
       set_breakpoint_count (breakpoint_count + 1);
       b->number = breakpoint_count;
       b->cond = *cond;
@@ -5625,28 +5682,29 @@ resolve_sal_pc (struct symtab_and_line *sal)
 void
 break_command (char *arg, int from_tty)
 {
-  break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
+  break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support,
+		   bp_none);
 }
 
 void
 tbreak_command (char *arg, int from_tty)
 {
   break_command_1 (arg, BP_TEMPFLAG, from_tty, NULL, NULL, 
-		   pending_break_support);
+		   pending_break_support, bp_none);
 }
 
 static void
 hbreak_command (char *arg, int from_tty)
 {
   break_command_1 (arg, BP_HARDWAREFLAG, from_tty, NULL, NULL, 
-		   pending_break_support);
+		   pending_break_support, bp_none);
 }
 
 static void
 thbreak_command (char *arg, int from_tty)
 {
   break_command_1 (arg, (BP_TEMPFLAG | BP_HARDWAREFLAG), from_tty, NULL, NULL,
-		   pending_break_support);
+		   pending_break_support, bp_none);
 }
 
 static void
@@ -5687,7 +5745,8 @@ stopin_command (char *arg, int from_tty)
   if (badInput)
     printf_filtered (_("Usage: stop in <function | address>\n"));
   else
-    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
+    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support,
+		     bp_none);
 }
 
 static void
@@ -5719,7 +5778,8 @@ stopat_command (char *arg, int from_tty)
   if (badInput)
     printf_filtered (_("Usage: stop at <line>\n"));
   else
-    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support);
+    break_command_1 (arg, 0, from_tty, NULL, NULL, pending_break_support,
+		     bp_none);
 }
 
 /* accessflag:  hw_write:  watch write, 
@@ -6468,7 +6528,7 @@ handle_gnu_v3_exceptions (int tempflag, char *cond_string,
 
   break_command_1 (trigger_func_name, tempflag, from_tty, NULL, 
 		   &gnu_v3_exception_catchpoint_ops,
-		   AUTO_BOOLEAN_TRUE);
+		   AUTO_BOOLEAN_TRUE, bp_none);
   return 1;
 }
 
