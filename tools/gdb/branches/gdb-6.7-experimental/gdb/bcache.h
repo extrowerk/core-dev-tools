@@ -149,8 +149,8 @@ extern void *deprecated_bcache (const void *addr, int length,
 extern const void *bcache (const void *addr, int length,
 			   struct bcache *bcache);
 
-extern void *bcache_added (const void *addr, int length,
-			   struct bcache *bcache, int *added);
+extern void *deprecated_bcache_added (const void *addr, int length,
+				      struct bcache *bcache, int *added);
 /* Free all the storage used by BCACHE.  */
 extern void bcache_xfree (struct bcache *bcache);
 
