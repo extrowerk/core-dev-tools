@@ -3127,8 +3127,8 @@ add_psymbol_to_bcache (char *name, int namelength, domain_enum domain,
   SYMBOL_SET_NAMES (&psymbol, buf, namelength, objfile);
 
   /* Stash the partial symbol away in the cache */
-  return bcache_added (&psymbol, sizeof (struct partial_symbol),
-		       objfile->psymbol_cache, added);
+  return deprecated_bcache_added (&psymbol, sizeof (struct partial_symbol),
+				  objfile->psymbol_cache, added);
 }
 
 /* Helper function, adds partial symbol to the given partial symbol

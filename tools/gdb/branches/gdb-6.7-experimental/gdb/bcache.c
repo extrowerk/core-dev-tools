@@ -196,7 +196,7 @@ expand_hash_table (struct bcache *bcache)
 static void *
 bcache_data (const void *addr, int length, struct bcache *bcache)
 {
-  return bcache_added (addr, length, bcache, NULL);
+  return deprecated_bcache_added (addr, length, bcache, NULL);
 }
 
 
@@ -219,7 +219,7 @@ bcache (const void *addr, int length, struct bcache *bcache)
    returning an old entry.  */
 
 void *
-bcache_added (const void *addr, int length, struct bcache *bcache, 
+deprecated_bcache_added (const void *addr, int length, struct bcache *bcache, 
 		   int *added)
 {
   unsigned long full_hash;
