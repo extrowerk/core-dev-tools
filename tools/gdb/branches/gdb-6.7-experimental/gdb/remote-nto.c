@@ -2621,6 +2621,12 @@ nto_can_run (void)
   return 0;
 }
 
+static int
+nto_can_use_hw_breakpoint (int type, int cnt, int othertype)
+{
+  return 1;
+}
+
 static void
 init_nto_ops ()
 {
@@ -2643,6 +2649,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_prepare_to_store = nto_prepare_to_store;
   nto_ops.deprecated_xfer_memory = nto_xfer_memory;
   nto_ops.to_files_info = nto_files_info;
+  nto_ops.to_can_use_hw_breakpoint = nto_can_use_hw_breakpoint;
   nto_ops.to_insert_breakpoint = nto_to_insert_breakpoint;
   nto_ops.to_remove_breakpoint = nto_to_remove_breakpoint;
   nto_ops.to_insert_hw_breakpoint = nto_insert_hw_breakpoint;

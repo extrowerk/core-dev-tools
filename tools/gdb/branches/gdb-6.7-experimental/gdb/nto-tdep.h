@@ -165,8 +165,6 @@ struct private_thread_info {
 
 void nto_init_solib_absolute_prefix (void);
 
-void nto_set_target(struct nto_target_ops *);
-
 char **nto_parse_redirection (char *start_argv[], const char **in,
 			      const char **out, const char **err);
 

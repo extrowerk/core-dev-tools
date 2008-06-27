@@ -42,6 +42,8 @@
 #ifdef __QNX__
 #include <sys/debug.h>
 #include <sys/elf_notes.h>
+#define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
+#include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
 #else
 #include "nto-share/debug.h"
@@ -78,23 +80,6 @@ nto_target (void)
 #else
   return p ? p : default_nto_target;
 #endif
-}
-
-void
-nto_set_target (struct nto_target_ops *targ)
-{
-  nto_trace (0) ("%s ()\n", __func__);
-  nto_regset_id = targ->regset_id;
-  nto_supply_gregset = targ->supply_gregset;
-  nto_supply_fpregset = targ->supply_fpregset;
-  nto_supply_altregset = targ->supply_altregset;
-  nto_supply_regset = targ->supply_regset;
-  nto_register_area = targ->register_area;
-  nto_regset_fill = targ->regset_fill;
-  if (targ->fetch_link_map_offsets)
-    nto_fetch_link_map_offsets = targ->fetch_link_map_offsets;
-  else
-    nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets; 
 }
 
 /* Take a string such as i386, rs6000, etc. and map it onto CPUTYPE_X86,
@@ -283,8 +268,16 @@ nto_generic_svr4_fetch_link_map_offsets (void)
     {
       lmp = &lmo;
 
+      /* r_debug structure.  */
+      lmo.r_version_offset = 0;
+      lmo.r_version_size = 4;
+      lmo.r_state_offset = 12;
+      lmo.r_state_size = 4;
+      lmo.r_rdevent_offset = 24;
+      lmo.r_rdevent_size = 4;
       lmo.r_map_offset = 4;
 
+      /* Link map.  */
       lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
 				   this is all we need.  */
       lmo.l_addr_offset = 0;
@@ -629,6 +622,35 @@ filename_cmp (const char *s1, const char *s2)
   return qnx_filename_cmp (s1, s2);
 }
 
+/* Used in breakpoint.c as SOLIB_HAVE_LOAD_EVENT.  */
+int
+nto_break_on_this_solib_event (enum bptype type)
+{
+  struct breakpoint *bpt;
+  CORE_ADDR address = svr4_fetch_r_debug ();
+  gdb_byte myaddr[128];
+  unsigned int len = sizeof (myaddr);
+  struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
+  unsigned int rt_state;
+  unsigned int rd_event;
+
+  /* see if we should stop here. */
+  /* See what is going on.  */
+  if (target_read_memory (address, myaddr, len))
+    /* Could not read memory. */
+    return 0;
+
+  rt_state = extract_unsigned_integer (&myaddr[lmo->r_state_offset], 
+				       lmo->r_state_size);
+  rd_event = extract_unsigned_integer (&myaddr[lmo->r_rdevent_offset], 
+				       lmo->r_rdevent_size);
+  if (rt_state == RT_ADD && type == bp_catch_load)
+    return 1;
+  if (rt_state == RT_DELETE && type == bp_catch_unload)
+    return 1;
+  return 0;
+}
+
 extern struct gdbarch *core_gdbarch;
 
 /* Add thread status for the given gdb_thread_id.  */
@@ -674,9 +696,9 @@ nto_core_add_thread_private_data (bfd *abfd, asection *sect, void *notused)
 {
   const char *sectname;
   unsigned int sectsize;
-  const char * const qnx_core_status = ".qnx_core_status/";
+  const char qnx_core_status[] = ".qnx_core_status/";
   const unsigned int qnx_sectnamelen = 17;/* strlen (qnx_core_status).  */
-  const char * const warning_msg = "Unable to read %s section from core.\n";
+  const char warning_msg[] = "Unable to read %s section from core.\n";
   int gdb_thread_id;
   int data_ofs;
   nto_procfs_status status;
@@ -762,6 +784,6 @@ for different positive values."),
 			    &showdebuglist);
 
   add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
-
-  nto_is_nto_target = nto_elf_osabi_sniffer;
+ nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
+ nto_is_nto_target = nto_elf_osabi_sniffer;
 }
