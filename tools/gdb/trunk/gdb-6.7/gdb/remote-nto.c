@@ -170,7 +170,7 @@ static void nto_find_new_threads (void);
 
 static int nto_insert_hw_breakpoint (struct bp_target_info *);
 
-static int nto_stopped_by_watchpoint (void);
+extern int nto_stopped_by_watchpoint (void);
 
 static int nto_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
@@ -248,6 +248,8 @@ struct pdebug_session *current_session = &only_session;
 
 /* Flag for whether upload command sets the current session's remote_exe.  */
 static int upload_sets_exec = 1;
+
+extern unsigned int nto_inferior_stopped_flags;
 
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
@@ -1484,6 +1486,7 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
 
   status->kind = TARGET_WAITKIND_STOPPED;
   status->value.sig = TARGET_SIGNAL_0;
+  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return null_ptid;
@@ -1667,6 +1670,9 @@ nto_parse_notify (struct target_waitstatus *status)
       current_session->target_has_stack_frame = 0;
       break;
     case DSMSG_NOTIFY_BRK:
+      nto_inferior_stopped_flags = 
+	EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.flags, 4);
+      /* Fallthrough.  */
     case DSMSG_NOTIFY_STEP:
       /* NYI: could update the CPU's IP register here.  */
       status->kind = TARGET_WAITKIND_STOPPED;
@@ -2963,12 +2969,6 @@ nto_insert_hw_breakpoint (struct bp_target_info *bp_tg_inf)
   tran.pkt.brk.addr = EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, 4);
   nto_send (sizeof (tran.pkt.brk), 0);
   return recv.pkt.hdr.cmd == DSrMsg_err;
-}
-
-static int
-nto_stopped_by_watchpoint (void)
-{
-  return 0;
 }
 
 static int
