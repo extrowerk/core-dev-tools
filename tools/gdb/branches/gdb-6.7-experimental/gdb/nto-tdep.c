@@ -65,6 +65,8 @@ static char default_nto_target[] = "";
 
 struct nto_target_ops current_nto_target;
 
+unsigned int nto_inferior_stopped_flags;
+
 static char *
 nto_target (void)
 {
@@ -757,6 +759,21 @@ init_nto_core_ops ()
   if (!original_core_open)
     error ("Orignal core open not set yet\n");
   core_ops.to_open = nto_core_open;
+}
+
+int
+nto_stopped_by_watchpoint (void)
+{
+  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are 
+     stopped due to a SIGTRAP.  This assumes gdb works in 'all-stop' mode;
+     future gdb versions will likely run in 'non-stop' mode in which case 
+     we will have to store/examine statuses per thread in question.  
+     Until then, this will work fine.  */
+
+  return nto_inferior_stopped_flags 
+	 & (_DEBUG_FLAG_TRACE_RD
+	    | _DEBUG_FLAG_TRACE_WR
+	    | _DEBUG_FLAG_TRACE_MODIFY);
 }
 
 /* Prevent corelow.c from adding core_ops target. We will do it

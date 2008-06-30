@@ -47,9 +47,13 @@
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\
 		_DEBUG_FLAG_TRACE_WR|_DEBUG_FLAG_TRACE_MODIFY)
 
+extern int nto_stopped_by_watchpoint (void);
+
 static struct target_ops procfs_ops;
 
 int ctl_fd;
+
+extern unsigned int nto_inferior_stopped_flags;
 
 static void (*ofunc) ();
 
@@ -76,8 +80,6 @@ static int procfs_can_use_hw_breakpoint (int, int, int);
 static int procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
 static int procfs_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
-
-static int procfs_stopped_by_watchpoint (void);
 
 static void procfs_notice_signals (ptid_t ptid);
 
@@ -733,6 +735,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
   nto_trace (0) ("%s (..)\n", __func__);
 
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
+  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -756,6 +759,8 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
+
+  nto_inferior_stopped_flags = status.flags;
 
   if (status.flags & _DEBUG_FLAG_SSTEP)
     {
@@ -1434,7 +1439,7 @@ init_procfs_ops (void)
   procfs_ops.to_remove_hw_breakpoint = procfs_remove_breakpoint;
   procfs_ops.to_insert_watchpoint = procfs_insert_hw_watchpoint;
   procfs_ops.to_remove_watchpoint = procfs_remove_hw_watchpoint;
-  procfs_ops.to_stopped_by_watchpoint = procfs_stopped_by_watchpoint;
+  procfs_ops.to_stopped_by_watchpoint = nto_stopped_by_watchpoint;
   procfs_ops.to_terminal_init = terminal_init_inferior;
   procfs_ops.to_terminal_inferior = terminal_inferior;
   procfs_ops.to_terminal_ours_for_output = terminal_ours_for_output;
@@ -1536,8 +1541,4 @@ procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type)
   return procfs_hw_watchpoint (addr, len, type);
 }
 
-static int
-procfs_stopped_by_watchpoint (void)
-{
-  return 0;
-}
+
