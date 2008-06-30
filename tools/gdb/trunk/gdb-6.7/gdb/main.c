@@ -954,6 +954,6 @@ Options:\n\n\
   fputs_unfiltered (_("\n\
 For more information, type \"help\" from within GDB, or consult the\n\
 GDB manual (available as on-line info or a printed manual).\n\
-Report bugs to \"bug-gdb@gnu.org\".\
+Report bugs to \"http://www.qnx.com/support/bugreports\".\
 "), stream);
 }
