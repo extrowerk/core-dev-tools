@@ -1778,9 +1778,24 @@ nto_fetch_registers (struct regcache *regcache, int regno)
     }
   else
     {
+      int len, off, rlen;
+      /* Only getting one register.  */
       regset = nto_regset_id (regno);
-      if (regset > -1 && regset < NTO_REG_END)
-	fetch_regs (regcache, regset, 1);
+      len = nto_register_area (regno, regset, &off);
+      if (len < 1) /* Don't know about this register.  */
+	return; 
+
+      nto_send_init (DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
+      tran.pkt.regrd.offset = EXTRACT_SIGNED_INTEGER (&off, 2);
+      tran.pkt.regrd.size = EXTRACT_SIGNED_INTEGER (&len, 2);
+      rlen = nto_send (sizeof (tran.pkt.regrd), 1);
+      /* Sometimes, for some reason, this gdb_assert fails.  However,
+	 it seems to be happening only when we are setting up a fake
+	 stack, i.e. when gdb calls an inferior function.  Commented out
+	 but left as a comment as a reminder (should be looked at).  */
+      //gdb_assert (rlen >= len);
+      if (rlen >= len)
+	regcache_raw_supply (regcache, regno, recv.pkt.okdata.data);
     }
 }
 
