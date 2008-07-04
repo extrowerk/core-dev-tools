@@ -1527,10 +1527,6 @@ svr4_ilp32_fetch_link_map_offsets (void)
 
       lmo.r_version_offset = 0;
       lmo.r_version_size = 4;
-      lmo.r_state_offset = 0;
-      lmo.r_state_size = 0;
-      lmo.r_rdevent_offset = 0;
-      lmo.r_rdevent_offset = 0;
       lmo.r_map_offset = 4;
       lmo.r_ldsomap_offset = 20;
 
