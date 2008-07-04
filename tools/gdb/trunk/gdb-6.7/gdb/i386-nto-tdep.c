@@ -42,6 +42,9 @@
    that is just filler.  Don't ask me, ask the kernel guys.  */
 #define NUM_GPREGS 13
 
+#define I387_ST0_REGNUM	tdep->st0_regnum
+#define I387_NUM_XMM_REGS tdep->num_xmm_regs
+
 /* Mapping between the general-purpose registers in `struct xxx'
    format and GDB's register cache layout.  */
 
@@ -121,6 +124,8 @@ i386nto_regset_id (int regno)
     return NTO_REG_GENERAL;
   else if (regno < I386_NUM_GREGS + I386_NUM_FREGS)
     return NTO_REG_FLOAT;
+  else if (regno < I386_SSE_NUM_REGS)
+    return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
 
   return -1;			/* Error.  */
 }
@@ -128,6 +133,7 @@ i386nto_regset_id (int regno)
 static int
 i386nto_register_area (int regno, int regset, unsigned *off)
 {
+  struct gdbarch_tdep *tdep = gdbarch_tdep (current_gdbarch);
   int len;
 
   *off = 0;
@@ -143,31 +149,84 @@ i386nto_register_area (int regno, int regset, unsigned *off)
     }
   else if (regset == NTO_REG_FLOAT)
     {
-      unsigned off_adjust, regsize, regset_size;
+      unsigned off_adjust, regsize, regset_size, regno_base;
+      /* The following are flags indicating number in our fxsave_area.  */
+      int first_four = (regno >= I387_FCTRL_REGNUM
+			&& regno <= I387_FISEG_REGNUM);
+      int second_four = (regno > I387_FISEG_REGNUM 
+			 && regno <= I387_FOP_REGNUM); 
+      int st_reg = (regno >= I387_ST0_REGNUM 
+		    && regno < I387_ST0_REGNUM+8);
+      int xmm_reg = (regno >= I387_XMM0_REGNUM 
+		     && regno < I387_MXCSR_REGNUM);
 
       if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
 	{
-	  off_adjust = 32;
-	  regsize = 16;
+	  /* fxsave_area structure.  */
+	  if (first_four)
+	    {
+	      /* fpu_control_word, fpu_status_word, fpu_tag_word, fpu_operand
+	         registers.  */
+	      regsize = 2; /* Two bytes each.  */
+	      off_adjust = 0;
+	      regno_base = I387_FCTRL_REGNUM;
+	    } 
+	  else if (second_four)
+	    {
+	      /* fpu_ip, fpu_cs, fpu_op, fpu_ds registers.  */
+	      regsize = 4;
+	      off_adjust = 8;
+	      regno_base = I387_FISEG_REGNUM + 1;
+	    }
+	  else if (st_reg)
+	    {
+	      /* ST registers.  */
+	      regsize = 16;
+	      off_adjust = 32;
+	      regno_base = I387_ST0_REGNUM;
+	    }
+	  else if (xmm_reg)
+	    {
+	      /* XMM registers.  */
+	      regsize = 16;
+	      off_adjust = 160;
+	      regno_base = I387_XMM0_REGNUM;
+	    }
+	  else 
+	    {
+	      /* It must be mxcsr register. Assert that.  */
+	      gdb_assert (regno == I387_MXCSR_REGNUM);
+	      regsize = 4;
+	      off_adjust = 24;
+	      regno_base = I387_MXCSR_REGNUM;
+	    }
 	  regset_size = 512;
 	}
       else
 	{
-	  off_adjust = 28;
-	  regsize = 10;
-	  regset_size = 128;
+	  /* fsave_area structure.  */
+	  if (first_four || second_four)
+	    {
+	      /* fpu_control_word, ... , fpu_ds registers.  */
+	      regsize = 4;
+	      off_adjust = 0;
+	      regno_base = I387_FCTRL_REGNUM;
+	    }
+	  else 
+	    {
+	      /* One of ST registers.  */
+	      regsize = 10;
+	      off_adjust = 7 * 4;
+	      regno_base = I387_ST0_REGNUM;
+	    }
+	  regset_size = 108;
 	}
 
       if (regno == -1)
 	return regset_size;
 
-      *off = (regno - gdbarch_fp0_regnum (current_gdbarch))
-	     * regsize + off_adjust;
-      return 10;
-      /* Why 10 instead of regsize?  GDB only stores 10 bytes per FP
-         register so if we're sending a register back to the target,
-         we only want pdebug to write 10 bytes so as not to clobber
-         the reserved 6 bytes in the fxsave structure.  */
+      *off = off_adjust + (regno - regno_base) * regsize;
+      return regsize;
     }
   return -1;
 }
