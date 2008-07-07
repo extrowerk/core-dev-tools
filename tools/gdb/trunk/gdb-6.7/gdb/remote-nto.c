@@ -106,7 +106,7 @@ static int nto_read_bytes (CORE_ADDR memaddr, char *myaddr, int len);
 
 static void nto_files_info (struct target_ops *ignore);
 
-static void nto_parse_notify (struct target_waitstatus *status);
+static ptid_t nto_parse_notify (struct target_waitstatus *status);
 
 static int nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
 			    int should_write, struct mem_attrib *attrib,
@@ -1229,7 +1229,13 @@ nto_attach (char *args, int from_tty)
   nto_send_init (DStMsg_attach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.attach.pid = PIDGET (ptid);
   tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4);
-  nto_send (sizeof (tran.pkt.attach), 1);
+  nto_send (sizeof (tran.pkt.attach), 0);
+
+  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
+    {
+      error (_("Failed to attach"));
+      return;
+    }
 
   /* Hack this in here, since we will bypass the notify.  */
   current_session->cputype =
@@ -1239,8 +1245,11 @@ nto_attach (char *args, int from_tty)
 #ifdef QNX_SET_PROCESSOR_TYPE
   QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips.  */
 #endif
-  ptid = nto_get_thread_alive (ptid);
-  inferior_ptid = ptid;
+  /* Get thread info as well.  */
+  //ptid = nto_get_thread_alive (ptid);
+  inferior_ptid = ptid_build (EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.pid, 4),
+			      0,
+			      EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.tid, 4));
   /* Initalize thread list.  */
   nto_find_new_threads ();
   /* NYI: add symbol information for process.  */
@@ -1480,6 +1489,7 @@ nto_interrupt (int signo)
 static ptid_t
 nto_wait (ptid_t ptid, struct target_waitstatus *status)
 {
+  ptid_t returned_ptid = inferior_ptid;
   nto_trace (0) ("nto_wait pid %d, inferior pid %d tid %ld\n",
 			 ptid_get_pid (ptid), ptid_get_pid (inferior_ptid),
 			 ptid_get_tid (ptid));
@@ -1576,7 +1586,7 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
 			  nto_interrupt (SIGINT);
 			}
 		    }
-		  nto_parse_notify (status);
+		  returned_ptid = nto_parse_notify (status);
 
 		  if (!WaitingForStopResponse)
 		    break;
@@ -1600,10 +1610,10 @@ nto_wait (ptid_t ptid, struct target_waitstatus *status)
     }
 
   recv.pkt.hdr.cmd = DSrMsg_ok;	/* To make us wait the next time.  */
-  return inferior_ptid;
+  return returned_ptid;
 }
 
-static void
+static ptid_t
 nto_parse_notify (struct target_waitstatus *status)
 {
   pid_t pid, tid;
@@ -1711,7 +1721,7 @@ nto_parse_notify (struct target_waitstatus *status)
       warning ("Unexpected notify type %d", recv.pkt.hdr.subcmd);
       break;
     }
-  inferior_ptid = ptid_build (pid, 0, tid);
+  return ptid_build (pid, 0, tid);
 }
 
 /* Fetch the regset, returning true if successful.  If supply is true,
@@ -2268,7 +2278,7 @@ freeargs:
   /* Comes back as an DSrMsg_okdata, but it's really a DShMsg_notify. */
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
-      nto_parse_notify (&status);
+      inferior_ptid  = nto_parse_notify (&status);
       add_thread (inferior_ptid);
     }
 
@@ -2284,7 +2294,6 @@ freeargs:
    * created inferior process.  */
   insert_breakpoints ();
   clear_proceed_status ();
-  //proceed (-1, TARGET_SIGNAL_DEFAULT, 0);
 }
 
 static int
@@ -3032,9 +3041,9 @@ nto_thread_info (pid_t pid, short tid)
   struct dspidlist *pidlist = (void *) recv.pkt.okdata.data;
   struct tidinfo *tip;
 
-  tran.pkt.pidlist.tid = tid;
   nto_send_init (DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC_TID,
 		 SET_CHANNEL_DEBUG);
+  tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER (&tid, 2);
   tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4);
   nto_send (sizeof (tran.pkt.pidlist), 0);
 
@@ -3043,7 +3052,7 @@ nto_thread_info (pid_t pid, short tid)
       nto_send_init (DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC,
 		     SET_CHANNEL_DEBUG);
       tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4);
-      nto_send (sizeof (tran.pkt.pidlist), 1);
+      nto_send (sizeof (tran.pkt.pidlist), 0);
       if (recv.pkt.hdr.cmd == DSrMsg_err)
 	{
 	  errno = errnoconvert (recv.pkt.err.err);
@@ -3051,6 +3060,7 @@ nto_thread_info (pid_t pid, short tid)
 	}
     }
 
+  /* Tidinfo structures are 4-byte aligned and start after name.  */
   for (tip = (void *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
        tip->tid != 0; tip++)
     {
