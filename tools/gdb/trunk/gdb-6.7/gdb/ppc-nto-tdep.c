@@ -387,7 +387,7 @@ ppc_nto_sigtramp_prev_register (struct frame_info *next_frame,
     = ppc_nto_sigtramp_cache (next_frame, this_cache);
   nto_trace (0) ("%s ()\n", __func__);
   trad_frame_get_prev_register (next_frame, info->saved_regs, regnum,
-			    optimizedp, lvalp, addrp, realnump, valuep);
+				optimizedp, lvalp, addrp, realnump, valuep);
 }
 
 static const struct frame_unwind ppc_nto_sigtramp_unwind =
@@ -415,7 +415,8 @@ ppc_nto_sigtramp_sniffer (struct frame_info *next_frame)
       if (!func_name || func_name[0] == '\0')
         return NULL;
       /* see if this is __signalstub function: */
-      if (0 == strcmp (func_name, "__signalstub"))
+      if (0 == strcmp (func_name, "__signalstub")
+	  || 0 == strcmp (func_name, "SignalReturn"))
         {
 	  return &ppc_nto_sigtramp_unwind;
 	}
@@ -849,7 +850,7 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_regset_from_core_section
     (gdbarch, ppcnto_regset_from_core_section);
 
-  //frame_unwind_append_sniffer (gdbarch, ppc_nto_sigtramp_sniffer);
+  frame_unwind_append_sniffer (gdbarch, ppc_nto_sigtramp_sniffer);
   init_ppcnto_ops ();
 }
 
