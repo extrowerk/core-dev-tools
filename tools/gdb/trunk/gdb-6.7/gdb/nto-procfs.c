@@ -641,6 +641,7 @@ procfs_attach (char *args, int from_tty)
       gdb_flush (gdb_stdout);
     }
   inferior_ptid = do_attach (pid_to_ptid (pid));
+  procfs_find_new_threads ();
   push_target (&procfs_ops);
 }
 
@@ -825,8 +826,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 	}
     }
 
-  inferior_ptid.tid = status.tid;
-  return inferior_ptid;
+  return ptid_build (status.pid, 0, status.tid);
 }
 
 /* Read the current values of the inferior's registers, both the
