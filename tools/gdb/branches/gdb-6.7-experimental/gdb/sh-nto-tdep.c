@@ -34,6 +34,8 @@
 #include "trad-frame.h"
 #include "tramp-frame.h"
 
+#include "frame-unwind.h"
+
 #define GP_REGSET_SIZE ((16 + 6) << 2)	/* 16 gpregs + 6 others.  */
 #define SR_OFF (16 << 2)
 #define PC_OFF (17 << 2)
@@ -316,6 +318,142 @@ shnto_regset_from_core_section (struct gdbarch *gdbarch,
 
 /* Signal trampolines. */
 
+/* Return whether the frame preceding NEXT_FRAME corresponds to a QNX
+   Neutrino sigtramp routine.  */
+
+#define SH_WORDSIZE 4
+
+static CORE_ADDR
+shnto_sigcontext_addr (struct frame_info *next_frame) 
+{
+  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+  CORE_ADDR sp, ptrctx;
+  int regi;
+  
+  nto_trace (0) ("%s () \n", __func__);
+
+  sp = frame_unwind_register_unsigned (next_frame, 
+                                      gdbarch_sp_regnum (current_gdbarch));
+
+  nto_trace (0) ("sp: 0x%s\n", paddr (sp));
+ 
+  /* we store context addr in [r8]. The address is really address
+   * of reg 5, we need to back-up for 5 * 4 bytes to point
+   * at the begining. */
+  ptrctx = frame_unwind_register_unsigned (next_frame, R0_REGNUM + 8);
+  nto_trace (0) ("r8: 0x%s\n", paddr (ptrctx));
+  ptrctx -= 20;
+  nto_trace (0) ("context address: 0x%s\n", paddr (ptrctx));
+
+  return ptrctx;
+}
+
+struct sh_nto_sigtramp_cache
+{
+  CORE_ADDR base;
+  struct trad_frame_saved_reg *saved_regs;
+};
+
+static struct sh_nto_sigtramp_cache *
+shnto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
+{
+  CORE_ADDR regs;
+  CORE_ADDR ptrctx;
+  CORE_ADDR fpregs;
+  int i;
+  struct sh_nto_sigtramp_cache *cache;
+  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  nto_trace (0) ("%s ()\n", __func__);
+
+  if ((*this_cache) != NULL)
+    return (*this_cache);
+  cache = FRAME_OBSTACK_ZALLOC (struct sh_nto_sigtramp_cache);
+  (*this_cache) = cache;
+  cache->saved_regs = trad_frame_alloc_saved_regs (next_frame);
+  cache->base = frame_unwind_register_unsigned (next_frame, 
+						gdbarch_pc_regnum (gdbarch));
+  //gpregs = read_memory_unsigned_integer (cache->base, tdep->wordsize);
+  ptrctx = shnto_sigcontext_addr (next_frame);
+
+  /* PC register (from before the signal).  */
+  cache->saved_regs[gdbarch_pc_regnum (gdbarch)].addr = ptrctx + PC_OFF;
+  cache->saved_regs[SR_REGNUM].addr = ptrctx + SR_OFF;
+  cache->saved_regs[GBR_REGNUM].addr = ptrctx + GBR_OFF;
+  cache->saved_regs[MACH_REGNUM].addr = ptrctx + MACH_OFF;
+  cache->saved_regs[MACL_REGNUM].addr = ptrctx + MACL_OFF;
+  cache->saved_regs[PR_REGNUM].addr = ptrctx + PR_OFF;
+
+  /* General purpose.  */
+  for (i = 0; i < 16; i++)
+    {
+      int regnum = i;
+      cache->saved_regs[regnum].addr = ptrctx + i * SH_WORDSIZE;
+    }
+
+  /* FP registers.  */
+  for (i = 1; i != 16; i++)
+    {
+      cache->saved_regs[FPSCR_REGNUM + i].addr 
+	= ptrctx + (i + FPSCR_REGNUM) * 4;
+    }
+
+  cache->saved_regs[FPUL_REGNUM].addr = ptrctx + FPUL_OFF;
+  cache->saved_regs[FPSCR_REGNUM].addr = ptrctx + FPSCR_OFF;
+
+  return cache;
+}
+
+static void
+sh_nto_sigtramp_this_id (struct frame_info *next_frame, void **this_cache,
+			 struct frame_id *this_id)
+{
+  struct sh_nto_sigtramp_cache *info = shnto_sigtramp_cache (next_frame, 
+							    this_cache);
+  nto_trace (0) ("%s ()\n", __func__);
+  (*this_id) = frame_id_build (info->base, frame_pc_unwind (next_frame));
+}
+
+static void
+sh_nto_sigtramp_prev_register (struct frame_info *next_frame,
+			       void **this_cache,
+			       int regnum, int *optimizedp,
+			       enum lval_type *lvalp, CORE_ADDR *addrp,
+			       int *relnump, gdb_byte *valuep)
+{
+  struct sh_nto_sigtramp_cache *info = shnto_sigtramp_cache (next_frame, 
+							    this_cache);
+  nto_trace (0) ("%s ()\n", __func__);
+  trad_frame_get_prev_register (next_frame, info->saved_regs, regnum,
+				optimizedp, lvalp, addrp, relnump, valuep);
+}
+
+static const struct frame_unwind sh_nto_sigtramp_unwind =
+{
+  SIGTRAMP_FRAME,
+  sh_nto_sigtramp_this_id,
+  sh_nto_sigtramp_prev_register
+};
+
+static const struct frame_unwind *
+sh_nto_sigtramp_sniffer (struct frame_info *next_frame)
+{
+  CORE_ADDR pc = frame_pc_unwind (next_frame);
+  char *name;
+
+  nto_trace (0) ("%s ()\n", __func__);
+
+  find_pc_partial_function (pc, &name, NULL, NULL);
+  if (name 
+      && (strcmp ("_signalstub", name) == 0
+	  || strcmp ("SignalReturn", name) == 0))
+    return &sh_nto_sigtramp_unwind;
+
+  return NULL;
+}
+
 static void
 shnto_sigtramp_cache_init (const struct tramp_frame *self,
                             struct frame_info *next_frame,
@@ -348,7 +486,7 @@ shnto_sigtramp_cache_init (const struct tramp_frame *self,
   for (regi = 0; regi < 16; regi++)
     {
       unsigned int regval;
-      CORE_ADDR addr = ptrctx + regi * 4;
+      CORE_ADDR addr = ptrctx + regi * SH_WORDSIZE;
 
       trad_frame_set_reg_addr (this_cache, regi, addr);
     }
@@ -391,6 +529,7 @@ shnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Trampoline */
   tramp_frame_prepend_unwinder (gdbarch, &sh_nto_sighandler_tramp_frame);
+  frame_unwind_append_sniffer (gdbarch, sh_nto_sigtramp_sniffer);
 
   /* Our loader handles solib relocations slightly differently than svr4.  */
   TARGET_SO_RELOCATE_SECTION_ADDRESSES = nto_relocate_section_addresses;
@@ -400,7 +539,7 @@ shnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Our linker code is in libc.  */
   TARGET_SO_IN_DYNSYM_RESOLVE_CODE = nto_in_dynsym_resolve_code;
-  
+
   set_gdbarch_regset_from_core_section
     (gdbarch, shnto_regset_from_core_section);
 
