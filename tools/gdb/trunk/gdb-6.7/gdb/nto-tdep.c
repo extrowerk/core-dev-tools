@@ -286,6 +286,7 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmp = &lmo;
 
       lmo.r_map_offset = 4;
+      lmo.r_ldsomap_offset = 20;
 
       lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
 				   this is all we need.  */
