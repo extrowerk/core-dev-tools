@@ -34,6 +34,8 @@
 #include "tramp-frame.h"
 #include "gdbcore.h"
 
+#include "frame-unwind.h"
+
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
 #define PS_OFF (16*4)
@@ -234,6 +236,121 @@ armnto_regset_from_core_section (struct gdbarch *gdbarch,
 
 /* Signal trampolines. */
 
+/* Signal trampoline sniffer.  */
+
+static CORE_ADDR
+armnto_sigcontext_addr (struct frame_info *next_frame)
+{
+  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  CORE_ADDR ptrctx, sp;
+
+  nto_trace (0) ("%s ()\n", __func__);
+
+  /* stack pointer for _signalstub frame.  */
+  sp = frame_unwind_register_unsigned (next_frame, 
+				       gdbarch_sp_regnum (gdbarch));
+
+  /*  read base from r5 of the sigtramp frame:
+   we store base + 4 (addr of r1, not r0) in r5. 
+   stmia	lr, {r1-r12} 
+   mov	r5, lr 
+  */
+  ptrctx = frame_unwind_register_unsigned (next_frame, ARM_A1_REGNUM + 5);
+  ptrctx -= 4;
+
+  nto_trace (0) ("context addr: 0x%s\n", paddr (ptrctx));
+
+  return ptrctx;
+}
+
+struct arm_nto_sigtramp_cache
+{
+  CORE_ADDR base;
+  struct trad_frame_saved_reg *saved_regs;
+};
+
+static struct arm_nto_sigtramp_cache *
+armnto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
+{
+  CORE_ADDR regs;
+  CORE_ADDR ptrctx;
+  CORE_ADDR fpregs;
+  int i;
+  struct arm_nto_sigtramp_cache *cache;
+  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+  const int REGSIZE = 4;
+
+  nto_trace (0) ("%s ()\n", __func__);
+
+  if ((*this_cache) != NULL)
+    return (*this_cache);
+  cache = FRAME_OBSTACK_ZALLOC (struct arm_nto_sigtramp_cache);
+  (*this_cache) = cache;
+  cache->saved_regs = trad_frame_alloc_saved_regs (next_frame);
+  cache->base = frame_unwind_register_unsigned (next_frame,
+						gdbarch_pc_regnum (gdbarch));
+  ptrctx = armnto_sigcontext_addr (next_frame);
+
+  /* Registers from before signal. */
+  for (i = ARM_A1_REGNUM; i != ARM_F0_REGNUM; ++i)
+    cache->saved_regs[i].addr = ptrctx + i * REGSIZE; 
+
+  /* PS register. We store it as 16-th register in ucontext_t structure. */
+  cache->saved_regs[ARM_PS_REGNUM].addr = ptrctx + 16 * REGSIZE;
+
+  return cache;
+}
+
+static void
+armnto_sigtramp_this_id (struct frame_info *next_frame, void **this_cache,
+			 struct frame_id *this_id)
+{
+  struct arm_nto_sigtramp_cache *info = armnto_sigtramp_cache (next_frame,
+							       this_cache);
+  nto_trace (0) ("%s ()\n", __func__);
+  (*this_id) = frame_id_build (info->base, frame_pc_unwind (next_frame));
+}
+
+static void
+armnto_sigtramp_prev_register (struct frame_info *next_frame,
+			       void **this_cache,
+			       int regnum, int *optimizedp,
+			       enum lval_type *lvalp, CORE_ADDR *addrp,
+			       int *relnump, gdb_byte *valuep)
+{
+  struct arm_nto_sigtramp_cache *info = armnto_sigtramp_cache (next_frame,
+							       this_cache);
+  nto_trace (0) ("%s ()\n", __func__);
+  trad_frame_get_prev_register (next_frame, info->saved_regs, regnum, 
+				optimizedp, lvalp, addrp, relnump, valuep);
+}
+
+static const struct frame_unwind arm_nto_sigtramp_unwind =
+{
+  SIGTRAMP_FRAME,
+  armnto_sigtramp_this_id,
+  armnto_sigtramp_prev_register
+};
+
+static const struct frame_unwind *
+armnto_sigtramp_sniffer (struct frame_info *next_frame)
+{
+  CORE_ADDR pc = frame_pc_unwind (next_frame);
+  char *name;
+
+  nto_trace (0) ("%s ()\n", __func__);
+
+  find_pc_partial_function (pc, &name, NULL, NULL);
+  if (name
+      && (strcmp ("__signalstub", name) == 0
+	  || strcmp ("SignalReturn", name) == 0))
+     return &arm_nto_sigtramp_unwind;
+
+  return NULL;
+}
+
+
 static void
 armnto_sigtramp_cache_init (const struct tramp_frame *self,
                             struct frame_info *next_frame,
@@ -323,13 +440,14 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Our linker code is in libc.  */
   TARGET_SO_IN_DYNSYM_RESOLVE_CODE = arm_nto_in_dynsym_resolve_code;
 
-/* register core handler */
+  /* register core handler */
   set_gdbarch_regset_from_core_section (gdbarch, 
                                     armnto_regset_from_core_section);
   
   /* Signal trampoline */
   tramp_frame_prepend_unwinder (gdbarch,
 				&arm_nto_sighandler_tramp_frame);
+  frame_unwind_append_sniffer (gdbarch, armnto_sigtramp_sniffer);
 
   init_armnto_ops ();
 }
