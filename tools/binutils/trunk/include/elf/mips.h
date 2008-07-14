@@ -661,7 +661,9 @@ extern void bfd_mips_elf32_swap_reginfo_out
 
 /* Address of auxiliary .dynamic.  */
 #define DT_MIPS_AUX_DYNAMIC	0x70000031
-
+
+#define DT_MIPS_REL32_VERSION	0x7fffff00 
+
 /* Flags which may appear in a DT_MIPS_FLAGS entry.  */
 
 /* No flags.  */
