@@ -7896,6 +7896,9 @@ dynobj = elf_hash_table (info)->dynobj;
 	  if (! MIPS_ELF_ADD_DYNAMIC_ENTRY (info, DT_MIPS_GOTSYM, 0))
 	    return FALSE;
 
+	  if (! MIPS_ELF_ADD_DYNAMIC_ENTRY (info, DT_MIPS_REL32_VERSION, 0))
+	    return FALSE;
+
 	  if (IRIX_COMPAT (dynobj) == ict_irix5
 	      && ! MIPS_ELF_ADD_DYNAMIC_ENTRY (info, DT_MIPS_HIPAGENO, 0))
 	    return FALSE;
