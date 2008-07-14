@@ -54,14 +54,14 @@ Boston, MA 02111-1307, USA.  */
 
 
 #define QNX_SYSTEM_LIBDIRS \
-"-L %$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3 \
- -L %$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib \
- -L %$QNX_TARGET/mips%{EB:be}%{!EB:le}/usr/lib \
- -L %$QNX_TARGET/mips%{EB:be}%{!EB:le}/opt/lib \
- -rpath-link %$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib:\
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/usr/lib:\
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/opt/lib "
+"-L %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/gcc/%v1.%v2.%v3 \
+ -L %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib \
+ -L %$QNX_TARGET/mips%{EL:le}%{!EL:be}/usr/lib \
+ -L %$QNX_TARGET/mips%{EL:le}%{!EL:be}/opt/lib \
+ -rpath-link %$QNX_TARGET/mips%{EL:be}%{!EL:be}/lib/gcc/%v1.%v2.%v3:\
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib:\
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/usr/lib:\
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/opt/lib "
 
 #undef LIB_SPEC
 #define LIB_SPEC \
@@ -72,32 +72,33 @@ Boston, MA 02111-1307, USA.  */
 #define LIBGCC_SPEC "-lgcc"
 
 #undef TARGET_ENDIAN_DEFAULT 
-#define TARGET_ENDIAN_DEFAULT 0 	/* LE */
+#define TARGET_ENDIAN_DEFAULT 1 	/* BE */
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/crti.o \
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/crtbegin.o"
+"%{!shared: %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/%{pg:m}%{p:m}crt1.o} \
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crti.o \
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtbegin.o"
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC "\
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/crtend.o \
-%$QNX_TARGET/mips%{EB:be}%{!EB:le}/lib/crtn.o"
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtend.o \
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtn.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC "-mips2 \
-%{!EB:%{!meb:-EL}} %{EB|meb:-EB} \
+%{!EL:%{!mel:-EB}} %{EL|leb:-EL} \
 %{G*} %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64} \
 %{shared} %{non_shared} \
-%{!EB:%{!meb:-belf32-qnxlittlemips}} %{EB|meb:-belf32-qnxbigmips} \
+%{!EL:%{!mel:-belf32-qnxbigmips}} %{EL|mel:-belf32-qnxlittlemips} \
 %{MAP: -Map mapfile} \
 %{static: -dn -Bstatic} \
 %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2} \
-%{EB|meb:-melf32lmipnto} %{!EB:%{!meb:-melf32lmipnto}}"
+-melf32lmipnto"
 
 #undef SUBTARGET_CC1_SPEC
 #define SUBTARGET_CC1_SPEC "\
+%{!mabicalls: -mno-abicalls} \
 %{fpic: -mqnx-pic} \
 %{fPIC: -mqnx-pic} \
 -mips2"
@@ -111,11 +112,10 @@ do                                                \
   }						  \
   while (0)
 
-
 #undef SUBTARGET_CPP_SPEC
 #define SUBTARGET_CPP_SPEC QNX_SYSTEM_INCLUDES "\
-%{!EB:-D__LITTLEENDIAN__} \
-%{EB:-D__BIGENDIAN__} \
+%{!EL:-D__BIGENDIAN__} \
+%{EL:-D__LITTLEENDIAN__} \
 %{fpic: -D__PIC__} %{fPIC: -D__PIC__} \
 %{mqnx-pic: -D__PIC__} \
 %{posix:-D_POSIX_SOURCE}"
@@ -123,7 +123,7 @@ do                                                \
 /* Define the specs passed to the assembler */
 #undef ASM_SPEC
 #define ASM_SPEC "-mips2 \
-%{!qnx-pic: %{G*}} %{EB} %{!EB:-EL} %{EL} \
+%{!qnx-pic: %{G*}} %{EB} %{!EL:-EB} %{EL} \
 %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64} \
 %{mips16:%{!mno-mips16:-mips16}} %{mno-mips16:-no-mips16} \
 %(subtarget_asm_optimizing_spec) \
@@ -141,7 +141,15 @@ do                                                \
 
 /* Do indirect call through function pointer to avoid section switching
    problem with assembler and R_MIPS_PC16 relocation errors. */
-#define DO_CRT_STATIC_CALL(f) { void (* volatile fp)() = f; fp(); }
+# define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)     \
+static void __attribute__((__used__))                   \
+call_ ## FUNC (void)                                    \
+{                                                       \
+  asm (SECTION_OP);                                     \
+  void (* volatile fp)() = FUNC; fp();                  \
+  FORCE_CODE_SECTION_ALIGN                              \
+  asm (TEXT_SECTION_ASM_OP);                            \
+}
 
 #undef MIPS_DEFAULT_GVALUE
 #define MIPS_DEFAULT_GVALUE 0
