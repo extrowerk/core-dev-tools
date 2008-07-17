@@ -182,6 +182,10 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   return ret;
 }
 
+/* The following two variables are defined in solib.c.  */
+extern char *gdb_sysroot; /* a.k.a solib-absolute-prefix  */
+extern char *solib_search_path;
+
 void
 nto_init_solib_absolute_prefix (void)
 {
@@ -212,13 +216,22 @@ nto_init_solib_absolute_prefix (void)
 
   sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
 
-  sprintf (buf, "set solib-absolute-prefix %s", arch_path);
-  execute_command (buf, 0);
+  /* Do not change it if already set.  */
+  if (!gdb_sysroot
+      || strlen (gdb_sysroot) == 0)
+    {
+      sprintf (buf, "set solib-absolute-prefix %s", arch_path);
+      execute_command (buf, 0);
+    }
 
-  sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
-	   arch_path, "lib", DIRNAME_SEPARATOR, 
-	   arch_path, "usr/lib");
-  execute_command (buf, 0);
+  if (!solib_search_path
+      || strlen (solib_search_path) == 0)
+    {
+      sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
+	      arch_path, "lib", DIRNAME_SEPARATOR, 
+	      arch_path, "usr/lib");
+      execute_command (buf, 0);
+    }
 }
 
 char **
@@ -713,14 +726,10 @@ static void (*original_core_open) (char *, int);
 static void
 nto_core_open (char *filename, int from_tty)
 {
-  static int solib_absolute_prefix_set = 0;
   nto_trace (0) ("%s (%s)\n", __func__, filename);
-  if (!solib_absolute_prefix_set)
-    {
-      solib_absolute_prefix_set = 1;
-      nto_init_solib_absolute_prefix ();
-    }
+
   original_core_open (filename, from_tty);
+  nto_init_solib_absolute_prefix ();
 
   /* Now we need to load additional thread status information stored
      in qnx notes.  */

@@ -95,7 +95,11 @@ static void do_clear_solib (void *);
 /* If non-empty, this is a search path for loading non-absolute shared library
    symbol files.  This takes precedence over the environment variables PATH
    and LD_LIBRARY_PATH.  */
+#ifndef __QNXTARGET__
 static char *solib_search_path = NULL;
+#else /* __QNXTARGET__ */
+char *solib_search_path = NULL;
+#endif
 static void
 show_solib_search_path (struct ui_file *file, int from_tty,
 			struct cmd_list_element *c, const char *value)
