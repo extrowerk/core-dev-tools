@@ -278,24 +278,32 @@ ppc_nto_in_sigtramp (CORE_ADDR pc, char *func_name)
   return (pc == handler || pc == handler + 4);
 }
 
+
+/* Signal tampoline sniffer.  */
+
 struct ppc_nto_sigtramp_cache
 {
   CORE_ADDR base;
   struct trad_frame_saved_reg *saved_regs;
 };
 
+/* The context is calculated the same way regardless of the sniffer method. */
 static CORE_ADDR
-ppcnto_sigcontext_addr (struct frame_info *next_frame) {
+ppcnto_sigcontext_addr (struct frame_info *next_frame)
+{
+  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   char buf[4];
-  CORE_ADDR sp;
+  CORE_ADDR ptrctx;
 
   nto_trace (0) ("%s ()\n", __func__);
 
-  frame_unwind_register (next_frame, gdbarch_sp_regnum (current_gdbarch), buf);
-  sp = extract_unsigned_integer (buf, 4);
-
-  return sp + 0x88;
-  //return sp + I386_NTO_SIGCONTEXT_OFFSET;
+  /* Read base from r31 of the sigtramp frame (see ppc/sigstub.S)  */
+  ptrctx = frame_unwind_register_unsigned (next_frame,
+					   tdep->ppc_gp0_regnum + 31);
+  if (ptrctx == 0)
+    warning ("Unable to retrieve sigstack_context pointer.");
+  return ptrctx;
 }
 
 static struct ppc_nto_sigtramp_cache *
@@ -316,26 +324,8 @@ ppc_nto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
   cache = FRAME_OBSTACK_ZALLOC (struct ppc_nto_sigtramp_cache);
   (*this_cache) = cache;
   cache->saved_regs = trad_frame_alloc_saved_regs (next_frame);
-
-  cache->base = frame_unwind_register_unsigned (next_frame, gdbarch_pc_regnum (current_gdbarch));
-
-  /* Find the register pointer, which gives the address of the
-     register buffers.  */
-  //if (tdep->wordsize == 4)
-  //  regs = (cache->base
-//	    + 0xd0 /* Offset to ucontext_t.  */
-//	    + 0x30 /* Offset to .reg.  */);
-  //regs = cache->base + 0x1B0;
-  //regs = cache->base + 0x10 + 0x78;
-  /* And the corresponding register buffers.  */
-  gpregs = read_memory_unsigned_integer (cache->base, tdep->wordsize);
-  gpregs = (CORE_ADDR)((char *) gpregs + 0x88);
-  /*
-  gpregs = cache->base
-	  + 0x10 
-	  + 0x78; 
- */
-  //gpregs = cache->base + 0xb8;
+  cache->base = frame_unwind_register_unsigned (next_frame, 
+						gdbarch_pc_regnum (gdbarch));
   gpregs = ppcnto_sigcontext_addr(next_frame); 
   fpregs = gpregs + 41 * tdep->wordsize;
 
@@ -345,7 +335,8 @@ ppc_nto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
       int regnum = i + tdep->ppc_gp0_regnum;
       cache->saved_regs[regnum].addr = gpregs + i * tdep->wordsize;
     }
-  cache->saved_regs[gdbarch_pc_regnum (current_gdbarch)].addr = gpregs + 35 * tdep->wordsize;
+  cache->saved_regs[gdbarch_pc_regnum (gdbarch)].addr = gpregs + 35
+							* tdep->wordsize;
   cache->saved_regs[tdep->ppc_ctr_regnum].addr = gpregs + 32 * tdep->wordsize;
   cache->saved_regs[tdep->ppc_lr_regnum].addr = gpregs + 33 * tdep->wordsize;
   cache->saved_regs[tdep->ppc_xer_regnum].addr = gpregs + 37 * tdep->wordsize;
@@ -408,16 +399,16 @@ ppc_nto_sigtramp_sniffer (struct frame_info *next_frame)
       > frame_unwind_register_unsigned (next_frame, 
                                         gdbarch_sp_regnum (current_gdbarch)))
     {
-      frame_func = get_frame_func (next_frame);
+      frame_func = frame_pc_unwind (next_frame);
       if (frame_func)
         find_pc_partial_function (frame_func, &func_name, NULL, NULL);
       nto_trace (0) ("get_frame_func returned: 0x%s %s\n", paddr (frame_func), func_name);
       if (!func_name || func_name[0] == '\0')
         return NULL;
       /* see if this is __signalstub function: */
-      if (0 == strcmp (func_name, "__signalstub")
-	  || 0 == strcmp (func_name, "SignalReturn"))
+      if (0 == strcmp (func_name, "__signalstub"))
         {
+	  nto_trace (0) ("This is signal trampoline frame\n");
 	  return &ppc_nto_sigtramp_unwind;
 	}
     }
@@ -764,10 +755,9 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
   /* Construct the frame ID using the function start. */
   trad_frame_set_id (this_cache, frame_id_build (sp, func));
 
-  /* read base from r31 of the sigtramp frame:
-   */
-  ptrctx = frame_unwind_register_unsigned (next_frame, tdep->ppc_gp0_regnum + 31);
-
+  /* Get ucontext address.  */
+  ptrctx = ppcnto_sigcontext_addr (next_frame);
+  
   for (i = 0; i != ppc_num_gprs; i++)
     {
       const int regnum = i + tdep->ppc_gp0_regnum;
@@ -778,7 +768,8 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
   trad_frame_set_reg_addr (this_cache, tdep->ppc_ctr_regnum, ptrctx + CTR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_lr_regnum, ptrctx + LR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_ps_regnum, ptrctx + MSR_OFF);
-  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (current_gdbarch), ptrctx + IAR_OFF);
+  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (gdbarch), 
+			   ptrctx + IAR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_cr_regnum, ptrctx + CR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_xer_regnum, ptrctx + XER_OFF);
 //  trad_frame_set_reg_addr (this_cache, ??? tdep->ppc_ear_regnum, base + EAR_OFF);
@@ -786,8 +777,8 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
   if(tdep->ppc_mq_regnum != -1)
     trad_frame_set_reg_addr (this_cache, tdep->ppc_mq_regnum, ptrctx + MQ_OFF);
   if(tdep->ppc_vrsave_regnum != -1)
-    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum, ptrctx + VRSAVE_OFF);
-
+    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum, 
+			     ptrctx + VRSAVE_OFF);
 }
 
 
