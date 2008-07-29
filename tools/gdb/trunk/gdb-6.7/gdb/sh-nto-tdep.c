@@ -445,6 +445,9 @@ sh_nto_sigtramp_sniffer (struct frame_info *next_frame)
 
   nto_trace (0) ("%s ()\n", __func__);
 
+  /* Note: single underscore is due to bfd stripping off leading underscore.
+     if bfd is reconfigured to not do that, the literal must be changed to
+     have double underscore.  */
   find_pc_partial_function (pc, &name, NULL, NULL);
   if (name 
       && (strcmp ("_signalstub", name) == 0

@@ -961,23 +961,13 @@ procfs_remove_hw_breakpoint (struct bp_target_info *bp_tgt)
 			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, -1);
 }
 
-/* Workaround for aliasing rules violation. In our case,
-   violation is o.k. We use sigaddset on fltset_t which is 
-   equivalent to sigset_t in nto. */
-
-typedef union 
-  {
-    sigset_t *ps;
-    fltset_t *pflt;
-  } ufltset;
-
 static void
 procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 {
   int signal_to_pass;
   procfs_status status;
   /* Workaround for aliasing rules violation. */
-  ufltset psigset;
+  sigset_t *run_fault = (sigset_t *) (void *) &run.fault;
 
   nto_trace (0) ("%s (...)\n", __func__);
 
@@ -991,18 +981,16 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
   if (step)
     run.flags |= _DEBUG_RUN_STEP;
 
-  psigset.pflt = &run.fault;
-
-  sigemptyset (psigset.ps);
-  sigaddset (psigset.ps, FLTBPT);
-  sigaddset (psigset.ps, FLTTRACE);
-  sigaddset (psigset.ps, FLTILL);
-  sigaddset (psigset.ps, FLTPRIV);
-  sigaddset (psigset.ps, FLTBOUNDS);
-  sigaddset (psigset.ps, FLTIOVF);
-  sigaddset (psigset.ps, FLTIZDIV);
-  sigaddset (psigset.ps, FLTFPE);
-  sigaddset (psigset.ps, FLTPAGE);
+  sigemptyset (run_fault);
+  sigaddset (run_fault, FLTBPT);
+  sigaddset (run_fault, FLTTRACE);
+  sigaddset (run_fault, FLTILL);
+  sigaddset (run_fault, FLTPRIV);
+  sigaddset (run_fault, FLTBOUNDS);
+  sigaddset (run_fault, FLTIOVF);
+  sigaddset (run_fault, FLTIZDIV);
+  sigaddset (run_fault, FLTFPE);
+  sigaddset (run_fault, FLTPAGE);
 
   run.flags |= _DEBUG_RUN_ARM;
 
@@ -1215,8 +1203,6 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   
   sigemptyset (&set);
   sigaddset (&set, SIGUSR1);
-  sigprocmask (SIG_UNBLOCK, &set, NULL);
-
   sigprocmask (SIG_BLOCK, &set, NULL);
 
   if (fds[0] != STDIN_FILENO)
