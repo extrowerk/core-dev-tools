@@ -5121,11 +5121,15 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 	    char *arg;
 	    if (pending_bp->cond_string)
 	      {
+		volatile struct gdb_exception except;
 		arg = pending_bp->cond_string;
 		b->cond_string = savestring (arg, strlen (arg));
-		b->cond = parse_exp_1 (&arg, block_for_pc (b->loc->address), 0);
-		if (*arg)
-		  error (_("Junk at end of pending breakpoint condition expression"));
+		TRY_CATCH (except, RETURN_MASK_ERROR)
+		  {
+		    b->cond = parse_exp_1 (&arg, block_for_pc (b->loc->address), 0);
+		    if (*arg)
+		      error (_("Junk at end of pending breakpoint condition expression"));
+		  }
 	      }
 	    /* If there are commands associated with the breakpoint, they should 
 	       be copied too.  */
