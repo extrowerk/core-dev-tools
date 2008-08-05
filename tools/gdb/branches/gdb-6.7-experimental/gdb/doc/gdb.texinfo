@@ -17731,10 +17731,52 @@ line="5",times="0",ignore="3"@}]@}
 (gdb)
 @end smallexample
 
-@ignore
 @subheading The @code{-break-catch} Command
 @findex -break-catch
 
+@subsubheading Synopsis
+
+@smallexample
+ -break-catch [ -t ] [ @var{event} ]
+@end smallexample
+
+@noindent
+where @var{event} can be one of:
+
+@itemize @bullet
+@item catch
+@item throw
+@end itemize
+
+The possible optional parameters of this command are:
+
+@table @samp
+@item -t
+Insert a temporary catchpoint.
+@end table
+
+@subsubheading Result
+
+The result is in the form:
+
+@smallexample
+^done,bkpt=@{number="@var{number}",type="@var{type}",
+disp="del"|"keep",enabled="y"|"n",addr="@var{hex}",
+what="exception catch"|"exception throw",times="@var{times}",
+original-location="@var{funcname}"@}
+@end smallexample
+
+@noindent
+where @var{number} is the @value{GDBN} number for this catchpoint,
+@var{funcname} is the name of the function where the catchpoint
+was inserted (target specific) and @var{times} the number of times
+that the catchpoint has been hit (always 0 for @code{-break-catch}
+but may be greater for @code{-break-info} or @code{-break-list} 
+which use the same output).
+
+Note: this format is open to change.
+
+@ignore
 @subheading The @code{-break-commands} Command
 @findex -break-commands
 @end ignore
