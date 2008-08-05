@@ -123,22 +123,6 @@ function hook_preconfigure {
 			fi
 			as_ver=${new}
 		done
-		if [ -n "${need_new}" ]; then
-			echo "GCC Requires new binutils (assembler) to build..."
-			dir_pref=${PWD%-*}
-			binutils_dir=$(echo ${dir_pref}-ntomulti | sed s/gcc/binutils/)
-			# We have to undefine LOOPING since it's inherited from the parent
-			# make which has already gone through qmake-cfg.mk. If this is not
-			# done then the binutils make goes through the other part of qmake-cfg.mk
-			# which just does an "include Makefile" and fails to do the configure.
-			# We also have to specify the makefile since this is the nto-x86-o-ntomulti
-			# directory which doesn't have a Makefile yet 
-			make -C${binutils_dir} -fGNUmakefile LOOPING=""
-			ln -s ${binutils_dir}/binutils binutils
-			op ln -sP ${binutils_dir}/binutils/ar ${basedir}/${target}/bin/ar
-			op ln -sP ${binutils_dir}/gas/${target}/as-new ${basedir}/bin/${target}/${gcc_version}/${nto_target}-as
-			op ln -sP ${binutils_dir}/ld/${target}/ld-new ${basedir}/bin/${target}/${gcc_version}/${nto_target}-ld
-		fi
 	fi	
 }
 
