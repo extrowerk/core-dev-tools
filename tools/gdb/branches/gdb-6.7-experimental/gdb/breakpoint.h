@@ -836,4 +836,6 @@ extern void remove_single_step_breakpoints (void);
 extern void *deprecated_insert_raw_breakpoint (CORE_ADDR);
 extern int deprecated_remove_raw_breakpoint (void *);
 
+extern void catch_command_1 (char *arg, int tempflag, int from_tty);
+
 #endif /* !defined (BREAKPOINT_H) */
