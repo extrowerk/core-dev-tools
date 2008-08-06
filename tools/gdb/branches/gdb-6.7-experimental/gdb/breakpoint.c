@@ -8363,7 +8363,7 @@ hardware.)"),
 			    show_can_use_hw_watchpoints,
 			    &setlist, &showlist);
 
-  //can_use_hw_watchpoints = 1;
+  can_use_hw_watchpoints = 1;
 
   add_prefix_cmd ("breakpoint", class_maintenance, set_breakpoint_cmd, _("\
 Breakpoint specific settings\n\
