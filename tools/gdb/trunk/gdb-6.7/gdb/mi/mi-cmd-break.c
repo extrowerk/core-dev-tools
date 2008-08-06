@@ -26,6 +26,7 @@
 #include "mi-getopt.h"
 #include "gdb-events.h"
 #include "gdb.h"
+#include "exceptions.h"
 
 enum
   {
@@ -238,3 +239,100 @@ mi_cmd_break_watch (char *command, char **argv, int argc)
     }
   return MI_CMD_DONE;
 }
+
+/* Implements the -break-catch command.
+   See the MI manual for the list of possible options.  */
+
+enum mi_cmd_result
+mi_cmd_break_catch (char *command, char **argv, int argc)
+{
+  char *event_name = NULL;
+  enum bp_type type = REG_BP;
+  int temp_p = 0;
+  int thread = -1;
+  int ignore_count = 0;
+  char *condition = NULL;
+  int pending = 0;
+  struct gdb_exception e;
+  struct gdb_events *old_hooks;
+  char argument[250];
+  enum opt
+    {
+      HARDWARE_OPT, TEMP_OPT, CONDITION_OPT,
+      IGNORE_COUNT_OPT, THREAD_OPT
+    };
+  static struct mi_opt opts[] =
+  {
+    {"h", HARDWARE_OPT, 0},
+    {"t", TEMP_OPT, 0},
+    {"c", CONDITION_OPT, 1},
+    {"i", IGNORE_COUNT_OPT, 1},
+    {"p", THREAD_OPT, 1},
+    { 0, 0, 0 }
+  };
+
+  /* Parse arguments. It could be -r or -h or -t, <location> or ``--''
+     to denote the end of the option list. */
+  int optind = 0;
+  char *optarg;
+  while (1)
+    {
+      int opt = mi_getopt ("mi_cmd_break_catch", argc, argv, opts, &optind, &optarg);
+      if (opt < 0)
+	break;
+      switch ((enum opt) opt)
+	{
+	case TEMP_OPT:
+	  temp_p = 1;
+	  break;
+	case HARDWARE_OPT:
+	  warning (_("Hardware flag ignored for catchpoints"));
+	  break;
+	case CONDITION_OPT:
+	  condition = optarg;
+	  break;
+	case IGNORE_COUNT_OPT:
+	  ignore_count = atol (optarg);
+	  warning (_("Ignore count not yet implemented for catchpoints"));
+	  break;
+	case THREAD_OPT:
+	  thread = atol (optarg);
+	  warning (_("Thread option not yet implemented for catchpoints"));
+	  break;
+	}
+    }
+
+  if (optind >= argc)
+    error (_("mi_cmd_break_catch: Missing <event name>"));
+  if (optind < argc - 1)
+    error (_("mi_cmd_break_catch: Garbage following <event name>"));
+  event_name = argv[optind];
+  
+  if (condition != NULL)
+    snprintf (argument, sizeof (argument), "%s %s", event_name, condition);
+  else
+    strcpy (argument, event_name);
+
+  /* Now we have what we need, let's insert the breakpoint! */
+  old_hooks = deprecated_set_gdb_event_hooks (&breakpoint_hooks);
+  /* Make sure we restore hooks even if exception is thrown.  */
+  TRY_CATCH (e, RETURN_MASK_ALL)
+    {
+      switch (type)
+	{
+	case REG_BP:
+	  catch_command_1 (argument, temp_p, 0);
+	  break;
+      default:
+	  internal_error (__FILE__, __LINE__,
+			  _("mi_cmd_break_catch: Bad switch."));
+	}
+    }
+  deprecated_set_gdb_event_hooks (old_hooks);
+  if (e.reason < 0)
+    throw_exception (e);
+
+  return MI_CMD_DONE;
+}
+
+

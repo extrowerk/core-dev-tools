@@ -62,8 +62,6 @@
 
 static void until_break_command_continuation (struct continuation_arg *arg);
 
-static void catch_command_1 (char *, int, int);
-
 static void enable_delete_command (char *, int);
 
 static void enable_delete_breakpoint (struct breakpoint *);
@@ -6447,10 +6445,19 @@ print_one_exception_catchpoint (struct breakpoint *b, CORE_ADDR *last_addr)
 static void
 print_mention_exception_catchpoint (struct breakpoint *b)
 {
-  if (strstr (b->addr_string, "throw") != NULL)
-    printf_filtered (_("Catchpoint %d (throw)"), b->number);
-  else
-    printf_filtered (_("Catchpoint %d (catch)"), b->number);
+  int bp_temp;
+  int bp_throw;
+
+  if (!ui_out_is_mi_like_p (uiout))
+    {
+      bp_temp = b->loc->owner->disposition == disp_del;
+      bp_throw = strstr (b->addr_string, "throw") != NULL;
+      ui_out_text (uiout, bp_temp ? _("Temporary catchpoint ")
+				  : _("Catchpoint "));
+      ui_out_field_int (uiout, "bkptno", b->number);
+      ui_out_text (uiout, bp_throw ? _(" (throw)")
+				   : _(" (catch)"));
+    }
 }
 
 static struct breakpoint_ops gnu_v3_exception_catchpoint_ops = {
@@ -6612,7 +6619,7 @@ cover_target_enable_exception_callback (void *arg)
     return 1;			/*is valid */
 }
 
-static void
+void
 catch_command_1 (char *arg, int tempflag, int from_tty)
 {
 
@@ -8296,7 +8303,7 @@ hardware.)"),
 			    show_can_use_hw_watchpoints,
 			    &setlist, &showlist);
 
-  //can_use_hw_watchpoints = 1;
+  can_use_hw_watchpoints = 1;
 
   add_prefix_cmd ("breakpoint", class_maintenance, set_breakpoint_cmd, _("\
 Breakpoint specific settings\n\
