@@ -62,6 +62,7 @@ typedef enum mi_cmd_result (mi_cmd_args_ftype) ( /*ui */ char *args, int from_tt
 /* Function implementing each command */
 extern mi_cmd_argv_ftype mi_cmd_break_insert;
 extern mi_cmd_argv_ftype mi_cmd_break_watch;
+extern mi_cmd_argv_ftype mi_cmd_break_catch;
 extern mi_cmd_argv_ftype mi_cmd_disassemble;
 extern mi_cmd_argv_ftype mi_cmd_data_evaluate_expression;
 extern mi_cmd_argv_ftype mi_cmd_data_list_register_names;

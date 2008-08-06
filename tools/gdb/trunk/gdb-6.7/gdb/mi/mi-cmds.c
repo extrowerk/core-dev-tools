@@ -33,7 +33,7 @@ static void build_table (struct mi_cmd *commands);
 struct mi_cmd mi_cmds[] =
 {
   { "break-after", { "ignore", 1 }, NULL, NULL },
-  { "break-catch", { NULL, 0 }, NULL, NULL },
+  { "break-catch", { NULL, 0 }, NULL, mi_cmd_break_catch },
   { "break-commands", { NULL, 0 }, NULL, NULL },
   { "break-condition", { "cond", 1 }, NULL, NULL },
   { "break-delete", { "delete breakpoint", 1 }, NULL, NULL },
