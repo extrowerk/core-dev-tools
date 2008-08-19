@@ -328,7 +328,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_ilp32_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Our loader handles solib relocations slightly differently than svr4.  */
   TARGET_SO_RELOCATE_SECTION_ADDRESSES = nto_relocate_section_addresses;
