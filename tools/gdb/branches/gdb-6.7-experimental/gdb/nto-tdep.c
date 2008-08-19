@@ -291,7 +291,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo.r_state_size = 4;
       lmo.r_rdevent_offset = 24;
       lmo.r_rdevent_size = 4;
-      lmo.r_ldsomap_offset = 20;
+      lmo.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
+				    show up twice.  */
 
       /* Link map.  */
       lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
@@ -312,24 +313,33 @@ nto_generic_svr4_fetch_link_map_offsets (void)
    solib-svr4.c to support nto_relocate_section_addresses
    which is different from the svr4 version.  */
 
+/* Link map info to include in an allocated so_list entry */
+
 struct lm_info
-{
-  /* Pointer to copy of link map from inferior.  The type is char *
-     rather than void *, so that we may use byte offsets to find the
-     various fields without the need for a cast.  */
-  char *lm;
-};
+  {
+    /* Pointer to copy of link map from inferior.  The type is char *
+       rather than void *, so that we may use byte offsets to find the
+       various fields without the need for a cast.  */
+    gdb_byte *lm;
+
+    /* Amount by which addresses in the binary should be relocated to
+       match the inferior.  This could most often be taken directly
+       from lm, but when prelinking is involved and the prelink base
+       address changes, we may need a different offset, we want to
+       warn about the difference and compute it only once.  */
+    CORE_ADDR l_addr;
+  };
 
 static CORE_ADDR
 LM_ADDR_FROM_LINK_MAP (struct so_list *so)
 {
   struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
 
-  gdb_byte *buf = so->lm_info->lm + lmo->l_addr_offset;
-  if (buf == NULL)
-    return 0;
-  return extract_typed_address (buf,
-				builtin_type_void_data_ptr);
+  if (so->lm_info->l_addr == (CORE_ADDR)-1)
+    so->lm_info->l_addr = extract_typed_address (so->lm_info->lm 
+						 + lmo->l_addr_offset,
+						 builtin_type_void_data_ptr);
+  return so->lm_info->l_addr;
 }
 
 static CORE_ADDR
@@ -371,10 +381,10 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
   sec->addr = nto_truncate_ptr (sec->addr 
-			        + LM_ADDR_FROM_LINK_MAP (so) 
+			        + LM_ADDR_FROM_LINK_MAP (so)
 				- vaddr);
   sec->endaddr = nto_truncate_ptr (sec->endaddr 
-				   + LM_ADDR_FROM_LINK_MAP (so) 
+				   + LM_ADDR_FROM_LINK_MAP (so)
 				   - vaddr);
 }
 
@@ -649,6 +659,8 @@ nto_break_on_this_solib_event (enum bptype type)
   struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
   unsigned int rt_state;
   unsigned int rd_event;
+
+  nto_trace (0) ("%s\n", __func__);
 
   /* see if we should stop here. */
   /* See what is going on.  */
