@@ -204,6 +204,8 @@ static void ep_skip_leading_whitespace (char **s);
 
 static int single_step_breakpoint_inserted_here_p (CORE_ADDR pc);
 
+static int bp_loc_permanent (struct bp_location *loc);
+
 static const char *
 bpdisp_text (enum bpdisp disp)
 {
@@ -1739,7 +1741,8 @@ breakpoint_init_inferior (enum inf_context context)
   struct bp_location *bpt;
 
   ALL_BP_LOCATIONS (bpt)
-    bpt->inserted = 0;
+    if (bpt->owner->enable_state != bp_permanent)
+      bpt->inserted = 0;
 
   ALL_BREAKPOINTS_SAFE (b, temp)
   {
@@ -3034,7 +3037,8 @@ bpstat_stop_status (CORE_ADDR bp_addr, ptid_t ptid, int stopped_by_watchpoint)
 	else
 	  {
 	    /* We will stop here */
-	    if (b->disposition == disp_disable)
+	    if (b->disposition == disp_disable
+		&& b->enable_state != bp_permanent)
 	      b->enable_state = bp_disabled;
 	    if (b->silent)
 	      bs->print = 0;
@@ -4560,6 +4564,7 @@ disable_breakpoints_in_shlibs (void)
 #else
 	&& solib_address (b->loc->address)
 #endif
+	&& !b->enable_state == bp_permanent
 	)
 	b->enable_state = bp_shlib_disabled;
   }
@@ -5134,6 +5139,10 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 	b->ignore_count = ignore_count;
 	b->enable_state = bp_enabled;
 	b->disposition = disposition;
+
+	if (bp_loc_permanent (b->loc))
+	  make_breakpoint_permanent (b);
+
 	/* If resolving a pending breakpoint, a check must be made to see if
 	   the user has specified a new condition or commands for the 
 	   breakpoint.  A new condition will override any condition that was 
@@ -8023,6 +8032,27 @@ single_step_breakpoint_inserted_here_p (CORE_ADDR pc)
       if (bp_tgt && bp_tgt->placed_address == pc)
 	return 1;
     }
+
+  return 0;
+}
+
+static int 
+bp_loc_permanent (struct bp_location *loc)
+{
+  const int READ_SUCCESS = 0;
+  int len;
+  CORE_ADDR addr;
+  const gdb_byte *brk;
+  gdb_byte target_mem[32];
+
+  gdb_assert (loc != NULL);
+
+  addr = loc->address;
+  brk = gdbarch_breakpoint_from_pc (current_gdbarch, &addr, &len);
+
+  if (target_read_memory (loc->address, target_mem, len) == READ_SUCCESS
+      && memcmp (target_mem, brk, len) == 0)
+    return 1;
 
   return 0;
 }
