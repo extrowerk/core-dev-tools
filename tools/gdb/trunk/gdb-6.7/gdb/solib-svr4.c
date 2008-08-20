@@ -420,7 +420,30 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
   return 0;
 }
 
+#ifdef __QNXTARGET__
+static char *
+get_soname (bfd *abfd)
+{
+  CORE_ADDR strtab, stroffs;
+  char buff[SO_NAME_MAX_PATH_SIZE];
+  int read;
 
+  if (!scan_dyntag (DT_STRTAB, abfd, &strtab)
+      || !scan_dyntag (DT_SONAME, abfd, &stroffs))
+    return NULL;
+
+  if (bfd_seek (abfd, strtab + stroffs, SEEK_SET))
+    return 0;
+
+  read = bfd_bread (buff, SO_NAME_MAX_PATH_SIZE - 1, abfd);
+  buff[SO_NAME_MAX_PATH_SIZE-1] = '\0';
+
+  if (read == 0 || buff[0] == '\0')
+    return 0;
+
+  return xstrdup (buff);
+}
+#endif /* __QNXTARGET__ */
 /*
 
    LOCAL FUNCTION
@@ -917,17 +940,19 @@ exec_entry_point (struct bfd *abfd, struct target_ops *targ)
 					     targ);
 }
 
-static int cmp_host_to_target_word(bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr) {
-	unsigned host_word, target_word;
-	
-	if((bfd_seek(abfd, host_addr, SEEK_SET) == -1) ||
-			bfd_bread((char*)&host_word, sizeof(host_word), abfd) != sizeof(host_word)) {
-		return -1;
-	}
-	if(target_read_memory(target_addr, (char*)&target_word, sizeof(target_word))) {
-		return -1;
-	}
-	return (host_word-target_word);
+static int 
+cmp_host_to_target_word (bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr)
+{
+  unsigned host_word, target_word;
+
+  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0 
+      || bfd_bread ((char*)&host_word, sizeof (host_word), abfd) 
+	 != sizeof (host_word)) 
+    return -1;
+  if (target_read_memory(target_addr, (char*)&target_word, 
+			 sizeof (target_word)))
+    return -1;
+  return (host_word-target_word);
 }
 
 /*
@@ -1074,7 +1099,15 @@ enable_break (void)
 
       if (!loader_found_in_list)
 	{
+#ifdef __QNXTARGET__
+	  char *soname = get_soname (tmp_bfd);
+	  if (soname && soname[0])
+	    debug_loader_name = soname;
+	  else
+	    debug_loader_name = xstrdup (buf);
+#else /* not __QNXTARGET__ */
 	  debug_loader_name = xstrdup (buf);
+#endif /* not __QNXTARGET__ */
 	  debug_loader_offset_p = 1;
 	  debug_loader_offset = load_addr;
 	  solib_add (NULL, 0, &current_target, auto_solib_add);
