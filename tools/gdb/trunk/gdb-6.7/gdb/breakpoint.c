@@ -2219,7 +2219,16 @@ print_it_typical (bpstat bs)
       annotate_catchpoint (bs->breakpoint_at->number);
       printf_filtered (_("\nCatchpoint %d (loaded %s), "),
 		       bs->breakpoint_at->number,
-		       bs->breakpoint_at->triggered_dll_pathname);
+		       bs->breakpoint_at->triggered_dll_pathname?:"(null)");
+      if (ui_out_is_mi_like_p (uiout))
+	{
+	  ui_out_field_string (uiout, "reason",
+			       async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	  ui_out_field_string (uiout, "disp",
+			       bpdisp_text (bs->breakpoint_at->disposition));
+	}
+      ui_out_field_int (uiout, "bkptno", bs->breakpoint_at->number);
+      ui_out_text (uiout, ", ");
       return PRINT_SRC_AND_LOC;
       break;
 
@@ -2227,7 +2236,16 @@ print_it_typical (bpstat bs)
       annotate_catchpoint (bs->breakpoint_at->number);
       printf_filtered (_("\nCatchpoint %d (unloaded %s), "),
 		       bs->breakpoint_at->number,
-		       bs->breakpoint_at->triggered_dll_pathname);
+		       bs->breakpoint_at->triggered_dll_pathname?:"(null)");
+      if (ui_out_is_mi_like_p (uiout))
+	{
+	  ui_out_field_string (uiout, "reason",
+			       async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	  ui_out_field_string (uiout, "disp",
+			       bpdisp_text (bs->breakpoint_at->disposition));
+	}
+      ui_out_field_int (uiout, "bkptno", bs->breakpoint_at->number);
+      ui_out_text (uiout, ", ");
       return PRINT_SRC_AND_LOC;
       break;
 
@@ -3462,7 +3480,13 @@ print_one_breakpoint (struct breakpoint *b,
 	   not line up too nicely with the headers, but the effect
 	   is relatively readable).  */
 	if (addressprint)
-	  ui_out_field_skip (uiout, "addr");
+	  {
+	    annotate_field (4);
+	    if (b->pending)
+	      ui_out_field_string (uiout, "addr", "<PENDING>");
+	    else
+	      ui_out_field_core_addr (uiout, "addr", b->loc->address);
+	  }
 	annotate_field (5);
 	if (b->dll_pathname == NULL)
 	  {
