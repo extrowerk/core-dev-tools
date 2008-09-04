@@ -185,3 +185,12 @@ QNX_SYSTEM_LIBDIRS \
 
 #undef  DRAFT_V4_STRUCT_RET
 #define DRAFT_V4_STRUCT_RET 1
+
+/* Enable SPE */
+#undef TARGET_SPE_ABI
+#undef TARGET_SPE
+#undef TARGET_E500
+
+#define TARGET_SPE_ABI rs6000_spe_abi
+#define TARGET_SPE rs6000_spe
+#define TARGET_E500 (rs6000_cpu == PROCESSOR_PPC8540)
