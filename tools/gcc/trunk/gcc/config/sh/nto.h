@@ -76,7 +76,7 @@ do {                                            \
 } while (0)
 
 #undef ASM_SPEC
-#define ASM_SPEC  "%{!mb:-little} %{mrelax:-relax}"
+#define ASM_SPEC  "%{!mb:-little} %{mrelax:-relax} --isa=sh4"
 
 #undef CC1_SPEC
 #define CC1_SPEC "%(cc1_spec) %{!mb:-ml} -m4"
