@@ -346,8 +346,21 @@ bfd_lookup_symbol (bfd *abfd, char *symname)
 /* Scan for DYNTAG in .dynamic section of ABFD. If DYNTAG is found 1 is
    returned and the corresponding PTR is set.  */
 
+#ifndef __QNXTARGET__
 static int
 scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
+#else /* __QNXTARGET__ */
+static int scan_dyntag_2 (int, bfd *, CORE_ADDR *, CORE_ADDR *);
+
+static int 
+scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
+{
+  return scan_dyntag_2 (dyntag, abfd, ptr, NULL);
+}
+
+static int
+scan_dyntag_2 (int dyntag, bfd *abfd, CORE_ADDR *ptr, CORE_ADDR *bfd_dyn_ptr)
+#endif /* __QNXTARGET__ */
 {
   int arch_size, step, sect_size;
   long dyn_tag;
@@ -400,6 +413,10 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
        return 0;
      if (dyn_tag == dyntag)
        {
+#ifdef __QNXTARGET__
+	 if (bfd_dyn_ptr)
+	   *bfd_dyn_ptr = dyn_ptr;
+#endif /* __QNXTARGET__ */
 	 /* If requested, try to read the runtime value of this .dynamic
 	    entry.  */
 	 if (ptr)
@@ -428,8 +445,8 @@ get_soname (bfd *abfd)
   char buff[SO_NAME_MAX_PATH_SIZE];
   int read;
 
-  if (!scan_dyntag (DT_STRTAB, abfd, &strtab)
-      || !scan_dyntag (DT_SONAME, abfd, &stroffs))
+  if (!scan_dyntag_2 (DT_STRTAB, abfd, NULL, &strtab)
+      || !scan_dyntag_2 (DT_SONAME, abfd, NULL, &stroffs))
     return NULL;
 
   if (bfd_seek (abfd, strtab + stroffs, SEEK_SET))
