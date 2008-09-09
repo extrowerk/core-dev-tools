@@ -1365,8 +1365,8 @@ value_field (struct value *arg1, int fieldno)
  */
 
 struct value *
-value_fn_field (struct value **arg1p, struct fn_field *f, int j, struct type *type,
-		int offset)
+value_fn_field (struct value **arg1p, struct fn_field *f, int j, 
+		struct type *type, int offset)
 {
   struct value *v;
   struct type *ftype = TYPE_FN_FIELD_TYPE (f, j);
@@ -1390,7 +1390,16 @@ value_fn_field (struct value **arg1p, struct fn_field *f, int j, struct type *ty
   v = allocate_value (ftype);
   if (sym)
     {
-      VALUE_ADDRESS (v) = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+      /* Constructors of non-virtual classes will not have block.  */
+      struct block *block = SYMBOL_BLOCK_VALUE (sym); 
+
+      if (block)
+	VALUE_ADDRESS (v) = BLOCK_START (block);
+      else
+	{
+	  release_value (v);
+	  return NULL;
+	}
     }
   else
     {
