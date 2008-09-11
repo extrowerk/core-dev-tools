@@ -301,6 +301,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
 
       lmo.l_name_offset = 4;
 
+      lmo.l_ld_offset = 8;
+
       lmo.l_next_offset = 12;
 
       lmo.l_prev_offset = 16;
@@ -386,6 +388,10 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
   sec->endaddr = nto_truncate_ptr (sec->endaddr 
 				   + LM_ADDR_FROM_LINK_MAP (so)
 				   - vaddr);
+  if (so->addr_low == 0)
+    so->addr_low = LM_ADDR_FROM_LINK_MAP (so);
+  if (so->addr_high < sec->endaddr)
+    so->addr_high = sec->endaddr;
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
