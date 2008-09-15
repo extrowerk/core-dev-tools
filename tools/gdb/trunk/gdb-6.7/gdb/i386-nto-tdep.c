@@ -297,7 +297,7 @@ init_i386nto_ops (void)
   nto_supply_regset = i386nto_supply_regset;
   nto_register_area = i386nto_register_area;
   nto_regset_fill = i386nto_regset_fill;
-  nto_fetch_link_map_offsets = svr4_ilp32_fetch_link_map_offsets;
+  nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
 }
 
 static void
