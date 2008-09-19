@@ -1091,6 +1091,7 @@ enable_break (void)
          target will also close the underlying bfd.  */
       tmp_bfd_target = target_bfd_reopen (tmp_bfd);
 
+#ifndef __QNXTARGET__
       /* On a running target, we can get the dynamic linker's base
          address from the shared library table.  */
       solib_add (NULL, 0, &current_target, auto_solib_add);
@@ -1106,7 +1107,7 @@ enable_break (void)
 	    }
 	  so = so->next;
 	}
-
+#endif
       /* Otherwise we find the dynamic linker's base address by examining
 	 the current pc (which should point at the entry point for the
 	 dynamic linker) and subtracting the offset of the entry point.  */
@@ -1127,7 +1128,9 @@ enable_break (void)
 #endif /* not __QNXTARGET__ */
 	  debug_loader_offset_p = 1;
 	  debug_loader_offset = load_addr;
+#ifndef __QNXTARGET__
 	  solib_add (NULL, 0, &current_target, auto_solib_add);
+#endif
 	}
 
       /* Record the relocated start and end address of the dynamic linker
