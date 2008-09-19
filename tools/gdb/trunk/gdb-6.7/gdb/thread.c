@@ -126,7 +126,11 @@ add_thread (ptid_t ptid)
   tp = (struct thread_info *) xmalloc (sizeof (*tp));
   memset (tp, 0, sizeof (*tp));
   tp->ptid = ptid;
+#ifndef __QNXTARGET__
   tp->num = ++highest_thread_num;
+#else
+  tp->num = ptid_get_tid (ptid);
+#endif
   tp->next = thread_list;
   thread_list = tp;
   return tp;
