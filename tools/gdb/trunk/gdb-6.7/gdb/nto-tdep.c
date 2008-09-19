@@ -31,6 +31,7 @@
 #include "bfd.h"
 #include "elf-bfd.h"
 #include "solib-svr4.h"
+#include "solist.h"
 #include "gdbcore.h"
 #include "objfiles.h"
 #include "filenames.h"
@@ -38,6 +39,8 @@
 #include "gdbcmd.h"
 #include "safe-ctype.h"
 #include "gdb_assert.h"
+
+#include "observer.h"
 
 #ifdef __QNX__
 #include <sys/debug.h>
@@ -380,6 +383,28 @@ find_load_phdr (bfd *abfd)
   return NULL;
 }
 
+static Elf_Internal_Phdr *
+find_load_phdr_2 (bfd *abfd, unsigned int p_filesz, 
+		  unsigned int p_memsz, unsigned int p_flags,
+		  unsigned int p_align)
+{
+  Elf_Internal_Phdr *phdr;
+  unsigned int i;
+
+  if (!elf_tdata (abfd))
+    return NULL;
+
+  phdr = elf_tdata (abfd)->phdr;
+  for (i = 0; i < elf_elfheader (abfd)->e_phnum; i++, phdr++)
+    {
+      if (phdr->p_type == PT_LOAD && phdr->p_flags == p_flags
+	  && phdr->p_memsz == p_memsz && phdr->p_filesz == p_filesz
+	  && phdr->p_align == p_align)
+	return phdr;
+    }
+  return NULL;
+}
+
 void
 nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
 {
@@ -640,6 +665,10 @@ filename_cmp (const char *s1, const char *s2)
   return qnx_filename_cmp (s1, s2);
 }
 
+
+
+/* NTO Core handling.  */
+
 extern struct gdbarch *core_gdbarch;
 
 /* Add thread status for the given gdb_thread_id.  */
@@ -717,11 +746,27 @@ nto_core_add_thread_private_data (bfd *abfd, asection *sect, void *notused)
 }
 
 static void (*original_core_open) (char *, int);
+static void (*original_core_close) (int);
+
+/* When opening a core, we do not want to set inferior hooks.  */
+static struct target_so_ops backup_so_ops;
+
+static void
+nto_core_solib_create_inferior_hook (void)
+{
+  /* Do nothing.  */
+}
 
 static void
 nto_core_open (char *filename, int from_tty)
 {
+  /* Backup target_so_ops.  */
+  backup_so_ops = *current_target_so_ops;
+
   nto_trace (0) ("%s (%s)\n", __func__, filename);
+
+  current_target_so_ops->solib_create_inferior_hook = 
+			 nto_core_solib_create_inferior_hook;
 
   original_core_open (filename, from_tty);
   nto_init_solib_absolute_prefix ();
@@ -733,15 +778,25 @@ nto_core_open (char *filename, int from_tty)
 }
 
 static void
+nto_core_close (int i)
+{
+  original_core_close (i);
+  /* Revert target_so_ops.  */
+  *current_target_so_ops = backup_so_ops;
+}
+
+static void
 init_nto_core_ops ()
 {
   gdb_assert (core_ops.to_shortname != NULL 
 	      && !!"core_ops must be initialized first!");
   core_ops.to_extra_thread_info = nto_target_extra_thread_info;
   original_core_open = core_ops.to_open;
-  if (!original_core_open)
+  original_core_close = core_ops.to_close;
+  if (!original_core_open || !original_core_close)
     error ("Orignal core open not set yet\n");
   core_ops.to_open = nto_core_open;
+  core_ops.to_close = nto_core_close;
 }
 
 int
@@ -759,10 +814,79 @@ nto_stopped_by_watchpoint (void)
 	    | _DEBUG_FLAG_TRACE_MODIFY);
 }
 
+
+/* Check for mismatching solibs.  */
+
+static void
+nto_solib_added_listener (struct so_list *solib)
+{
+  /* Check if the libraries match.
+     We compare all PT_LOAD segments.  */
+  CORE_ADDR mem_phdr_addr;
+  CORE_ADDR phdr_offs_addr = solib->addr_low + 28; 
+  /* See Elf32_Ehdr, 28 is offset of e_phoff.  */
+  gdb_byte offs_buf[4]; /* Offset is defined Elf32_Off 
+			   which is 4 bytes size. */
+
+  if (target_read_memory (phdr_offs_addr, offs_buf, sizeof (offs_buf)))
+    {
+      nto_trace (0) ("Could not read memory.\n");
+      return;
+    }
+
+  mem_phdr_addr = solib->addr_low 
+		  + extract_typed_address (offs_buf, 
+					   builtin_type_void_data_ptr); 
+
+  while (1)
+    {
+      gdb_byte phdr_buf[32]; /* 32 == sizeof (Elf32_Phdr) */
+      /* We compare phdr fields: p_type, p_flags, p_aign, p_filesz, p_memsz */
+      unsigned int p_type;
+      unsigned int p_filesz;
+      unsigned int p_memsz;
+      unsigned int p_flags;
+      unsigned int p_align;
+      Elf_Internal_Phdr *file_phdr;
+
+      if (target_read_memory (mem_phdr_addr, phdr_buf, sizeof (phdr_buf)))
+	{
+	  nto_trace (0) ("Could not read phdr\n");
+	  return;
+	}
+
+      p_type = extract_unsigned_integer (&phdr_buf[0], 4);
+      if (p_type == PT_LOAD)
+	{
+	  p_filesz = extract_unsigned_integer (&phdr_buf[16], 4);
+	  p_memsz = extract_unsigned_integer (&phdr_buf[20], 4);
+	  p_flags = extract_unsigned_integer (&phdr_buf[24], 4);
+	  p_align = extract_unsigned_integer (&phdr_buf[28], 4);
+
+	  file_phdr = find_load_phdr_2 (solib->abfd, 
+					p_filesz, p_memsz, p_flags, p_align); 
+	  if (file_phdr == NULL)
+	    {
+	      warning ("Host file %s does not match target file.",
+		       solib->so_name);
+	      break;
+	    }
+	}
+
+      if (p_type == PT_NULL)
+	break;
+
+      mem_phdr_addr += sizeof (phdr_buf);
+    }
+}
+
+
+
 /* Prevent corelow.c from adding core_ops target. We will do it
    after overriding some of the default functions. See comment in
    corelow.c for details.  */
 int coreops_suppress_target = 1;
+
 
 void
 _initialize_nto_tdep (void)
@@ -784,6 +908,8 @@ for different positive values."),
 			    &showdebuglist);
 
   add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
-
+  nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
   nto_is_nto_target = nto_elf_osabi_sniffer;
+
+  observer_attach_solib_loaded (nto_solib_added_listener);
 }
