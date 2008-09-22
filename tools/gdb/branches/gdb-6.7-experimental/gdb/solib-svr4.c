@@ -1047,6 +1047,9 @@ enable_break (void)
       int tmp_fd = -1;
       char *tmp_pathname = NULL;
       CORE_ADDR sym_addr = 0;
+#ifdef __QNXTARGET__
+      char *ldd_soname = NULL;
+#endif
 
       /* Read the contents of the .interp section into a local buffer;
          the contents specify the dynamic linker this program uses.  */
@@ -1091,14 +1094,28 @@ enable_break (void)
          target will also close the underlying bfd.  */
       tmp_bfd_target = target_bfd_reopen (tmp_bfd);
 
-#ifndef __QNXTARGET__
+#ifdef __QNXTARGET__
+      /* We are looking for real ldqnx file which is libc.so.?  */
+      ldd_soname = get_soname (tmp_bfd);
+      if (!ldd_soname || !ldd_soname[0])
+	{
+	  xfree (ldd_soname);
+	  ldd_soname = xstrdup (buf);
+	}
+#endif
+
       /* On a running target, we can get the dynamic linker's base
          address from the shared library table.  */
       solib_add (NULL, 0, &current_target, auto_solib_add);
       so = master_so_list ();
       while (so)
 	{
+#ifdef __QNXTARGET__
+	  const char *dbg_soname = ldd_soname;
+	  if (strcmp (dbg_soname, so->so_original_name) == 0)
+#else  /* not __QNXTARGET__ */
 	  if (strcmp (buf, so->so_original_name) == 0)
+#endif /* not __QNXTARGET__ */
 	    {
 	      load_addr_found = 1;
 	      loader_found_in_list = 1;
@@ -1107,7 +1124,7 @@ enable_break (void)
 	    }
 	  so = so->next;
 	}
-#endif
+
       /* Otherwise we find the dynamic linker's base address by examining
 	 the current pc (which should point at the entry point for the
 	 dynamic linker) and subtracting the offset of the entry point.  */
@@ -1118,11 +1135,7 @@ enable_break (void)
       if (!loader_found_in_list)
 	{
 #ifdef __QNXTARGET__
-	  char *soname = get_soname (tmp_bfd);
-	  if (soname && soname[0])
-	    debug_loader_name = soname;
-	  else
-	    debug_loader_name = xstrdup (buf);
+	  debug_loader_name = ldd_soname;
 #else /* not __QNXTARGET__ */
 	  debug_loader_name = xstrdup (buf);
 #endif /* not __QNXTARGET__ */
