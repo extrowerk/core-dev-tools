@@ -114,7 +114,7 @@ do {                                            \
 #undef GOMP_SELF_SPECS
 #define GOMP_SELF_SPECS ""
 
-#define MFLIB_SPEC " %{fmudflap: -lmudflap -lsocket\
+#define MFLIB_SPEC " %{fmudflap: -export-dynamic -lmudflap -lsocket\
  %{static:%(link_gcc_c_sequence) -lmudflap -lsocket}} \
- %{fmudflapth: -lmudflapth -lsocket\
+ %{fmudflapth: -export-dynamic -lmudflapth -lsocket\
  %{static:%(link_gcc_c_sequence) -lmudflapth -lsocket}} "
