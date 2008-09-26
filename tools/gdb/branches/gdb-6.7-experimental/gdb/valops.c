@@ -631,7 +631,7 @@ value_assign (struct value *toval, struct value *fromval)
 	frame = frame_find_by_id (VALUE_FRAME_ID (toval));
 	value_reg = VALUE_REGNUM (toval);
 
-	if (!frame)
+	if (!frame && !(frame = get_current_frame ()))
 	  error (_("Value being assigned to is no longer active."));
 	
 	if (gdbarch_convert_register_p
