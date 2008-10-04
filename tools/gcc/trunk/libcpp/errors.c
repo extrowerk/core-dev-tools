@@ -151,6 +151,15 @@ cpp_error (cpp_reader * pfile, int level, const char *msgid, ...)
 	  else
 	    src_loc = pfile->line_table->highest_line;
 	}
+      /* We don't want to refer to a token before the beginning of the
+         current run -- that is invalid.  */
+      else if (pfile->cur_token == pfile->cur_run->base)
+        {
+          if (pfile->cur_run->prev != NULL)
+            src_loc = pfile->cur_run->prev->limit->src_loc;
+          else
+            src_loc = 0;
+        }
       else
 	{
 	  src_loc = pfile->cur_token[-1].src_loc;
