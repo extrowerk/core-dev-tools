@@ -1,0 +1,177 @@
+minimum_binutils=2.12.1
+need_new=""
+
+srcdir=${PWD}/..
+targ_root=${PWD}
+
+gcc_version=$(cat ../gcc/BASE-VER)
+
+qnx_target_version=6.3.0
+nto_target=${PWD##*-}
+cpu_string=`echo ${nto_target} | sed 's/nto//'`
+if [ $cpu_string = x86 ]; then
+cpu_string=i386
+fi
+tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}`
+target=`${srcdir}/config.sub ${tmpstring}`
+basedir='/usr'
+
+STACKSIZE=${STACKSIZE:-4096000}
+
+case ${SYSNAME} in
+nto)
+	make_CC="gcc"
+	;;
+win32)
+	QNXSDK_HOST_LDFLAGS="-Wl,--stack=$STACKSIZE"
+	;;
+esac
+
+export LDFLAGS="-Wl,-s $QNXSDK_HOST_LDFLAGS"
+
+function hook_preconfigure {
+	case ${SYSNAME} in
+	nto)
+		case "${target}" in
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/qnx630/host/qnx6/x86}}
+				basedir=${TOOL_PATH}/usr ;;
+		*)		basedir=/usr/qnx630/host/qnx6/x86/usr ;;
+		esac
+		;;
+	solaris)
+		host_cpu=$(uname -p)
+		case ${host_cpu} in
+        i[34567]86) host_cpu=x86;;
+		esac
+		basedir=${QNX_HOST:-/usr/qnx630/host/solaris/${host_cpu}/usr}
+		;;
+	linux)
+		if [ X${WIN32_ENVIRON} == Xmingw ]; then
+			configure_opts="${configure_opts} --host=i386-mingw32msvc"
+			configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
+		fi
+		host_cpu=$(uname -m)
+		case ${host_cpu} in
+        i[34567]86) host_cpu=x86 ;;
+		esac
+		#basedir=${QNX_HOST:-/usr/qnx630/host/linux/${host_cpu}/usr}
+		basedir=/opt/qnx630/host/linux/x86/usr
+		;;
+	win32)
+		tooldir=${QNX_HOST:-c:/qnx630/host/win32/x86}
+		basedir=${tooldir}/usr
+		;;
+	*)
+		echo "Don't have config for ${SYSNAME}"
+		exit 1
+		;;
+	esac
+
+	case ${target} in
+	*nto-qnx*)	
+		configure_opts="${configure_opts} --enable-cheaders=c"
+		configure_opts="${configure_opts} --with-as=${nto_target}-as-2.18"
+		configure_opts="${configure_opts} --with-ld=${nto_target}-ld-2.18"
+	esac 
+
+	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
+	configure_opts="${configure_opts} --disable-werror"
+ 	configure_opts="${configure_opts} --libdir=${basedir}/lib"
+	configure_opts="${configure_opts} --libexecdir=${basedir}/lib"
+	configure_opts="${configure_opts} --target=${target}"
+	configure_opts="${configure_opts} --srcdir=${srcdir}"
+	configure_opts="${configure_opts} --prefix=${basedir}"
+	configure_opts="${configure_opts} --exec-prefix=${basedir}"
+	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
+	configure_opts="${configure_opts} --enable-languages=c++"
+	configure_opts="${configure_opts} --enable-threads=posix"
+	configure_opts="${configure_opts} --disable-nls"
+	configure_opts="${configure_opts} --disable-libssp"
+	configure_opts="${configure_opts} --disable-tls"
+	configure_opts="${configure_opts} --enable-__cxa_atexit"
+	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/${gcc_version}"
+	configure_opts="${configure_opts} --enable-multilib"
+	configure_opts="${configure_opts} --enable-shared"
+
+	# The cross compilation of libgcc.a and libstdc++ require system headers
+	# from the next version of Neutrino while gcc itself should be compiled
+	# against the currently released version. This symlink puts the system
+	# headers in a location already referenced by the makefiles for libgcc
+	# and libstd++. This location is where gcc would like to see headers
+	# but we aren't currently using it. Thus the symlink is safe for now.
+
+	if test "${SYSNAME}" = "nto"; then
+		if test -n "${USE_ROOT_nto}"; then 
+			op ln -sP ${USE_ROOT_nto}/usr/include ${basedir}/${target}/include
+		fi
+
+		as_ver=$(${nto_target}-as --version | head -l -n 1 | sed -e "s/^[^0-9]*//" -e "s/[^0-9.]*$//")
+		while [ -n "${as_ver}" ]; do
+			act=${as_ver%%.*}
+			req=${minimum_binutils%%.*}
+			if [ ${act} -lt ${req} ]; then
+				need_new="yes"
+				break;
+			fi
+			if [ ${act} -gt ${req} ]; then 
+				break
+			fi
+			minimum_binutils=${minimum_binutils#*.}
+			new=${as_ver#*.}
+			if [ "${new}" = "${as_ver}" ]; then
+				new=""
+			fi
+			as_ver=${new}
+		done
+	fi	
+}
+
+function hook_premake {
+	strip_r_switch
+	make_opts="CFLAGS+=-O2"
+
+}
+
+function hook_postmake {
+	if [ ${SYSNAME} = nto ]; then
+		ldrel -L -S $STACKSIZE gcc/cc1
+		ldrel -L -S $STACKSIZE gcc/cc1plus
+		echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
+		${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
+		# If we are mips or arm, also weaken the be variant
+		case ${nto_target} in
+		ntoarm | ntomips)
+			echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
+			${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a
+			;;	
+		esac
+	fi
+}
+
+function want_library {
+	# If it's not little endian on the SH, we don't want it
+	case ${nto_target} in
+	ntosh)
+		test "$(echo $1 | fgrep /ml)" != ""
+		return $?
+		;;
+	esac
+	return 0
+}
+
+function hook_pinfo {
+	case ${SYSNAME} in
+	win32)	exe_suffix=".exe" 	;;
+	*)	exe_suffix=""		;;
+	esac
+
+	# Executables
+	gen_pinfo -ngcc/cc1 cc1${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/cc1plus cc1plus${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/collect2 collect2${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
+	gen_pinfo -ngcc/xgcc ${target}-gcc${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-gcc${exe_suffix} FINFO="0 0 1775"
+	gen_pinfo -ngcc/g++ ${target}-g++${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-g++${exe_suffix} SYMLINK=/${target}-c++${exe_suffix} SYMLINK=/${nto_target}-c++${exe_suffix} FINFO="0 0 1775"
+	gen_pinfo -ngcc/gcov ${target}-gcov${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-gcov${exe_suffix}
+	gen_pinfo -ngcc/specs specs /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC specs ${gcc_version}"
+}
+
