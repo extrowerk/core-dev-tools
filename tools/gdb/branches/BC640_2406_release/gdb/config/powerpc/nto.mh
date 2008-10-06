@@ -1,0 +1,3 @@
+# Host: PowerPC running QNX Neutrino
+
+NATDEPFILES= nto-procfs.o
