@@ -843,6 +843,7 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   frame_unwind_append_sniffer (gdbarch, ppc_nto_sigtramp_sniffer);
   init_ppcnto_ops ();
+  set_gdbarch_have_nonsteppable_watchpoint (gdbarch, 0);
 }
 
 void
