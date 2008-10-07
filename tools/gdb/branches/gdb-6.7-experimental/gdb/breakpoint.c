@@ -1181,7 +1181,22 @@ Note: automatically using hardware breakpoints for read-only addresses.\n"));
 	      fprintf_unfiltered (tmp_error_stream,
 				  "Could not insert hardware watchpoint %d.\n", 
 				  bpt->owner->number);
-	      val = -1;
+	      printf_unfiltered ("Changing watchpoint type to software and trying again.\n");
+	      bpt->owner->type = bp_watchpoint;
+	      bpt->loc_type = bp_loc_other;
+	      val = insert_bp_location (bpt,
+					tmp_error_stream,
+					disabled_breaks, 
+					process_warning,
+					hw_breakpoint_error);
+	      if (val == -1)
+		{
+		  bpt->owner->enable_state = bp_disabled;
+		  *disabled_breaks = 1;
+		}
+	      else
+		  /* We inserted the software watchpoint.  */
+		  *hw_breakpoint_error = 0;
 	    }               
 	}
       else
@@ -1633,7 +1648,8 @@ remove_breakpoint (struct bp_location *b, insertion_state_t is)
       struct value *v;
       struct value *n;
 
-      b->inserted = (is == mark_inserted);
+      val = 0;
+
       /* Walk down the saved value chain.  */
       for (v = b->owner->val_chain; v; v = value_next (v))
 	{
@@ -1650,6 +1666,7 @@ remove_breakpoint (struct bp_location *b, insertion_state_t is)
 		{
 		  CORE_ADDR addr;
 		  int len, type;
+		  int aval = 0;
 
 		  addr = VALUE_ADDRESS (v) + value_offset (v);
 		  len = TYPE_LENGTH (value_type (v));
@@ -1659,17 +1676,22 @@ remove_breakpoint (struct bp_location *b, insertion_state_t is)
 		  else if (b->owner->type == bp_access_watchpoint)
 		    type = hw_access;
 
-		  val = target_remove_watchpoint (addr, len, type);
-		  if (val == -1)
-		    b->inserted = 1;
-		  val = 0;
+		  aval = target_remove_watchpoint (addr, len, type);
+		  if (aval == -1)
+		    {
+		      b->inserted &= 1;
+		      val = -1;
+		    }
 		}
 	    }
 	}
-      /* Failure to remove any of the hardware watchpoints comes here.  */
-      if ((is == mark_uninserted) && (b->inserted))
+
+      if (val == -1 && b->inserted)
 	warning (_("Could not remove hardware watchpoint %d."),
 		 b->owner->number);
+
+      if (val == 0)
+	b->inserted = (is == mark_inserted);
     }
   else if ((b->owner->type == bp_catch_fork ||
 	    b->owner->type == bp_catch_vfork ||
