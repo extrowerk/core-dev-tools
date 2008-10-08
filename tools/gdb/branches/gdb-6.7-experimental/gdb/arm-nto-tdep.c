@@ -450,6 +450,9 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   frame_unwind_append_sniffer (gdbarch, armnto_sigtramp_sniffer);
 
   init_armnto_ops ();
+
+  /* Our single step is broken. Use software. */
+  set_gdbarch_software_single_step (gdbarch, arm_software_single_step);
 }
 
 void
