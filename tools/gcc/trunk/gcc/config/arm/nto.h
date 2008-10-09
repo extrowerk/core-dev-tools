@@ -158,3 +158,4 @@ do {                                            \
 #undef FPUTYPE_DEFAULT
 #define FPUTYPE_DEFAULT FPUTYPE_VFP
 
+#define USE_OLD_ATBASE
