@@ -47,6 +47,11 @@
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\
 		_DEBUG_FLAG_TRACE_WR|_DEBUG_FLAG_TRACE_MODIFY)
 
+/* Typedefs, we use gdb specific type names... to be consistent,
+   we use them here too.  */
+typedef debug_thread_t nto_procfs_status;
+typedef debug_process_t nto_procfs_info;
+
 extern int nto_stopped_by_watchpoint (void);
 
 static struct target_ops procfs_ops;
@@ -124,7 +129,8 @@ procfs_open (char *arg, int from_tty)
   int fd, total_size;
   procfs_sysinfo *sysinfo;
 
-  nto_trace (0) ("%s (arg=%s, from_tty=%d)\n", __func__, arg, from_tty);
+  nto_trace (0) ("%s (arg=%s, from_tty=%d)\n", __func__, 
+		 (arg != NULL) ? arg : "", from_tty);
 
   /* Set the default node used for spawning to this one,
      and only override it if there is a valid arg.  */
@@ -373,7 +379,8 @@ procfs_pidlist (char *args, int from_tty)
   pid_t pid;
   char name[512];
 
-  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, 
+		 (args != NULL) ? args : "", from_tty);
 
   dp = opendir (nto_procfs_path);
   if (dp == NULL)
@@ -479,7 +486,8 @@ procfs_meminfo (char *args, int from_tty)
     char name[256];
   } printme;
 
-  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, 
+		 (args != NULL) ? args : "", from_tty);
 
   /* Get the number of map entrys.  */
   err = devctl (ctl_fd, DCMD_PROC_MAPINFO, NULL, 0, &num);
@@ -617,7 +625,8 @@ procfs_attach (char *args, int from_tty)
   char *exec_file;
   int pid;
 
-  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__,
+		 (args != NULL) ? args : "", from_tty);
 
   if (!args)
     error_no_arg (_("process-id to attach"));
@@ -885,6 +894,39 @@ procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
   return (nbytes);
 }
 
+static LONGEST
+procfs_xfer_partial (struct target_ops *ops, enum target_object object,
+		     const char *annex, gdb_byte *readbuf,
+		     const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+{
+  if (object == TARGET_OBJECT_AUXV
+      && readbuf)
+    {
+      int err;
+      CORE_ADDR initial_stack;
+      nto_procfs_info procinfo;
+
+      if (offset > 0)
+	return 0;
+
+      err = devctl (ctl_fd, DCMD_PROC_INFO, &procinfo, sizeof procinfo, 0);
+      if (err != EOK)
+	return -1;
+
+      /* Similar as in the case of a core file, we read auxv from
+         initial_stack.  */
+      initial_stack = procinfo.initial_stack;
+
+      /* procfs is always 'self-hosted', no byte-order manipulation. */
+      return nto_read_auxv_from_initial_stack (initial_stack, readbuf, len);
+    }
+
+  if (ops->beneath && ops->beneath->to_xfer_partial)
+    return ops->beneath->to_xfer_partial (ops, object, annex, readbuf,
+					  writebuf, offset, len);
+  return -1;
+}
+
 /* Take a program previously attached to and detaches it.
    The program resumes execution and will no longer stop
    on signals, etc.  We'd better not have left any breakpoints
@@ -894,7 +936,8 @@ procfs_detach (char *args, int from_tty)
 {
   int siggnal = 0;
 
-  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, args, from_tty);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__, 
+		 (args != NULL) ? args : "", from_tty);
 
   if (from_tty)
     {
@@ -924,7 +967,8 @@ procfs_breakpoint (CORE_ADDR addr, int type, int size)
 {
   procfs_break brk;
 
-  nto_trace (0) ("%s (addr=%s, type=%d, size=%d)\n", __func__, paddr (addr), type, size);
+  nto_trace (0) ("%s (addr=%s, type=%d, size=%d)\n", __func__, 
+		 paddr (addr), type, size);
 
   brk.type = type;
   brk.addr = addr;
@@ -1116,7 +1160,9 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   sigset_t set;
   const char *inferior_io_terminal = get_inferior_io_terminal ();
 
-  nto_trace (0) ("%s (exec_file=%s, allargs=%s, ...)\n", __func__, exec_file, allargs);
+  nto_trace (0) ("%s (exec_file=%s, allargs=%s, ...)\n", __func__, 
+		 (exec_file != NULL) ? exec_file : "", 
+		 (allargs != NULL) ? allargs : "");
 
   argv = xmalloc (((strlen (allargs) + 1) / (unsigned) 2 + 2) *
 		  sizeof (*argv));
@@ -1417,6 +1463,7 @@ init_procfs_ops (void)
   procfs_ops.to_store_registers = procfs_store_registers;
   procfs_ops.to_prepare_to_store = procfs_prepare_to_store;
   procfs_ops.deprecated_xfer_memory = procfs_xfer_memory;
+  procfs_ops.to_xfer_partial = procfs_xfer_partial;
   procfs_ops.to_files_info = procfs_files_info;
   procfs_ops.to_insert_breakpoint = procfs_insert_breakpoint;
   procfs_ops.to_remove_breakpoint = procfs_remove_breakpoint;

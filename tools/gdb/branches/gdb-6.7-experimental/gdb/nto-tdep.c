@@ -48,6 +48,7 @@
 #define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
 #include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
+typedef debug_process_t nto_procfs_info;
 #else
 #include "nto-share/debug.h"
 #endif
@@ -290,6 +291,7 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo.r_version_offset = 0;
       lmo.r_version_size = 4;
       lmo.r_map_offset = 4;
+      lmo.r_brk_offset = 8;
       lmo.r_state_offset = 12;
       lmo.r_state_size = 4;
       lmo.r_rdevent_offset = 24;
@@ -775,11 +777,153 @@ static void (*original_core_close) (int);
 /* When opening a core, we do not want to set inferior hooks.  */
 static struct target_so_ops backup_so_ops;
 
+struct target_ops original_core_ops;
+
+
 static void
 nto_core_solib_create_inferior_hook (void)
 {
   /* Do nothing.  */
 }
+
+struct auxv_buf
+{
+  LONGEST len;
+  LONGEST len_read; /* For passing result. Can be len, 0, or -1  */
+  gdb_byte *readbuf;
+};
+
+/* Read AUXV from initial_stack.  */
+LONGEST
+nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
+				  LONGEST len)
+{
+  int data_ofs = 0;
+  int anint32;
+  LONGEST len_read = 0;
+  gdb_byte *panint32 = (gdb_byte*)&anint32;
+  gdb_byte *buff;
+
+  /* Skip over argc, argv and envp... (see comment in ldd.c)  */
+  if (target_read_memory (initial_stack + data_ofs, panint32, 4) != 0)
+    return 0;
+
+  anint32 = EXTRACT_UNSIGNED_INTEGER (panint32, sizeof (anint32));
+
+  /* Size of pointer is assumed to be 4 bytes (32 bit arch. ) */
+  data_ofs += (anint32 + 2) * 4; /* + 2 comes from argc itself and
+				    NULL terminating pointer in argv */
+
+  /* Now loop over env table:  */
+  while (target_read_memory (initial_stack + data_ofs, panint32, 4) == 0)
+    {
+      anint32 = EXTRACT_SIGNED_INTEGER (panint32, sizeof (anint32));
+      data_ofs += 4;
+      if (anint32 == 0)
+	break;
+    }
+  initial_stack += data_ofs;
+
+  memset (readbuf, 0, len);
+  buff = readbuf;
+  while (len_read <= len-8)
+    {
+      /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+
+      /* Search backwards until we have read AT_PHDR (num. 3),
+	 AT_PHENT (num 4), AT_PHNUM (num 5)  */
+      if (target_read_memory (initial_stack, buff, 8)
+	  == 0)
+	{
+	  int a_type = EXTRACT_SIGNED_INTEGER (buff, sizeof (a_type));
+	  if (a_type != AT_NULL)
+	    {
+	      buff += 8;
+	      len_read += 8;
+	      nto_trace (0) ("Read a_type: %d\n", a_type);
+	    }
+	  if (a_type == AT_PHNUM) /* That's all we need.  */
+	    break;
+	  initial_stack += 8;
+	}
+      else
+	break;
+    }
+  return len_read;
+}
+
+/* Read AUXV from note.  */
+static void
+nto_core_read_auxv_from_note (bfd *abfd, asection *sect, void *pauxv_buf)
+{
+  struct auxv_buf *auxv_buf = (struct auxv_buf *)pauxv_buf;
+  const char *sectname;
+  unsigned int sectsize;
+  const char qnx_core_info[] = ".qnx_core_info/";
+  const unsigned int qnx_sectnamelen = 14;/* strlen (qnx_core_status).  */
+  const char warning_msg[] = "Unable to read %s section from core.\n";
+  int data_ofs;
+  nto_procfs_info info;
+  int len;
+  gdb_byte *buff; /* For skipping over argc, argv and envp-s */
+  int anint32;
+  CORE_ADDR initial_stack, base_address;
+
+  sectname = bfd_get_section_name (abfd, sect);
+  sectsize = bfd_section_size (abfd, sect);
+  if (sectsize > sizeof (info))
+    sectsize = sizeof (info);
+
+  if (strncmp (sectname, qnx_core_info, qnx_sectnamelen) != 0) 
+    return;
+
+  if (bfd_seek (abfd, sect->filepos, SEEK_SET) != 0)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  len = bfd_bread ((gdb_byte *)&info, sectsize, abfd);
+  if (len != sectsize)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  initial_stack = EXTRACT_UNSIGNED_INTEGER 
+    (&info.initial_stack, sizeof (info.initial_stack));
+  base_address = EXTRACT_UNSIGNED_INTEGER
+    (&info.base_address, sizeof (info.base_address));
+  buff = auxv_buf->readbuf;
+
+  auxv_buf->len_read = nto_read_auxv_from_initial_stack 
+    (initial_stack, auxv_buf->readbuf, auxv_buf->len);
+}
+
+static LONGEST
+nto_core_xfer_partial (struct target_ops *ops, enum target_object object,
+		       const char *annex, gdb_byte *readbuf,
+		       const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+{
+  if (object == TARGET_OBJECT_AUXV
+      && readbuf)
+    {
+      struct auxv_buf auxv_buf;
+
+      auxv_buf.len = len;
+      auxv_buf.len_read = 0;
+      auxv_buf.readbuf = readbuf;
+      
+      if (offset > 0)
+	return 0;
+
+      bfd_map_over_sections (core_bfd, nto_core_read_auxv_from_note, &auxv_buf);
+      if (auxv_buf.len_read > 0)
+	return auxv_buf.len_read;
+    }
+
+  /* In any other case, try default code.  */
+  return original_core_ops.to_xfer_partial (ops, object, annex, readbuf,
+					    writebuf, offset, len);
+} 
 
 static void
 nto_core_open (char *filename, int from_tty)
@@ -789,10 +933,7 @@ nto_core_open (char *filename, int from_tty)
 
   nto_trace (0) ("%s (%s)\n", __func__, filename);
 
-  current_target_so_ops->solib_create_inferior_hook = 
-			 nto_core_solib_create_inferior_hook;
-
-  original_core_open (filename, from_tty);
+  original_core_ops.to_open (filename, from_tty);
   nto_init_solib_absolute_prefix ();
 
   /* Now we need to load additional thread status information stored
@@ -804,7 +945,7 @@ nto_core_open (char *filename, int from_tty)
 static void
 nto_core_close (int i)
 {
-  original_core_close (i);
+  original_core_ops.to_close (i);
   /* Revert target_so_ops.  */
   *current_target_so_ops = backup_so_ops;
 }
@@ -814,13 +955,11 @@ init_nto_core_ops ()
 {
   gdb_assert (core_ops.to_shortname != NULL 
 	      && !!"core_ops must be initialized first!");
+  original_core_ops = core_ops;
   core_ops.to_extra_thread_info = nto_target_extra_thread_info;
-  original_core_open = core_ops.to_open;
-  original_core_close = core_ops.to_close;
-  if (!original_core_open || !original_core_close)
-    error ("Orignal core open not set yet\n");
   core_ops.to_open = nto_core_open;
   core_ops.to_close = nto_core_close;
+  core_ops.to_xfer_partial = nto_core_xfer_partial;
 }
 
 int
