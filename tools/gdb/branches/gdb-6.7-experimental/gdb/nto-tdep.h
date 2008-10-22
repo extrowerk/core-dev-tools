@@ -197,5 +197,8 @@ int target_signal_to_nto(struct gdbarch *, enum target_signal sig);
 
 int qnx_filename_cmp (const char *s1, const char *s2);
 
+LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, 
+					  gdb_byte *readbuf,
+					  LONGEST len);
 
 #endif

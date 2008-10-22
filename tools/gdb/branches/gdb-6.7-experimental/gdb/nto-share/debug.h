@@ -158,8 +158,8 @@ typedef struct _debug_process_info
   pid_t sibling;
   pid_t pgrp;
   pid_t sid;
-  int base_address;
-  int initial_stack;
+  qnx_64 base_address;
+  qnx_64 initial_stack;
   uid_t uid;
   gid_t gid;
   uid_t euid;
@@ -173,7 +173,14 @@ typedef struct _debug_process_info
   unsigned num_fdcons;
   unsigned num_threads;
   unsigned num_timers;
-  qnx_64 reserved[20];
+  qnx_64 reserved[5];	  /* Process times.  */
+  unsigned char priority; /* Process base priority.  */
+  unsigned char reserved2[7];
+  unsigned char extsched[8];
+  qnx_64 pls;	  /* Address of process local storage.  */
+  qnx_64 sigstub; /* Address of process signal trampoline.  */
+  qnx_64 canstub; /* Address of process thread cancellation trampoline. */
+  qnx_64 reserved3[10];
 } nto_procfs_info;
 
 typedef struct _debug_thread_info
@@ -183,9 +190,9 @@ typedef struct _debug_thread_info
   unsigned flags;
   unsigned short why;
   unsigned short what;
-  int ip;
-  int sp;
-  int stkbase;
+  qnx_64 ip;
+  qnx_64 sp;
+  qnx_64 stkbase;
   int tls;
   unsigned stksize;
   unsigned tid_flags;

@@ -65,6 +65,17 @@
 #include "nto-share/dsmsgs.h"
 #include "nto-tdep.h"
 
+#ifdef __QNX__
+#include <sys/debug.h>
+#include <sys/elf_notes.h>
+#define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
+#include <sys/link.h>
+typedef debug_thread_t nto_procfs_status;
+#else
+#include "nto-share/debug.h"
+#endif
+
+
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
@@ -1994,6 +2005,64 @@ nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int should_write,
   return res;
 }
 
+static LONGEST
+nto_xfer_partial (struct target_ops *ops, enum target_object object,
+		  const char *annex, gdb_byte *readbuf,
+		  const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+{
+  if (object == TARGET_OBJECT_AUXV
+      && readbuf)
+    {
+      if (offset > 0)
+	return 0;
+
+      /* Once we have transfer of procfs_info over pdebug protocol in
+         place, we should use that here.  */
+      if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
+	  && exec_bfd->tdata.elf_obj_data->phdr != NULL)
+	{
+	  unsigned int phdr = 0, phent, phnum = 0;
+	  gdb_byte *buff = readbuf;
+
+	  /* Simply copy what we have in exec_bfd to the readbuf.  */
+	  while (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type != PT_NULL)
+	    {
+	      if (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type == PT_PHDR)
+		phdr = exec_bfd->tdata.elf_obj_data->phdr[phnum].p_vaddr;
+	      phnum++;
+	    }
+
+	  /* Create artificial auxv, with AT_PHDR, AT_PHENT and AT_PHNUM
+	     elements.  */
+	  *(int*)buff = AT_PHNUM;
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
+	  buff += 4;
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (&phnum, sizeof (phnum));
+	  buff += 4;
+
+	  *(int*)buff = AT_PHENT;
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
+	  buff += 4;
+	  *(int*)buff = 0x20; /* for Elf32 */
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
+	  buff += 4;
+
+	  *(int*)buff = AT_PHDR;
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (&buff, sizeof (int));
+	  buff += 4;
+	  *(int*)buff = phdr;
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
+	  buff += 4;
+
+	  return (buff - readbuf);
+	}
+    }
+  
+  if (ops->beneath && ops->beneath->to_xfer_partial)
+    return ops->beneath->to_xfer_partial (ops, object, annex, readbuf,
+					  writebuf, offset, len);
+  return -1;
+}
 
 static void
 nto_files_info (struct target_ops *ignore)
@@ -2678,6 +2747,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_store_registers = nto_store_registers;
   nto_ops.to_prepare_to_store = nto_prepare_to_store;
   nto_ops.deprecated_xfer_memory = nto_xfer_memory;
+  nto_ops.to_xfer_partial = nto_xfer_partial;
   nto_ops.to_files_info = nto_files_info;
   nto_ops.to_can_use_hw_breakpoint = nto_can_use_hw_breakpoint;
   nto_ops.to_insert_breakpoint = nto_to_insert_breakpoint;

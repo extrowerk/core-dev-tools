@@ -41,6 +41,13 @@
 #include "bfd-target.h"
 #include "elf-bfd.h"
 #include "exec.h"
+#include "auxv.h"
+#include "exceptions.h"
+
+#ifdef __QNXTARGET__
+/* Allow using core_bfd if exec_bfd is not present.  */
+#define exec_bfd ((exec_bfd != NULL) ? exec_bfd : core_bfd)
+#endif
 
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);
@@ -227,10 +234,12 @@ IGNORE_FIRST_LINK_MAP_ENTRY (struct so_list *so)
 {
   struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
 
+#ifndef __QNXTARGET__
   /* Assume that everything is a library if the dynamic loader was loaded
      late by a static executable.  */
   if (bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
     return 0;
+#endif /* !__QNXTARGET__ */
 
   return extract_typed_address (so->lm_info->lm + lmo->l_prev_offset,
 				builtin_type_void_data_ptr) == 0;
@@ -342,6 +351,137 @@ bfd_lookup_symbol (bfd *abfd, char *symname)
 
   return symaddr;
 }
+
+
+/* Read program header TYPE from inferior memory.  The header is found
+   by scanning the OS auxillary vector.
+
+   Return a pointer to allocated memory holding the program header contents,
+   or NULL on failure.  If sucessful, and unless P_SECT_SIZE is NULL, the
+   size of those contents is returned to P_SECT_SIZE.  Likewise, the target
+   architecture size (32-bit or 64-bit) is returned to P_ARCH_SIZE.  */
+
+static gdb_byte *
+read_program_header (int type, int *p_sect_size, int *p_arch_size)
+{
+  CORE_ADDR at_phdr, at_phent, at_phnum;
+  int arch_size, sect_size;
+  CORE_ADDR sect_addr;
+  gdb_byte *buf;
+
+  /* Get required auxv elements from target.  */
+  if (target_auxv_search (&current_target, AT_PHDR, &at_phdr) <= 0)
+    return 0;
+  if (target_auxv_search (&current_target, AT_PHENT, &at_phent) <= 0)
+    return 0;
+  if (target_auxv_search (&current_target, AT_PHNUM, &at_phnum) <= 0)
+    return 0;
+  if (!at_phdr || !at_phnum)
+    return 0;
+
+  /* Determine ELF architecture type.  */
+  if (at_phent == sizeof (Elf32_External_Phdr))
+    arch_size = 32;
+  else if (at_phent == sizeof (Elf64_External_Phdr))
+    arch_size = 64;
+  else
+    return 0;
+
+  /* Find .dynamic section via the PT_DYNAMIC PHDR.  */
+  if (arch_size == 32)
+    {
+      Elf32_External_Phdr phdr;
+      int i;
+
+      /* Search for requested PHDR.  */
+      for (i = 0; i < at_phnum; i++)
+	{
+	  if (target_read_memory (at_phdr + i * sizeof (phdr),
+				  (gdb_byte *)&phdr, sizeof (phdr)))
+	    return 0;
+
+	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type, 4) == type)
+	    break;
+	}
+
+      if (i == at_phnum)
+	return 0;
+
+      /* Retrieve address and size.  */
+      sect_addr = extract_unsigned_integer ((gdb_byte *)phdr.p_vaddr, 4);
+      sect_size = extract_unsigned_integer ((gdb_byte *)phdr.p_memsz, 4);
+    }
+  else
+    {
+      Elf64_External_Phdr phdr;
+      int i;
+
+      /* Search for requested PHDR.  */
+      for (i = 0; i < at_phnum; i++)
+	{
+	  if (target_read_memory (at_phdr + i * sizeof (phdr),
+				  (gdb_byte *)&phdr, sizeof (phdr)))
+	    return 0;
+
+	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type, 4) == type)
+	    break;
+	}
+
+      if (i == at_phnum)
+	return 0;
+
+      /* Retrieve address and size.  */
+      sect_addr = extract_unsigned_integer ((gdb_byte *)phdr.p_vaddr, 8);
+      sect_size = extract_unsigned_integer ((gdb_byte *)phdr.p_memsz, 8);
+    }
+
+  /* Read in requested program header.  */
+  buf = xmalloc (sect_size);
+  if (target_read_memory (sect_addr, buf, sect_size))
+    {
+      xfree (buf);
+      return NULL;
+    }
+
+  if (p_arch_size)
+    *p_arch_size = arch_size;
+  if (p_sect_size)
+    *p_sect_size = sect_size;
+
+  return buf;
+}
+
+
+/* Return program interpreter string.  */
+static gdb_byte *
+find_program_interpreter (void)
+{
+  gdb_byte *buf = NULL;
+
+  /* If we have an exec_bfd, use its section table.  */
+  if (exec_bfd
+      && bfd_get_flavour (exec_bfd) == bfd_target_elf_flavour)
+   {
+     struct bfd_section *interp_sect;
+
+     interp_sect = bfd_get_section_by_name (exec_bfd, ".interp");
+     if (interp_sect != NULL)
+      {
+	CORE_ADDR sect_addr = bfd_section_vma (exec_bfd, interp_sect);
+	int sect_size = bfd_section_size (exec_bfd, interp_sect);
+
+	buf = xmalloc (sect_size);
+	bfd_get_section_contents (exec_bfd, interp_sect, buf, 0, sect_size);
+      }
+   }
+
+  /* If we didn't find it, use the target auxillary vector.  */
+  if (!buf)
+    buf = read_program_header (PT_INTERP, NULL, NULL);
+
+  return buf;
+}
+
 
 /* Scan for DYNTAG in .dynamic section of ABFD. If DYNTAG is found 1 is
    returned and the corresponding PTR is set.  */
@@ -461,6 +601,62 @@ get_soname (bfd *abfd)
   return xstrdup (buff);
 }
 #endif /* __QNXTARGET__ */
+
+
+/* Scan for DYNTAG in .dynamic section of the target's main executable,
+   found by consulting the OS auxillary vector.  If DYNTAG is found 1 is
+   returned and the corresponding PTR is set.  */
+
+static int
+scan_dyntag_auxv (int dyntag, CORE_ADDR *ptr)
+{
+  int sect_size, arch_size, step;
+  long dyn_tag;
+  CORE_ADDR dyn_ptr;
+  gdb_byte *bufend, *bufstart, *buf;
+
+  /* Read in .dynamic section.  */
+  buf = bufstart = read_program_header (PT_DYNAMIC, &sect_size, &arch_size);
+  if (!buf)
+    return 0;
+
+  /* Iterate over BUF and scan for DYNTAG.  If found, set PTR and return.  */
+  step = (arch_size == 32) ? sizeof (Elf32_External_Dyn)
+			   : sizeof (Elf64_External_Dyn);
+  for (bufend = buf + sect_size;
+       buf < bufend;
+       buf += step)
+  {
+    if (arch_size == 32)
+      {
+	Elf32_External_Dyn *dynp = (Elf32_External_Dyn *) buf;
+	dyn_tag = extract_unsigned_integer ((gdb_byte *) dynp->d_tag, 4);
+	dyn_ptr = extract_unsigned_integer ((gdb_byte *) dynp->d_un.d_ptr, 4);
+      }
+    else
+      {
+	Elf64_External_Dyn *dynp = (Elf64_External_Dyn *) buf;
+	dyn_tag = extract_unsigned_integer ((gdb_byte *) dynp->d_tag, 8);
+	dyn_ptr = extract_unsigned_integer ((gdb_byte *) dynp->d_un.d_ptr, 8);
+      }
+    if (dyn_tag == DT_NULL)
+      break;
+
+    if (dyn_tag == dyntag)
+      {
+	if (ptr)
+	  *ptr = dyn_ptr;
+
+	xfree (bufstart);
+	return 1;
+      }
+  }
+
+  xfree (bufstart);
+  return 0;
+}
+
+
 /*
 
    LOCAL FUNCTION
@@ -494,7 +690,8 @@ elf_locate_base (void)
   /* Look for DT_MIPS_RLD_MAP first.  MIPS executables use this
      instead of DT_DEBUG, although they sometimes contain an unused
      DT_DEBUG.  */
-  if (scan_dyntag (DT_MIPS_RLD_MAP, exec_bfd, &dyn_ptr))
+  if (scan_dyntag (DT_MIPS_RLD_MAP, exec_bfd, &dyn_ptr)
+      || scan_dyntag_auxv (DT_MIPS_RLD_MAP, &dyn_ptr))
     {
       gdb_byte *pbuf;
       int pbuf_size = TYPE_LENGTH (builtin_type_void_data_ptr);
@@ -507,7 +704,8 @@ elf_locate_base (void)
     }
 
   /* Find DT_DEBUG.  */
-  if (scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr))
+  if (scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr)
+      || scan_dyntag_auxv (DT_DEBUG, &dyn_ptr))
     return dyn_ptr;
 
   /* This may be a static executable.  Look for the symbol
@@ -589,6 +787,17 @@ solib_svr4_r_map (void)
 
   return read_memory_typed_address (debug_base + lmo->r_map_offset,
 				    builtin_type_void_data_ptr);
+}
+
+/* Find r_brk from the inferior's debug base.  */
+
+static CORE_ADDR
+solib_svr4_r_brk (void)
+{
+  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
+  struct type *ptr_type = builtin_type (current_gdbarch)->builtin_data_ptr;
+
+  return read_memory_typed_address (debug_base + lmo->r_brk_offset, ptr_type);
 }
 
 /* Find the link map for the dynamic linker (if it is not in the
@@ -1023,6 +1232,8 @@ enable_break (void)
   struct minimal_symbol *msymbol;
   char **bkpt_namep;
   asection *interp_sect;
+  gdb_byte *interp_name;
+  CORE_ADDR sym_addr;
 
   /* First, remove all the solib event breakpoints.  Their addresses
      may have changed since the last time we ran the program.  */
@@ -1030,6 +1241,56 @@ enable_break (void)
 
   interp_text_sect_low = interp_text_sect_high = 0;
   interp_plt_sect_low = interp_plt_sect_high = 0;
+
+  /* If we already have a shared library list in the target, and
+     r_debug contains r_brk, set the breakpoint there - this should
+     mean r_brk has already been relocated.  Assume the dynamic linker
+     is the object containing r_brk.  */
+
+  solib_add (NULL, 0, &current_target, auto_solib_add);
+  sym_addr = 0;
+  if (debug_base && solib_svr4_r_map () != 0)
+    sym_addr = solib_svr4_r_brk ();
+
+  if (sym_addr != 0)
+    {
+      struct obj_section *os;
+
+      sym_addr = gdbarch_addr_bits_remove
+	(current_gdbarch, gdbarch_convert_from_func_ptr_addr (current_gdbarch,
+							      sym_addr,
+							      &current_target));
+
+      os = find_pc_section (sym_addr);
+      if (os != NULL)
+	{
+	  /* Record the relocated start and end address of the dynamic linker
+	     text and plt section for svr4_in_dynsym_resolve_code.  */
+	  bfd *tmp_bfd;
+	  CORE_ADDR load_addr;
+
+	  tmp_bfd = os->objfile->obfd;
+	  load_addr = ANOFFSET (os->objfile->section_offsets,
+				os->objfile->sect_index_text);
+
+	  interp_sect = bfd_get_section_by_name (tmp_bfd, ".text");
+	  if (interp_sect)
+	    {
+	      interp_text_sect_low = 
+		bfd_section_vma (tmp_bfd, interp_sect) + load_addr;
+	      interp_text_sect_high =
+		interp_text_sect_low + bfd_section_size (tmp_bfd, interp_sect);
+	    }
+	  interp_sect = bfd_get_section_by_name (tmp_bfd, ".plt");
+	  if (interp_sect)
+	    {
+	      interp_plt_sect_low = 
+		bfd_section_vma (tmp_bfd, interp_sect) + load_addr;
+	      interp_plt_sect_high = 
+		interp_plt_sect_low + bfd_section_size (tmp_bfd, interp_sect);
+	    }
+	}
+    }
 
   /* Find the .interp section; if not found, warn the user and drop
      into the old breakpoint at symbol code.  */
