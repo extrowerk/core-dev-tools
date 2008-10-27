@@ -14,8 +14,8 @@ LIB1ASMFUNCS = _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_nto _bb_init_func \
  	       _addsubdf3 _cmpdf2 _negdf2 _fixdfsi _muldivdf3 _fixunsdfsi \
 	       _lshrdi3 _ashrdi3 _ashldi3
 
-MULTILIB_OPTIONS = fpic EB
-MULTILIB_DIRNAMES = pic be
+MULTILIB_OPTIONS = fpic
+MULTILIB_DIRNAMES = pic
 MULTILIB_MATCHES = fpic=shared
 
 EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o

@@ -10493,6 +10493,7 @@ tree_add_const_value_attribute (dw_die_ref var_die, tree decl)
     add_const_value_attribute (var_die, rtl);
 }
 
+#ifndef USE_OLD_ATBASE
 /* Convert the CFI instructions for the current function into a
    location list.  This is used for DW_AT_frame_base when we targeting
    a dwarf2 consumer that does not support the dwarf3
@@ -10606,7 +10607,7 @@ compute_frame_pointer_to_fb_displacement (HOST_WIDE_INT offset)
 
   frame_pointer_fb_offset = -offset;
 }
-
+#endif 
 /* Generate a DW_AT_name attribute given some string value to be included as
    the value of the attribute.  */
 
@@ -11873,6 +11874,7 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 
       cfa_fb_offset = CFA_FRAME_BASE_OFFSET (decl);
 
+#ifndef  USE_OLD_ATBASE 
       /* We define the "frame base" as the function's CFA.  This is more
 	 convenient for several reasons: (1) It's stable across the prologue
 	 and epilogue, which makes it better than just a frame pointer,
@@ -11899,6 +11901,19 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	 debugger about.  We'll need to adjust all frame_base references
 	 by this displacement.  */
       compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+
+#else
+      /* For targets which support DWARF2, but not DWARF2 call-frame info,
+	 we just use the stack pointer or frame pointer.  */
+     /* ??? Should investigate getting better info via callbacks, or else
+	 by interpreting the IA-64 unwind info.  */
+     {
+	rtx fp_reg
+	  = frame_pointer_needed ? hard_frame_pointer_rtx : stack_pointer_rtx;
+	add_AT_loc (subr_die, DW_AT_frame_base, reg_loc_descriptor (fp_reg));
+      }
+#endif
+
 
       if (cfun->static_chain_decl)
 	add_AT_location_description (subr_die, DW_AT_static_link,
