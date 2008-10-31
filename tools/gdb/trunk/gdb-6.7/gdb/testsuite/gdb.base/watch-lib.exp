@@ -1,0 +1,68 @@
+# Copyright 2007
+# Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set testfile "watch-lib"
+set srcfile ${testfile}.c
+set binfile ${objdir}/${subdir}/${testfile}
+
+if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug}] != "" } {
+     untested watch-lib.exp
+     return -1
+}
+
+proc test_lib_watchpoint { type } {
+    global pf_prefix decimal
+
+    set old_pf_prefix $pf_prefix
+    set pf_prefix "$pf_prefix $type:"
+
+    runto [gdb_get_line_number "set breakpoint here"]
+    
+    gdb_test "print a" "\\\$$decimal = 0"
+    gdb_test "watch a" ".*atchpoint $decimal: a"
+    gdb_test "continue" "Old value = 0\r\nNew value = 1.*" "first continue"
+    gdb_test "backtrace" "" ""
+    gdb_test "continue" "Old value = 1\r\nNew value = 2.*" "second continue"
+    gdb_test "backtrace" "" ""
+
+    set pf_prefix $old_pf_prefix
+}
+
+# Start with a fresh gdb.
+
+gdb_exit
+gdb_start
+gdb_reinitialize_dir $srcdir/$subdir
+gdb_load $binfile
+set prev_timeout $timeout
+set timeout 600	
+verbose "Timeout now 600 sec.\n"
+
+gdb_test "set can-use-hw-watchpoints 0" "" ""
+test_lib_watchpoint sw
+
+if {! [target_info exists gdb,no_hardware_watchpoints]} {
+    gdb_exit
+    gdb_start
+    gdb_reinitialize_dir $srcdir/$subdir
+    gdb_load $binfile
+    gdb_test "set can-use-hw-watchpoints 1" "" ""
+    test_lib_watchpoint hw
+}
+
+# Restore old timeout
+set timeout $prev_timeout
+verbose "Timeout now $timeout sec.\n"
