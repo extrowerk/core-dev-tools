@@ -45,7 +45,11 @@
 #include "exceptions.h"
 #include "solib.h"
 #include "filenames.h"
+#include "elf-bfd.h"
 
+#ifndef __QNXNTO__
+#include "nto-tdep.h"
+#endif
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -200,7 +204,11 @@ core_close (int quitting)
 
       /* Clear out solib state while the bfd is still open. See
          comments in clear_solib in solib.c. */
+#ifdef CLEAR_SOLIB
+      CLEAR_SOLIB ();
+#else
       clear_solib ();
+#endif
 
       name = bfd_get_filename (core_bfd);
       if (!bfd_close (core_bfd))
@@ -232,20 +240,24 @@ static void
 add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
 {
   int thread_id;
+  ptid_t ptid;
   asection *reg_sect = (asection *) reg_sect_arg;
 
   if (strncmp (bfd_section_name (abfd, asect), ".reg/", 5) != 0)
     return;
 
   thread_id = atoi (bfd_section_name (abfd, asect) + 5);
-
-  add_thread (pid_to_ptid (thread_id));
+  if (abfd != NULL && elf_tdata (abfd) != NULL)
+    ptid = ptid_build (elf_tdata (abfd)->core_pid, 0, thread_id);
+  else
+    ptid = ptid_build (42, 0, thread_id);
+  add_thread (ptid);
 
 /* Warning, Will Robinson, looking at BFD private data! */
 
   if (reg_sect != NULL
       && asect->filepos == reg_sect->filepos)	/* Did we find .reg? */
-    inferior_ptid = pid_to_ptid (thread_id);	/* Yes, make it current */
+    inferior_ptid = ptid;	/* Yes, make it current */
 }
 
 /* This routine opens and sets up the core file bfd.  */
@@ -272,7 +284,7 @@ core_open (char *filename, int from_tty)
     }
 
   filename = tilde_expand (filename);
-  if (!IS_ABSOLUTE_PATH(filename))
+  if (!IS_ABSOLUTE_PATH (filename))
     {
       temp = concat (current_directory, "/", filename, (char *)NULL);
       xfree (filename);
@@ -359,7 +371,8 @@ core_open (char *filename, int from_tty)
        value is called ``target_signal'' and this function got the
        name ..._from_host(). */
     printf_filtered (_("Program terminated with signal %d, %s.\n"), siggy,
-		     target_signal_to_string (target_signal_from_host (siggy)));
+		     target_signal_to_string (
+		     gdbarch_target_signal_from_host (core_gdbarch, siggy)));
 
   /* Build up thread list from BFD sections. */
 
@@ -424,8 +437,8 @@ get_core_register_section (struct regcache *regcache,
   char *contents;
 
   xfree (section_name);
-  if (PIDGET (inferior_ptid))
-    section_name = xstrprintf ("%s/%d", name, PIDGET (inferior_ptid));
+  if (ptid_get_tid (inferior_ptid))
+    section_name = xstrprintf ("%s/%ld", name, ptid_get_tid (inferior_ptid));
   else
     section_name = xstrdup (name);
 
@@ -521,7 +534,7 @@ core_xfer_partial (struct target_ops *ops, enum target_object object,
     case TARGET_OBJECT_MEMORY:
       if (readbuf)
 	return (*ops->deprecated_xfer_memory) (offset, readbuf,
-					       len, 0/*read*/, NULL, ops);
+					       len, 0/*write*/, NULL, ops);
       if (writebuf)
 	return (*ops->deprecated_xfer_memory) (offset, (gdb_byte *) writebuf,
 					       len, 1/*write*/, NULL, ops);

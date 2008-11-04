@@ -988,6 +988,10 @@ AC_CACHE_CHECK([for long long support in compiler], gdb_cv_c_long_long,
 [[switch (foo & 2) { case 0: return 1; }]])],
                                   gdb_cv_c_long_long=yes,
                                   gdb_cv_c_long_long=no)])
+
+# QNX: Override.
+gdb_cv_c_long_long=yes
+
 if test $gdb_cv_c_long_long = yes; then
   AC_DEFINE(CC_HAS_LONG_LONG, 1,
             [Define to 1 if the compiler supports long long.])
@@ -1009,6 +1013,10 @@ AC_CACHE_CHECK([for long long support in printf],
                               gdb_cv_printf_has_long_long=yes,
                               gdb_cv_printf_has_long_long=no,
                               gdb_cv_printf_has_long_long=no)])
+
+# QNX: override.
+gdb_cv_printf_has_long_long=yes
+
 if test $gdb_cv_printf_has_long_long = yes; then
   AC_DEFINE(PRINTF_HAS_LONG_LONG, 1,
             [Define to 1 if the "%ll" format works to print long longs.])
@@ -1059,6 +1067,10 @@ AC_CACHE_CHECK([for long double support in printf],
                               gdb_cv_printf_has_long_double=yes,
                               gdb_cv_printf_has_long_double=no,
                               gdb_cv_printf_has_long_double=no)])
+
+#QNX: override
+gdb_cv_printf_has_long_double=yes
+
 if test $gdb_cv_printf_has_long_double = yes; then
   AC_DEFINE(PRINTF_HAS_LONG_DOUBLE, 1,
             [Define to 1 if the "%Lg" format works to print long doubles.])

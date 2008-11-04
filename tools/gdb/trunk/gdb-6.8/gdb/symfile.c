@@ -212,10 +212,11 @@ void
 sort_pst_symbols (struct partial_symtab *pst)
 {
   /* Sort the global list; don't sort the static list */
-
+  gdb_assert (!pst->globals_sorted);
   qsort (pst->objfile->global_psymbols.list + pst->globals_offset,
 	 pst->n_global_syms, sizeof (struct partial_symbol *),
 	 compare_psymbols);
+  pst->globals_sorted = 1;
 }
 
 /* Make a null terminated copy of the string at PTR with SIZE characters in
@@ -3079,6 +3080,68 @@ start_psymtab_common (struct objfile *objfile,
   return (psymtab);
 }
 
+/* Helper function, initialises partial symbol structure and stashes 
+   it into objfile's bcache.  Note that our caching mechanism will
+   use all fields of struct partial_symbol to determine hash value of the
+   structure.  In other words, having two symbols with the same name but
+   different domain (or address) is possible and correct.  */
+
+static struct partial_symbol *
+add_psymbol_to_bcache (char *name, int namelength, domain_enum domain,
+		       enum address_class class,
+		       long val,	/* Value as a long */
+		       CORE_ADDR coreaddr,	/* Value as a CORE_ADDR */
+		       enum language language, struct objfile *objfile,
+		       int *added)
+{
+  char *buf = name;  
+  /* psymbol is static so that there will be no uninitialized gaps in the
+     structure which might contain random data, causing cache misses in
+     bcache. */
+  static struct partial_symbol psymbol;
+  
+  if (name[namelength] != '\0')
+    {
+      buf = alloca (namelength + 1);
+      /* Create local copy of the partial symbol */
+      memcpy (buf, name, namelength);
+      buf[namelength] = '\0';
+    }
+  /* val and coreaddr are mutually exclusive, one of them *will* be zero */
+  if (val != 0)
+    {
+      SYMBOL_VALUE (&psymbol) = val;
+    }
+  else
+    {
+      SYMBOL_VALUE_ADDRESS (&psymbol) = coreaddr;
+    }
+  SYMBOL_SECTION (&psymbol) = 0;
+  SYMBOL_LANGUAGE (&psymbol) = language;
+  PSYMBOL_DOMAIN (&psymbol) = domain;
+  PSYMBOL_CLASS (&psymbol) = class;
+
+  SYMBOL_SET_NAMES (&psymbol, buf, namelength, objfile);
+
+  /* Stash the partial symbol away in the cache */
+  return deprecated_bcache_added (&psymbol, sizeof (struct partial_symbol),
+				  objfile->psymbol_cache, added);
+}
+
+/* Helper function, adds partial symbol to the given partial symbol
+   list.  */
+
+static void
+append_psymbol_to_list (struct psymbol_allocation_list *list,
+			struct partial_symbol *psym,
+			struct objfile *objfile)
+{
+  if (list->next >= list->list + list->size)
+    extend_psymbol_list (list, objfile);
+  *list->next++ = psym;
+  OBJSTAT (objfile, n_psyms++);
+}
+
 /* Add a symbol with a long value to a psymtab.
    Since one arg is a struct, we pass in a ptr and deref it (sigh).
    Return the partial symbol that has been added.  */
@@ -3102,6 +3165,7 @@ add_psymbol_to_list (char *name, int namelength, domain_enum domain,
 		     enum language language, struct objfile *objfile)
 {
   struct partial_symbol *psym;
+#ifndef __QNXTARGET__
   char *buf = alloca (namelength + 1);
   /* psymbol is static so that there will be no uninitialized gaps in the
      structure which might contain random data, causing cache misses in
@@ -3126,7 +3190,6 @@ add_psymbol_to_list (char *name, int namelength, domain_enum domain,
   PSYMBOL_CLASS (&psymbol) = class;
 
   SYMBOL_SET_NAMES (&psymbol, buf, namelength, objfile);
-
   /* Stash the partial symbol away in the cache */
   psym = deprecated_bcache (&psymbol, sizeof (struct partial_symbol),
 			    objfile->psymbol_cache);
@@ -3138,6 +3201,20 @@ add_psymbol_to_list (char *name, int namelength, domain_enum domain,
     }
   *list->next++ = psym;
   OBJSTAT (objfile, n_psyms++);
+#else /* __QNXTARGET__ */
+  int added;
+
+  /* Stash the partial symbol away in the cache */
+  psym = add_psymbol_to_bcache (name, namelength, domain, class,
+				val, coreaddr, language, objfile, &added);
+
+  /* Do not duplicate global partial symbols.  */
+  if (list == &objfile->global_psymbols
+      && !added)
+    return psym;
+
+  append_psymbol_to_list (list, psym, objfile);
+#endif /* __QNXTARGET__ */
 
   return psym;
 }

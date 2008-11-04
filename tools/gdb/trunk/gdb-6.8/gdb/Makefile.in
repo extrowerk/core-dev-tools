@@ -1530,6 +1530,7 @@ ALLDEPFILES = \
 	amd64-linux-nat.c amd64-linux-tdep.c \
 	amd64-sol2-tdep.c \
 	arm-linux-nat.c arm-linux-tdep.c arm-tdep.c \
+	arm-nto-tdep.c \
 	armnbsd-nat.c armbsd-tdep.c armnbsd-tdep.c armobsd-tdep.c \
 	avr-tdep.c \
 	bsd-uthread.c bsd-kvm.c \
@@ -1569,24 +1570,29 @@ ALLDEPFILES = \
 	mips-irix-tdep.c \
 	mips-tdep.c \
 	mipsnbsd-nat.c mipsnbsd-tdep.c \
+	mips-nto-tdep.c \
 	mips64obsd-nat.c mips64obsd-tdep.c \
 	nbsd-nat.c nbsd-tdep.c obsd-tdep.c \
+	nto-procfs.c \
 	solib-osf.c \
 	solib-target.c \
 	somread.c solib-som.c \
 	posix-hdep.c \
 	ppc-sysv-tdep.c ppc-linux-nat.c ppc-linux-tdep.c \
+	ppc-nto-tdep.c \
 	ppcnbsd-nat.c ppcnbsd-tdep.c \
 	ppcobsd-nat.c ppcobsd-tdep.c \
 	procfs.c \
 	remote-m32r-sdi.c remote-mips.c \
 	remote-sim.c \
+	remote-nto.c \
 	dcache.c \
 	rs6000-nat.c rs6000-tdep.c \
 	s390-tdep.c s390-nat.c \
 	score-tdep.c \
 	ser-go32.c ser-pipe.c ser-tcp.c ser-mingw.c \
 	sh-tdep.c sh64-tdep.c shnbsd-tdep.c shnbsd-nat.c \
+	sh-nto-tdep.c \
 	sol2-tdep.c \
 	solib-irix.c solib-svr4.c solib-sunos.c \
 	sparc-linux-nat.c \
@@ -1902,6 +1908,9 @@ arm-linux-tdep.o: arm-linux-tdep.c $(defs_h) $(target_h) $(value_h) \
 	$(doublest_h) $(solib_svr4_h) $(osabi_h) $(arm_tdep_h) \
 	$(regset_h) $(arm_linux_tdep_h) $(breakpoint_h) \
 	$(glibc_tdep_h) $(trad_frame_h) $(tramp_frame_h) $(gdb_string_h)
+arm-nto-tdep.o: arm-nto-tdep.c $(defs_h) $(frame_h) $(target_h) $(regcache_h) \
+	$(solib-svr4_h) $(arm_tdep_h) $(nto_tdep_h) $(osabi_h) $(trad_frame_h)\
+	$(tramp_frame_h) $(gdbcore_h) $(frame_unwind_h)
 armnbsd-nat.o: armnbsd-nat.c $(defs_h) $(gdbcore_h) $(inferior_h) \
 	$(regcache_h) $(target_h) $(gdb_string_h) $(arm_tdep_h) $(inf_ptrace_h)
 armbsd-tdep.o: armbsd-tdep.c $(defs_h) $(osabi_h) $(regcache_h) $(regset_h) \

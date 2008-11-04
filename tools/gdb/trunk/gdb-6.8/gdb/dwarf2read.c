@@ -1552,7 +1552,9 @@ dwarf2_build_psymtabs_hard (struct objfile *objfile, int mainline)
 	(objfile->global_psymbols.list + pst->globals_offset);
       pst->n_static_syms = objfile->static_psymbols.next -
 	(objfile->static_psymbols.list + pst->statics_offset);
+#ifndef __QNXTARGET__
       sort_pst_symbols (pst);
+#endif
 
       /* If there is already a psymtab or symtab for a file of this
          name, remove it. (If there is a symtab, more drastic things
@@ -2008,6 +2010,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 			   : &objfile->static_psymbols,
 			   0, (CORE_ADDR) 0, cu->language, objfile);
 
+#ifndef __QNXTARGET__
       if (cu->language == language_cplus
           || cu->language == language_java
           || cu->language == language_ada)
@@ -2018,6 +2021,7 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
 			       &objfile->global_psymbols,
 			       0, (CORE_ADDR) 0, cu->language, objfile);
 	}
+#endif
       break;
     case DW_TAG_enumerator:
       add_psymbol_to_list (actual_name, strlen (actual_name),
@@ -7443,17 +7447,21 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
 		|| cu->language == language_java
 		|| cu->language == language_ada)
 	      {
+#ifndef __QNXTARGET__
 		struct symbol *typedef_sym = (struct symbol *)
 		  obstack_alloc (&objfile->objfile_obstack,
 				 sizeof (struct symbol));
 		*typedef_sym = *sym;
 		SYMBOL_DOMAIN (typedef_sym) = VAR_DOMAIN;
+#endif
 		/* The symbol's name is already allocated along with
 		   this objfile, so we don't need to duplicate it for
 		   the type.  */
 		if (TYPE_NAME (SYMBOL_TYPE (sym)) == 0)
 		  TYPE_NAME (SYMBOL_TYPE (sym)) = SYMBOL_SEARCH_NAME (sym);
+#ifndef __QNXTARGET__
 		add_symbol_to_list (typedef_sym, list_to_add);
+#endif
 	      }
 	  }
 	  break;

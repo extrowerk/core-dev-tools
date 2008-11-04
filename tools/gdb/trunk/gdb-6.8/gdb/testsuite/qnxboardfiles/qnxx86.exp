@@ -1,0 +1,20 @@
+send_user "****************************************\n"
+send_user "************** QNX X86 *****************\n"
+send_user "****************************************\n"
+
+
+load_generic_config "unix"
+load_lib "gdb.exp"
+load_lib "mi-support.exp"
+load_lib libqnx.exp
+
+process_multilib_options ""
+
+global qnx_target_host
+global qnx_target_port
+set qnx_target_host tx86
+set qnx_target_port 8000
+#set qnx_target_port 8010
+#set qnx_target_host 192.168.88.130
+#set qnx_target_host 10.42.110.147
+set qnx_target_host mytst

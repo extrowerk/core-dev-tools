@@ -923,13 +923,15 @@ struct partial_symtab
 
   int number_of_dependencies;
 
-  /* Global symbol list.  This list will be sorted after readin to
+  /* Global symbol list.  This list will be sorted on first lookup to 
      improve access.  Binary search will be the usual method of
      finding a symbol within it. globals_offset is an integer offset
-     within global_psymbols[].  */
+     within global_psymbols[]. globals_sorted is set to non zero when
+     sorted.  */
 
   int globals_offset;
   int n_global_syms;
+  int globals_sorted;
 
   /* Static symbol list.  This list will *not* be sorted after readin;
      to find a symbol in it, exhaustive search must be used.  This is
@@ -998,6 +1000,10 @@ extern int demangle;
 extern int asm_demangle;
 
 /* symtab.c lookup functions */
+
+int symbol_matches_domain (enum language symbol_language, 
+			   domain_enum symbol_domain,
+			   domain_enum domain);
 
 /* lookup a symbol table by source file name */
 

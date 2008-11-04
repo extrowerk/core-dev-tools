@@ -82,6 +82,12 @@ arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
 	# Target: NetBSD/arm
 	gdb_target_obs="arm-tdep.o armnbsd-tdep.o solib.o solib-svr4.o"
 	;;
+arm-*-nto*)
+	# Target: QNX Neutrino/arm
+	gdb_target_obs="corelow.o solib.o solib-svr4.o \
+			arm-nto-tdep.o arm-tdep.o  \
+			nto-tdep.o remote-nto.o nto-signals.o" 
+	;;
 arm*-*-openbsd*)
 	# Target: OpenBSD/arm
 	gdb_target_obs="arm-tdep.o armbsd-tdep.o armobsd-tdep.o obsd-tdep.o \
@@ -163,7 +169,7 @@ i[34567]86-*-openbsd*)
 i[34567]86-*-nto*)
 	# Target: Intel 386 running qnx6.
 	gdb_target_obs="i386-tdep.o i387-tdep.o corelow.o solib.o solib-svr4.o \
-			i386-nto-tdep.o nto-tdep.o"
+			i386-nto-tdep.o nto-tdep.o remote-nto.o nto-signals.o"
 	;;
 i[34567]86-*-solaris2.1[0-9]*)
 	# Target: Solaris x86_64
@@ -307,6 +313,11 @@ mips64*-*-openbsd*)
 	gdb_target_obs="mips-tdep.o mips64obsd-tdep.o \
 			corelow.o solib.o solib-svr4.o"
 	;;
+mips-*-nto*)
+	# Target: QNX Neutrino/mips
+	gdb_target_obs="mips-tdep.o corelow.o solib.o solib-svr4.o \
+			mips-nto-tdep.o nto-tdep.o remote-nto.o nto-signals.o"
+	;;
 mips*-*-*)
 	# Target: MIPS
 	gdb_target_obs="mips-tdep.o"
@@ -346,6 +357,12 @@ powerpc-*-linux* | powerpc64-*-linux*)
 			solib.o solib-svr4.o corelow.o symfile-mem.o"
 	gdb_sim=../sim/ppc/libsim.a
 	build_gdbserver=yes
+	;;
+powerpc-*-nto*)
+	# Target: QNX Neutrino/PowerPC
+	gdb_target_obs="rs6000-tdep.o ppc-sysv-tdep.o corelow.o solib.o \
+			solib-svr4.o ppc-nto-tdep.o nto-tdep.o remote-nto.o \
+			nto-signals.o"
 	;;
 powerpc*-*-*)
 	# Target: PowerPC running eabi
@@ -389,6 +406,12 @@ sh64-*-elf*)
 	# Target: Renesas/Super-H 64 bit with simulator
 	gdb_target_obs="sh-tdep.o sh64-tdep.o"
 	gdb_sim=../sim/sh64/libsim.a
+	;;
+sh-*-nto*)
+	# Target: QNX Neutrino/sh
+	gdb_target_obs="sh-tdep.o corelow.o solib.o solib-svr4.o \
+			sh-nto-tdep.o sh64-tdep.o nto-tdep.o remote-nto.o \
+			nto-signals.o "
 	;;
 sh*)
 	# Target: Embedded Renesas Super-H with ICE and simulator
