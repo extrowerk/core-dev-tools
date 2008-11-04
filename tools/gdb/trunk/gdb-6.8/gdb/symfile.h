@@ -199,6 +199,12 @@ struct partial_symbol *add_psymbol_to_list (char *, int, domain_enum,
 					    long, CORE_ADDR,
 					    enum language, struct objfile *);
 
+extern const
+struct partial_symbol *add_psymbol_to_global_list (char *, int, domain_enum,
+					    enum address_class,
+					    long, CORE_ADDR,
+					    enum language, struct objfile *);
+
 extern void init_psymbol_list (struct objfile *, int);
 
 extern void sort_pst_symbols (struct partial_symtab *);

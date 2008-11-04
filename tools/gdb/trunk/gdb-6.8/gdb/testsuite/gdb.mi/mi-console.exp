@@ -48,13 +48,19 @@ if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {deb
      return -1
 }
 
+#global verbose
+#set verbose 3
+
 mi_run_to_main
+send_user "Stopped at main\n"
 
 # Next over the hello() call which will produce lots of output
 mi_gdb_test "47-exec-next" \
 	    "47\\^running" \
 	    "Testing console output" \
-	    "Hello \\\\\"!\[\r\n\]+"
+	    ".*Hello "
+
+#\[\\\\\]+\"!\[\r\n\]+"
 
 mi_gdb_test "" "47\\*stopped.*" "Finished step over hello"
     

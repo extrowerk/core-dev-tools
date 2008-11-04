@@ -75,4 +75,6 @@ m68*-hp-hpux*)		HDEFINES=-DHOST_HP300HPUX ;;
 			ac_cv_header_sys_time_h=no
 			ac_cv_header_unistd_h=no
 			;;
+*-*-nto*)		HDEFINES=-D_LARGEFILE64_SOURCE
+			;;
 esac

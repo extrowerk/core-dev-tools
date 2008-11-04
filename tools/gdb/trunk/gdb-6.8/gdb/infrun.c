@@ -3153,9 +3153,6 @@ Further execution is probably impossible.\n"));
 
   /* Delete the breakpoint we stopped at, if it wants to be deleted.
      Delete any breakpoint that is to be deleted at the next stop.  */
-
-  breakpoint_auto_delete (stop_bpstat);
-
   /* If an auto-display called a function and that got a signal,
      delete that auto-display to avoid an infinite recursion.  */
 
@@ -3294,6 +3291,9 @@ Further execution is probably impossible.\n"));
 done:
   annotate_stopped ();
   observer_notify_normal_stop (stop_bpstat);
+  /* Delete the breakpoint we stopped at, if it wants to be deleted.
+     Delete any breakpoint that is to be deleted at the next stop.  */
+  breakpoint_auto_delete (stop_bpstat);
 }
 
 static int

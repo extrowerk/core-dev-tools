@@ -34,6 +34,14 @@ struct link_map_offsets
     /* Offset and size of r_debug.r_version.  */
     int r_version_offset, r_version_size;
 
+#ifdef __QNXTARGET__
+    /* Offset and size of r_debug.r_state.  */
+    int r_state_offset, r_state_size;
+    
+    /* Offset and size of r_debug.r_rdevent.  */
+    int r_rdevent_offset, r_rdevent_size;
+#endif
+
     /* Offset of r_debug.r_map.  */
     int r_map_offset;
 
@@ -83,5 +91,12 @@ extern struct link_map_offsets *svr4_lp64_fetch_link_map_offsets (void);
 /* Return 1 if PC lies in the dynamic symbol resolution code of the
    SVR4 run time loader.  */
 int svr4_in_dynsym_resolve_code (CORE_ADDR pc);
+
+#ifdef __QNXTARGET__
+/* Retrieve pointer to _r_debug.  This and link map offsets give targets
+   access to dynamic linker's internal state.  */
+extern CORE_ADDR svr4_fetch_r_debug (void);
+#endif /* __QNXTARGET__ */
+
 
 #endif /* solib-svr4.h */

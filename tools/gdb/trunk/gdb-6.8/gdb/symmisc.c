@@ -1053,6 +1053,10 @@ void
 maintenance_info_psymtabs (char *regexp, int from_tty)
 {
   struct objfile *objfile;
+  int sum_global_syms = 0;
+  int sum_static_syms  = 0;
+  int sum_num_sorts = 0;
+  int sum_num_psymtabs = 0;
 
   if (regexp)
     re_comp (regexp);
@@ -1069,6 +1073,7 @@ maintenance_info_psymtabs (char *regexp, int from_tty)
         if (! regexp
             || re_exec (psymtab->filename))
           {
+	    sum_num_psymtabs++;
             if (! printed_objfile_start)
               {
                 printf_filtered ("{ objfile %s ", objfile->name);
@@ -1096,6 +1101,11 @@ maintenance_info_psymtabs (char *regexp, int from_tty)
                                  (psymtab->objfile->global_psymbols.list
                                   + psymtab->globals_offset),
                                  psymtab->n_global_syms);
+		printf_filtered ("    sorted %s\n",
+				 psymtab->globals_sorted ? "yes" : "no");
+		sum_global_syms += psymtab->n_global_syms;
+		if (psymtab->globals_sorted)
+		  sum_num_sorts++;
               }
             else
               printf_filtered ("(none)\n");
@@ -1106,6 +1116,7 @@ maintenance_info_psymtabs (char *regexp, int from_tty)
                                  (psymtab->objfile->static_psymbols.list
                                   + psymtab->statics_offset),
                                  psymtab->n_static_syms);
+		sum_static_syms += psymtab->n_static_syms;
               }
             else
               printf_filtered ("(none)\n");
@@ -1134,6 +1145,13 @@ maintenance_info_psymtabs (char *regexp, int from_tty)
       if (printed_objfile_start)
         printf_filtered ("}\n");
     }
+
+  /* Print statistics.  */
+  printf_filtered ("Statistics:\n%s%9d\n%s%9d\n%s%9d\n%s%9d\n",
+		   "    Number of psymtabs         :", sum_num_psymtabs,
+		   "    Number of global symbols   :", sum_global_syms,
+		   "    Number of static symbols   :", sum_static_syms,
+		   "    Number of glob. sym. sorts :", sum_num_sorts);
 }
 
 

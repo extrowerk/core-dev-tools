@@ -210,6 +210,15 @@ unlink_locations_from_global_list (struct breakpoint *bpt);
 static int
 is_hardware_watchpoint (struct breakpoint *bpt);
 
+static const char *
+bpdisp_text (enum bpdisp disp)
+{
+  /* NOTE: the following values are a part of MI protocol and represent
+     values for 'disp' field returned when inferior stops at a breakpoint.  */
+  static char *bpdisps[] = {"del", "dstp", "dis", "keep"};
+  return bpdisps[(int) disp];
+}
+
 /* Prototypes for exported functions. */
 
 /* If FALSE, gdb will not use hardware support for watchpoints, even
@@ -341,21 +350,91 @@ static struct exception_event_record *current_exception_event;
 /* This function is called by the "catch load" command.  It allows the
    debugger to be notified by the dynamic linker when a specified
    library file (or any library file, if filename is NULL) is loaded.  */
-
+#ifndef __QNXTARGET__
 #ifndef SOLIB_CREATE_CATCH_LOAD_HOOK
 #define SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string) \
    error (_("catch of library loads not yet implemented on this platform"))
 #endif
+#else /* __QNXTARGET__ */
+#define SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string) \
+  nto_SOLIB_CREATE_CATCH_LOAD_HOOK(pid,tempflag,filename,cond_string, \
+				   from_tty);
+#endif /* __QNXTARGET__ */
 
 /* This function is called by the "catch unload" command.  It allows
    the debugger to be notified by the dynamic linker when a specified
    library file (or any library file, if filename is NULL) is
    unloaded.  */
 
+#ifndef __QNXTARGET__
 #ifndef SOLIB_CREATE_CATCH_UNLOAD_HOOK
 #define SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string) \
    error (_("catch of library unloads not yet implemented on this platform"))
 #endif
+#else /* __QNXTARGET__ */
+#define SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string) \
+  nto_SOLIB_CREATE_CATCH_UNLOAD_HOOK(pid, tempflag, filename, cond_string, \
+				     from_tty);
+#endif /* __QNXTARGET__ */
+
+#ifdef __QNXTARGET__
+static void
+break_command_really (char *arg, char *cond_string, int thread,
+		      int parse_condition_and_thread,
+		      int tempflag, int hardwareflag, 
+		      int ignore_count,
+		      enum auto_boolean pending_break_support,
+		      struct breakpoint_ops *ops,
+		      int from_tty);
+
+static void
+nto_SOLIB_CREATE_CATCH_LOAD_HOOK (int pid, int tempflag, 
+				  const char *filename, 
+				  const char *cond_string,
+				  int from_tty)
+{
+  char *conds = xstrdup (cond_string != NULL ? cond_string : ""); 
+  char *arg = xstrdup ("_dl_debug_state");
+
+  make_cleanup (xfree, arg);
+  make_cleanup (xfree, conds);
+  break_command_really (arg, conds,
+			0, 0, 
+			tempflag, 0,
+			0,
+			AUTO_BOOLEAN_TRUE,
+			NULL,
+			from_tty);
+}
+
+static void
+nto_SOLIB_CREATE_CATCH_UNLOAD_HOOK (int pid, int tempflag, 
+				   const char *filename, 
+				   const char *cond_string,
+				   int from_tty)
+{	
+  char *conds = xstrdup (cond_string != NULL ? cond_string : ""); 
+  char *arg = xstrdup ("_dl_debug_state");
+
+  make_cleanup (xfree, arg);
+  make_cleanup (xfree, conds);
+
+  break_command_really (arg, conds,
+			0, 0,
+			tempflag, 0,
+			0,
+			AUTO_BOOLEAN_TRUE,
+			NULL,
+			from_tty);
+}
+
+extern int nto_break_on_this_solib_event (enum bptype type);
+
+#define SOLIB_HAVE_LOAD_EVENT(pid) \
+	nto_break_on_this_solib_event (bp_catch_load)
+#define SOLIB_HAVE_UNLOAD_EVENT(pid) \
+	nto_break_on_this_solib_event (bp_catch_unload)
+#endif /* __QNXTARGET__ */
 
 /* Return whether a breakpoint is an active enabled breakpoint.  */
 static int
@@ -575,44 +654,45 @@ condition_command (char *arg, int from_tty)
 
   ALL_BREAKPOINTS (b)
     if (b->number == bnum)
-    {
-      struct bp_location *loc = b->loc;
-      for (; loc; loc = loc->next)
-	{
-	  if (loc->cond)
-	    {
-	      xfree (loc->cond);
-	      loc->cond = 0;
-	    }
-	}
-      if (b->cond_string != NULL)
-	xfree (b->cond_string);
+      {
+	struct bp_location *loc = b->loc;
+	for (; loc; loc = loc->next)
+	  {
+	    if (loc->cond)
+	      {
+		xfree (loc->cond);
+		loc->cond = 0;
+	      }
+	  }
+	if (b->cond_string != NULL)
+	  xfree (b->cond_string);
 
-      if (*p == 0)
-	{
-	  b->cond_string = NULL;
-	  if (from_tty)
-	    printf_filtered (_("Breakpoint %d now unconditional.\n"), bnum);
-	}
-      else
-	{
-	  arg = p;
-	  /* I don't know if it matters whether this is the string the user
-	     typed in or the decompiled expression.  */
-	  b->cond_string = savestring (arg, strlen (arg));
-	  b->condition_not_parsed = 0;
-	  for (loc = b->loc; loc; loc = loc->next)
-	    {
-	      arg = p;
-	      loc->cond = parse_exp_1 (&arg, block_for_pc (loc->address), 0);
-	      if (*arg)
-		error (_("Junk at end of expression"));
-	    }
-	}
-      breakpoints_changed ();
-      breakpoint_modify_event (b->number);
-      return;
-    }
+	if (*p == 0)
+	  {
+	    b->cond_string = NULL;
+	    if (from_tty)
+	      printf_filtered (_("Breakpoint %d now unconditional.\n"), bnum);
+	  }
+	else
+	  {
+	    arg = p;
+	    /* I don't know if it matters whether this is the string the user
+	       typed in or the decompiled expression.  */
+	    b->cond_string = savestring (arg, strlen (arg));
+	    b->condition_not_parsed = 0;
+	    for (loc = b->loc; loc; loc = loc->next)
+	      {
+		arg = p;
+		loc->cond =
+		  parse_exp_1 (&arg, block_for_pc (loc->address), 0);
+		if (*arg)
+		  error (_("Junk at end of expression"));
+	      }
+	  }
+	breakpoints_changed ();
+	breakpoint_modify_event (b->number);
+	return;
+      }
 
   error (_("No breakpoint number %d."), bnum);
 }
@@ -697,7 +777,7 @@ commands_from_control_command (char *arg, struct command_line *cmd)
 	breakpoints_changed ();
 	breakpoint_modify_event (b->number);
 	return simple_control;
-    }
+      }
   error (_("No breakpoint number %d."), bnum);
 }
 
@@ -1187,7 +1267,30 @@ Note: automatically using hardware breakpoints for read-only addresses.\n"));
       val = target_insert_watchpoint (bpt->address, 
 				      bpt->length,
 				      bpt->watchpoint_type);
+#ifdef __QNXTARGET__
+      if (val == -1)
+	{
+	  printf_unfiltered ("Changing watchpoint type to software and trying again.\n");
+	  bpt->owner->type = bp_watchpoint;
+	  bpt->loc_type = bp_loc_other;
+	  val = target_insert_watchpoint (bpt->address,
+					  bpt->length,
+					  bpt->watchpoint_type);
+	}
+#endif /* __QNXTARGET__ */
       bpt->inserted = (val != -1);
+#ifdef __QNXTARGET__
+      if (val == -1)
+	{
+	  fprintf_unfiltered (tmp_error_stream,
+			      "Could not insert watchpoint %d.\n",
+			      bpt->owner->number);
+	  bpt->owner->enable_state = bp_disabled;
+	  *disabled_breaks = 1;
+	}
+      else
+	*hw_breakpoint_error = 0;
+#endif /* __QNXTARGET__ */
     }
 
   else if (bpt->owner->type == bp_catch_fork
@@ -1849,7 +1952,7 @@ breakpoint_thread_match (CORE_ADDR pc, ptid_t ptid)
 int
 ep_is_catchpoint (struct breakpoint *ep)
 {
-  return
+  return 
     (ep->type == bp_catch_load)
     || (ep->type == bp_catch_unload)
     || (ep->type == bp_catch_fork)
@@ -2131,6 +2234,7 @@ print_it_typical (bpstat bs)
   struct breakpoint *b;
   const struct bp_location *bl;
   struct ui_stream *stb;
+  int bp_temp = 0;  
   stb = ui_out_stream_new (uiout);
   old_chain = make_cleanup_ui_out_stream_delete (stb);
   /* bs->breakpoint_at can be NULL if it was a momentary breakpoint
@@ -2144,15 +2248,22 @@ print_it_typical (bpstat bs)
     {
     case bp_breakpoint:
     case bp_hardware_breakpoint:
+      bp_temp = bs->breakpoint_at->owner->disposition == disp_del;
       if (bl->address != bl->requested_address)
 	breakpoint_adjustment_warning (bl->requested_address,
 	                               bl->address,
 				       b->number, 1);
       annotate_breakpoint (b->number);
-      ui_out_text (uiout, "\nBreakpoint ");
+      if (bp_temp) 
+	ui_out_text (uiout, "\nTemporary breakpoint ");
+      else
+	ui_out_text (uiout, "\nBreakpoint ");
       if (ui_out_is_mi_like_p (uiout))
-	ui_out_field_string (uiout, "reason", 
-			     async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	{
+	  ui_out_field_string (uiout, "reason", 
+			  async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	  ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));
+	}
       ui_out_field_int (uiout, "bkptno", b->number);
       ui_out_text (uiout, ", ");
       return PRINT_SRC_AND_LOC;
@@ -2183,7 +2294,16 @@ print_it_typical (bpstat bs)
       annotate_catchpoint (b->number);
       printf_filtered (_("\nCatchpoint %d (loaded %s), "),
 		       b->number,
-		       b->triggered_dll_pathname);
+		       b->triggered_dll_pathname?:"(null)");
+      if (ui_out_is_mi_like_p (uiout))
+	{
+	  ui_out_field_string (uiout, "reason",
+			       async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	  ui_out_field_string (uiout, "disp",
+			       bpdisp_text (b->disposition));
+	}
+      ui_out_field_int (uiout, "bkptno", b->number);
+      ui_out_text (uiout, ", ");
       return PRINT_SRC_AND_LOC;
       break;
 
@@ -2192,6 +2312,15 @@ print_it_typical (bpstat bs)
       printf_filtered (_("\nCatchpoint %d (unloaded %s), "),
 		       b->number,
 		       b->triggered_dll_pathname);
+      if (ui_out_is_mi_like_p (uiout))
+	{
+	  ui_out_field_string (uiout, "reason",
+			       async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+	  ui_out_field_string (uiout, "disp",
+			       bpdisp_text (b->disposition));
+	}
+      ui_out_field_int (uiout, "bkptno", b->number);
+      ui_out_text (uiout, ", ");
       return PRINT_SRC_AND_LOC;
       break;
 
@@ -3322,6 +3451,15 @@ static void print_breakpoint_location (struct breakpoint *b,
     }
 }
 
+static int
+all_locations_are_pending (struct bp_location *loc)
+{
+  for (; loc; loc = loc->next)
+    if (!loc->shlib_disabled)
+      return 0;
+  return 1;
+}
+
 /* Print B to gdb_stdout. */
 static void
 print_one_breakpoint_location (struct breakpoint *b,
@@ -3480,7 +3618,13 @@ print_one_breakpoint_location (struct breakpoint *b,
 	   not line up too nicely with the headers, but the effect
 	   is relatively readable).  */
 	if (addressprint)
-	  ui_out_field_skip (uiout, "addr");
+	  {
+	    annotate_field (4);
+	    if (all_locations_are_pending (b->loc))
+	      ui_out_field_string (uiout, "addr", "<PENDING>");
+	    else
+	      ui_out_field_core_addr (uiout, "addr", b->loc->address);
+	  }
 	annotate_field (5);
 	if (b->dll_pathname == NULL)
 	  {
@@ -4792,7 +4936,11 @@ mention (struct breakpoint *b)
 	    say_where = 0;
 	    break;
 	  }
-	printf_filtered (_("Breakpoint %d"), b->number);
+	if (b->disposition == disp_del)
+	  printf_filtered (_("Temporary breakpoint"));
+	else
+	  printf_filtered (_("Breakpoint"));
+	printf_filtered (_(" %d"), b->number);
 	say_where = 1;
 	break;
       case bp_hardware_breakpoint:
@@ -4900,7 +5048,8 @@ static void
 create_breakpoint (struct symtabs_and_lines sals, char *addr_string,
 		   char *cond_string,
 		   enum bptype type, enum bpdisp disposition,
-		   int thread, int ignore_count, int from_tty)
+		   int thread, int ignore_count, 
+		   struct breakpoint_ops *ops, int from_tty)
 {
   struct breakpoint *b = NULL;
   int i;
@@ -4960,6 +5109,7 @@ create_breakpoint (struct symtabs_and_lines sals, char *addr_string,
        me.  */
     b->addr_string = xstrprintf ("*0x%s", paddr (b->loc->address));
 
+  b->ops = ops;
   mention (b);
 }
 
@@ -5104,7 +5254,8 @@ static void
 create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 		    char *cond_string,
 		    enum bptype type, enum bpdisp disposition,
-		    int thread, int ignore_count, int from_tty)
+		    int thread, int ignore_count, 
+		    struct breakpoint_ops *ops, int from_tty)
 {
   int i;
   for (i = 0; i < sals.nelts; ++i)
@@ -5114,7 +5265,7 @@ create_breakpoints (struct symtabs_and_lines sals, char **addr_string,
 
       create_breakpoint (expanded, addr_string[i],
 			 cond_string, type, disposition,
-			 thread, ignore_count, from_tty);
+			 thread, ignore_count, ops, from_tty);
     }
 }
 
@@ -5280,6 +5431,7 @@ break_command_really (char *arg, char *cond_string, int thread,
 		      int tempflag, int hardwareflag, 
 		      int ignore_count,
 		      enum auto_boolean pending_break_support,
+		      struct breakpoint_ops *ops,
 		      int from_tty)
 {
   struct gdb_exception e;
@@ -5388,7 +5540,7 @@ break_command_really (char *arg, char *cond_string, int thread,
      breakpoint. */
   if (!pending)
     {
-        if (parse_condition_and_thread)
+      if (parse_condition_and_thread)
         {
             /* Here we only parse 'arg' to separate condition
                from thread number, so parsing in context of first
@@ -5400,7 +5552,7 @@ break_command_really (char *arg, char *cond_string, int thread,
             if (cond_string)
                 make_cleanup (xfree, cond_string);
         }
-        else
+      else
         {
             /* Create a private copy of condition string.  */
             if (cond_string)
@@ -5413,7 +5565,7 @@ break_command_really (char *arg, char *cond_string, int thread,
 			  hardwareflag ? bp_hardware_breakpoint 
 			  : bp_breakpoint,
 			  tempflag ? disp_del : disp_donttouch,
-			  thread, ignore_count, from_tty);
+			  thread, ignore_count, ops, from_tty);
     }
   else
     {
@@ -5433,6 +5585,8 @@ break_command_really (char *arg, char *cond_string, int thread,
       b->ignore_count = ignore_count;
       b->disposition = tempflag ? disp_del : disp_donttouch;
       b->condition_not_parsed = 1;
+      b->ops = ops;
+
       mention (b);
     }
   
@@ -5463,7 +5617,7 @@ break_command_1 (char *arg, int flag, int from_tty)
 			NULL, 0, 1 /* parse arg */,
 			tempflag, hardwareflag,
 			0 /* Ignore count */,
-			pending_break_support, from_tty);
+			pending_break_support, NULL, from_tty);
 }
 
 
@@ -5479,7 +5633,7 @@ set_breakpoint (char *address, char *condition,
 			ignore_count,
 			pending 
 			? AUTO_BOOLEAN_TRUE : AUTO_BOOLEAN_FALSE,
-			0);
+			NULL, 0);
 }
 
 
@@ -6316,15 +6470,31 @@ catch_unload_command_1 (char *arg, int tempflag, int from_tty)
 static enum print_stop_action
 print_exception_catchpoint (struct breakpoint *b)
 {
+  int bp_temp, bp_throw;
+
   annotate_catchpoint (b->number);
 
-  if (strstr (b->addr_string, "throw") != NULL)
-    printf_filtered (_("\nCatchpoint %d (exception thrown)\n"),
-		     b->number);
-  else
-    printf_filtered (_("\nCatchpoint %d (exception caught)\n"),
-		     b->number);
-
+  bp_throw = strstr (b->addr_string, "throw") != NULL;
+  if (b->loc->address != b->loc->requested_address)
+    breakpoint_adjustment_warning (b->loc->requested_address,
+	                           b->loc->address,
+				   b->number, 1);
+  bp_temp = b->loc->owner->disposition == disp_del;
+  ui_out_text (uiout, 
+	       bp_temp ? "Temporary catchpoint "
+		       : "Catchpoint ");
+  if (!ui_out_is_mi_like_p (uiout))
+    ui_out_field_int (uiout, "bkptno", b->number);
+  ui_out_text (uiout,
+	       bp_throw ? " (exception thrown), "
+		        : " (exception caught), ");
+  if (ui_out_is_mi_like_p (uiout))
+    {
+      ui_out_field_string (uiout, "reason", 
+			   async_reason_lookup (EXEC_ASYNC_BREAKPOINT_HIT));
+      ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));
+      ui_out_field_int (uiout, "bkptno", b->number);
+    }
   return PRINT_SRC_AND_LOC;
 }
 
@@ -6334,10 +6504,14 @@ print_one_exception_catchpoint (struct breakpoint *b, CORE_ADDR *last_addr)
   if (addressprint)
     {
       annotate_field (4);
-      ui_out_field_core_addr (uiout, "addr", b->loc->address);
+      if (b->loc == NULL || b->loc->shlib_disabled)
+	ui_out_field_string (uiout, "addr", "<PENDING>");
+      else
+	ui_out_field_core_addr (uiout, "addr", b->loc->address);
     }
   annotate_field (5);
-  *last_addr = b->loc->address;
+  if (b->loc)
+    *last_addr = b->loc->address;
   if (strstr (b->addr_string, "throw") != NULL)
     ui_out_field_string (uiout, "what", "exception throw");
   else
@@ -6347,11 +6521,18 @@ print_one_exception_catchpoint (struct breakpoint *b, CORE_ADDR *last_addr)
 static void
 print_mention_exception_catchpoint (struct breakpoint *b)
 {
-  if (strstr (b->addr_string, "throw") != NULL)
-    printf_filtered (_("Catchpoint %d (throw)"), b->number);
-  else
-    printf_filtered (_("Catchpoint %d (catch)"), b->number);
+  int bp_temp;
+  int bp_throw;
+
+  bp_temp = b->loc->owner->disposition == disp_del;
+  bp_throw = strstr (b->addr_string, "throw") != NULL;
+  ui_out_text (uiout, bp_temp ? _("Temporary catchpoint ")
+			      : _("Catchpoint "));
+  ui_out_field_int (uiout, "bkptno", b->number);
+  ui_out_text (uiout, bp_throw ? _(" (throw)")
+			       : _(" (catch)"));
 }
+
 
 static struct breakpoint_ops gnu_v3_exception_catchpoint_ops = {
   print_exception_catchpoint,
@@ -6363,36 +6544,20 @@ static int
 handle_gnu_v3_exceptions (int tempflag, char *cond_string,
 			  enum exception_event_kind ex_event, int from_tty)
 {
-  char *trigger_func_name, *nameptr;
-  struct symtabs_and_lines sals;
-  struct breakpoint *b;
+  char *trigger_func_name;
 
   if (ex_event == EX_EVENT_CATCH)
-    trigger_func_name = xstrdup ("__cxa_begin_catch");
+    trigger_func_name = "__cxa_begin_catch";
   else
-    trigger_func_name = xstrdup ("__cxa_throw");
+    trigger_func_name = "__cxa_throw";
 
-  nameptr = trigger_func_name;
-  sals = decode_line_1 (&nameptr, 1, NULL, 0, NULL, NULL);
-  if (sals.nelts == 0)
-    {
-      xfree (trigger_func_name);
-      return 0;
-    }
+  break_command_really (trigger_func_name, cond_string, -1,
+			0 /* condition and thread are valid.  */,
+			tempflag, 0,
+			0,
+			AUTO_BOOLEAN_TRUE /* pending */,
+			&gnu_v3_exception_catchpoint_ops, from_tty);
 
-  b = set_raw_breakpoint (sals.sals[0], bp_breakpoint);
-  set_breakpoint_count (breakpoint_count + 1);
-  b->number = breakpoint_count;
-  b->cond_string = (cond_string == NULL) ? 
-    NULL : savestring (cond_string, strlen (cond_string));
-  b->thread = -1;
-  b->addr_string = trigger_func_name;
-  b->enable_state = bp_enabled;
-  b->disposition = tempflag ? disp_del : disp_donttouch;
-  b->ops = &gnu_v3_exception_catchpoint_ops;
-
-  xfree (sals.sals);
-  mention (b);
   return 1;
 }
 
@@ -6405,6 +6570,8 @@ catch_exception_command_1 (enum exception_event_kind ex_event, char *arg,
   char *cond_string = NULL;
   struct symtab_and_line *sal = NULL;
 
+  if (!arg)
+    arg = "";
   ep_skip_leading_whitespace (&arg);
 
   cond_string = ep_parse_optional_if_clause (&arg);
@@ -7059,15 +7226,6 @@ delete_command (char *arg, int from_tty)
     }
   else
     map_breakpoint_numbers (arg, delete_breakpoint);
-}
-
-static int
-all_locations_are_pending (struct bp_location *loc)
-{
-  for (; loc; loc = loc->next)
-    if (!loc->shlib_disabled)
-      return 0;
-  return 1;
 }
 
 /* Subroutine of update_breakpoint_locations to simplify it.

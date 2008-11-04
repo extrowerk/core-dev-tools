@@ -61,7 +61,7 @@ static int procfs_can_run (void);
 
 static ptid_t procfs_wait (ptid_t, struct target_waitstatus *);
 
-static int procfs_xfer_memory (CORE_ADDR, char *, int, int,
+static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
 			       struct mem_attrib *attrib,
 			       struct target_ops *);
 
@@ -535,7 +535,11 @@ procfs_attach (char *args, int from_tty)
       gdb_flush (gdb_stdout);
     }
   inferior_ptid = do_attach (pid_to_ptid (pid));
+  attach_flag = 1;
+
   push_target (&procfs_ops);
+
+  procfs_find_new_threads ();
 }
 
 static void
@@ -571,7 +575,6 @@ do_attach (ptid_t ptid)
   if (devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0) == EOK
       && status.flags & _DEBUG_FLAG_STOPPED)
     SignalKill (nto_node (), PIDGET (ptid), 0, SIGCONT, 0, 0);
-  attach_flag = 1;
   nto_init_solib_absolute_prefix ();
   return ptid;
 }
@@ -706,7 +709,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 	}
     }
 
-  return inferior_ptid;
+  return ptid_build (status.pid, 0, status.tid);
 }
 
 /* Read the current values of the inferior's registers, both the
@@ -744,7 +747,7 @@ procfs_fetch_registers (struct regcache *regcache, int regno)
    doesn't allow memory operations to cross below us in the target stack
    anyway.  */
 static int
-procfs_xfer_memory (CORE_ADDR memaddr, char *myaddr, int len, int dowrite,
+procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
 		    struct mem_attrib *attrib, struct target_ops *target)
 {
   int nbytes = 0;
@@ -769,6 +772,7 @@ static void
 procfs_detach (char *args, int from_tty)
 {
   int siggnal = 0;
+  int pid;
 
   if (from_tty)
     {
@@ -787,9 +791,10 @@ procfs_detach (char *args, int from_tty)
 
   close (ctl_fd);
   ctl_fd = -1;
-  init_thread_list ();
+
+  pid = ptid_get_pid (inferior_ptid);
   inferior_ptid = null_ptid;
-  attach_flag = 0;
+  init_thread_list ();
   unpush_target (&procfs_ops);	/* Pop out of handling an inferior.  */
 }
 
@@ -838,6 +843,7 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
 {
   int signal_to_pass;
   procfs_status status;
+  sigset_t *run_fault = (sigset_t *) (void *) &run.fault;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -849,17 +855,17 @@ procfs_resume (ptid_t ptid, int step, enum target_signal signo)
   if (step)
     run.flags |= _DEBUG_RUN_STEP;
 
-  sigemptyset ((sigset_t *) &run.fault);
-  sigaddset ((sigset_t *) &run.fault, FLTBPT);
-  sigaddset ((sigset_t *) &run.fault, FLTTRACE);
-  sigaddset ((sigset_t *) &run.fault, FLTILL);
-  sigaddset ((sigset_t *) &run.fault, FLTPRIV);
-  sigaddset ((sigset_t *) &run.fault, FLTBOUNDS);
-  sigaddset ((sigset_t *) &run.fault, FLTIOVF);
-  sigaddset ((sigset_t *) &run.fault, FLTIZDIV);
-  sigaddset ((sigset_t *) &run.fault, FLTFPE);
+  sigemptyset (run_fault);
+  sigaddset (run_fault, FLTBPT);
+  sigaddset (run_fault, FLTTRACE);
+  sigaddset (run_fault, FLTILL);
+  sigaddset (run_fault, FLTPRIV);
+  sigaddset (run_fault, FLTBOUNDS);
+  sigaddset (run_fault, FLTIOVF);
+  sigaddset (run_fault, FLTIZDIV);
+  sigaddset (run_fault, FLTFPE);
   /* Peter V will be changing this at some point.  */
-  sigaddset ((sigset_t *) &run.fault, FLTPAGE);
+  sigaddset (run_fault, FLTPAGE);
 
   run.flags |= _DEBUG_RUN_ARM;
 
@@ -906,7 +912,6 @@ procfs_mourn_inferior (void)
   init_thread_list ();
   unpush_target (&procfs_ops);
   generic_mourn_inferior ();
-  attach_flag = 0;
 }
 
 /* This function breaks up an argument string into an argument
@@ -1076,6 +1081,7 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   inferior_ptid = do_attach (pid_to_ptid (pid));
 
   attach_flag = 0;
+
   flags = _DEBUG_FLAG_KLC;	/* Kill-on-Last-Close flag.  */
   errn = devctl (ctl_fd, DCMD_PROC_SET_FLAG, &flags, sizeof (flags), 0);
   if (errn != EOK)
@@ -1090,11 +1096,10 @@ procfs_create_inferior (char *exec_file, char *allargs, char **env,
   if (exec_bfd != NULL
       || (symfile_objfile != NULL && symfile_objfile->obfd != NULL))
     solib_create_inferior_hook ();
-  stop_soon = 0;
 }
 
 static void
-procfs_stop (void)
+procfs_stop ()
 {
   devctl (ctl_fd, DCMD_PROC_STOP, NULL, 0, 0);
 }
@@ -1192,7 +1197,8 @@ procfs_store_registers (struct regcache *regcache, int regno)
       if (dev_set == -1)
 	return;
 
-      len = nto_register_area (regno, regset, &off);
+      len = nto_register_area (get_regcache_arch (regcache),
+			       regno, regset, &off);
 
       if (len < 1)
 	return;

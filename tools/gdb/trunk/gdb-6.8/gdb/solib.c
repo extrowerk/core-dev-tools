@@ -92,7 +92,7 @@ static struct so_list *so_list_head;	/* List of known shared objects */
 /* If non-empty, this is a search path for loading non-absolute shared library
    symbol files.  This takes precedence over the environment variables PATH
    and LD_LIBRARY_PATH.  */
-static char *solib_search_path = NULL;
+char *solib_search_path = NULL;
 static void
 show_solib_search_path (struct ui_file *file, int from_tty,
 			struct cmd_list_element *c, const char *value)
