@@ -20716,6 +20716,9 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $gdb_cv_c_long_long" >&5
 echo "${ECHO_T}$gdb_cv_c_long_long" >&6
+
+# QNX: override
+gdb_cv_c_long_long=yes
 if test $gdb_cv_c_long_long = yes; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -20781,6 +20784,9 @@ fi
 fi
 echo "$as_me:$LINENO: result: $gdb_cv_printf_has_long_long" >&5
 echo "${ECHO_T}$gdb_cv_printf_has_long_long" >&6
+
+# QNX: override
+gdb_cv_printf_has_long_long=yes
 if test $gdb_cv_printf_has_long_long = yes; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -20840,6 +20846,8 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $gdb_cv_c_long_double" >&5
 echo "${ECHO_T}$gdb_cv_c_long_double" >&6
+# QNX: override
+gdb_cv_c_long_double=yes
 if test $gdb_cv_c_long_double = yes; then
 
 cat >>confdefs.h <<\_ACEOF
