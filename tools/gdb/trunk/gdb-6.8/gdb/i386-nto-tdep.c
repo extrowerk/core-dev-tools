@@ -333,22 +333,15 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_solib_svr4_fetch_link_map_offsets
     (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
-  /* Initialize this lazily, to avoid an initialization order
-     dependency on solib-svr4.c's _initialize routine.  */
-  if (svr4_so_ops.in_dynsym_resolve_code == NULL)
-    {
-      /* Our loader handles solib relocations differently than svr4.  */
-      svr4_so_ops.relocate_section_addresses
-        = nto_relocate_section_addresses;
+  /* Our loader handles solib relocations differently than svr4.  */
+  svr4_so_ops.relocate_section_addresses = nto_relocate_section_addresses;
 
-      /* Supply a nice function to find our solibs.  */
-      svr4_so_ops.find_and_open_solib
-        = nto_find_and_open_solib;
+  /* Supply a nice function to find our solibs.  */
+  svr4_so_ops.find_and_open_solib = nto_find_and_open_solib;
 
-      /* Our linker code is in libc.  */
-      svr4_so_ops.in_dynsym_resolve_code
-        = nto_in_dynsym_resolve_code;
-    }
+  /* Our linker code is in libc.  */
+  svr4_so_ops.in_dynsym_resolve_code = nto_in_dynsym_resolve_code;
+
   set_solib_ops (gdbarch, &svr4_so_ops);
 }
 
