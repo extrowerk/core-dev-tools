@@ -1,0 +1,44 @@
+#Test: Symbol table bug.
+#Purpose: PR:54474
+#Date: May 13, 2008
+#Author: Aleksandar Ristovski
+
+set test "PR54474"
+
+# For details on this test, please see PR54474.
+# Executable file PR54474 contains debug information that show the following:
+#
+# <0><b>: Abbrev Number: 1 (DW_TAG_compile_unit)
+# ...
+# DW_AT_name        : c:/Temp/dirs/main.c
+# DW_AT_comp_dir    : c:/Temp/dirs/debug
+# ...
+# The Directory Table:
+#   ..
+#   C:/QNX632/target/qnx6/usr/include
+#
+# The File Name Table:
+#  Entry Dir     Time    Size    Name
+#  1     1       0       0       main.c
+#
+# Notice how Directory Table contains relative path ".." and File Name Table
+# contains basename "main.c". However, compilation unit contains
+# DW_AT_name "c:/Temp/dirs/main.c". This is conflicting since DWARF spec
+# says that when Directory Table specifies relative path, and DW_AT_comp_dir
+# is given, full path is to be constructed by appending relative path to
+# comp_dir, i.e it would construct c:/Temp/dirs/debug/../main.c when
+# reading debug_line section but when reading compilation unig info,
+# the path will be DW_AT_name. This causes gdb to misinterpret the line info,
+# which would cause this test to fail (breakpoint would not be set since
+# line information for main.c will not be found.)
+# 
+gdb_exit
+gdb_start 
+
+set testfile $test
+set srcfile ${srcdir}/${subdir}/${testfile}
+gdb_test "symbol-file $srcfile" "Reading symbols from .*done.*" \
+	 "Loading symbols failed"
+
+gdb_test "break main.c:5" "Breakpoint 1 at ${hex}: file ../main.c, line 5." "Set breakpoint"
+
