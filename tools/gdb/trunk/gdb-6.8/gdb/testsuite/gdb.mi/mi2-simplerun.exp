@@ -112,7 +112,7 @@ proc test_running_the_program {} {
     # The following is equivalent to a send_gdb "000-exec-run\n"
     mi_run_cmd
     gdb_expect {
-	-re "000\\*stopped,reason=\"breakpoint-hit\",bkptno=\"1\",thread-id=\"\[01\]\",frame=\{addr=\"$hex\",func=\"main\",args=\\\[\\\],file=\".*basics.c\",line=\"$line_main_body\"\}\r\n$mi_gdb_prompt$" {
+	-re "000\\*stopped,reason=\"breakpoint-hit\",disp=\"keep\",bkptno=\"1\",thread-id=\"\[01\]\",frame=\{addr=\"$hex\",func=\"main\",args=\\\[\\\],file=\".*basics.c\",fullname=\".*basics.c\",line=\"$line_main_body\"\}\r\n$mi_gdb_prompt$" {
 	    pass "run to main"
 	}
 	-re ".*$mi_gdb_prompt$" {
