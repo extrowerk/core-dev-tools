@@ -48,9 +48,10 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #define _XOPEN_SOURCE_EXTENDED 1
 
 #if defined(__QNXNTO__)
-#define getpagesize() sysconf(_SC_PAGE_SIZE)
 #undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
+#include <backtrace.h>
+#include <dlfcn.h>
 #endif
 
 #include <stdio.h>
@@ -1676,7 +1677,7 @@ __mf_describe_object (__mf_object_t *obj)
   if (__mf_opts.abbreviate && obj->description_epoch == epoch)
     {
       fprintf (stderr,
-               "mudflap %sobject %p: name=`%s'\n",
+               "mudflap %sobject 0x%p: name=`%s'\n",
                (obj->deallocated_p ? "dead " : ""),
                (void *) obj, (obj->name ? obj->name : ""));
       return;
@@ -1685,9 +1686,9 @@ __mf_describe_object (__mf_object_t *obj)
     obj->description_epoch = epoch;
 
   fprintf (stderr,
-           "mudflap %sobject %p: name=`%s'\n"
-           "bounds=[%p,%p] size=%lu area=%s check=%ur/%uw liveness=%u%s\n"
-           "alloc time=%lu.%06lu pc=%p"
+           "mudflap %sobject 0x%p: name=`%s'\n"
+           "bounds=[0x%p,0x%p] size=%lu area=%s check=%ur/%uw liveness=%u%s\n"
+           "alloc time=%lu.%06lu pc=0x%p"
 #ifdef LIBMUDFLAPTH
            " thread=%u"
 #endif
@@ -1723,7 +1724,7 @@ __mf_describe_object (__mf_object_t *obj)
     {
       if (obj->deallocated_p)
         {
-          fprintf (stderr, "dealloc time=%lu.%06lu pc=%p"
+          fprintf (stderr, "dealloc time=%lu.%06lu pc=0x%p"
 #ifdef LIBMUDFLAPTH
                    " thread=%u"
 #endif
@@ -1868,6 +1869,58 @@ __mfu_report ()
     }
 }
 
+#ifdef __QNXNTO__
+
+extern char *__progname;
+
+char **
+backtrace_symbols(void **pc_array, unsigned remaining_size) 
+{
+    char **pointers;
+    int i;
+    enum { perline = 30 };
+    DECLARE (void *, calloc, size_t c, size_t n);
+    DECLARE (void *, malloc, size_t n);
+
+    pointers = CALL_REAL (calloc, remaining_size, sizeof (pointers[0]));
+    for (i = 0; i < remaining_size; i++)
+      {
+	Dl_info info;
+	unsigned linelen = perline;
+	char *fname = "\0";
+	char *symbolname = "\0";
+	unsigned offset = 0;
+
+	/* Fetch symbol info using dladdr: */
+	if (_dladdr (pc_array [i], &info) != 0)
+	  {
+	    if (info.dli_fname != NULL)
+	      {
+		linelen += strlen (info.dli_fname);
+		fname = info.dli_fname;
+	      }
+	    else
+	      fname = __progname;
+
+	    if (info.dli_sname != NULL)
+	      {
+		linelen += strlen (info.dli_sname);
+		symbolname = info.dli_sname;
+		offset = pc_array [i] - info.dli_saddr;
+	      }
+	  }
+        pointers[i] = CALL_REAL (malloc, linelen);
+        sprintf (pointers [i], "%s(%s+0x%x) [0x%p]", fname, symbolname, 
+		 offset, pc_array [i]);
+      }
+    return pointers;
+}
+
+
+#define HAVE_BACKTRACE_SYMBOLS
+
+#endif /* __QNXNTO__ */
+
 /* __mf_backtrace */
 
 size_t
@@ -1878,6 +1931,9 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   unsigned remaining_size;
   unsigned omitted_size = 0;
   unsigned i;
+#  ifdef __QNXNTO__
+  bt_accessor_t acc;
+#  endif /* __QNXNTO__ */
   DECLARE (void, free, void *ptr);
   DECLARE (void *, calloc, size_t c, size_t n);
   DECLARE (void *, malloc, size_t n);
@@ -1886,6 +1942,15 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
 #ifdef HAVE_BACKTRACE
   pc_array_size = backtrace (pc_array, pc_array_size);
 #else
+
+#   ifdef __QNXNTO__
+  bt_init_accessor (&acc, BT_SELF);
+  pc_array_size = bt_get_backtrace (&acc, (bt_addr_t *) pc_array, 
+				    pc_array_size);
+  bt_release_accessor (&acc);
+#   else  /* ! __QNXNTO__ */
+
+
 #define FETCH(n) do { if (pc_array_size >= n) { \
                  pc_array[n] = __builtin_return_address(n); \
                  if (pc_array[n] == 0) pc_array_size = n; } } while (0)
@@ -1907,6 +1972,7 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   if (pc_array_size > 8) pc_array_size = 9;
 #else
   if (pc_array_size > 0) pc_array_size = 1;
+#   endif  /* ! __QNXNTO__ */
 #endif
 
 #undef FETCH
@@ -1926,6 +1992,31 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   if (omitted_size == 0) /* No match? */
     if (pc_array_size > guess_omit_levels)
       omitted_size = guess_omit_levels;
+
+#if defined(__QNXNTO__) && defined(SKIP_MUDFLAP_ENTRIES)
+  /* We do not want libmudflap.so entries. Avoid if possible.
+     (probably not possible for static executables and statically linked
+     mudflap). */
+  {
+    int i = omitted_size;
+
+    while (i != pc_array_size)
+      {
+	void *pivot = pc_array [i];
+	Dl_info info;
+	if (_dladdr (pivot, &info) != 0)
+	  {
+	    if (info.dli_fname == NULL)
+	      break;
+	    if (strstr (info.dli_fname, "libmudflap") == info.dli_fname)
+	      omitted_size++;
+	  }
+	else
+	  break;
+	i++;
+      }
+  }
+#endif
 
   remaining_size = pc_array_size - omitted_size;
 
@@ -1991,7 +2082,11 @@ __mf_violation (void *ptr, size_t sz, uintptr_t pc,
     fprintf (stderr,
              "*******\n"
              "mudflap violation %u (%s): time=%lu.%06lu "
-             "ptr=%p size=%lu\npc=%p%s%s%s\n",
+             "ptr=0x%p size=%lu\npc=0x%p%s%s%s"
+#ifdef LIBMUDFLAPTH
+             " thread=%u"
+#endif
+             "\n",
              violation_number,
              ((type == __MF_VIOL_READ) ? "check/read" :
               (type == __MF_VIOL_WRITE) ? "check/write" :
@@ -2002,7 +2097,11 @@ __mf_violation (void *ptr, size_t sz, uintptr_t pc,
              (void *) ptr, (unsigned long)sz, (void *) pc,
              (location != NULL ? " location=`" : ""),
              (location != NULL ? location : ""),
-             (location != NULL ? "'" : ""));
+             (location != NULL ? "'" : "")
+#ifdef LIBMUDFLAPTH
+             ,pthread_self ()
+#endif
+	     );
 
     if (__mf_opts.backtrace > 0)
       {

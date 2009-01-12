@@ -51,7 +51,6 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #define _XOPEN_SOURCE_EXTENDED 1
 
 #if defined(__QNXNTO__)
-#define getpagesize() sysconf(_SC_PAGE_SIZE) 
 #undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
 #endif
