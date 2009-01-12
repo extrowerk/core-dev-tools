@@ -85,8 +85,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
+QNXLDFLAGS = -Wl,-Bstatic -Wl,-lbacktrace -Wl,-Bdynamic
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+	$(AM_LDFLAGS) $(LDFLAGS) $(QNXLDFLAGS) -o $@
 SOURCES = $(libmudflap_la_SOURCES) $(libmudflapth_la_SOURCES)
 DIST_SOURCES = $(libmudflap_la_SOURCES) $(libmudflapth_la_SOURCES)
 MULTISRCTOP = 
