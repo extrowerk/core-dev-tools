@@ -6,7 +6,8 @@ targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
-qnx_target_version=6.3.0
+qnx_target_version=6.4.0
+qnx_install_version=qnx640
 nto_target=${PWD##*-}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
 if [ $cpu_string = x86 ]; then
@@ -33,9 +34,9 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/qnx630/host/qnx6/x86}}
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_install_version}/host/qnx6/x86}}
 				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/qnx630/host/qnx6/x86/usr ;;
+		*)		basedir=/usr/${qnx_install_version}/host/qnx6/x86/usr ;;
 		esac
 		;;
 	solaris)
@@ -43,7 +44,7 @@ function hook_preconfigure {
 		case ${host_cpu} in
         i[34567]86) host_cpu=x86;;
 		esac
-		basedir=${QNX_HOST:-/usr/qnx630/host/solaris/${host_cpu}/usr}
+		basedir=${QNX_HOST:-/usr/${qnx_install_version}/host/solaris/${host_cpu}/usr}
 		;;
 	linux)
 		if [ X${WIN32_ENVIRON} == Xmingw ]; then
@@ -54,11 +55,11 @@ function hook_preconfigure {
 		case ${host_cpu} in
         i[34567]86) host_cpu=x86 ;;
 		esac
-		#basedir=${QNX_HOST:-/usr/qnx630/host/linux/${host_cpu}/usr}
-		basedir=/opt/qnx630/host/linux/x86/usr
+		#basedir=${QNX_HOST:-/usr/${qnx_install_version}/host/linux/${host_cpu}/usr}
+		basedir=/opt/${qnx_install_version}/host/linux/x86/usr
 		;;
 	win32)
-		tooldir=${QNX_HOST:-c:/qnx630/host/win32/x86}
+		tooldir=${QNX_HOST:-c:/${qnx_install_version}/host/win32/x86}
 		basedir=${tooldir}/usr
 		;;
 	*)
@@ -88,6 +89,9 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-tls"
+	if [ "${qnx_target_version}" = "6.4.0" ]; then
+	  configure_opts="${configure_opts} --enable-libmudflap"
+	fi
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/${gcc_version}"
 	configure_opts="${configure_opts} --enable-multilib"
