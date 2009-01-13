@@ -112,8 +112,8 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   char *buf, *arch_path, *nto_root, *endian, *base;
   const char *arch;
   int ret;
-#define PATH_FMT "%s/lib:%s/usr/lib:%s/usr/photon/lib:" \
-		 "%s/usr/photon/dll:%s/lib/dll"
+#define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
+		 "%s/usr/photon/dll%c%s/lib/dll"
 
   nto_root = nto_target ();
   nto_trace (0) ("%s (..) nto_root: %s\n", __func__, nto_root);
@@ -145,8 +145,9 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
 
   buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
-  sprintf (buf, PATH_FMT, arch_path, arch_path, arch_path, arch_path,
-	   arch_path);
+  sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
+	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
+	   arch_path, DIRNAME_SEPARATOR, arch_path);
 
   /* Don't assume basename() isn't destructive.  */
   base = strrchr (solib, '/');
