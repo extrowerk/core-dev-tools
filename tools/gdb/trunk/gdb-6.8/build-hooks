@@ -132,7 +132,7 @@ function hook_preconfigure {
 	
 	case ${target} in 
 	  *-nto-*)
-	  CFLAGS="-D__QNXTARGET__ -g3 -O0 "; export CFLAGS
+	  CFLAGS="-D__QNXTARGET__ -g0 -O "; export CFLAGS
 	  ;;
 	esac
 }
