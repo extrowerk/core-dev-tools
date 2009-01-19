@@ -1124,15 +1124,27 @@ nto_semi_init (void)
     }
 }
 
+static int nto_open_interrupted = 0;
+
+static void 
+nto_open_break (int signo)
+{
+  nto_trace(0)("SIGINT in serial open\n");
+  nto_open_interrupted = 1;
+}
+
 /* Open a connection to a remote debugger.
    NAME is the filename used for communication.  */
 static void
 nto_open (char *name, int from_tty)
 {
   int tries = 0;
+  void (*ofunc) ();
+
   nto_trace (0) ("nto_open(name '%s', from_tty %d)\n", name,
 			 from_tty);
 
+  nto_open_interrupted = 0;
   if (name == 0)
     error
       ("To open a remote debug connection, you need to specify what serial\ndevice is attached to the remote system (e.g. /dev/ttya).");
@@ -1142,9 +1154,15 @@ nto_open (char *name, int from_tty)
   target_preopen (from_tty);
   unpush_target (&nto_ops);
 
-  while (tries < MAX_TRAN_TRIES)
+  ofunc = signal(SIGINT, nto_open_break);
+
+  while (tries < MAX_TRAN_TRIES && !nto_open_interrupted)
   {
     current_session->desc = serial_open (name);
+
+    if (nto_open_interrupted)
+      break;
+    
     /* Give the target some time to come up. When we are connecting
        immediately after disconnecting from the remote, pdebug
        needs some time to start listening to the port. */
@@ -1156,6 +1174,14 @@ nto_open (char *name, int from_tty)
     else
         break;
   }
+
+  signal(SIGINT, ofunc);
+
+  if (nto_open_interrupted)
+    {
+      immediate_quit = 0;
+      return;
+    }
 
   if (!current_session->desc)
     {
