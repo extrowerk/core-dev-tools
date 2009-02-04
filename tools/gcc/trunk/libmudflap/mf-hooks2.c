@@ -327,10 +327,13 @@ WRAPPER2(char *, strdup, const char *s)
   size_t n = strlen (s);
   TRACE ("%s\n", __PRETTY_FUNCTION__);
   MF_VALIDATE_EXTENT(s, CLAMPADD(n,1), __MF_CHECK_READ, "strdup region");
+
+  BEGIN_MALLOC_PROTECT ();
   result = (char *)CALL_REAL(malloc,
 			     CLAMPADD(CLAMPADD(n,1),
 				      CLAMPADD(__mf_opts.crumple_zone,
 					       __mf_opts.crumple_zone)));
+  END_MALLOC_PROTECT ();
 
   if (UNLIKELY(! result)) return result;
 
@@ -351,11 +354,13 @@ WRAPPER2(char *, strndup, const char *s, size_t n)
   TRACE ("%s\n", __PRETTY_FUNCTION__);
   MF_VALIDATE_EXTENT(s, sz, __MF_CHECK_READ, "strndup region"); /* nb: strNdup */
 
+  BEGIN_MALLOC_PROTECT ();
   /* note: strndup still adds a \0, even with the N limit! */
   result = (char *)CALL_REAL(malloc,
 			     CLAMPADD(CLAMPADD(n,1),
 				      CLAMPADD(__mf_opts.crumple_zone,
 					       __mf_opts.crumple_zone)));
+  END_MALLOC_PROTECT ();
 
   if (UNLIKELY(! result)) return result;
 
