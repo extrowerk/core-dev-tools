@@ -114,7 +114,7 @@ site.exp: ./config.status Makefile
 	@echo "set build_triplet ${build_canonical}" >> ./tmp0
 	@echo "set srcdir ${srcdir}" >> ./tmp0
 	@echo "set tool gdb" >> ./tmp0
-	@echo "if ![info exists board_dir] {" >> ./tmp0
+	@echo "if ![info exists boards_dir] {" >> ./tmp0
 	@echo "  set boards_dir {}" >> ./tmp0
 	@echo "}" >> ./tmp0
 	@echo "lappend boards_dir \"../../../gdb/testsuite/qnxboardfiles\"" >> ./tmp0
