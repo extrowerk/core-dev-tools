@@ -22,6 +22,7 @@ case ${host_target} in
 esac
 
 function hook_preconfigure {
+	configure_opts="${configure_opts} --without-expat"
 	case ${SYSNAME} in
 	nto)
 		host_cpu=$(uname -p)
@@ -47,7 +48,7 @@ function hook_preconfigure {
 		;;
 	linux)
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
-			;;
+		;;
 	win32)
 		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
 		;;
@@ -60,7 +61,7 @@ function hook_preconfigure {
         if [ ${host_target%%-*} != ${SYSNAME} ]; then
 	  case $host_target in
 		nto*)
-	          configure_opts="${configure_opts} --host=i386-pc-nto-qnx${qnx_target_version}"
+	          configure_opts="${configure_opts} --host=${target}"
                   if [ $SYSNAME != "nto" ]; then
                       if [ x$INSTALL_ROOT = x ]; then
                          INSTALL_ROOT=/usr/$qnx_install_version/host
