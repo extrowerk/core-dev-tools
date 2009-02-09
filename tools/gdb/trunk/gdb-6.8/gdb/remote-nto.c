@@ -1845,9 +1845,13 @@ nto_fetch_registers (struct regcache *regcache, int regno)
 	 it seems to be happening only when we are setting up a fake
 	 stack, i.e. when gdb calls an inferior function.  Commented out
 	 but left as a comment as a reminder (should be looked at).  */
-      //gdb_assert (rlen >= len);
-      if (rlen >= len)
+      if (rlen > 0)
 	regcache_raw_supply (regcache, regno, recv.pkt.okdata.data);
+      else
+	{
+	  nto_trace (0) ("Could not read register %d (rlen: %d len: %d)\n", 
+			 regno, rlen, len);
+	}
     }
 }
 
@@ -2079,7 +2083,7 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 	  buff += 4;
 
 	  *(int*)buff = AT_PHDR;
-	  *(int*)buff = EXTRACT_SIGNED_INTEGER (&buff, sizeof (int));
+	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
 	  buff += 4;
 	  *(int*)buff = phdr;
 	  *(int*)buff = EXTRACT_SIGNED_INTEGER (buff, sizeof (int));
