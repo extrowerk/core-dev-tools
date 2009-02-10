@@ -40,6 +40,12 @@
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
 #define PS_OFF (16*4)
+/* Our FP register size. See arm/context.h  */
+#define NTO_FP_REGISTER_SIZE 8
+
+/* FP registers - see context.h, Largest register file size + status regs. */
+#define FP_REGSET_SIZE (NTO_FP_REGISTER_SIZE * 32 + STATUS_REGISTER_SIZE * 4) 
+
 
 static void
 armnto_supply_reg_gregset (struct regcache *regcache, int regno, char *regs)
@@ -55,9 +61,34 @@ armnto_supply_reg_gregset (struct regcache *regcache, int regno, char *regs)
 }
 
 static void
+armnto_supply_reg_fpregset (struct regcache *regcache, int regno, char *regs)
+{
+  int regi;
+
+  for (regi = ARM_F0_REGNUM; regi <= ARM_F7_REGNUM; regi++)
+    {
+      gdb_byte gdbbuf[FP_REGISTER_SIZE]; /* This is GDB's register size. */
+
+      memset (gdbbuf, 0, 12);
+      memcpy (gdbbuf + 4, regs, NTO_FP_REGISTER_SIZE);
+      RAW_SUPPLY_IF_NEEDED (regcache, regi, gdbbuf);
+      regs += NTO_FP_REGISTER_SIZE;     
+    }
+  /* Status registers. */
+  /* FPSCR a.k.a. ARM_FPS_REGNUM (24) */
+  /* FPEXC */
+}
+
+static void
 armnto_supply_gregset (struct regcache *regcache, char *regs)
 {
   armnto_supply_reg_gregset (regcache, NTO_ALL_REGS, regs);
+}
+
+static void
+armnto_supply_fpregset (struct regcache *regcache, char *regs)
+{
+  armnto_supply_reg_fpregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
@@ -67,6 +98,9 @@ armnto_supply_regset (struct regcache *regcache, int regset, char *data)
     {
     case NTO_REG_GENERAL:
       armnto_supply_gregset (regcache, data);
+      break;
+    case NTO_REG_FLOAT:
+      armnto_supply_fpregset (regcache, data);
       break;
     default:
       gdb_assert (0);
@@ -210,10 +244,29 @@ armnto_core_supply_gregset (const struct regset *regset,
   armnto_supply_reg_gregset (regcache, regnum, (char *)preg);
 }
 
+static void
+armnto_core_supply_fpregset (const struct regset *regset,
+			     struct regcache *regcache,
+			     int regnum, const void *preg,
+			     size_t len)
+{
+  nto_trace (0) ("%s () regnum=%d\n", __func__, regnum);
+
+  armnto_supply_reg_fpregset (regcache, regnum, (char *)preg);
+}
+
 static struct regset armnto_gregset =
 {
   NULL,
   armnto_core_supply_gregset,
+  NULL,
+  NULL
+};
+
+static struct regset armnto_fpregset = 
+{
+  NULL,
+  armnto_core_supply_fpregset,
   NULL,
   NULL
 };
@@ -231,6 +284,10 @@ armnto_regset_from_core_section (struct gdbarch *gdbarch,
   if (strcmp (sect_name, ".reg") == 0
       && sect_size >= GP_REGSET_SIZE)
     return &armnto_gregset;
+
+  if (strcmp (sect_name, ".reg2") == 0
+      && sect_size >= FP_REGSET_SIZE)
+    return &armnto_fpregset;
 
   gdb_assert (0);
   return NULL;
