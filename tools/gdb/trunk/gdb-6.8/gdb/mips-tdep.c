@@ -4508,7 +4508,14 @@ mips_print_registers_info (struct gdbarch *gdbarch, struct ui_file *file,
 {
   if (regnum != -1)		/* do one specified register */
     {
+#ifdef __QNXTARGET__
+      if (regnum < gdbarch_num_regs (gdbarch)
+	  && regnum >= 0)
+	/* Convert regnum to pseudo regnum.  */
+	regnum += gdbarch_num_regs (gdbarch);
+#else  /* ! __QNXTARGET__ */
       gdb_assert (regnum >= gdbarch_num_regs (gdbarch));
+#endif /* ! __QNXTARGET__ */
       if (*(gdbarch_register_name (gdbarch, regnum)) == '\0')
 	error (_("Not a valid register for the current processor type"));
 
