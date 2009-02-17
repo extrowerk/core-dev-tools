@@ -124,11 +124,15 @@ add_thread_silent (ptid_t ptid)
   tp = (struct thread_info *) xmalloc (sizeof (*tp));
   memset (tp, 0, sizeof (*tp));
   tp->ptid = ptid;
-#ifndef __QNXTARGET__
+#ifdef __QNXTARGET__
+  if (ptid_get_tid (ptid) > 0)
+    {
+      tp->num = ptid_get_tid (ptid);
+      highest_thread_num = max (tp->num, highest_thread_num);
+    }
+  else
+#endif /* __QNXTARGET__ */
   tp->num = ++highest_thread_num;
-#else
-  tp->num = ptid_get_tid (ptid);
-#endif
   tp->next = thread_list;
   thread_list = tp;
   return tp;
