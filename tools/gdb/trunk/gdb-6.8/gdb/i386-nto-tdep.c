@@ -165,6 +165,7 @@ i386nto_register_area (struct gdbarch *gdbarch,
 
       if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
 	{
+	  regset_size = 512;
 	  /* fxsave_area structure.  */
 	  if (first_four)
 	    {
@@ -195,18 +196,24 @@ i386nto_register_area (struct gdbarch *gdbarch,
 	      off_adjust = 160;
 	      regno_base = I387_XMM0_REGNUM;
 	    }
-	  else 
+	  else if (regno == I387_MXCSR_REGNUM) 
 	    {
-	      /* It must be mxcsr register. Assert that.  */
-	      gdb_assert (regno == I387_MXCSR_REGNUM);
 	      regsize = 4;
 	      off_adjust = 24;
 	      regno_base = I387_MXCSR_REGNUM;
 	    }
-	  regset_size = 512;
+	  else
+	    {
+	      /* Whole regset.  */
+	      gdb_assert (regno == -1); 
+	      off_adjust = 0;
+	      regno_base = 0;
+	      regsize = regset_size;
+	    }
 	}
       else
 	{
+	  regset_size = 108;
 	  /* fsave_area structure.  */
 	  if (first_four || second_four)
 	    {
@@ -215,20 +222,27 @@ i386nto_register_area (struct gdbarch *gdbarch,
 	      off_adjust = 0;
 	      regno_base = I387_FCTRL_REGNUM;
 	    }
-	  else 
+	  else if (st_reg)
 	    {
 	      /* One of ST registers.  */
 	      regsize = 10;
 	      off_adjust = 7 * 4;
 	      regno_base = I387_ST0_REGNUM;
 	    }
-	  regset_size = 108;
+	  else
+	    {
+	      /* Whole regset.  */
+	      gdb_assert (regno == -1);
+	      off_adjust = 0;
+	      regno_base = 0;
+	      regsize = regset_size;
+	    }
 	}
 
-      if (regno == -1)
-	return regset_size;
-
-      *off = off_adjust + (regno - regno_base) * regsize;
+      if (regno != -1)
+	*off = off_adjust + (regno - regno_base) * regsize;
+      else
+	*off = 0;
       return regsize;
     }
   return -1;
