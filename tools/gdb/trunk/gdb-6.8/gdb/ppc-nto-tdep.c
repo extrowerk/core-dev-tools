@@ -574,7 +574,7 @@ ppcnto_register_area (struct gdbarch *gdbarch,
 
       if (regno < FPLAST_REGNUM)
 	{
-	  *off = regno * 8;
+	  *off = (regno - gdbarch_fp0_regnum (current_gdbarch)) * 8;
 	  return 8;
 	}
       else
@@ -593,7 +593,7 @@ ppcnto_register_area (struct gdbarch *gdbarch,
 
       if (regno < ALTLAST_REGNUM)
         {
-          *off = regno * 16;
+          *off = (regno - tdep->ppc_vr0_regnum) * 16;
           return 16;
         }
       else
