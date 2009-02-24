@@ -201,6 +201,8 @@ pthread_mutex_t __mf_biglock =
 #endif
 #endif
 
+#define PRINT_OUT_OF_MEM { fprintf (stderr, "libmudflap: Out of memory.\n"); }
+
 /* Use HAVE_PTHREAD_H here instead of LIBMUDFLAPTH, so that even
    the libmudflap.la (no threading support) can diagnose whether
    the application is linked with -lpthread.  See __mf_usage() below.  */
@@ -1048,6 +1050,11 @@ __mf_insert_new_object (uintptr_t low, uintptr_t high, int type,
 
   __mf_object_t *new_obj;
   new_obj = CALL_REAL (calloc, 1, sizeof(__mf_object_t));
+  if (new_obj == NULL)
+    {
+      PRINT_OUT_OF_MEM;
+      return NULL;
+    }
   new_obj->low = low;
   new_obj->high = high;
   new_obj->type = type;
@@ -1873,49 +1880,75 @@ __mfu_report ()
 
 extern char *__progname;
 
+/* Generate backtrace lines. If the strings can not fit into the
+   allocated space, return 0; otherwise, return used size.  */
+unsigned
+generate_backtrace_lines (void **pc_array, unsigned remaining_size,
+			  void *allocated_table, unsigned allocated_size)
+{
+  char **pointers;
+  char *next_string;
+  int i;
+
+  pointers = (char **)allocated_table;
+  next_string = &pointers [remaining_size];
+
+  for (i = 0; i < remaining_size; i++)
+    {
+      Dl_info info;
+      unsigned linelen = 0;
+      char *fname = __progname;
+      char *symbolname = "\0";
+      unsigned offset = 0;
+
+    /* Fetch symbol info using dladdr: */
+      if (_dladdr (pc_array [i], &info) != 0)
+	{
+	  if (info.dli_fname != NULL)
+	    fname = info.dli_fname;
+	  if (info.dli_sname != NULL)
+	    {
+	      symbolname = info.dli_sname;
+	      offset = pc_array [i] - info.dli_saddr;
+	    }
+	}
+      linelen += strlen (fname);
+      linelen += strlen (symbolname);
+      linelen += 10 + 2 * 8 + 1; /* for printed literals + max. number of
+				    characters for each of the 
+				    hex numbers (2 * 8) + '\0' */
+      if (next_string - (char *)allocated_table + linelen > allocated_size)
+	/* Not enough space in the allocated buffer. */
+	return 0;
+      pointers[i] = next_string;
+      sprintf (next_string, "%s(%s+0x%x) [0x%p]", fname, symbolname, 
+	       offset, pc_array [i]);
+      next_string += strlen (next_string) + 1;
+    }
+  return (next_string - (char *)allocated_table);
+}
+
 static char **
 backtrace_symbols(void **pc_array, unsigned remaining_size) 
 {
-    char **pointers;
-    int i;
-    enum { perline = 30 };
-    DECLARE (void *, calloc, size_t c, size_t n);
-    DECLARE (void *, malloc, size_t n);
+  char **pointers;
+  char *next_string;
+  int max_size = remaining_size * 64;
+  const int increment = 64;
+  int i;
+  DECLARE (void *, calloc, size_t c, size_t n);
+  DECLARE (void, free, void *ptr);
 
-    pointers = CALL_REAL (calloc, remaining_size, sizeof (pointers[0]));
-    for (i = 0; i < remaining_size; i++)
-      {
-	Dl_info info;
-	unsigned linelen = perline;
-	char *fname = "\0";
-	char *symbolname = "\0";
-	unsigned offset = 0;
-
-	/* Fetch symbol info using dladdr: */
-	if (_dladdr (pc_array [i], &info) != 0)
-	  {
-	    if (info.dli_fname != NULL)
-	      {
-		linelen += strlen (info.dli_fname);
-		fname = info.dli_fname;
-	      }
-	    else
-	      fname = __progname;
-
-	    linelen += strlen (fname);
-
-	    if (info.dli_sname != NULL)
-	      {
-		linelen += strlen (info.dli_sname);
-		symbolname = info.dli_sname;
-		offset = pc_array [i] - info.dli_saddr;
-	      }
-	  }
-        pointers[i] = CALL_REAL (malloc, linelen);
-        sprintf (pointers [i], "%s(%s+0x%x) [0x%p]", fname, symbolname, 
-		 offset, pc_array [i]);
-      }
-    return pointers;
+  while ((pointers = CALL_REAL (calloc, max_size, 1)) != NULL)
+    {
+      if (generate_backtrace_lines(pc_array, remaining_size,
+				   pointers, max_size))
+	break;
+      /* Try again. */
+      max_size += increment;
+      CALL_REAL (free, pointers);
+    }
+  return pointers;
 }
 
 
@@ -1941,6 +1974,11 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   DECLARE (void *, malloc, size_t n);
 
   pc_array = CALL_REAL (calloc, pc_array_size, sizeof (void *) );
+  if (pc_array == NULL)
+    {
+      PRINT_OUT_OF_MEM;
+      return 0;
+    }
 #ifdef HAVE_BACKTRACE
   pc_array_size = backtrace (pc_array, pc_array_size);
 #else
@@ -2047,6 +2085,12 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
 #endif
   CALL_REAL (free, pc_array);
 
+  if (*symbols == NULL)
+    {
+      PRINT_OUT_OF_MEM;
+      return 0;
+    }
+
   return remaining_size;
 }
 
@@ -2107,7 +2151,7 @@ __mf_violation (void *ptr, size_t sz, uintptr_t pc,
 
     if (__mf_opts.backtrace > 0)
       {
-        char ** symbols;
+        char ** symbols = NULL;
         unsigned i, num;
 
         num = __mf_backtrace (& symbols, (void *) pc, 2);
@@ -2115,8 +2159,17 @@ __mf_violation (void *ptr, size_t sz, uintptr_t pc,
            __mf_violation and presumably __mf_check, it'll detect
            recursion, and not put the new string into the database.  */
 
+#if defined(__QNXNTO__)
+	if (symbols != NULL)
+	  {
+#endif
         for (i=0; i<num; i++)
           fprintf (stderr, "      %s\n", symbols[i]);
+#if defined(__QNXNTO__)
+	  }
+	else
+	  fprintf (stderr, "      <not enough memory for backtrace>\n");
+#endif
 
         /* Calling free() here would trigger a violation.  */
         CALL_REAL(free, symbols);
@@ -2643,6 +2696,11 @@ static mfsplay_tree
 mfsplay_tree_new ()
 {
   mfsplay_tree sp = mfsplay_tree_xmalloc (sizeof (struct mfsplay_tree_s));
+  if (sp == NULL)
+    {
+      PRINT_OUT_OF_MEM;
+      return NULL;
+    }
   sp->root = NULL;
   sp->last_splayed_key_p = 0;
   sp->num_keys = 0;
