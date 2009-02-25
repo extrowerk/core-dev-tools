@@ -648,14 +648,32 @@ _rl_backspace (count)
 {
   register int i;
 
-#ifndef __MSDOS__
+#if !defined( __MSDOS__ ) && !defined( __MINGW32__ )
   if (_rl_term_backspace)
     for (i = 0; i < count; i++)
       tputs (_rl_term_backspace, 1, _rl_output_character_function);
   else
 #endif
+#ifdef __MINGW32__
+  {
+  HANDLE hConOut = GetStdHandle (STD_OUTPUT_HANDLE);
+  if (hConOut != INVALID_HANDLE_VALUE)
+    {
+      CONSOLE_SCREEN_BUFFER_INFO scr;
+      COORD newpos;
+      CONSOLE_CURSOR_INFO cinfo;
+      if (GetConsoleScreenBufferInfo (hConOut, &scr))
+	{
+	  newpos = scr.dwCursorPosition;
+	}
+      newpos.X -= count;
+      SetConsoleCursorPosition (hConOut, newpos); 
+    }
+  }
+#else /* ! __MINGW32__ */
     for (i = 0; i < count; i++)
       putc ('\b', _rl_out_stream);
+#endif /* ! __MINGW32__ */
   return 0;
 }
 
