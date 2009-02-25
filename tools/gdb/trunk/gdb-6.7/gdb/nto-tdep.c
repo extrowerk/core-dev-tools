@@ -106,17 +106,18 @@ nto_map_arch_to_cputype (const char *arch)
   return CPUTYPE_UNKNOWN;
 }
 
-int
-nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
+/* Helper function, calculates architecture path, e.g.
+   /opt/qnx640/target/qnx6/ppcbe
+   It allocates string, callers must free the string using free.  */
+
+static char *
+nto_build_arch_path ()
 {
-  char *buf, *arch_path, *nto_root, *endian, *base;
-  const char *arch;
-  int ret;
-#define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
-		 "%s/usr/photon/dll%c%s/lib/dll"
+  const char *nto_root, *arch, *endian;
+  char *arch_path;
+  const char *variant_suffix = "";
 
   nto_root = nto_target ();
-  nto_trace (0) ("%s (..) nto_root: %s\n", __func__, nto_root);
   if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name, "i386") == 0)
     {
       arch = "x86";
@@ -137,14 +138,38 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 	       == BFD_ENDIAN_BIG ? "be" : "le";
     }
 
+  if (strcmp (arch, "ppc") == 0)
+    {
+      struct bfd_arch_info const *info = 
+	gdbarch_bfd_arch_info (current_gdbarch);
+
+      nto_trace (1) ("Selecting -spe variant\n");
+
+      if (info->mach == bfd_mach_ppc_e500)
+	variant_suffix = "-spe";
+    }
+
   /* In case nto_root is short, add strlen(solib)
      so we can reuse arch_path below.  */
   arch_path =
-    alloca (strlen (nto_root) + strlen (arch) + strlen (endian) + 2 +
-	    strlen (solib));
-  sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
+    malloc (strlen (nto_root) + strlen (arch) + strlen (endian) 
+	    + strlen (variant_suffix) +	2);
+  sprintf (arch_path, "%s/%s%s%s", nto_root, arch, endian, variant_suffix);
+  return arch_path;
+}
 
+int
+nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
+{
+  char *buf, *arch_path, *base;
+  const char *arch;
+  int ret;
+#define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
+		 "%s/usr/photon/dll%c%s/lib/dll"
+
+  arch_path = nto_build_arch_path ();
   buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
+  free (arch_path);
   sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path);
@@ -159,12 +184,12 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   ret = openp (buf, 1, base, o_flags, 0, temp_pathname);
   if (ret < 0 && base != solib)
     {
-      sprintf (arch_path, "/%s", solib);
-      ret = open (arch_path, o_flags, 0);
+      sprintf (buf, "/%s", solib);
+      ret = open (buf, o_flags, 0);
       if (temp_pathname)
 	{
 	  if (ret >= 0)
-	    *temp_pathname = gdb_realpath (arch_path);
+	    *temp_pathname = gdb_realpath (buf);
 	  else
 	    *temp_pathname = NULL;
 	}
@@ -179,49 +204,38 @@ extern char *solib_search_path;
 void
 nto_init_solib_absolute_prefix (void)
 {
-  char buf[PATH_MAX * 2], arch_path[PATH_MAX];
-  char *nto_root, *endian;
+  char *buf, *arch_path;
+  char *nto_root; 
+  const char *endian;
   const char *arch;
 
-  nto_root = nto_target ();
-  if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name, "i386") == 0)
-    {
-      arch = "x86";
-      endian = "";
-    }
-  else if (strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
-		   "rs6000") == 0
-	   || strcmp (gdbarch_bfd_arch_info (current_gdbarch)->arch_name,
-		   "powerpc") == 0)
-    {
-      arch = "ppc";
-      endian = "be";
-    }
-  else
-    {
-      arch = gdbarch_bfd_arch_info (current_gdbarch)->arch_name;
-      endian = gdbarch_byte_order (current_gdbarch)
-	       == BFD_ENDIAN_BIG ? "be" : "le";
-    }
+  arch_path = nto_build_arch_path ();
 
-  sprintf (arch_path, "%s/%s%s", nto_root, arch, endian);
+  nto_trace (0) ("nto_init_solib_absolute_prefix\n");
 
   /* Do not change it if already set.  */
   if (!gdb_sysroot
       || strlen (gdb_sysroot) == 0)
     {
+      buf = malloc (26 /* set solib-absolute-prefix */ 
+		    + strlen (arch_path) + 1);
       sprintf (buf, "set solib-absolute-prefix %s", arch_path);
       execute_command (buf, 0);
+      free (buf);
     }
 
   if (!solib_search_path
       || strlen (solib_search_path) == 0)
     {
+      buf = malloc (22 /* set solib-search-path */ + strlen (arch_path) * 2 
+		    + 3 /* "lib" */ + 7 /* "usr/lib" */ + 4);
       sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
 	      arch_path, "lib", DIRNAME_SEPARATOR, 
 	      arch_path, "usr/lib");
       execute_command (buf, 0);
+      free (buf);
     }
+  free (arch_path);
 }
 
 char **
