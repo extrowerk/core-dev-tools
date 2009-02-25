@@ -19,9 +19,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int loops = 1000000;
+
 extern void
 keeper (int sig)
 {
+  loops--;
+  if (!loops)
+    exit (1);
 }
 
 volatile long v1 = 0;

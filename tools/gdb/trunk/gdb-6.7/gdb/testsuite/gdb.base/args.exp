@@ -56,10 +56,12 @@ proc args_test { name arglist } {
     gdb_load $binfile
 
     runto_main
+    send_user "GDBFLAGS: ${arglist}\n"
     gdb_breakpoint [gdb_get_line_number "set breakpoint here"]
     gdb_continue_to_breakpoint "breakpoint for $name"
 
     set expected_len [expr 1 + [llength $arglist]]
+    send_user "Expected len: $expected_len\n"
     gdb_test "print argc" "\\\$$decimal = $expected_len" "argc for $name"
 
     set i 1
@@ -82,14 +84,14 @@ args_test basic {{1} {3}}
 # The syntax needed is a little peculiar; DejaGNU treats the arguments as a
 # list and expands them itself, since no shell redirection is involved.
 #
-set GDBFLAGS "--args $binfile 1 {} 3"
-args_test "one empty" {{1} {} {3}}
+#set GDBFLAGS "--args $binfile 1 {} 3"
+#args_test "one empty" {{1} {} {3}}
 
 #
 # try with 2 empty args
 #
-set GDBFLAGS "--args $binfile 1 {} {} 3"
-args_test "two empty" {{1} {} {} 3}
+#set GDBFLAGS "--args $binfile 1 {} {} 3"
+#args_test "two empty" {{1} {} {} 3}
 
 # Try with arguments containing literal single quotes.
 
