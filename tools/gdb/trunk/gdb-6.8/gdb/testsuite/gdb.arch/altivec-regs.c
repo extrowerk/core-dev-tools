@@ -15,10 +15,10 @@ vector_fun (vector unsigned int a, vector unsigned int b)
 int
 main ()
 {
-  vector unsigned int y; 
+  vector unsigned int y = { 1, 2, 3, 42 }; 
   vector unsigned int x; 
   vector unsigned int z; 
-  int a;
+  int a, b;
 
   /* This line may look unnecessary but we do need it, because we want to
      have a line to do a next over (so that gdb refetches the registers)
@@ -26,6 +26,7 @@ main ()
      The splat operations below modify the VRs,i
      so we don't want to execute them yet.  */
   a = 9;
+  b = 10;
   x = ((vector unsigned int) vec_splat_u8 (-2));
   y = ((vector unsigned int) vec_splat_u8 (1));
 	

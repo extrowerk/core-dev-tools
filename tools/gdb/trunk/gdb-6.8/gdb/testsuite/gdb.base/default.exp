@@ -437,6 +437,8 @@ No program loaded.*$gdb_prompt $"\
 			{ pass "run \"r\" abbreviation" }
 	    -re "Don't know how to run.  Try \"help target\"..*$gdb_prompt $"\
 			{ pass "run \"r\" abbreviation" }
+	    -re "Starting program: .*$gdb_prompt $"\
+			{ pass "run \"r\" abbreviation" }
 	    -re ".*$gdb_prompt $"	{ fail "run \"r\" abbreviation" }
 	    timeout		{ fail "(timeout) run \"r\" abbreviation" }
 	}
@@ -469,6 +471,8 @@ No program loaded.*$gdb_prompt $"\
 			{ pass "run \"r\" abbreviation" }
 	    -re "Don't know how to run.  Try \"help target\"..*$gdb_prompt $"\
 			{ pass "run" }
+	    -re "Starting program: .*$gdb_prompt $"\
+			{ pass "run \"r\" abbreviation" }
 	    -re ".*$gdb_prompt $"	{ fail "run" }
 	    timeout		{ fail "(timeout) run" }
 	}

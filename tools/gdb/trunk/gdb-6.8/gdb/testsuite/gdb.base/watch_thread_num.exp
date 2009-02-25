@@ -33,7 +33,9 @@ if [get_compiler_info ${binfile}] {
     return -1
 }
 
-if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug libs=-lpthread}] != "" } {
+#if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug libs=-lpthread}] != "" } {
+if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug }] != "" } {
+
      untested watch_thread_num.exp
      return -1
 }

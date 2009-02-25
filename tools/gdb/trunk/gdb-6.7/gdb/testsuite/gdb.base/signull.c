@@ -19,6 +19,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 enum tests {
   code_entry_point, code_descriptor, data_read, data_write
@@ -72,6 +73,7 @@ int
 main ()
 {
   static volatile int i;
+  static volatile int count = 10000000;
 
   struct sigaction act;
   memset (&act, 0, sizeof act);
@@ -80,6 +82,9 @@ main ()
 
   for (i = 0; i < 10; i++)
     {
+      if (!count--)
+	exit (1);
+      sleep (1);
       sigsetjmp (env, 1);
       bowler ();
     }

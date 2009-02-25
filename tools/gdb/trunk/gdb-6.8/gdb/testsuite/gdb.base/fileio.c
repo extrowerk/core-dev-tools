@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/types.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -287,7 +287,7 @@ test_stat ()
   stop ();
   /* NULL pathname */
   errno = 0;
-  ret = stat (NULL, &st);
+  ret = stat ("", &st);
   printf ("stat 2: ret = %d, errno = %d %s\n", ret, errno,
   	  strerrno (errno));
   stop ();

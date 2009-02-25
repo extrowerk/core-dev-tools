@@ -72,6 +72,7 @@ int
 main ()
 {
   static volatile int i;
+  static volatile int count = 10000000;
 
   struct sigaction act;
   memset (&act, 0, sizeof act);
@@ -81,6 +82,9 @@ main ()
   for (i = 0; i < 10; i++)
     {
       sigsetjmp (env, 1);
+      count--;
+      if (!count)
+	exit(1);
       bowler ();
     }
 }
