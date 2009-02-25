@@ -59,6 +59,11 @@
 #include "rlprivate.h"
 #include "xmalloc.h"
 
+#if defined (__MINGW32__)
+# include <windows.h>
+# include <wincon.h>
+#endif
+
 #if !defined (strchr) && !defined (__STDC__)
 extern char *strchr (), *strrchr ();
 #endif /* !strchr && !__STDC__ */
@@ -1761,6 +1766,24 @@ _rl_move_cursor_relative (new, data)
     _rl_backspace (cpos - dpos);
 
   _rl_last_c_pos = dpos;
+
+#if defined(__MINGW32__)
+  {
+  HANDLE hConOut = GetStdHandle (STD_OUTPUT_HANDLE);
+  if (hConOut != INVALID_HANDLE_VALUE)
+    {
+      CONSOLE_SCREEN_BUFFER_INFO scr;
+      COORD newpos;
+      CONSOLE_CURSOR_INFO cinfo;
+      if (GetConsoleScreenBufferInfo (hConOut, &scr))
+	{
+	  newpos = scr.dwCursorPosition;
+	}
+      newpos.X = dpos;
+      SetConsoleCursorPosition (hConOut, newpos); 
+    }
+  }
+#endif
 }
 
 /* PWP: move the cursor up or down. */
@@ -1786,7 +1809,7 @@ _rl_move_vert (to)
     }
   else
     {			/* delta < 0 */
-#ifdef __MSDOS__
+#if defined (__MSDOS__)
       int row, col;
 
       fflush (rl_outstream); /* make sure the cursor pos is current! */
