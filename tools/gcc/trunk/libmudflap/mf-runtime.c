@@ -1902,7 +1902,7 @@ generate_backtrace_lines (void **pc_array, unsigned remaining_size,
       unsigned offset = 0;
 
     /* Fetch symbol info using dladdr: */
-      if (_dladdr (pc_array [i], &info) != 0)
+      if (dladdr (pc_array [i], &info) != 0)
 	{
 	  if (info.dli_fname != NULL)
 	    fname = info.dli_fname;
