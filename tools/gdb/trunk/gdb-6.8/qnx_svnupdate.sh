@@ -40,7 +40,7 @@ fi
 atrev=${atrev##*revision }
 atrev=${atrev%\.}
 
-versionin="6.7 qnx-nto (rev. ${atrev})"
+versionin="6.8 qnx-nto (rev. ${atrev})"
 
 if [ "${APPEND_DATE}" ]; then
   now=`date +"%Y%m%d%H%M%S"`
