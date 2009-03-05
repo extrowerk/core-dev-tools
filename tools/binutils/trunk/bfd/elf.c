@@ -5227,9 +5227,8 @@ rewrite_elf_program_header (bfd *ibfd, bfd *obfd)
      don't set the p_paddr_valid fields.  */
 #ifdef __QNXTARGET__
   p_paddr_valid = TRUE;
-  /* Trunk elf.c only sets p_addr_valid if all the segment p_paddr fields are
-     zero. ldrel has produced binaries that PT_LOAD segments with valid p_paddr
-     and other segments with zero fields. */
+  /* ldrel has produced binaries that PT_LOAD segments with valid
+     p_paddr and other segments with zero fields. */
 
   for (i = 0, segment = elf_tdata (ibfd)->phdr;
        i < num_segments;
@@ -5777,10 +5776,25 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
   map_first = NULL;
   pointer_to_map = &map_first;
 
+  num_segments = elf_elfheader (ibfd)->e_phnum;
+#ifdef __QNXTARGET__
+  p_paddr_valid = TRUE;
+  /* ldrel has produced binaries that PT_LOAD segments with valid
+     p_paddr and other segments with zero fields. */
+
+  for (i = 0, segment = elf_tdata (ibfd)->phdr;
+       i < num_segments;
+       i++, segment++)
+    if (!segment->p_paddr)
+      {
+        p_paddr_valid = FALSE;
+        break;
+      }
+
+#else 
   /* If all the segment p_paddr fields are zero, don't set
      map->p_paddr_valid.  */
   p_paddr_valid = FALSE;
-  num_segments = elf_elfheader (ibfd)->e_phnum;
   for (i = 0, segment = elf_tdata (ibfd)->phdr;
        i < num_segments;
        i++, segment++)
@@ -5789,6 +5803,7 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
 	p_paddr_valid = TRUE;
 	break;
       }
+#endif 
 
   for (i = 0, segment = elf_tdata (ibfd)->phdr;
        i < num_segments;
