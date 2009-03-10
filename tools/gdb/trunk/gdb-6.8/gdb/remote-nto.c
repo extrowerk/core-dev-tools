@@ -2170,6 +2170,11 @@ nto_mourn_inferior ()
 
   nto_trace (0) ("nto_mourn_inferior()\n");
 
+  nto_send_init (DStMsg_detach, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.detach.pid = PIDGET (inferior_ptid);
+  tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid, 4);
+  nto_send (sizeof (tran.pkt.detach), 1);
+
   init_thread_list ();
 
   attach_flag = 0;
