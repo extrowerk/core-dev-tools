@@ -402,7 +402,7 @@ mipsnto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   const int REGSIZE = 4;
   const int num_regs = gdbarch_num_regs (gdbarch);
-  int off;
+  int off = 0;
 
   nto_trace (0) ("%s ()\n", __func__);
 
