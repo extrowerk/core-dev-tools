@@ -61,7 +61,6 @@ function hook_preconfigure {
         if [ ${host_target%%-*} != ${SYSNAME} ]; then
 	  case $host_target in
 		nto*)
-	          configure_opts="${configure_opts} --host=${target}"
                   if [ $SYSNAME != "nto" ]; then
                       if [ x$INSTALL_ROOT = x ]; then
                          INSTALL_ROOT=/usr/$qnx_install_version/host
