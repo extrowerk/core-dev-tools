@@ -1,4 +1,4 @@
 . ${srcdir}/emulparams/elf32ppc.sh
 MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
 TEXT_START_ADDR=0x48040000
-TART_SYMBOLS='_btext = .;'
+TEXT_START_SYMBOLS='_btext = .;'
