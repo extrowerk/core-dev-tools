@@ -111,9 +111,9 @@ static int getpkt (int forever);
 
 static unsigned nto_send (unsigned, int);
 
-static int nto_write_bytes (CORE_ADDR memaddr, char *myaddr, int len);
+static int nto_write_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len);
 
-static int nto_read_bytes (CORE_ADDR memaddr, char *myaddr, int len);
+static int nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len);
 
 static void nto_files_info (struct target_ops *ignore);
 
@@ -878,7 +878,7 @@ set_thread (int th)
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      warning ("Thread %d has terminated. \n", th);
+      nto_trace (0) ("Thread %d does not exist\n", th);
       return 0;
     }
 
@@ -968,7 +968,7 @@ nto_get_thread_alive (ptid_t th)
       returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4);
     }
   else
-    returned_tid = ptid_get_tid (th);
+    return minus_one_ptid;
 
  return ptid_build (ptid_get_pid (th), ptid_get_lwp (th), returned_tid);
 }
@@ -1374,10 +1374,34 @@ nto_resume (ptid_t ptid, int step, enum target_signal sig)
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
 
-  if (!set_thread (
-	ptid_equal (ptid, minus_one_ptid) ? ptid_get_tid (inferior_ptid)
-	      : ptid_get_tid (ptid)))
-    return; /* Thread not found?  */
+  /* Select requested thread.  If minus_one_ptid is given, or selecting
+     requested thread fails, select tid 1.  If tid 1 does not exist,
+     first next available will be selected.  */
+  if (!ptid_equal (ptid, minus_one_ptid))
+    {
+      ptid_t ptid_alive = nto_get_thread_alive (ptid);
+
+      /* If returned thread is minus_one_ptid, then requested thread is
+	 dead and there are no alive threads with tid > ptid_get_tid (ptid).
+	 Try with first alive with tid >= 1.  */
+      if (ptid_equal (ptid_alive, minus_one_ptid))
+	{
+	  nto_trace (0) ("Thread %ld does not exist. Trying with tid >= 1\n",
+			 ptid_get_tid (ptid));
+	  ptid_alive = nto_get_thread_alive (ptid_build (
+					    ptid_get_pid (ptid), 0, 1));
+	  nto_trace (1) ("First next tid found is: %ld\n", 
+			 ptid_get_tid (ptid_alive));
+	}
+      if (!ptid_equal (ptid_alive, minus_one_ptid))
+	{
+	  if (!set_thread (ptid_get_tid (ptid_alive))) 
+	    {
+	      nto_trace (0) ("Failed to set thread: %ld\n", 
+			     ptid_get_tid (ptid_alive));
+	    }
+	}
+    }
 
   /* The HandleSig stuff is part of the new protover 0.1, but has not
      been implemented in all pdebugs that reflect that version.  If
@@ -1658,6 +1682,7 @@ static ptid_t
 nto_parse_notify (struct target_waitstatus *status)
 {
   pid_t pid, tid;
+  CORE_ADDR stopped_pc = 0;
 
   nto_trace (0) ("nto_parse_notify(status) - subcmd %d\n",
 			 recv.pkt.hdr.subcmd);
@@ -1723,6 +1748,13 @@ nto_parse_notify (struct target_waitstatus *status)
     case DSMSG_NOTIFY_BRK:
       nto_inferior_stopped_flags = 
 	EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.flags, 4);
+      stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.ip, 4);
+      /* NOTE: We do not have New thread notification. This will cause
+	 gdb to think that breakpoint stop is really a new thread event if
+	 it happens to be in a thread unknown prior to this stop.
+	 We add new threads here to be transparent to the rest 
+	 of the gdb.  */
+      nto_find_new_threads ();
       /* Fallthrough.  */
     case DSMSG_NOTIFY_STEP:
       /* NYI: could update the CPU's IP register here.  */
@@ -1762,7 +1794,8 @@ nto_parse_notify (struct target_waitstatus *status)
       warning ("Unexpected notify type %d", recv.pkt.hdr.subcmd);
       break;
     }
-  nto_trace (0) ("nto_trace_notify: pid=%d, tid=%d\n", pid, tid);
+  nto_trace (0) ("nto_parse_notify: pid=%d, tid=%d ip=0x%s\n",
+		 pid, tid, paddr (stopped_pc));
   return ptid_build (pid, 0, tid);
 }
 
@@ -1935,7 +1968,7 @@ nto_store_registers (struct regcache *regcache, int regno)
 
    Returns number of bytes transferred, or 0 for error.  */
 static int
-nto_write_bytes (CORE_ADDR memaddr, char *myaddr, int len)
+nto_write_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len)
 {
   long long addr;
   nto_trace (0) ("nto_write_bytes(to %s, from %p, len %d)\n",
@@ -1966,7 +1999,7 @@ nto_write_bytes (CORE_ADDR memaddr, char *myaddr, int len)
 
    Returns number of bytes transferred, or 0 for error.  */
 static int
-nto_read_bytes (CORE_ADDR memaddr, char *myaddr, int len)
+nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len)
 {
   int rcv_len, tot_len, ask_len;
   long long addr;
@@ -2933,7 +2966,7 @@ nto_find_new_threads ()
 	  continue;
 	}
 
-      new_thread = find_thread_pid(ptid);
+      new_thread = find_thread_pid (ptid);
       if(!new_thread)
         new_thread = add_thread (ptid);
       if(!new_thread->private){
@@ -3204,7 +3237,7 @@ nto_pid_to_str (ptid_t ptid)
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
 
-  n = sprintf (buf, "process %d", pid);
+  n = sprintf (buf, "process %d thread %d", pid, tid);
 
   tip = nto_thread_info (pid, tid);
   if (tip != NULL)
