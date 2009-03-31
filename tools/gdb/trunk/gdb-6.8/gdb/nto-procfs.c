@@ -346,7 +346,6 @@ procfs_find_new_threads (void)
 	  && (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
 	      != EOK))
 	break;
-      ptid = ptid_build (pid, 0, tid);
       if (status.tid != tid)
 	{
 	/* The reason why this would not be equal is that devctl might have 
@@ -356,6 +355,7 @@ procfs_find_new_threads (void)
 	    delete_thread (ptid);  */
 	  continue;
 	}
+      ptid = ptid_build (pid, 0, tid);
       new_thread = find_thread_pid (ptid);
       if (!new_thread)
 	new_thread = add_thread (ptid);
@@ -782,6 +782,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
     {
       ourstatus->kind = TARGET_WAITKIND_STOPPED;
       ourstatus->value.sig = TARGET_SIGNAL_TRAP;
+      procfs_find_new_threads ();
     }
   else if (status.flags & _DEBUG_FLAG_ISTOP)
     {
