@@ -326,7 +326,8 @@ ppc_nto_sigtramp_sniffer (struct frame_info *next_frame)
       frame_func = frame_pc_unwind (next_frame);
       if (frame_func)
         find_pc_partial_function (frame_func, &func_name, NULL, NULL);
-      nto_trace (0) ("get_frame_func returned: 0x%s %s\n", paddr (frame_func), func_name);
+      nto_trace (0) ("get_frame_func returned: 0x%s %s\n", paddr (frame_func),
+		     func_name ? func_name : "(null)");
       if (!func_name || func_name[0] == '\0')
         return NULL;
       /* see if this is __signalstub function: */
