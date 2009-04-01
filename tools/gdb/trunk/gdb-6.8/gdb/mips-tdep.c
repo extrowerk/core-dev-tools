@@ -152,6 +152,17 @@ enum mips_fpu_type
   MIPS_FPU_NONE			/* No floating point.  */
 };
 
+
+/* Numeric part will be adjusted during initialization.  */
+const struct register_alias mips_numeric_register_aliases[] = {
+#define R(n) { #n, n }
+  R(0), R(1), R(2), R(3), R(4), R(5), R(6), R(7),
+  R(8), R(9), R(10), R(11), R(12), R(13), R(14), R(15),
+  R(16), R(17), R(18), R(19), R(20), R(21), R(22), R(23),
+  R(24), R(25), R(26), R(27), R(28), R(29), R(30), R(31),
+#undef R
+};
+
 #ifndef MIPS_DEFAULT_FPU_TYPE
 #define MIPS_DEFAULT_FPU_TYPE MIPS_FPU_DOUBLE
 #endif
@@ -480,25 +491,13 @@ mips_register_name (struct gdbarch *gdbarch, int regno)
     "t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra"
   };
 
-  static char *mips_gpr_numeric_names[] = {
-    "0", "1", "2", "3", "4", "5", "6", "7",
-    "8", "9", "10", "11", "12", "13", "14", "15",
-    "16", "17", "18", "19", "20", "21", "22", "23",
-    "24", "25", "26", "27", "28", "29", "30", "31"
-  };
-
   enum mips_abi abi = mips_abi (gdbarch);
 
   /* Map [gdbarch_num_regs .. 2*gdbarch_num_regs) onto the raw registers, 
      but then don't make the raw register names visible.  */
   int rawnum = regno % gdbarch_num_regs (gdbarch);
   if (regno < gdbarch_num_regs (gdbarch))
-    {
-      if (regno >= 0 && regno < 32)
-	return mips_gpr_numeric_names [regno];
-      else
-	return "";
-    }
+    return "";
 
   /* The MIPS integer registers are always mapped from 0 to 31.  The
      names of the registers (which reflects the conventions regarding
@@ -4520,6 +4519,7 @@ mips_print_registers_info (struct gdbarch *gdbarch, struct ui_file *file,
 {
   if (regnum != -1)		/* do one specified register */
     {
+      gdb_assert (regnum >= gdbarch_num_regs (gdbarch));
       if (*(gdbarch_register_name (gdbarch, regnum)) == '\0')
 	error (_("Not a valid register for the current processor type"));
 
@@ -5887,6 +5887,11 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   for (i = 0; i < ARRAY_SIZE (mips_register_aliases); i++)
     user_reg_add (gdbarch, mips_register_aliases[i].name,
 		  value_of_mips_user_reg, &mips_register_aliases[i].regnum);
+
+  for (i = 0; i < ARRAY_SIZE (mips_numeric_register_aliases); i++)
+    user_reg_add (gdbarch, mips_numeric_register_aliases[i].name,
+		  value_of_mips_user_reg,
+		  &mips_numeric_register_aliases[i].regnum);
 
   return gdbarch;
 }
