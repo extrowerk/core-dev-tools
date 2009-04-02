@@ -3913,9 +3913,18 @@ process_g_packet (struct regcache *regcache)
 
   buf_len = strlen (rs->buf);
 
-  /* Further sanity checks, with knowledge of the architecture.  */
-  if (buf_len > 2 * rsa->sizeof_g_packet)
-    error (_("Remote 'g' packet reply is too long: %s"), rs->buf);
+  if (remote_debug)
+    {
+      fprintf_unfiltered (gdb_stdlog,
+	"Received g packet length: %d. Estimated sizeof_g_packet: %ld\n.",
+	buf_len, rsa->sizeof_g_packet);
+
+      /* Further sanity checks, with knowledge of the architecture.  */
+      if (buf_len > 2 * rsa->sizeof_g_packet)
+	fprintf_unfiltered (gdb_stdlog, 
+			    "Remote 'g' packet reply is too long: %s \n",
+			    rs->buf);
+    }
 
   /* Save the size of the packet sent to us by the target.  It is used
      as a heuristic when determining the max size of packets that the
