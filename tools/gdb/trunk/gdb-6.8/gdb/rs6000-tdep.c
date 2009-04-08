@@ -128,6 +128,7 @@ struct rs6000_framedata
 				   by which we decrement sp to allocate
 				   the frame */
     int saved_gpr;		/* smallest # of saved gpr */
+    unsigned int gpr_mask;	/* Each bit is an individual saved GPR.  */
     int saved_fpr;		/* smallest # of saved fpr */
     int saved_vr;               /* smallest # of saved vr */
     int saved_ev;               /* smallest # of saved ev */
@@ -1364,6 +1365,10 @@ skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc, CORE_ADDR lim_pc,
 	{
 
 	  reg = GET_SRC_REG (op);
+	  if ((op & 0xfc1f0000) == 0xbc010000)
+	    fdata->gpr_mask |= ~((1U << reg) - 1);
+	  else
+	    fdata->gpr_mask |= 1U << reg;
 	  if (fdata->saved_gpr == -1 || fdata->saved_gpr > reg)
 	    {
 	      fdata->saved_gpr = reg;
@@ -1767,11 +1772,15 @@ skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc, CORE_ADDR lim_pc,
 
       else
 	{
+	  unsigned int all_mask = ~((1U << fdata->saved_gpr) - 1);
+
 	  /* Not a recognized prologue instruction.
 	     Handle optimizer code motions into the prologue by continuing
 	     the search if we have no valid frame yet or if the return
-	     address is not yet saved in the frame.  */
-	  if (fdata->frameless == 0 && fdata->nosavedpc == 0)
+	     address is not yet saved in the frame.  Also skip instructions
+	     if some of the GPRs expected to be saved are not yet saved.  */
+	  if (fdata->frameless == 0 && fdata->nosavedpc == 0
+	      && (fdata->gpr_mask & all_mask) == all_mask)
 	    break;
 
 	  if (op == 0x4e800020		/* blr */
@@ -3055,7 +3064,8 @@ rs6000_frame_cache (struct frame_info *next_frame, void **this_cache)
       CORE_ADDR gpr_addr = cache->base + fdata.gpr_offset;
       for (i = fdata.saved_gpr; i < ppc_num_gprs; i++)
 	{
-	  cache->saved_regs[tdep->ppc_gp0_regnum + i].addr = gpr_addr;
+	  if (fdata.gpr_mask & (1U << i))
+	    cache->saved_regs[tdep->ppc_gp0_regnum + i].addr = gpr_addr;
 	  gpr_addr += wordsize;
 	}
     }
