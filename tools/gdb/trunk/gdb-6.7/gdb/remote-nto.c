@@ -187,7 +187,7 @@ static int nto_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
 static int nto_insert_hw_watchpoint (CORE_ADDR addr, int len, int type);
 
-char *nto_pid_to_str (ptid_t ptid);
+static char *remote_nto_pid_to_str (ptid_t ptid);
 
 static struct target_ops nto_ops;
 
@@ -2841,7 +2841,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_has_stack = 0;
   nto_ops.to_has_registers = 1;
   nto_ops.to_has_execution = 0;
-  nto_ops.to_pid_to_str = nto_pid_to_str;
+  nto_ops.to_pid_to_str = remote_nto_pid_to_str;
   /* nto_ops.to_has_thread_control = tc_schedlock; *//* can lock scheduler */
   nto_ops.to_magic = OPS_MAGIC;
   nto_ops.to_have_continuable_watchpoint = 1;
@@ -3217,17 +3217,20 @@ nto_thread_info (pid_t pid, short tid)
   return NULL;
 }
 
-char *
-nto_pid_to_str (ptid_t ptid)
+static char *
+remote_nto_pid_to_str (ptid_t ptid)
 {
   static char buf[1024];
+  const char *generic_nto_pid_to_str;
   int pid, tid, n;
   struct tidinfo *tip;
 
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
 
-  n = sprintf (buf, "process %d thread %d", pid, tid);
+  generic_nto_pid_to_str = nto_pid_to_str (ptid);
+
+  n = sprintf (buf, "%s", generic_nto_pid_to_str);
 
   tip = nto_thread_info (pid, tid);
   if (tip != NULL)
