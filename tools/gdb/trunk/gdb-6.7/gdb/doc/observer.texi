@@ -129,3 +129,8 @@ Called with @var{objfile} equal to @code{NULL} to indicate
 previously loaded symbol table data has now been invalidated.
 @end deftypefun
 
+@deftypefun void architecture_changed (struct gdbarch *@var{newarch})
+The current architecture has changed.  The argument @var{newarch} is
+a pointer to the new architecture.
+@end deftypefun
+
