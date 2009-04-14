@@ -1208,6 +1208,8 @@ read_dbx_symtab (struct objfile *objfile)
   struct partial_symtab **dependency_list;
   int dependencies_used, dependencies_allocated;
 
+  memset (&nlist, 0, sizeof (nlist));
+
   text_addr = DBX_TEXT_ADDR (objfile);
   text_size = DBX_TEXT_SIZE (objfile);
 

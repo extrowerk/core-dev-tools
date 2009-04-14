@@ -218,20 +218,26 @@ mipsnto_regset_fill (const struct regcache *regcache, int regset, char *data)
 
   nto_trace (0) ("%s ()\n", __func__);
 
-  if(gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG &&
-     register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
-          off = 4;
+  if(gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG
+     && register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
+    off = 4;
 
   if (regset == NTO_REG_GENERAL)
     {
-      for (regno = MIPS_ZERO_REGNUM; regno < gdbarch_fp0_regnum (current_gdbarch); regno++)
-	  regcache_raw_collect (regcache, regno, &regs[regno - MIPS_ZERO_REGNUM][off]);
+      for (regno = MIPS_ZERO_REGNUM;
+	   regno < gdbarch_fp0_regnum (current_gdbarch); regno++)
+	regcache_raw_collect (regcache, regno,
+			      regs
+			      + (regno - MIPS_ZERO_REGNUM) * sizeof (nto_reg64)
+			      + off);
     }
   else if (regset == NTO_REG_FLOAT)
     {
       for (regno = 0; regno < 16; regno++)
 	{
-	  regcache_raw_collect (regcache, regno + gdbarch_fp0_regnum (current_gdbarch), &regs[regno][off]);
+	  regcache_raw_collect (regcache, regno
+				+ gdbarch_fp0_regnum (current_gdbarch),
+				regs + regno * sizeof (nto_reg64) + off);
 	}
       regcache_raw_collect (regcache, mips_regnum(current_gdbarch)->fp_control_status, data + FPCR31_OFF);
     }
