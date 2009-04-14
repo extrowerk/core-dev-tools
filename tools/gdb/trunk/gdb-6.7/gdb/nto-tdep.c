@@ -204,6 +204,11 @@ extern char *solib_search_path;
 void
 nto_init_solib_absolute_prefix (void)
 {
+  /* If it was nto_init_solib_absolute_prefix that set the paths,
+   the following variables will be set to 1.  */
+  static int nto_set_gdb_sysroot;
+  static int nto_set_solib_search_path;
+
   char *buf, *arch_path;
   char *nto_root; 
   const char *endian;
@@ -214,26 +219,51 @@ nto_init_solib_absolute_prefix (void)
   nto_trace (0) ("nto_init_solib_absolute_prefix\n");
 
   /* Do not change it if already set.  */
-  if (!gdb_sysroot
+  if ((!gdb_sysroot
       || strlen (gdb_sysroot) == 0)
+      || nto_set_gdb_sysroot)
     {
-      buf = malloc (26 /* set solib-absolute-prefix */ 
+      buf = alloca (26 /* set solib-absolute-prefix */ 
 		    + strlen (arch_path) + 1);
       sprintf (buf, "set solib-absolute-prefix %s", arch_path);
       execute_command (buf, 0);
-      free (buf);
+      nto_set_gdb_sysroot = 1;
     }
 
-  if (!solib_search_path
+  if ((!solib_search_path
       || strlen (solib_search_path) == 0)
+      || nto_set_solib_search_path)
     {
-      buf = malloc (22 /* set solib-search-path */ + strlen (arch_path) * 2 
-		    + 3 /* "lib" */ + 7 /* "usr/lib" */ + 4);
-      sprintf (buf, "set solib-search-path %s/%s%c%s/%s", 
-	      arch_path, "lib", DIRNAME_SEPARATOR, 
-	      arch_path, "usr/lib");
-      execute_command (buf, 0);
-      free (buf);
+      const char * const setcmd = "set solib-search-path ";
+      const char * const subdirs[] = { "lib", "usr/lib", "lib/dll", NULL };
+      unsigned int subdirs_len = 0;
+      const unsigned int subdirs_num = sizeof (subdirs) / sizeof (subdirs[0]);
+      const char * const *pivot;
+
+      buf = alloca (strlen (setcmd)
+		    + strlen (arch_path) * subdirs_num
+		    + subdirs_num - 1 /* For DIRNAME_SEPARATOR.  */
+		    + subdirs_num /* For  path separator '/' */ 
+		    + subdirs_len
+		    + 1 /* for final '\0' */ );
+
+      sprintf (buf, "%s", setcmd);
+      for (pivot = subdirs; *pivot != NULL; ++pivot)
+	{
+	  sprintf (buf + strlen (buf), "%s/%s", arch_path, *pivot);
+	  if (*(pivot + 1) != NULL)
+	    sprintf (buf + strlen (buf), "%c", DIRNAME_SEPARATOR);
+	}
+
+      /* Do not set it if already set. Otherwise, this would cause
+         re-reading symbols.  */
+      if (solib_search_path == NULL
+	  || strcmp (solib_search_path, buf + strlen (setcmd)) != 0)
+	{
+	  nto_trace (0) ("Executing %s\n", buf);
+	  execute_command (buf, 0);
+	}
+      nto_set_solib_search_path = 1;
     }
   free (arch_path);
 }
