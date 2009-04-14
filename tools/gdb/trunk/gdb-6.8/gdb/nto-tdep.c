@@ -947,10 +947,7 @@ nto_core_open (char *filename, int from_tty)
   backup_so_ops = *current_target_so_ops;
 
   nto_trace (0) ("%s (%s)\n", __func__, filename);
-
   original_core_ops.to_open (filename, from_tty);
-  nto_init_solib_absolute_prefix ();
-
   /* Now we need to load additional thread status information stored
      in qnx notes.  */
   if (core_bfd)
@@ -1058,6 +1055,12 @@ nto_solib_added_listener (struct so_list *solib)
     }
 }
 
+static void
+nto_architecture_changed_listener (struct gdbarch *newarch)
+{
+  nto_trace (0) ("%s\n", __func__);
+  nto_init_solib_absolute_prefix ();
+}
 
 
 /* Prevent corelow.c from adding core_ops target. We will do it
@@ -1090,4 +1093,5 @@ for different positive values."),
  nto_is_nto_target = nto_elf_osabi_sniffer;
 
  observer_attach_solib_loaded (nto_solib_added_listener);
+ observer_attach_architecture_changed (nto_architecture_changed_listener);
 }
