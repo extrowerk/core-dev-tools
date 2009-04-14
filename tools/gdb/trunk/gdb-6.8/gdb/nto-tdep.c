@@ -658,6 +658,23 @@ nto_info_tidinfo_command (char *args, int from_tty)
   iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
 
+
+char *
+nto_pid_to_str (ptid_t ptid)
+{
+  static char buf[1024];
+  int pid, tid, n;
+  struct tidinfo *tip;
+
+  pid = ptid_get_pid (ptid);
+  tid = ptid_get_tid (ptid);
+
+  n = sprintf (buf, "process %d thread %d", pid, tid);
+
+  return buf;
+}
+
+
 int
 qnx_filename_cmp (const char *s1, const char *s2)
 {
@@ -1002,6 +1019,7 @@ init_nto_core_ops ()
   core_ops.to_open = nto_core_open;
   core_ops.to_close = nto_core_close;
   core_ops.to_xfer_partial = nto_core_xfer_partial;
+  core_ops.to_pid_to_str = nto_pid_to_str;
 }
 
 int

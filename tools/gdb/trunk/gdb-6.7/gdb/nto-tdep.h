@@ -201,4 +201,8 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack,
 					  gdb_byte *readbuf,
 					  LONGEST len);
 
+char *nto_pid_to_str (ptid_t);
+
+
+
 #endif
