@@ -3340,11 +3340,34 @@ rs6000_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   if (info.abfd)
     {
-      sect = bfd_get_section_by_name (info.abfd, ".PPC.EMB.apuinfo");
-      if (sect)
+      /* We want to check .gnu.attributes first as it records user's 
+	 setting.  In particular, we want to know if this binary is meant
+	 to be executed on a popwer pc with  SPE APU.  To do that,
+	 we look for tag 8. Failing that, resort to detecting apuinfo 
+	 section.  See 'as.pdf', section 'Object Attributes'.   */
+      int tag8_value; /* Tag_GNU_Power_ABI_Vector */
+      unsigned long m = 0;
+
+      tag8_value = bfd_elf_get_obj_attr_int (info.abfd, OBJ_ATTR_GNU,
+					     Tag_GNU_Power_ABI_Vector);
+
+      /* The vector ABI used by this object file. The value will be:
+	 - 0 for files not affected by the vector ABI.
+	 - 1 for files using general purpose registers to pass vectors.
+	 - 2 for files using AltiVec registers to pass vectors.
+	 - 3 for files using SPE registers to pass vectors.  */
+      if (tag8_value == 3)
+	m = bfd_mach_ppc_e500;
+      else
 	{
+	  sect = bfd_get_section_by_name (info.abfd, ".PPC.EMB.apuinfo");
+	  if (sect)
+	    m = bfd_mach_ppc_e500;
+	}
+      if (m != 0)
+	{
+	  mach = m;
 	  arch = info.bfd_arch_info->arch;
-	  mach = bfd_mach_ppc_e500;
 	  bfd_default_set_arch_mach (&abfd, arch, mach);
 	  info.bfd_arch_info = bfd_get_arch_info (&abfd);
 	}
@@ -3921,6 +3944,36 @@ powerpc_set_vector_abi (char *args, int from_tty,
     internal_error (__FILE__, __LINE__, "could not update architecture");
 }
 
+static void
+powerpc_show_vector_abi (struct ui_file *file,
+			 int from_tty,
+			 struct cmd_list_element *c,
+			 const char *value)
+{
+  struct gdbarch *gdbarch = current_gdbarch;
+  enum powerpc_vector_abi tdep_vector_abi;
+  int global_msg_only = 0;
+
+  if (gdbarch == NULL)
+    global_msg_only = 1;
+  else 
+    {
+      tdep_vector_abi = gdbarch_tdep (gdbarch)->vector_abi;
+      if (strcmp (powerpc_vector_abi_string,
+		  powerpc_vector_strings[tdep_vector_abi]) == 0)
+	global_msg_only = 1;
+    }
+
+  if (global_msg_only)
+    printf_unfiltered ("The vector ABI is \"%s\"\n",
+		       powerpc_vector_abi_string);
+  else
+    printf_unfiltered ("\
+The vector ABI in use is \"%s\". Default setting is \"%s\".\n",
+		       powerpc_vector_strings[tdep_vector_abi],
+		       powerpc_vector_abi_string); 
+}
+
 /* Initialization code.  */
 
 extern initialize_file_ftype _initialize_rs6000_tdep; /* -Wmissing-prototypes */
@@ -3970,6 +4023,6 @@ _initialize_rs6000_tdep (void)
 			&powerpc_vector_abi_string,
 			_("Set the vector ABI."),
 			_("Show the vector ABI."),
-			NULL, powerpc_set_vector_abi, NULL,
+			NULL, powerpc_set_vector_abi, powerpc_show_vector_abi,
 			&setpowerpccmdlist, &showpowerpccmdlist);
 }
