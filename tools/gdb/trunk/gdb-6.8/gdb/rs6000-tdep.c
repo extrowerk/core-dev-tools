@@ -3951,7 +3951,7 @@ powerpc_show_vector_abi (struct ui_file *file,
 			 const char *value)
 {
   struct gdbarch *gdbarch = current_gdbarch;
-  enum powerpc_vector_abi tdep_vector_abi;
+  enum powerpc_vector_abi tdep_vector_abi = POWERPC_VEC_LAST;
   int global_msg_only = 0;
 
   if (gdbarch == NULL)
