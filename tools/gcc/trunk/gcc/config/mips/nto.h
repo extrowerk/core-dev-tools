@@ -100,7 +100,7 @@ Boston, MA 02111-1307, USA.  */
 %{!EL:%{!mel:-belf32-tradbigmips}} %{EL|mel:-belf32-tradlittlemips} \
 %{MAP: -Map mapfile} \
 %{static: -dn -Bstatic} \
-%{!shared: --dynamic-linker /usr/lib/ldqnx.so.2} \
+%{!shared: --dynamic-linker /usr/lib/ldqnx.so.3} \
 -melf32btsmip"
 
 #undef SUBTARGET_CC1_SPEC
