@@ -39,9 +39,9 @@ do { \
 } while (0)
 
 #define QNX_SYSTEM_INCLUDES \
-"-isystem %$QNX_HOST/usr/lib/gcc/" TARGET_ALIAS "/%v1.%v2.%v3/include \
+"-isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" TARGET_ALIAS " \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
  -idirafter %$QNX_TARGET/usr/include "
 

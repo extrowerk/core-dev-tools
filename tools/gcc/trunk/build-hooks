@@ -1,14 +1,11 @@
-minimum_binutils=2.12.1
-need_new=""
-
 srcdir=${PWD}/..
 targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
 qnx_target_version=6.4.0
-qnx_install_version=qnx640
 nto_target=${PWD##*-}
+host_target=${PWD##*/}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
 if [ $cpu_string = x86 ]; then
 cpu_string=i386
@@ -34,9 +31,9 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_install_version}/host/qnx6/x86}}
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/qnx640/host/qnx6/x86}}
 				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/${qnx_install_version}/host/qnx6/x86/usr ;;
+		*)		basedir=/usr/qnx640/host/qnx6/x86/usr ;;
 		esac
 		;;
 	solaris)
@@ -44,22 +41,34 @@ function hook_preconfigure {
 		case ${host_cpu} in
         i[34567]86) host_cpu=x86;;
 		esac
-		basedir=${QNX_HOST:-/usr/${qnx_install_version}/host/solaris/${host_cpu}/usr}
+		basedir=${QNX_HOST:-/usr/qnx640/host/solaris/${host_cpu}/usr}
 		;;
 	linux)
-		if [ X${WIN32_ENVIRON} == Xmingw ]; then
+		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
+		case "${host_target}" in
+			win32-*) 	
 			configure_opts="${configure_opts} --host=i386-mingw32msvc"
-			configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
-		fi
-		host_cpu=$(uname -m)
-		case ${host_cpu} in
-        i[34567]86) host_cpu=x86 ;;
-		esac
-		#basedir=${QNX_HOST:-/usr/${qnx_install_version}/host/linux/${host_cpu}/usr}
-		basedir=/opt/${qnx_install_version}/host/linux/x86/usr
-		;;
+			basedir=/c/qnx640/host/win32/x86/usr
+			qnxtarget=/c/qnx640/target/qnx6/
+			;;
+			nto-*)
+			configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.4.0"
+			basedir=/usr/qnx640/host/qnx6/x86/usr
+			qnxtarget=/usr/qnx640/target/qnx6
+				
+			;;
+			linux-*)
+				host_cpu=$(uname -m)
+				case ${host_cpu} in
+			i[34567]86) host_cpu=x86 ;;
+				esac
+				basedir=/opt/qnx640/host/linux/x86/usr
+				qnxtarget=/opt/qnx640/target/qnx6
+			
+			;;
+		esac ;;
 	win32)
-		tooldir=${QNX_HOST:-c:/${qnx_install_version}/host/win32/x86}
+		tooldir=${QNX_HOST:-c:/qnx640/host/win32/x86}
 		basedir=${tooldir}/usr
 		;;
 	*)
@@ -71,8 +80,8 @@ function hook_preconfigure {
 	case ${target} in
 	*nto-qnx*)	
 		configure_opts="${configure_opts} --enable-cheaders=c"
-		configure_opts="${configure_opts} --with-as=${nto_target}-as-2.18"
-		configure_opts="${configure_opts} --with-ld=${nto_target}-ld-2.18"
+		configure_opts="${configure_opts} --with-as=${nto_target}-as-2.19"
+		configure_opts="${configure_opts} --with-ld=${nto_target}-ld-2.19"
 	esac 
 
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
@@ -89,13 +98,18 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-tls"
-	if [ "${qnx_target_version}" = "6.4.0" ]; then
-	  configure_opts="${configure_opts} --enable-libmudflap"
-	fi
+	configure_opts="${configure_opts} --disable-libstdcxx-pch"
+	configure_opts="${configure_opts} --enable-libmudflap"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
-	configure_opts="${configure_opts} --with-gxx-include-dir=$QNX_TARGET/usr/include/c++/${gcc_version}"
+	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
 	configure_opts="${configure_opts} --enable-multilib"
-	configure_opts="${configure_opts} --enable-shared"
+	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
+	if test "${target}" = "mips-unknown-nto-qnx6.4.0"; then
+		configure_opts="${configure_opts} --disable-shared"
+		configure_opts="${configure_opts} --disable-fixed-point"
+	else
+		configure_opts="${configure_opts} --enable-shared"
+	fi
 
 	# The cross compilation of libgcc.a and libstdc++ require system headers
 	# from the next version of Neutrino while gcc itself should be compiled
@@ -127,6 +141,22 @@ function hook_preconfigure {
 			fi
 			as_ver=${new}
 		done
+		if [ -n "${need_new}" ]; then
+			echo "GCC Requires new binutils (assembler) to build..."
+			dir_pref=${PWD%-*}
+			binutils_dir=$(echo ${dir_pref}-ntomulti | sed s/gcc/binutils/)
+			# We have to undefine LOOPING since it's inherited from the parent
+			# make which has already gone through qmake-cfg.mk. If this is not
+			# done then the binutils make goes through the other part of qmake-cfg.mk
+			# which just does an "include Makefile" and fails to do the configure.
+			# We also have to specify the makefile since this is the nto-x86-o-ntomulti
+			# directory which doesn't have a Makefile yet 
+			make -C${binutils_dir} -fGNUmakefile LOOPING=""
+			ln -s ${binutils_dir}/binutils binutils
+			op ln -sP ${binutils_dir}/binutils/ar ${basedir}/${target}/bin/ar
+			op ln -sP ${binutils_dir}/gas/${target}/as-new ${basedir}/bin/${target}/${gcc_version}/${nto_target}-as
+			op ln -sP ${binutils_dir}/ld/${target}/ld-new ${basedir}/bin/${target}/${gcc_version}/${nto_target}-ld
+		fi
 	fi	
 }
 
@@ -170,12 +200,5 @@ function hook_pinfo {
 	esac
 
 	# Executables
-	gen_pinfo -ngcc/cc1 cc1${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
-	gen_pinfo -ngcc/cc1plus cc1plus${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
-	gen_pinfo -ngcc/collect2 collect2${exe_suffix} /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC ${gcc_version}" FINFO="0 0 1775"
-	gen_pinfo -ngcc/xgcc ${target}-gcc${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-gcc${exe_suffix} FINFO="0 0 1775"
-	gen_pinfo -ngcc/g++ ${target}-g++${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-g++${exe_suffix} SYMLINK=/${target}-c++${exe_suffix} SYMLINK=/${nto_target}-c++${exe_suffix} FINFO="0 0 1775"
-	gen_pinfo -ngcc/gcov ${target}-gcov${exe_suffix} usr/bin LICE=GPL DESCRIPTION="GCC ${gcc_version}" SYMLINK=${nto_target}-gcov${exe_suffix}
-	gen_pinfo -ngcc/specs specs /usr/lib/gcc-lib/${target}/${gcc_version} LICE=GPL DESCRIPTION="GCC specs ${gcc_version}"
 }
 

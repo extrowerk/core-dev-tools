@@ -43,7 +43,8 @@ along with GCC; see the file COPYING3.  If not see
 #if TARGET_CPU_DEFAULT == TARGET_CPU_v9 \
     || TARGET_CPU_DEFAULT == TARGET_CPU_ultrasparc \
     || TARGET_CPU_DEFAULT == TARGET_CPU_ultrasparc3 \
-    || TARGET_CPU_DEFAULT == TARGET_CPU_niagara
+    || TARGET_CPU_DEFAULT == TARGET_CPU_niagara \
+    || TARGET_CPU_DEFAULT == TARGET_CPU_niagara2
 /* A 64 bit v9 compiler with stack-bias,
    in a Medium/Low code model environment.  */
 
@@ -345,6 +346,9 @@ do {									\
 /* Determine whether the entire c99 runtime is present in the
    runtime library.  */
 #define TARGET_C99_FUNCTIONS (OPTION_GLIBC)
+
+/* Whether we have sincos that follows the GNU extension.  */
+#define TARGET_HAS_SINCOS (OPTION_GLIBC)
 
 #define TARGET_POSIX_IO
 

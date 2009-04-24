@@ -13,7 +13,7 @@ foreach flags $MUDFLAP_FLAGS {
                             ${srcdir}/libmudflap.c/hook*.c \
                             ${srcdir}/libmudflap.c/pass*.c]] {
 	set bsrc [file tail $srcfile]
-	setenv MUDFLAP_OPTIONS "-viol-segv -backtrace=5"
+	setenv MUDFLAP_OPTIONS "-viol-segv"
 	dg-runtest $srcfile $flags "-fmudflap -lmudflap"
     }
 }
