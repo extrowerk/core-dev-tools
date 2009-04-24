@@ -230,6 +230,8 @@ static prop_value_t *const_val;
 /* True if we are also propagating constants in stores and loads.  */
 static bool do_store_ccp;
 
+static void canonicalize_float_value (prop_value_t *);
+
 /* Dump constant propagation value VAL to file OUTF prefixed by PREFIX.  */
 
 static void
@@ -402,6 +404,8 @@ get_value (tree var)
 
   if (val->lattice_val == UNINITIALIZED)
     *val = get_default_value (var);
+
+  canonicalize_float_value (val);
 
   return val;
 }
