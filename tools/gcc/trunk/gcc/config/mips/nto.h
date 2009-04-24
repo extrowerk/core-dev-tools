@@ -71,44 +71,50 @@ Boston, MA 02111-1307, USA.  */
 #undef LIBGCC_SPEC
 #define LIBGCC_SPEC "-lgcc"
 
+/*
 #undef TARGET_ENDIAN_DEFAULT 
-#define TARGET_ENDIAN_DEFAULT 1 	/* BE */
+#define TARGET_ENDIAN_DEFAULT 1
+*/
+
+/* If we don't set MASK_ABICALLS, we can't default to PIC.  */
+#undef TARGET_DEFAULT
+#define TARGET_DEFAULT MASK_ABICALLS
+
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
 "%{!shared: %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crti.o \
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crti_PIC.o \
 %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtbegin.o"
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC "\
 %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtend.o \
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtn.o"
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtn_PIC.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC "-mips2 \
 %{!EL:%{!mel:-EB}} %{EL|leb:-EL} \
 %{G*} %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64} \
 %{shared} %{non_shared} \
-%{!EL:%{!mel:-belf32-qnxbigmips}} %{EL|mel:-belf32-qnxlittlemips} \
+%{!EL:%{!mel:-belf32-tradbigmips}} %{EL|mel:-belf32-tradlittlemips} \
 %{MAP: -Map mapfile} \
 %{static: -dn -Bstatic} \
 %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2} \
--melf32lmipnto"
+-melf32btsmip"
 
 #undef SUBTARGET_CC1_SPEC
-#define SUBTARGET_CC1_SPEC "\
-%{!mabicalls: -mno-abicalls} \
-%{fpic: -mqnx-pic} \
-%{fPIC: -mqnx-pic} \
--mips2"
+#define SUBTARGET_CC1_SPEC "-mips2 \
+%{mshared|mno-shared|fpic|fPIC|fpie|fPIE:;:-mno-shared -mplt}"
 
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()                  \
 do                                                \
    {                                              \
-        NTO_TARGET_OS_CPP_BUILTINS();             \
-        builtin_define_std ("__MIPS__");          \
+	NTO_TARGET_OS_CPP_BUILTINS();             \
+	builtin_define_std ("__MIPS__");          \
+	if (TARGET_ABICALLS)                      \
+	  builtin_define ("__MIPS_ABICALLS__");   \
   }						  \
   while (0)
 
@@ -141,6 +147,7 @@ do                                                \
 
 /* Do indirect call through function pointer to avoid section switching
    problem with assembler and R_MIPS_PC16 relocation errors. */
+#undef CRT_CALL_STATIC_FUNCTION
 # define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)     \
 static void __attribute__((__used__))                   \
 call_ ## FUNC (void)                                    \
@@ -163,7 +170,7 @@ call_ ## FUNC (void)                                    \
    used.  */
 #define BSS_SECTION_ASM_OP	"\t.section\t.bss"
 
-#define ASM_OUTPUT_ALIGNED_BSS mips_output_aligned_bss
+/* #define ASM_OUTPUT_ALIGNED_BSS mips_output_aligned_bss */
 
 #undef ASM_DECLARE_OBJECT_NAME
 #define ASM_DECLARE_OBJECT_NAME mips_declare_object_name

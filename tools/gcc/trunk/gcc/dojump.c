@@ -275,7 +275,7 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
           && (mode = mode_for_size (i + 1, MODE_INT, 0)) != BLKmode
           && (type = lang_hooks.types.type_for_mode (mode, 1)) != 0
           && TYPE_PRECISION (type) < TYPE_PRECISION (TREE_TYPE (exp))
-          && (cmp_optab->handlers[(int) TYPE_MODE (type)].insn_code
+          && (optab_handler (cmp_optab, TYPE_MODE (type))->insn_code
               != CODE_FOR_nothing))
         {
           do_jump (fold_convert (type, exp), if_false_label, if_true_label);
@@ -307,8 +307,6 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
 	break;
       }
 
-    case TRUTH_ANDIF_EXPR:
-    case TRUTH_ORIF_EXPR:
     case COMPOUND_EXPR:
       /* Lowered by gimplify.c.  */
       gcc_unreachable ();
@@ -334,7 +332,7 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
         if (! SLOW_BYTE_ACCESS
             && type != 0 && bitsize >= 0
             && TYPE_PRECISION (type) < TYPE_PRECISION (TREE_TYPE (exp))
-            && (cmp_optab->handlers[(int) TYPE_MODE (type)].insn_code
+            && (optab_handler (cmp_optab, TYPE_MODE (type))->insn_code
 		!= CODE_FOR_nothing))
           {
             do_jump (fold_convert (type, exp), if_false_label, if_true_label);
@@ -518,6 +516,7 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
       if (BRANCH_COST >= 4 || TREE_SIDE_EFFECTS (TREE_OPERAND (exp, 1)))
 	goto normal;
 
+    case TRUTH_ANDIF_EXPR:
       if (if_false_label == NULL_RTX)
         {
 	  drop_through_label = gen_label_rtx ();
@@ -538,6 +537,7 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
       if (BRANCH_COST >= 4 || TREE_SIDE_EFFECTS (TREE_OPERAND (exp, 1)))
 	goto normal;
 
+    case TRUTH_ORIF_EXPR:
       if (if_true_label == NULL_RTX)
 	{
           drop_through_label = gen_label_rtx ();
@@ -551,37 +551,6 @@ do_jump (tree exp, rtx if_false_label, rtx if_true_label)
 	}
       break;
 
-      /* Special case:
-          __builtin_expect (<test>, 0)	and
-          __builtin_expect (<test>, 1)
-
-         We need to do this here, so that <test> is not converted to a SCC
-         operation on machines that use condition code registers and COMPARE
-         like the PowerPC, and then the jump is done based on whether the SCC
-         operation produced a 1 or 0.  */
-    case CALL_EXPR:
-      /* Check for a built-in function.  */
-      {
-	tree fndecl = get_callee_fndecl (exp);
-	tree arglist = TREE_OPERAND (exp, 1);
-
-	if (fndecl
-	    && DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_NORMAL
-	    && DECL_FUNCTION_CODE (fndecl) == BUILT_IN_EXPECT
-	    && arglist != NULL_TREE
-	    && TREE_CHAIN (arglist) != NULL_TREE)
-	  {
-	    rtx seq = expand_builtin_expect_jump (exp, if_false_label,
-						  if_true_label);
-
-	    if (seq != NULL_RTX)
-	      {
-		emit_insn (seq);
-		return;
-	      }
-	  }
-      }
- 
       /* Fall through and generate the normal code.  */
     default:
     normal:

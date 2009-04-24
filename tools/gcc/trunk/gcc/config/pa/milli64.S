@@ -429,7 +429,7 @@ LSYM(small_divisor)
 
 #if defined(pa64)
 /*  Clear the upper 32 bits of the arg1 register.  We are working with	*/
-/*  small divisors (and 32 bit integers)   We must not be mislead  */
+/*  small divisors (and 32-bit integers)   We must not be mislead  */
 /*  by "1" bits left in the upper 32 bits.  */
 	depd %r0,31,32,%r25
 #endif
@@ -644,7 +644,7 @@ LSYM(special_divisor)
 
 #if defined(pa64)
 /* Clear the upper 32 bits of the arg1 register.  We are working with
-   small divisors (and 32 bit unsigned integers)   We must not be mislead
+   small divisors (and 32-bit unsigned integers)   We must not be mislead
    by "1" bits left in the upper 32 bits.  */
 	depd %r0,31,32,%r25
 #endif

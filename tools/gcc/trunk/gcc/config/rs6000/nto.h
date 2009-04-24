@@ -113,6 +113,9 @@ do {                                            \
 #define CPP_SPEC \
 QNX_SYSTEM_INCLUDES \
 "%{posix: -D_POSIX_SOURCE} \
+%{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}" 
+
+/*
 %(cpp_sysv) %(cpp_endian) %(cpp_cpu) \
 %{mads: %(cpp_os_ads) } \
 %{myellowknife: %(cpp_os_yellowknife) } \
@@ -126,48 +129,31 @@ QNX_SYSTEM_INCLUDES \
 %{!mcall-linux: %{!mcall-gnu: %{!mcall-netbsd: %(cpp_os_default) }}}}}}}} \
 %{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}" 
 
+*/
+
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/crti.o \
+"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1.o} \
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crti.o \
 %{!fno-exceptions: crtbegin.o%s} \
-%{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/crtbegin.o}" 
+%{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtbegin.o}" 
 
 #undef  ENDFILE_SPEC
 #define ENDFILE_SPEC \
 "%{!fno-exceptions: crtend.o%s} \
- %{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/crtend.o} \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/crtn.o"
+ %{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtend.o} \
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtn.o"
 
 #define QNX_SYSTEM_LIBDIRS \
-"%{me500*: \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3/e500 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/e500 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib/e500 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib/e500 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib \
+" -L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3 \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/usr/lib \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib \
 -rpath-link \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3/e500:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/e500:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib/e500:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib/e500:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib} \
-%{!me500*: \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib \
--rpath-link \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/usr/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}/opt/lib} "
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/usr/lib:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib} "
 
 #undef	LIB_SPEC
 #define LIB_SPEC \
@@ -190,7 +176,13 @@ QNX_SYSTEM_LIBDIRS \
 #undef TARGET_SPE_ABI
 #undef TARGET_SPE
 #undef TARGET_E500
+#undef TARGET_FPRS
+#undef TARGET_E500_SINGLE
+#undef TARGET_E500_DOUBLE
 
 #define TARGET_SPE_ABI rs6000_spe_abi
 #define TARGET_SPE rs6000_spe
 #define TARGET_E500 (rs6000_cpu == PROCESSOR_PPC8540)
+#define TARGET_FPRS (!rs6000_float_gprs)
+#define TARGET_E500_SINGLE (TARGET_HARD_FLOAT && rs6000_float_gprs == 1)
+#define TARGET_E500_DOUBLE (TARGET_HARD_FLOAT && rs6000_float_gprs == 2)
