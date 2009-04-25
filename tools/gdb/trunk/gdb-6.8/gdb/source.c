@@ -689,11 +689,11 @@ openp (const char *path, int opts, const char *string,
        char **filename_opened)
 {
   int fd;
-  char *filename;
+  char *filename = NULL;
   const char *p;
   const char *p1;
   int len;
-  int alloclen;
+  unsigned int alloclen;
 
   if (!path)
     path = ".";
@@ -706,7 +706,7 @@ openp (const char *path, int opts, const char *string,
 
       if (is_regular_file (string))
 	{
-	  filename = alloca (strlen (string) + 1);
+	  filename = xmalloc (strlen (string) + 1);
 	  strcpy (filename, string);
 	  fd = open (filename, mode, prot);
 	  if (fd >= 0)
@@ -732,9 +732,16 @@ openp (const char *path, int opts, const char *string,
   while (string[0] == '.' && IS_DIR_SEPARATOR (string[1]))
     string += 2;
 
-  alloclen = strlen (path) + strlen (string) + 2;
-  filename = alloca (alloclen);
   fd = -1;
+
+  alloclen = strlen (path) + strlen (string) + 2;
+  if (alloclen > PATH_MAX)
+    {
+      warning ("Attempt to build full path from the following strings:\n"\
+"path: '%s'\nstring:'%s'\nyields to invalid path length.", path, string);
+      goto done;
+    }
+  filename = xrealloc (filename, alloclen);
   for (p = path; p; p = p1 ? p1 + 1 : 0)
     {
       p1 = strchr (p, DIRNAME_SEPARATOR);
@@ -755,7 +762,7 @@ openp (const char *path, int opts, const char *string,
 	  if (newlen > alloclen)
 	    {
 	      alloclen = newlen;
-	      filename = alloca (alloclen);
+	      filename = xrealloc (filename, alloclen);
 	    }
 	  strcpy (filename, current_directory);
 	}
@@ -805,6 +812,8 @@ done:
 	  xfree (f);
 	}
     }
+
+  xfree (filename);
 
   return fd;
 }
