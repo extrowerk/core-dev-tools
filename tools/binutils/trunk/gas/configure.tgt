@@ -346,7 +346,7 @@ case ${generic_target} in
   sh*-*-symbianelf*)			fmt=elf endian=little ;;
   sh-*-elf* | sh-*-uclinux* | sh[12]-*-uclinux*)	fmt=elf ;;
   sh-*-coff*)				fmt=coff ;;
-  sh-*-nto*)				fmt=elf ;;
+  sh-*-nto*)				fmt=elf endian=little;;
   sh-*-pe*)				fmt=coff em=pe bfd_gas=yes endian=little ;;
   sh-*-rtemscoff*)			fmt=coff ;;
   sh-*-rtems*)				fmt=elf ;;
