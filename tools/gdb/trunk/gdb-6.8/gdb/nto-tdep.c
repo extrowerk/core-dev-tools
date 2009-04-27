@@ -225,8 +225,17 @@ nto_init_solib_absolute_prefix (void)
     {
       buf = alloca (26 /* set solib-absolute-prefix */ 
 		    + strlen (arch_path) + 1);
-      sprintf (buf, "set solib-absolute-prefix %s", arch_path);
-      execute_command (buf, 0);
+      if (gdb_sysroot == NULL || gdb_sysroot[0] == '\0')
+	{
+	  /* Initially, only set the string. We don't want any side effects. */
+	  xfree (gdb_sysroot);
+	  gdb_sysroot = xstrdup (arch_path);
+	}
+      else
+	{
+	  sprintf (buf, "set solib-absolute-prefix %s", arch_path);
+	  execute_command (buf, 0);
+	}
       nto_set_gdb_sysroot = 1;
     }
 
@@ -255,11 +264,16 @@ nto_init_solib_absolute_prefix (void)
 	    sprintf (buf + strlen (buf), "%c", DIRNAME_SEPARATOR);
 	}
 
-      /* Do not set it if already set. Otherwise, this would cause
-         re-reading symbols.  */
-      if (solib_search_path == NULL
-	  || strcmp (solib_search_path, buf + strlen (setcmd)) != 0)
+      if (solib_search_path == NULL || solib_search_path[0] == '\0')
 	{
+	  /* Initially, only set the string. We don't want any side effects. */
+	  xfree (solib_search_path);
+	  solib_search_path = xstrdup (buf + strlen(setcmd));
+	}
+      else if (strcmp (solib_search_path, buf + strlen (setcmd)) != 0)
+	{
+	/* Do not set it if already set. Otherwise, this would cause
+	   re-reading symbols.  */
 	  nto_trace (0) ("Executing %s\n", buf);
 	  execute_command (buf, 0);
 	}
