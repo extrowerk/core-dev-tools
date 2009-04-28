@@ -627,7 +627,6 @@ __mfu_set_options (const char *optstr)
 void
 __mf_resolve_single_dynamic (struct __mf_dynamic_entry *e)
 {
-  char *err;
 
   assert (e);
   if (e->pointer) return;
@@ -639,16 +638,16 @@ __mf_resolve_single_dynamic (struct __mf_dynamic_entry *e)
 #endif
     e->pointer = dlsym (RTLD_NEXT, e->name);
 
-  err = dlerror ();
-
-  if (err)
-    {
-      fprintf (stderr, "mf: error in dlsym(\"%s\"): %s\n",
-               e->name, err);
-      abort ();
-    }
   if (! e->pointer)
     {
+      const char *err;
+
+      err = dlerror ();
+
+      if (err)
+	fprintf (stderr, "mf: error in dlsym(\"%s\"): %s\n",
+		 e->name, err);
+
       fprintf (stderr, "mf: dlsym(\"%s\") = NULL\n", e->name);
       abort ();
     }
