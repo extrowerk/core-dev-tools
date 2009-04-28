@@ -1,6 +1,6 @@
 /* ppc-opc.c -- PowerPC opcode list
    Copyright 1994, 1995, 1996, 1997, 1998, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Support
 
    This file is part of the GNU opcodes library.
@@ -590,12 +590,12 @@ const struct powerpc_operand powerpc_operands[] =
 #define FCRT_MASK (0x1f << 21)
   { 0x1f, 21, 0, 0, PPC_OPERAND_FCR },
 
-  /* Xilinx FSL related masks and macros */  
+  /* Xilinx FSL related masks and macros */
 #define FSL FCRT + 1
 #define FSL_MASK (0x1f << 11)
-  { 0x1f, 11, 0, 0, PPC_OPERAND_FSL },  
+  { 0x1f, 11, 0, 0, PPC_OPERAND_FSL },
 
-  /* Xilinx UDI related masks and macros */  
+  /* Xilinx UDI related masks and macros */
 #define URT FSL + 1
   { 0x1f, 21, 0, 0, PPC_OPERAND_UDI },
 
@@ -2330,7 +2330,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"vandc",	VX (4,1092),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
 {"vcmpequh.",	VXR(4,	70,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi1fcm.",	APU(4, 547,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi1fcm",	APU(4, 547,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi1fcm",	APU(4, 547,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"evmwhssf",	VX (4,1095),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"evmwlumi",	VX (4,1096),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"vminfp",	VX (4,1098),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
@@ -2362,7 +2362,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"vor",		VX (4,1156),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
 {"vcmpequw.",	VXR(4, 134,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi2fcm.",	APU(4, 579,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi2fcm",	APU(4, 579,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi2fcm",	APU(4, 579,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"machhwsuo",	XO (4,	76,1,0),XO_MASK, PPC405|PPC440,	{RT, RA, RB}},
 {"machhwsuo.",	XO (4,	76,1,1),XO_MASK, PPC405|PPC440,	{RT, RA, RB}},
 {"ps_merge10",	XOPS(4,592,0),	XOPS_MASK,   PPCPS,	{FRT, FRA, FRB}},
@@ -2376,7 +2376,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"evdivws",	VX (4,1222),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"vcmpeqfp.",	VXR(4, 198,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi3fcm.",	APU(4, 611,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi3fcm",	APU(4, 611,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi3fcm",	APU(4, 611,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"evdivwu",	VX (4,1223),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"evaddumiaaw",	VX (4,1224),	VX_MASK,     PPCSPE,	{RS, RA}},
 {"evaddsmiaaw",	VX (4,1225),	VX_MASK,     PPCSPE,	{RS, RA}},
@@ -3889,16 +3889,16 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"mfivor35",	XSPR(31,339,531), XSPR_MASK, PPCPMR,	{RT}},
 {"mfdbatu",	XSPR(31,339,536), XSPRBAT_MASK, PPC,	{RT, SPRBAT}},
 {"mfdbatl",	XSPR(31,339,537), XSPRBAT_MASK, PPC,	{RT, SPRBAT}},
+{"mfmcsrr0",	XSPR(31,339,570), XSPR_MASK, PPCRFMCI,	{RT}}, /* must precede mfdc_dat */
+{"mfmcsrr1",	XSPR(31,339,571), XSPR_MASK, PPCRFMCI,	{RT}},
+{"mfmcsr",	XSPR(31,339,572), XSPR_MASK, PPCRFMCI,	{RT}},
+{"mfmcar",	XSPR(31,339,573), XSPR_MASK, PPCRFMCI,	{RT}},
 {"mfic_cst",	XSPR(31,339,560), XSPR_MASK, PPC860,	{RT}},
 {"mfic_adr",	XSPR(31,339,561), XSPR_MASK, PPC860,	{RT}},
 {"mfic_dat",	XSPR(31,339,562), XSPR_MASK, PPC860,	{RT}},
 {"mfdc_cst",	XSPR(31,339,568), XSPR_MASK, PPC860,	{RT}},
 {"mfdc_adr",	XSPR(31,339,569), XSPR_MASK, PPC860,	{RT}},
 {"mfdc_dat",	XSPR(31,339,570), XSPR_MASK, PPC860,	{RT}},
-{"mfmcsrr0",	XSPR(31,339,570), XSPR_MASK, PPCRFMCI,	{RT}},
-{"mfmcsrr1",	XSPR(31,339,571), XSPR_MASK, PPCRFMCI,	{RT}},
-{"mfmcsr",	XSPR(31,339,572), XSPR_MASK, PPCRFMCI,	{RT}},
-{"mfmcar",	XSPR(31,339,573), XSPR_MASK, PPCRFMCI,	{RT}},
 {"mfdpdr",	XSPR(31,339,630), XSPR_MASK, PPC860,	{RT}},
 {"mfdpir",	XSPR(31,339,631), XSPR_MASK, PPC860,	{RT}},
 {"mfimmr",	XSPR(31,339,638), XSPR_MASK, PPC860,	{RT}},
@@ -4879,8 +4879,8 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"dctfix",	XRC(59,290,0),	X_MASK,      POWER6,	{FRT, FRB}},
 {"dctfix.",	XRC(59,290,1),	X_MASK,      POWER6,	{FRT, FRB}},
 
-{"ddedpd",	XRC(59,322,0),	X_MASK,      POWER6,	{SP, FRT, FRB}}, 
-{"ddedpd.",	XRC(59,322,1),	X_MASK,      POWER6,	{SP, FRT, FRB}}, 
+{"ddedpd",	XRC(59,322,0),	X_MASK,      POWER6,	{SP, FRT, FRB}},
+{"ddedpd.",	XRC(59,322,1),	X_MASK,      POWER6,	{SP, FRT, FRB}},
 
 {"dxex",	XRC(59,354,0),	X_MASK,      POWER6,	{FRT, FRB}},
 {"dxex.",	XRC(59,354,1),	X_MASK,      POWER6,	{FRT, FRB}},
