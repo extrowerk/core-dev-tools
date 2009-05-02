@@ -8640,12 +8640,12 @@ elf_read_notes (bfd *abfd, file_ptr offset, bfd_size_type size)
   if (buf == NULL)
     return FALSE;
 
-  if (bfd_bread (buf, size, abfd) != size
-      || !elf_parse_notes (abfd, buf, size, offset))
+  if (bfd_bread (buf, size, abfd) != size)
     {
       free (buf);
       return FALSE;
     }
+  elf_parse_notes (abfd, buf, size, offset);
 
   free (buf);
   return TRUE;
