@@ -274,8 +274,10 @@ nto_init_solib_absolute_prefix (void)
 	{
 	/* Do not set it if already set. Otherwise, this would cause
 	   re-reading symbols.  */
-	  nto_trace (0) ("Executing %s\n", buf);
-	  execute_command (buf, 0);
+      char * buf2 = alloca (strlen (setcmd) + strlen(solib_search_path) + strlen(buf + strlen (setcmd))+1+1);
+      sprintf (buf2, "%s %s%c%s", setcmd, solib_search_path, DIRNAME_SEPARATOR, buf + strlen (setcmd));
+      nto_trace (0) ("Executing %s\n", buf2);
+      execute_command (buf2, 0); 
 	}
       nto_set_solib_search_path = 1;
     }
