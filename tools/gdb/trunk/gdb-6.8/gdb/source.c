@@ -735,12 +735,6 @@ openp (const char *path, int opts, const char *string,
   fd = -1;
 
   alloclen = strlen (path) + strlen (string) + 2;
-  if (alloclen > PATH_MAX)
-    {
-      warning ("Attempt to build full path from the following strings:\n"\
-"path: '%s'\nstring:'%s'\nyields to invalid path length.", path, string);
-      goto done;
-    }
   filename = xrealloc (filename, alloclen);
   for (p = path; p; p = p1 ? p1 + 1 : 0)
     {
