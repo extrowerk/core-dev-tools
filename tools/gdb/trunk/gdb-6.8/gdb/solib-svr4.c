@@ -488,7 +488,7 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
 #else /* __QNXTARGET__ */
 static int scan_dyntag_2 (int, bfd *, CORE_ADDR *, CORE_ADDR *);
 
-static int 
+static int
 scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
 {
   return scan_dyntag_2 (dyntag, abfd, ptr, NULL);
@@ -1051,7 +1051,7 @@ svr4_fetch_objfile_link_map (struct objfile *objfile)
     return 0;   /* failed somehow... */
 
   /* Position ourselves on the first link map.  */
-  lm = solib_svr4_r_map ();  
+  lm = solib_svr4_r_map ();
   while (lm)
     {
       /* Get info on the layout of the r_debug and link_map structures. */
@@ -1092,9 +1092,9 @@ svr4_fetch_objfile_link_map (struct objfile *objfile)
 	  /* If the file is not a shared library and has no name,
 	     we are sure it is the main executable, so we return that.  */
 
-	  if (buffer 
+	  if (buffer
 	      && ((strcmp (buffer, objfile->name) == 0)
-		  || (!(objfile->flags & OBJF_SHARED) 
+		  || (!(objfile->flags & OBJF_SHARED)
 		      && (strcmp (buffer, "") == 0))))
   	    {
     	      do_cleanups (old_chain);
@@ -1162,16 +1162,16 @@ exec_entry_point (struct bfd *abfd, struct target_ops *targ)
 }
 
 #ifdef __QNXTARGET__
-static int 
+static int
 cmp_host_to_target_word (bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr)
 {
   unsigned host_word, target_word;
 
-  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0 
-      || bfd_bread ((char*)&host_word, sizeof (host_word), abfd) 
-	 != sizeof (host_word)) 
+  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0
+      || bfd_bread ((char*)&host_word, sizeof (host_word), abfd)
+	 != sizeof (host_word))
     return -1;
-  if (target_read_memory(target_addr, (char*)&target_word, 
+  if (target_read_memory(target_addr, (char*)&target_word,
 			 sizeof (target_word)))
     return -1;
   return (host_word-target_word);
@@ -1273,7 +1273,7 @@ enable_break (void)
 	  interp_sect = bfd_get_section_by_name (tmp_bfd, ".text");
 	  if (interp_sect)
 	    {
-	      interp_text_sect_low = 
+	      interp_text_sect_low =
 		bfd_section_vma (tmp_bfd, interp_sect) + load_addr;
 	      interp_text_sect_high =
 		interp_text_sect_low + bfd_section_size (tmp_bfd, interp_sect);
@@ -1281,9 +1281,9 @@ enable_break (void)
 	  interp_sect = bfd_get_section_by_name (tmp_bfd, ".plt");
 	  if (interp_sect)
 	    {
-	      interp_plt_sect_low = 
+	      interp_plt_sect_low =
 		bfd_section_vma (tmp_bfd, interp_sect) + load_addr;
-	      interp_plt_sect_high = 
+	      interp_plt_sect_high =
 		interp_plt_sect_low + bfd_section_size (tmp_bfd, interp_sect);
 	    }
 
@@ -1333,7 +1333,10 @@ enable_break (void)
 	tmp_bfd = bfd_fopen (tmp_pathname, gnutarget, FOPEN_RB, tmp_fd);
 
       if (tmp_bfd == NULL)
-	goto bkpt_at_symbol;
+	    {
+		  warning (_("Unable to open dynamic linker %s."), buf);
+		  goto bkpt_at_symbol;
+		}
 
       /* Make sure the dynamic linker's really a useful object.  */
       if (!bfd_check_format (tmp_bfd, bfd_object))
@@ -1451,7 +1454,7 @@ enable_break (void)
 	if (sym_addr != 0
 	    && cmp_host_to_target_word (tmp_bfd, sym_addr,
 					sym_addr+load_addr) != 0)
-	  warning ("Host file %s does not match target file %s", 
+	  warning ("Host file %s does not match target file %s",
 		   tmp_pathname, buf);
 
 	}
@@ -1515,7 +1518,7 @@ enable_break (void)
    DESCRIPTION
 
    Once the symbols from a shared object have been loaded in the usual
-   way, we are called to do any system specific symbol handling that 
+   way, we are called to do any system specific symbol handling that
    is needed.
 
    For SunOS4, this consisted of grunging around in the dynamic
@@ -1533,10 +1536,10 @@ svr4_special_symbol_handling (void)
 }
 
 /* Relocate the main executable.  This function should be called upon
-   stopping the inferior process at the entry point to the program. 
+   stopping the inferior process at the entry point to the program.
    The entry point from BFD is compared to the PC and if they are
-   different, the main executable is relocated by the proper amount. 
-   
+   different, the main executable is relocated by the proper amount.
+
    As written it will only attempt to relocate executables which
    lack interpreter sections.  It seems likely that only dynamic
    linker executables will get relocated, though it should work
@@ -1567,7 +1570,7 @@ svr4_relocate_main_executable (void)
      interpreter section and the start address obtained from the
      executable is different from the address at which GDB is
      currently stopped.
-     
+
      [ The astute reader will note that we also test to make sure that
        the executable in question has the DYNAMIC flag set.  It is my
        opinion that this test is unnecessary (undesirable even).  It
@@ -1583,7 +1586,7 @@ svr4_relocate_main_executable (void)
      */
 
   interp_sect = bfd_get_section_by_name (exec_bfd, ".interp");
-  if (interp_sect == NULL 
+  if (interp_sect == NULL
       && (bfd_get_file_flags (exec_bfd) & DYNAMIC) != 0
       && (exec_entry_point (exec_bfd, &exec_ops) != pc))
     {
@@ -1591,13 +1594,13 @@ svr4_relocate_main_executable (void)
       struct section_offsets *new_offsets;
       int i, changed;
       CORE_ADDR displacement;
-      
+
       /* It is necessary to relocate the objfile.  The amount to
 	 relocate by is simply the address at which we are stopped
 	 minus the starting address from the executable.
 
 	 We relocate all of the sections by the same amount.  This
-	 behavior is mandated by recent editions of the System V ABI. 
+	 behavior is mandated by recent editions of the System V ABI.
 	 According to the System V Application Binary Interface,
 	 Edition 4.1, page 5-5:
 
@@ -1844,7 +1847,7 @@ svr4_have_link_map_offsets (void)
 
 /* Fetch (and possibly build) an appropriate `struct link_map_offsets'
    for an ILP32 SVR4 system.  */
-  
+
 struct link_map_offsets *
 svr4_ilp32_fetch_link_map_offsets (void)
 {
@@ -1875,7 +1878,7 @@ svr4_ilp32_fetch_link_map_offsets (void)
 
 /* Fetch (and possibly build) an appropriate `struct link_map_offsets'
    for an LP64 SVR4 system.  */
-  
+
 struct link_map_offsets *
 svr4_lp64_fetch_link_map_offsets (void)
 {
@@ -1932,8 +1935,8 @@ svr4_same (struct so_list *gdb, struct so_list *inferior)
     return 1;
 
   /* On Solaris, when starting inferior we think that dynamic linker is
-     /usr/lib/ld.so.1, but later on, the table of loaded shared libraries 
-     contains /lib/ld.so.1.  Sometimes one file is a link to another, but 
+     /usr/lib/ld.so.1, but later on, the table of loaded shared libraries
+     contains /lib/ld.so.1.  Sometimes one file is a link to another, but
      sometimes they have identical content, but are not linked to each
      other.  We don't restrict this check for Solaris, but the chances
      of running into this situation elsewhere are very low.  */
