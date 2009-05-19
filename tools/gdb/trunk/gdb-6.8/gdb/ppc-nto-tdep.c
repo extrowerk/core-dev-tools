@@ -1,6 +1,6 @@
 /* PPC specific functionality for QNX Neutrino.
 
-   Copyright 2003 Free Software Foundation, Inc.
+   Copyright 2003, 2009 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -59,11 +59,11 @@
 #define MQ_OFF (IAR_OFF + 4 * 4)
 #define VRSAVE_OFF (IAR_OFF + 5 * 4)
 
-/* 32 general fp regs + 2 fpscr regs */
+/* 32 general fp regs + 1 fpscr reg */
 #define FP_REG_SIZE (8)
-#define FP_REGSET_SIZE (32 * FP_REG_SIZE + 2 * 4)
-#define FPSCR_OFF (32 * 8)
-#define FPSCR_VAL_OFF (32 * 8 + 4)
+#define FP_REGSET_SIZE (33 * FP_REG_SIZE)
+#define FPSCR_OFF (32 * FP_REG_SIZE)
+#define FPSCR_VAL_OFF (32 * FP_REG_SIZE + 4)
 
 /* 32 Altivec regs + vscr  */
 #define PPCVMX_REGSIZE (16)
@@ -249,9 +249,9 @@ ppc_nto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
   cache = FRAME_OBSTACK_ZALLOC (struct ppc_nto_sigtramp_cache);
   (*this_cache) = cache;
   cache->saved_regs = trad_frame_alloc_saved_regs (next_frame);
-  cache->base = frame_unwind_register_unsigned (next_frame, 
+  cache->base = frame_unwind_register_unsigned (next_frame,
 						gdbarch_pc_regnum (gdbarch));
-  gpregs = ppcnto_sigcontext_addr (next_frame); 
+  gpregs = ppcnto_sigcontext_addr (next_frame);
   fpregs = gpregs + GP_REGSET_SIZE;
 
   /* General purpose.  */
@@ -275,7 +275,7 @@ ppc_nto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
           cache->saved_regs[regnum].addr = fpregs + i * FP_REG_SIZE;
         }
       cache->saved_regs[tdep->ppc_fpscr_regnum].addr
-        = fpregs + FPSCR_VAL_OFF;
+        = fpregs + FPSCR_OFF;
     }
 
   return cache;
@@ -320,7 +320,7 @@ ppc_nto_sigtramp_sniffer (struct frame_info *next_frame)
   char *func_name = "";
   nto_trace (0) ("%s ()\n", __func__);
   if (frame_pc_unwind (next_frame)
-      > frame_unwind_register_unsigned (next_frame, 
+      > frame_unwind_register_unsigned (next_frame,
                                         gdbarch_sp_regnum (current_gdbarch)))
     {
       frame_func = frame_pc_unwind (next_frame);
@@ -337,7 +337,7 @@ ppc_nto_sigtramp_sniffer (struct frame_info *next_frame)
 	  return &ppc_nto_sigtramp_unwind;
 	}
     }
-      
+
   return NULL;
 }
 
@@ -387,10 +387,10 @@ ppcnto_supply_reg_fpregset (struct regcache *regcache, int regno, char *data)
   int regi;
   nto_trace (0) ("%s ()\n", __func__);
   for (regi = 0; regi < 32; regi++)
-    RAW_SUPPLY_IF_NEEDED (regcache, 
-                          gdbarch_fp0_regnum (current_gdbarch) + regi, 
+    RAW_SUPPLY_IF_NEEDED (regcache,
+                          gdbarch_fp0_regnum (current_gdbarch) + regi,
 			  data + regi * FP_REG_SIZE);
-  RAW_SUPPLY_IF_NEEDED (regcache, tdep->ppc_fpscr_regnum, data + FPSCR_VAL_OFF);
+  RAW_SUPPLY_IF_NEEDED (regcache, tdep->ppc_fpscr_regnum, data + FPSCR_OFF);
 }
 
 static void
@@ -398,7 +398,7 @@ ppcnto_supply_fpregset (struct regcache *regcache, char *data)
 {
   ppcnto_supply_reg_fpregset (regcache, NTO_ALL_REGS, data);
 }
-   
+
 static void
 ppcnto_supply_reg_altregset (struct regcache *regcache, int regno, char *data)
 {
@@ -411,19 +411,15 @@ ppcnto_supply_reg_altregset (struct regcache *regcache, int regno, char *data)
   if (tdep->ppc_vr0_regnum > -1)
     {
       for (regi = 0; regi < PPCVMX_NUMREGS; ++regi)
-	RAW_SUPPLY_IF_NEEDED (regcache, regi + tdep->ppc_vr0_regnum, 
+	RAW_SUPPLY_IF_NEEDED (regcache, regi + tdep->ppc_vr0_regnum,
 			      data + regi * PPCVMX_REGSIZE);
       RAW_SUPPLY_IF_NEEDED (regcache, PPC_VSCR_REGNUM,
 			    data + VSCR_OFF);
     }
-  else 
   /* SPE */
-  if (tdep->ppc_ev0_regnum > -1)
+  else if (tdep->ppc_ev0_regnum > -1)
     {
-      /* Our structure looks like this:
-		_Uint64t	acc;
-		_Uint32t  gpr_hi[32];  */
-      RAW_SUPPLY_IF_NEEDED (regcache, tdep->ppc_acc_regnum, data); 
+      RAW_SUPPLY_IF_NEEDED (regcache, tdep->ppc_acc_regnum, data);
 
       for (regi = tdep->ppc_ev0_upper_regnum; regi < 32; ++regi)
 	RAW_SUPPLY_IF_NEEDED (regcache, regi, data
@@ -463,31 +459,13 @@ ppcnto_regset_id (int regno)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (current_gdbarch);
 
+  /* Floating point registers.  */
+  if (regno == tdep->ppc_fpscr_regnum
+      || (regno >= gdbarch_fp0_regnum (current_gdbarch)
+	  && regno < FPLAST_REGNUM))
+    return NTO_REG_FLOAT;
 
-#if 0
-Nto general registers:		GDB name:
-    _Uint32t gpr[32]; 
-    _Uint32t ctr;		ctr
-    _Uint32t lr;		lr
-    _Uint32t msr;		ps
-    _Uint32t iar;		pc
-    _Uint32t cr;		cr
-    _Uint32t xer;		xer
-    _Uint32t  ear;  /* not present on all chips */    ?
-    union {
-      _Uint32t  mq;   /* only on the 601 */
-      _Uint32t  usprg0; /* only on the BookE's */
-      _Uint32t	msr_u;	/* used by 32-bit procnto running on 64-bit implementations */
-    }	u;
-    union {
-      _Uint32t  vrsave;   /* on Altivec CPU's, SPR256 */
-      _Uint32t  spefscr;	/* on E500 CPU's, SPR512 */
-    } u2;
-#endif
-
-
-
-/* General purpose registers.  */
+  /* General purpose registers.  */
   if (regno < GPLAST_REGNUM)
     return NTO_REG_GENERAL;
 
@@ -504,27 +482,17 @@ Nto general registers:		GDB name:
   NTOGREG(tdep->ppc_spefscr_regnum);
 #undef NTOGREG
 
+  /* Altivec and SPE registers.  */
 
-/* Floating point registers.  */
-  if (regno >= gdbarch_fp0_regnum (current_gdbarch) 
-      && regno < FPLAST_REGNUM)
-    return NTO_REG_FLOAT;
-
-
-/* Altivec and SPE registers.  */
-  
-/* Note that QNX register sets are
-   organized slightly different than in gdb:
-   - for SPE regisers, spefscr is in GP regset on QNX. 
-   - for Altivec vrsave register is in GP regset on QNX.
-   Both cases are being taken care of above, so it is safe
-   to use functions from rs6000-tdep.c.  */
+  /* Note that QNX register sets are
+     organized slightly different than in gdb:
+     - for SPE registers, spefscr is in GP regset on QNX.
+     - for Altivec vrsave register is in GP regset on QNX.
+     Both cases are being taken care of above, so it is safe
+     to use functions from rs6000-tdep.c.  */
 
   if (spe_register_p (current_gdbarch, regno))
-    {
-      nto_trace (0) ("This is SPE register\n");
-      return NTO_REG_ALT;
-    }
+    return NTO_REG_ALT;
   else if (altivec_register_p (current_gdbarch, regno))
     return NTO_REG_ALT;
 
@@ -536,6 +504,8 @@ ppcnto_register_area (struct gdbarch *gdbarch,
 		      int regno, int regset, unsigned *off)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (current_gdbarch);
+
+  nto_trace (0) ("%s () regno=%d regset=%d\n", __func__, regno, regset);
 
   *off = 0;
   if (regset == NTO_REG_GENERAL)
@@ -577,16 +547,20 @@ ppcnto_register_area (struct gdbarch *gdbarch,
 
       if (regno < FPLAST_REGNUM)
 	{
-	  *off = (regno - gdbarch_fp0_regnum (current_gdbarch)) * 8;
-	  return 8;
+	  *off = (regno - gdbarch_fp0_regnum (current_gdbarch)) * FP_REG_SIZE;
+	  return FP_REG_SIZE;
 	}
       else
 	{
 	  if (regno == tdep->ppc_fpscr_regnum)
-	    *off = FPSCR_VAL_OFF;
+	    {
+	      *off = FPSCR_OFF;
+	      return FP_REG_SIZE;
+	    }
 	  else
-	    return 0;
-	  return 4;
+	    {
+	      return 0;
+	    }
 	}
     }
   else if (regset == NTO_REG_ALT)
@@ -608,9 +582,8 @@ ppcnto_register_area (struct gdbarch *gdbarch,
 	  *off = (regno - tdep->ppc_vr0_regnum) * PPCVMX_REGSIZE;
 	  reg_size = PPCVMX_REGSIZE;
 	}
-      else
       /* SPE */
-      if (spe_register_p (current_gdbarch, regno))
+      else if (spe_register_p (current_gdbarch, regno))
         {
 	  if (regno == tdep->ppc_acc_regnum)
 	    {
@@ -661,9 +634,8 @@ ppcnto_regset_fill (const struct regcache *regcache, int regset, char *data)
   else if (regset == NTO_REG_FLOAT)
     {
       for (regno = 0; regno < 32; regno++)
-	regcache_raw_collect (regcache, gdbarch_fp0_regnum (current_gdbarch) + regno, data + regno * 8);
-      /* FIXME: is this right?  Lower order bits?  */
-      regcache_raw_collect (regcache, tdep->ppc_fpscr_regnum, data + FPSCR_VAL_OFF);
+	regcache_raw_collect (regcache, gdbarch_fp0_regnum (current_gdbarch) + regno, data + regno * FP_REG_SIZE);
+      regcache_raw_collect (regcache, tdep->ppc_fpscr_regnum, data + FPSCR_OFF);
     }
   else if (regset == NTO_REG_ALT)
     {
@@ -674,7 +646,7 @@ ppcnto_regset_fill (const struct regcache *regcache, int regset, char *data)
 
 	  for (regi = 0; regi < PPCVMX_NUMREGS; ++regi)
 	    regcache_raw_collect (regcache, tdep->ppc_vr0_regnum + regi,
-				  data + PPCVMX_REGSIZE * regi); 
+				  data + PPCVMX_REGSIZE * regi);
 	  regcache_raw_collect (regcache, PPC_VSCR_REGNUM,
 				data + VSCR_OFF);
 	}
@@ -684,15 +656,19 @@ ppcnto_regset_fill (const struct regcache *regcache, int regset, char *data)
 	  int regi;
 
 	  /* Acc: */
-	  regcache_raw_collect (regcache, tdep->ppc_acc_regnum, data); 
+	  regcache_raw_collect (regcache, tdep->ppc_acc_regnum, data);
 	  /* GPR HI registers */
 	  for (regi = 0; regi < 32; ++regi)
 	    regcache_raw_collect (regcache, tdep->ppc_ev0_upper_regnum + regi,
-				  data + SPE_GPR_HI_OFF 
+				  data + SPE_GPR_HI_OFF
 				  + regi * SPE_GPR_HI_REG_SIZE);
 	}
     }
-	  return -1;
+  else
+    {
+      return -1;
+    }
+
   return 0;
 }
 
@@ -712,19 +688,19 @@ init_ppcnto_ops ()
 /* Core file support */
 
 static void
-ppcnto_core_supply_gregset (const struct regset *regset, 
+ppcnto_core_supply_gregset (const struct regset *regset,
                              struct regcache *regcache,
 			     int regnum, const void *gpreg,
-			     size_t len) 
+			     size_t len)
 {
   int regset_id;
- 
+
   nto_trace (0) ("%s () regnum: %d\n", __func__, regnum);
 
   if (regnum == NTO_ALL_REGS) // all registers
     {
       ppcnto_supply_regset (regcache, NTO_REG_GENERAL, (char *)gpreg);
-    } 
+    }
   else
     {
       regset_id = ppcnto_regset_id (regnum);
@@ -733,11 +709,11 @@ ppcnto_core_supply_gregset (const struct regset *regset,
     }
 }
 
-static void 
-ppcnto_core_supply_fpregset (const struct regset *regset, 
+static void
+ppcnto_core_supply_fpregset (const struct regset *regset,
                              struct regcache *regcache,
 			     int regnum, const void *fpreg,
-			     size_t len) 
+			     size_t len)
 {
   int regset_id;
   nto_trace (0) ("%s () regnum: %d\n", __func__, regnum);
@@ -750,7 +726,7 @@ ppcnto_core_supply_fpregset (const struct regset *regset,
     {
       regset_id = ppcnto_regset_id (regnum);
       nto_trace (0) ("nto regset_id=%d\n", regset_id);
-      ppcnto_supply_reg_fpregset (regcache, regnum, (char *)fpreg); 
+      ppcnto_supply_reg_fpregset (regcache, regnum, (char *)fpreg);
     }
 }
 
@@ -758,7 +734,7 @@ ppcnto_core_supply_fpregset (const struct regset *regset,
 struct regset ppcnto_gregset =
 {
   NULL,
-  ppcnto_core_supply_gregset, 
+  ppcnto_core_supply_gregset,
   NULL,
   NULL
 };
@@ -801,7 +777,7 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   CORE_ADDR ptrctx, sp;
   int i;
-  
+
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddr (func));
 
   sp = frame_unwind_register_unsigned (next_frame,
@@ -814,18 +790,18 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
 
   /* Get ucontext address.  */
   ptrctx = ppcnto_sigcontext_addr (next_frame);
-  
+
   for (i = 0; i != ppc_num_gprs; i++)
     {
       const int regnum = i + tdep->ppc_gp0_regnum;
       const int addr = ptrctx + i * tdep->wordsize;
       trad_frame_set_reg_addr (this_cache, regnum, addr);
     }
-  
+
   trad_frame_set_reg_addr (this_cache, tdep->ppc_ctr_regnum, ptrctx + CTR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_lr_regnum, ptrctx + LR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_ps_regnum, ptrctx + MSR_OFF);
-  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (gdbarch), 
+  trad_frame_set_reg_addr (this_cache, gdbarch_pc_regnum (gdbarch),
 			   ptrctx + IAR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_cr_regnum, ptrctx + CR_OFF);
   trad_frame_set_reg_addr (this_cache, tdep->ppc_xer_regnum, ptrctx + XER_OFF);
@@ -836,7 +812,7 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
 
   /* Altivec */
   if(tdep->ppc_vrsave_regnum != -1)
-    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum, 
+    trad_frame_set_reg_addr (this_cache, tdep->ppc_vrsave_regnum,
 			     ptrctx + VRSAVE_OFF);
   /* SPE */
   if (tdep->ppc_spefscr_regnum != -1)
@@ -848,7 +824,7 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
 static struct tramp_frame ppc32_nto_sighandler_tramp_frame_630 = {
   SIGTRAMP_FRAME,
   4,
-  { 
+  {
     { 0x7fc3f378, 0xFFFFFFFF }, /* mr r3,r30 */
     { 0x801f0084, 0xFFFFFFFF }, /* lwz r0,132(r31) */
     { 0x7c0803a6, 0xFFFFFFFF }, /* mtctr r0 */
@@ -884,7 +860,7 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   //set_gdbarch_in_solib_call_trampoline (gdbarch, in_plt_section);
   //set_gdbarch_skip_trampoline_code (gdbarch, find_solib_trampoline_target);
   //  set_gdbarch_skip_trampoline_code (gdbarch, ppc_nto_skip_trampoline_code);
-  
+
   set_solib_svr4_fetch_link_map_offsets (gdbarch,
 					 nto_generic_svr4_fetch_link_map_offsets);
 
