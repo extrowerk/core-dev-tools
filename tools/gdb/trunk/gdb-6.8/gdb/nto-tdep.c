@@ -169,10 +169,10 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 
   arch_path = nto_build_arch_path ();
   buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
-  free (arch_path);
   sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path);
+  free (arch_path);
 
   /* Don't assume basename() isn't destructive.  */
   base = strrchr (solib, '/');
@@ -238,7 +238,7 @@ nto_init_solib_absolute_prefix (void)
 	}
       nto_set_gdb_sysroot = 1;
     }
-
+#if 0
   if ((!solib_search_path
       || strlen (solib_search_path) == 0)
       || nto_set_solib_search_path)
@@ -281,6 +281,7 @@ nto_init_solib_absolute_prefix (void)
 	}
       nto_set_solib_search_path = 1;
     }
+#endif
   free (arch_path);
 }
 
@@ -695,9 +696,10 @@ int
 qnx_filename_cmp (const char *s1, const char *s2)
 {
   int c1, c2;
-nto_trace (0) ("%s(%s,%s)\n", __func__, s1, s2);
+
   gdb_assert (s1 != NULL);
   gdb_assert (s2 != NULL);
+  nto_trace (3) ("%s(%s,%s)\n", __func__, s1, s2);
 
   if (0 == strcmp (s1, s2))
     return 0;
