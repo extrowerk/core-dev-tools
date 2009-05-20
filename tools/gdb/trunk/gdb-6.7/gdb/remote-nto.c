@@ -1007,7 +1007,7 @@ nto_start_remote (char *dummy)
   int orig_target_endian;
 
   nto_trace (0) ("nto_start_remote, recv.pkt.hdr.cmd %d, (dummy %s)\n",
-	 recv.pkt.hdr.cmd, dummy);
+		 recv.pkt.hdr.cmd, dummy ? dummy : "(null)");
 
   immediate_quit = 1;		/* Allow user to interrupt it.  */
   for (;;)
