@@ -2,7 +2,7 @@
 
 /* Dynamic architecture support for GDB, the GNU debugger.
 
-   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009
    Free Software Foundation, Inc.
 
    This file is part of GDB.
@@ -919,6 +919,12 @@ extern void initialize_current_architecture (void);
 
 /* gdbarch trace variable */
 extern int gdbarch_debug;
+
+extern int gdbarch_strlen_paddr (struct gdbarch *gdbarch);
+extern char *gdbarch_paddr (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern char *gdbarch_paddr_nz (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern const char *gdbarch_paddress (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern char * gdbarch_paddr_d(struct gdbarch *gdbarch, CORE_ADDR addr);
 
 extern void gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file);
 

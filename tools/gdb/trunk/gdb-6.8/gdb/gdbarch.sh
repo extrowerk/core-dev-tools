@@ -2,7 +2,7 @@
 
 # Architecture commands for GDB, the GNU debugger.
 #
-# Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
+# Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009,
 # 2008 Free Software Foundation, Inc.
 #
 # This file is part of GDB.
@@ -219,7 +219,7 @@ do
 	#   hiding something from the ``struct info'' object
 	# m -> multi-arch function
 	#   hiding a multi-arch function (parameterised with the architecture)
-        # M -> multi-arch function + predicate
+    # M -> multi-arch function + predicate
 	#   hiding a multi-arch function + predicate to test function validity
 
     returntype ) : ;;
@@ -681,7 +681,7 @@ cat <<EOF
 
 /* Dynamic architecture support for GDB, the GNU debugger.
 
-   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009
    Free Software Foundation, Inc.
 
    This file is part of GDB.
@@ -1022,6 +1022,12 @@ extern void initialize_current_architecture (void);
 /* gdbarch trace variable */
 extern int gdbarch_debug;
 
+extern int gdbarch_strlen_paddr (struct gdbarch *gdbarch);
+extern char *gdbarch_paddr (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern char *gdbarch_paddr_nz (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern const char *gdbarch_paddress (struct gdbarch *gdbarch, CORE_ADDR addr);
+extern char * gdbarch_paddr_d(struct gdbarch *gdbarch, CORE_ADDR addr);
+
 extern void gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file);
 
 #endif
@@ -1357,6 +1363,51 @@ EOF
 printf "\n"
 printf "\n"
 cat <<EOF
+
+int
+gdbarch_strlen_paddr (struct gdbarch *gdbarch)
+{
+  return (gdbarch_addr_bit (gdbarch) / 8 * 2);
+}
+
+char *
+gdbarch_paddr (struct gdbarch *gdbarch, CORE_ADDR addr)
+{
+  return phex (addr, gdbarch_addr_bit (gdbarch) / 8);
+}
+
+char *
+gdbarch_paddr_nz (struct gdbarch *gdbarch, CORE_ADDR addr)
+{
+  return phex (addr, gdbarch_addr_bit (gdbarch) / 8);
+}
+
+const char *
+gdbarch_paddress (struct gdbarch *gdbarch, CORE_ADDR addr)
+{
+  /* Truncate address to the size of a target address, avoiding shifts
+     larger or equal than the width of a CORE_ADDR.  The local
+     variable ADDR_BIT stops the compiler reporting a shift overflow
+     when it won't occur. */
+  /* NOTE: This assumes that the significant address information is
+     kept in the least significant bits of ADDR - the upper bits were
+     either zero or sign extended.  Should gdbarch_address_to_pointer or
+     some ADDRESS_TO_PRINTABLE() be used to do the conversion?  */
+
+  int addr_bit = gdbarch_addr_bit (gdbarch);
+
+  if (addr_bit < (sizeof (CORE_ADDR) * HOST_CHAR_BIT))
+    addr &= ((CORE_ADDR) 1 << addr_bit) - 1;
+  return hex_string (addr);
+}
+
+char *
+gdbarch_paddr_d (struct gdbarch *gdbarch, CORE_ADDR addr)
+{
+  gdb_assert (gdbarch != NULL);
+  return paddr_d (addr);
+}
+
 /* Print out the details of the current architecture. */
 
 void
@@ -1390,11 +1441,11 @@ do
 	case "${print}:${returntype}" in
 	    :CORE_ADDR )
 		fmt="0x%s"
-		print="paddr_nz (gdbarch->${function})"
+		print="gdbarch_paddr_nz (gdbarch, gdbarch->${function})"
 		;;
 	    :* )
 	        fmt="%s"
-		print="paddr_d (gdbarch->${function})"
+		print="gdbarch_paddr_d (gdbarch, gdbarch->${function})"
 		;;
 	    * )
 	        fmt="%s"
