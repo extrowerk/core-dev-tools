@@ -169,10 +169,10 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 
   arch_path = nto_build_arch_path ();
   buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
-  free (arch_path);
   sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path);
+  free (arch_path);
 
   /* Don't assume basename() isn't destructive.  */
   base = strrchr (solib, '/');
@@ -199,20 +199,15 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 
 /* The following two variables are defined in solib.c.  */
 extern char *gdb_sysroot; /* a.k.a solib-absolute-prefix  */
-extern char *solib_search_path;
 
 void
 nto_init_solib_absolute_prefix (void)
 {
-  /* If it was nto_init_solib_absolute_prefix that set the paths,
-   the following variables will be set to 1.  */
+  /* If it was nto_init_solib_absolute_prefix that set the path,
+     the following variable will be set to 1.  */
   static int nto_set_gdb_sysroot;
-  static int nto_set_solib_search_path;
 
   char *buf, *arch_path;
-  char *nto_root; 
-  const char *endian;
-  const char *arch;
 
   arch_path = nto_build_arch_path ();
 
@@ -237,47 +232,6 @@ nto_init_solib_absolute_prefix (void)
 	  execute_command (buf, 0);
 	}
       nto_set_gdb_sysroot = 1;
-    }
-
-  if ((!solib_search_path
-      || strlen (solib_search_path) == 0)
-      || nto_set_solib_search_path)
-    {
-      const char * const setcmd = "set solib-search-path ";
-      const char * const subdirs[] = { "lib", "usr/lib", "lib/dll", NULL };
-      unsigned int subdirs_len = 0;
-      const unsigned int subdirs_num = sizeof (subdirs) / sizeof (subdirs[0]);
-      const char * const *pivot;
-
-      buf = alloca (strlen (setcmd)
-		    + strlen (arch_path) * subdirs_num
-		    + subdirs_num - 1 /* For DIRNAME_SEPARATOR.  */
-		    + subdirs_num /* For  path separator '/' */ 
-		    + subdirs_len
-		    + 1 /* for final '\0' */ );
-
-      sprintf (buf, "%s", setcmd);
-      for (pivot = subdirs; *pivot != NULL; ++pivot)
-	{
-	  sprintf (buf + strlen (buf), "%s/%s", arch_path, *pivot);
-	  if (*(pivot + 1) != NULL)
-	    sprintf (buf + strlen (buf), "%c", DIRNAME_SEPARATOR);
-	}
-
-      if (solib_search_path == NULL || solib_search_path[0] == '\0')
-	{
-	  /* Initially, only set the string. We don't want any side effects. */
-	  xfree (solib_search_path);
-	  solib_search_path = xstrdup (buf + strlen(setcmd));
-	}
-      else if (strcmp (solib_search_path, buf + strlen (setcmd)) != 0)
-	{
-	/* Do not set it if already set. Otherwise, this would cause
-	   re-reading symbols.  */
-	  nto_trace (0) ("Executing %s\n", buf);
-	  execute_command (buf, 0);
-	}
-      nto_set_solib_search_path = 1;
     }
   free (arch_path);
 }
@@ -693,9 +647,10 @@ int
 qnx_filename_cmp (const char *s1, const char *s2)
 {
   int c1, c2;
-nto_trace (0) ("%s(%s,%s)\n", __func__, s1, s2);
+
   gdb_assert (s1 != NULL);
   gdb_assert (s2 != NULL);
+  nto_trace (3) ("%s(%s,%s)\n", __func__, s1, s2);
 
   if (0 == strcmp (s1, s2))
     return 0;

@@ -3587,7 +3587,7 @@ rs6000_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
       unsigned long m = 0;
 
       tag8_value = bfd_elf_get_obj_attr_int (info.abfd, OBJ_ATTR_GNU,
-					     Tag_GNU_Power_ABI_Vector);
+					     8 /*Tag_GNU_Power_ABI_Vector*/);
 
       /* The vector ABI used by this object file. The value will be:
 	 - 0 for files not affected by the vector ABI.

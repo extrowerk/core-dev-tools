@@ -199,20 +199,15 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 
 /* The following two variables are defined in solib.c.  */
 extern char *gdb_sysroot; /* a.k.a solib-absolute-prefix  */
-extern char *solib_search_path;
 
 void
 nto_init_solib_absolute_prefix (void)
 {
-  /* If it was nto_init_solib_absolute_prefix that set the paths,
-   the following variables will be set to 1.  */
+  /* If it was nto_init_solib_absolute_prefix that set the path,
+     the following variable will be set to 1.  */
   static int nto_set_gdb_sysroot;
-  static int nto_set_solib_search_path;
 
   char *buf, *arch_path;
-  char *nto_root; 
-  const char *endian;
-  const char *arch;
 
   arch_path = nto_build_arch_path ();
 
@@ -238,50 +233,6 @@ nto_init_solib_absolute_prefix (void)
 	}
       nto_set_gdb_sysroot = 1;
     }
-#if 0
-  if ((!solib_search_path
-      || strlen (solib_search_path) == 0)
-      || nto_set_solib_search_path)
-    {
-      const char * const setcmd = "set solib-search-path ";
-      const char * const subdirs[] = { "lib", "usr/lib", "lib/dll", NULL };
-      unsigned int subdirs_len = 0;
-      const unsigned int subdirs_num = sizeof (subdirs) / sizeof (subdirs[0]);
-      const char * const *pivot;
-
-      buf = alloca (strlen (setcmd)
-		    + strlen (arch_path) * subdirs_num
-		    + subdirs_num - 1 /* For DIRNAME_SEPARATOR.  */
-		    + subdirs_num /* For  path separator '/' */ 
-		    + subdirs_len
-		    + 1 /* for final '\0' */ );
-
-      sprintf (buf, "%s", setcmd);
-      for (pivot = subdirs; *pivot != NULL; ++pivot)
-	{
-	  sprintf (buf + strlen (buf), "%s/%s", arch_path, *pivot);
-	  if (*(pivot + 1) != NULL)
-	    sprintf (buf + strlen (buf), "%c", DIRNAME_SEPARATOR);
-	}
-
-      if (solib_search_path == NULL || solib_search_path[0] == '\0')
-	{
-	  /* Initially, only set the string. We don't want any side effects. */
-	  xfree (solib_search_path);
-	  solib_search_path = xstrdup (buf + strlen(setcmd));
-	}
-      else if (strcmp (solib_search_path, buf + strlen (setcmd)) != 0)
-	{
-	/* Do not set it if already set. Otherwise, this would cause
-	   re-reading symbols.  */
-      char * buf2 = alloca (strlen (setcmd) + strlen(solib_search_path) + strlen(buf + strlen (setcmd))+1+1);
-      sprintf (buf2, "%s%s%c%s", setcmd, solib_search_path, DIRNAME_SEPARATOR, buf + strlen (setcmd));
-      nto_trace (0) ("Executing %s\n", buf2);
-      execute_command (buf2, 0); 
-	}
-      nto_set_solib_search_path = 1;
-    }
-#endif
   free (arch_path);
 }
 
