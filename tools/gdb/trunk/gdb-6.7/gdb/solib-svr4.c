@@ -766,8 +766,9 @@ locate_base (void)
 
   if (debug_base == 0 && svr4_have_link_map_offsets ())
     {
-      if (exec_bfd != NULL
+      if ((exec_bfd != NULL
 	  && bfd_get_flavour (exec_bfd) == bfd_target_elf_flavour)
+	  || exec_bfd == NULL)
 	debug_base = elf_locate_base ();
     }
   return (debug_base);
