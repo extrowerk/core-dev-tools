@@ -738,7 +738,6 @@ static ptid_t
 procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 {
   sigset_t set;
-  siginfo_t info;
   procfs_status status;
   static int exit_signo = 0;	/* To track signals that cause termination.  */
 
@@ -755,17 +754,22 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
       return null_ptid;
     }
 
-  sigemptyset (&set);
-  sigaddset (&set, SIGUSR1);
-
   devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
   while (!(status.flags & _DEBUG_FLAG_ISTOP))
     {
       int sigwaitres;
+      siginfo_t info;
+      sigset_t set;
+
+      sigemptyset (&set);
+      sigaddset (&set, SIGUSR1);
       ofunc = (void (*)()) signal (SIGINT, nto_interrupt);
       sigwaitres = sigwaitinfo (&set, &info);
       if (sigwaitres == -1)
-	perror_with_name (__FILE__);
+	{
+	  nto_trace (0) ("sigwaitinfo interrupted due to errno=%d (%s)\n",
+			 errno, strerror (errno));
+	}
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
