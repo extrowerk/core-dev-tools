@@ -329,6 +329,7 @@ typedef struct
   int pid;
 } DStMsg_attach_t;
 
+typedef DStMsg_attach_t DStMsg_procfsinfo_t;
 
 /* Detach from a running process which was attached to or loaded.  */
 typedef struct
@@ -663,6 +664,7 @@ typedef union
   DStMsg_select_t select;
   DStMsg_load_t load;
   DStMsg_attach_t attach;
+  DStMsg_procfsinfo_t procfsinfo;
   DStMsg_detach_t detach;
   DStMsg_kill_t kill;
   DStMsg_stop_t stop;

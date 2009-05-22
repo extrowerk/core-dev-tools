@@ -71,6 +71,7 @@
 #define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
 #include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
+typedef debug_process_t nto_procfs_info;
 #else
 #include "nto-share/debug.h"
 #endif
@@ -998,6 +999,33 @@ nto_close (int quitting)
     }
 }
 
+
+/* Reads procfs_info structure for the given process.
+   
+   Returns 1 on success, 0 otherwise.  */
+
+static int
+nto_read_procfsinfo (nto_procfs_info *pinfo)
+{
+  gdb_assert (pinfo != NULL && !! "pinfo must not be NULL\n");
+  nto_send_init (DStMsg_procfsinfo, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.procfsinfo.pid = ptid_get_pid (inferior_ptid);
+  tran.pkt.procfsinfo.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.procfsinfo.pid,
+						    4);
+  nto_send (sizeof (tran.pkt.procfsinfo), 0);
+  if (recv.pkt.hdr.cmd == DSrMsg_okdata)
+    {
+      memcpy (pinfo, recv.pkt.okdata.data, sizeof (*pinfo));
+      return 1;
+    }
+  else
+    {
+      nto_trace (0) ("DStMsg_procfsinfo not supported by the target.\n");
+    }
+  return 0;
+}
+
+
 /* This is a 'hack' to reset internal state maintained by gdb. It is 
    unclear why it doesn't do it automatically, but the same hack can be
    seen in linux, so I guess it is o.k. to use it here too.  */
@@ -1289,6 +1317,8 @@ nto_attach (char *args, int from_tty)
   inferior_ptid = ptid_build (EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.pid, 4),
 			      0,
 			      EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.tid, 4));
+  nto_init_solib_absolute_prefix ();
+
   /* Initalize thread list.  */
   nto_find_new_threads ();
   /* NYI: add symbol information for process.  */
@@ -1310,6 +1340,7 @@ nto_attach (char *args, int from_tty)
 static void
 nto_post_attach (pid_t pid)
 {
+  nto_trace (0) ("%s pid:%d\n", __func__, pid);
 #ifdef SOLIB_CREATE_INFERIOR_HOOK
   if (exec_bfd)
     SOLIB_CREATE_INFERIOR_HOOK (pid);
@@ -2123,6 +2154,25 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 	  buff += 4;
 
 	  return (buff - readbuf);
+	}
+      else
+	{
+	  /* If there is no exec_bfd, but there is inferior, we try to 
+	     read auxv using initial stack.
+	     The problem is, older pdebug-s don't support reading
+	     procfs_info.  */
+	  nto_procfs_info procfs_info;
+
+	  if (nto_read_procfsinfo (&procfs_info))
+	    {
+	      CORE_ADDR initial_stack;
+
+	      initial_stack =
+		EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack, 8);
+
+	      return nto_read_auxv_from_initial_stack (initial_stack,
+						       readbuf, len);
+	    }
 	}
     }
   
