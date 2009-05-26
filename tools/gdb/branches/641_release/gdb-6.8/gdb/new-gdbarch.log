@@ -1,0 +1,1391 @@
+i const struct bfd_arch_info * bfd_arch_info ()
+    class=i
+    returntype=const struct bfd_arch_info *
+    function=bfd_arch_info
+    formal=
+    actual=
+    staticdefault=&bfd_default_arch_struct
+    predefault=
+    postdefault=
+    invalid_p=
+    print=gdbarch_bfd_arch_info (gdbarch)->printable_name
+    garbage_at_eol=
+
+i int byte_order ()
+    class=i
+    returntype=int
+    function=byte_order
+    formal=
+    actual=
+    staticdefault=BFD_ENDIAN_BIG
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+i enum gdb_osabi osabi ()
+    class=i
+    returntype=enum gdb_osabi
+    function=osabi
+    formal=
+    actual=
+    staticdefault=GDB_OSABI_UNKNOWN
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+i const struct target_desc * target_desc ()
+    class=i
+    returntype=const struct target_desc *
+    function=target_desc
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=paddr_d ((long) gdbarch->target_desc)
+    garbage_at_eol=
+
+v int bits_big_endian ()
+    class=v
+    returntype=int
+    function=bits_big_endian
+    formal=
+    actual=
+    staticdefault=1
+    predefault=(gdbarch->byte_order == BFD_ENDIAN_BIG)
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int short_bit ()
+    class=v
+    returntype=int
+    function=short_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (short)
+    predefault=2*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int int_bit ()
+    class=v
+    returntype=int
+    function=int_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (int)
+    predefault=4*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int long_bit ()
+    class=v
+    returntype=int
+    function=long_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (long)
+    predefault=4*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int long_long_bit ()
+    class=v
+    returntype=int
+    function=long_long_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (LONGEST)
+    predefault=2*gdbarch->long_bit
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int float_bit ()
+    class=v
+    returntype=int
+    function=float_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (float)
+    predefault=4*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v const struct floatformat ** float_format ()
+    class=v
+    returntype=const struct floatformat **
+    function=float_format
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=floatformats_ieee_single
+    invalid_p=
+    print=pformat (gdbarch->float_format)
+    garbage_at_eol=
+
+v int double_bit ()
+    class=v
+    returntype=int
+    function=double_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (double)
+    predefault=8*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v const struct floatformat ** double_format ()
+    class=v
+    returntype=const struct floatformat **
+    function=double_format
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=floatformats_ieee_double
+    invalid_p=
+    print=pformat (gdbarch->double_format)
+    garbage_at_eol=
+
+v int long_double_bit ()
+    class=v
+    returntype=int
+    function=long_double_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (long double)
+    predefault=8*TARGET_CHAR_BIT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v const struct floatformat ** long_double_format ()
+    class=v
+    returntype=const struct floatformat **
+    function=long_double_format
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=floatformats_ieee_double
+    invalid_p=
+    print=pformat (gdbarch->long_double_format)
+    garbage_at_eol=
+
+v int ptr_bit ()
+    class=v
+    returntype=int
+    function=ptr_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (void*)
+    predefault=gdbarch->int_bit
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int addr_bit ()
+    class=v
+    returntype=int
+    function=addr_bit
+    formal=
+    actual=
+    staticdefault=8 * sizeof (void*)
+    predefault=0
+    postdefault=gdbarch_ptr_bit (gdbarch)
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int char_signed ()
+    class=v
+    returntype=int
+    function=char_signed
+    formal=
+    actual=
+    staticdefault=1
+    predefault=-1
+    postdefault=1
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+F CORE_ADDR read_pc (struct regcache *regcache)
+    class=F
+    returntype=CORE_ADDR
+    function=read_pc
+    formal=struct regcache *regcache
+    actual=regcache
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+F void write_pc (struct regcache *regcache, CORE_ADDR val)
+    class=F
+    returntype=void
+    function=write_pc
+    formal=struct regcache *regcache, CORE_ADDR val
+    actual=regcache, val
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m void virtual_frame_pointer (CORE_ADDR pc, int *frame_regnum, LONGEST *frame_offset)
+    class=m
+    returntype=void
+    function=virtual_frame_pointer
+    formal=CORE_ADDR pc, int *frame_regnum, LONGEST *frame_offset
+    actual=pc, frame_regnum, frame_offset
+    staticdefault=legacy_virtual_frame_pointer
+    predefault=legacy_virtual_frame_pointer
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M void pseudo_register_read (struct regcache *regcache, int cookednum, gdb_byte *buf)
+    class=M
+    returntype=void
+    function=pseudo_register_read
+    formal=struct regcache *regcache, int cookednum, gdb_byte *buf
+    actual=regcache, cookednum, buf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M void pseudo_register_write (struct regcache *regcache, int cookednum, const gdb_byte *buf)
+    class=M
+    returntype=void
+    function=pseudo_register_write
+    formal=struct regcache *regcache, int cookednum, const gdb_byte *buf
+    actual=regcache, cookednum, buf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int num_regs ()
+    class=v
+    returntype=int
+    function=num_regs
+    formal=
+    actual=
+    staticdefault=0
+    predefault=-1
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int num_pseudo_regs ()
+    class=v
+    returntype=int
+    function=num_pseudo_regs
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int sp_regnum ()
+    class=v
+    returntype=int
+    function=sp_regnum
+    formal=
+    actual=
+    staticdefault=-1
+    predefault=-1
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int pc_regnum ()
+    class=v
+    returntype=int
+    function=pc_regnum
+    formal=
+    actual=
+    staticdefault=-1
+    predefault=-1
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int ps_regnum ()
+    class=v
+    returntype=int
+    function=ps_regnum
+    formal=
+    actual=
+    staticdefault=-1
+    predefault=-1
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int fp0_regnum ()
+    class=v
+    returntype=int
+    function=fp0_regnum
+    formal=
+    actual=
+    staticdefault=0
+    predefault=-1
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int stab_reg_to_regnum (int stab_regnr)
+    class=m
+    returntype=int
+    function=stab_reg_to_regnum
+    formal=int stab_regnr
+    actual=stab_regnr
+    staticdefault=no_op_reg_to_regnum
+    predefault=no_op_reg_to_regnum
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int ecoff_reg_to_regnum (int ecoff_regnr)
+    class=m
+    returntype=int
+    function=ecoff_reg_to_regnum
+    formal=int ecoff_regnr
+    actual=ecoff_regnr
+    staticdefault=no_op_reg_to_regnum
+    predefault=no_op_reg_to_regnum
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int dwarf_reg_to_regnum (int dwarf_regnr)
+    class=m
+    returntype=int
+    function=dwarf_reg_to_regnum
+    formal=int dwarf_regnr
+    actual=dwarf_regnr
+    staticdefault=no_op_reg_to_regnum
+    predefault=no_op_reg_to_regnum
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int sdb_reg_to_regnum (int sdb_regnr)
+    class=m
+    returntype=int
+    function=sdb_reg_to_regnum
+    formal=int sdb_regnr
+    actual=sdb_regnr
+    staticdefault=no_op_reg_to_regnum
+    predefault=no_op_reg_to_regnum
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int dwarf2_reg_to_regnum (int dwarf2_regnr)
+    class=m
+    returntype=int
+    function=dwarf2_reg_to_regnum
+    formal=int dwarf2_regnr
+    actual=dwarf2_regnr
+    staticdefault=no_op_reg_to_regnum
+    predefault=no_op_reg_to_regnum
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m const char * register_name (int regnr)
+    class=m
+    returntype=const char *
+    function=register_name
+    formal=int regnr
+    actual=regnr
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M struct type * register_type (int reg_nr)
+    class=M
+    returntype=struct type *
+    function=register_type
+    formal=int reg_nr
+    actual=reg_nr
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M struct frame_id unwind_dummy_id (struct frame_info *info)
+    class=M
+    returntype=struct frame_id
+    function=unwind_dummy_id
+    formal=struct frame_info *info
+    actual=info
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int deprecated_fp_regnum ()
+    class=v
+    returntype=int
+    function=deprecated_fp_regnum
+    formal=
+    actual=
+    staticdefault=-1
+    predefault=-1
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR push_dummy_call (struct value *function, struct regcache *regcache, CORE_ADDR bp_addr, int nargs, struct value **args, CORE_ADDR sp, int struct_return, CORE_ADDR struct_addr)
+    class=M
+    returntype=CORE_ADDR
+    function=push_dummy_call
+    formal=struct value *function, struct regcache *regcache, CORE_ADDR bp_addr, int nargs, struct value **args, CORE_ADDR sp, int struct_return, CORE_ADDR struct_addr
+    actual=function, regcache, bp_addr, nargs, args, sp, struct_return, struct_addr
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int call_dummy_location ()
+    class=v
+    returntype=int
+    function=call_dummy_location
+    formal=
+    actual=
+    staticdefault=0
+    predefault=AT_ENTRY_POINT
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR push_dummy_code (CORE_ADDR sp, CORE_ADDR funaddr, struct value **args, int nargs, struct type *value_type, CORE_ADDR *real_pc, CORE_ADDR *bp_addr, struct regcache *regcache)
+    class=M
+    returntype=CORE_ADDR
+    function=push_dummy_code
+    formal=CORE_ADDR sp, CORE_ADDR funaddr, struct value **args, int nargs, struct type *value_type, CORE_ADDR *real_pc, CORE_ADDR *bp_addr, struct regcache *regcache
+    actual=sp, funaddr, args, nargs, value_type, real_pc, bp_addr, regcache
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m void print_registers_info (struct ui_file *file, struct frame_info *frame, int regnum, int all)
+    class=m
+    returntype=void
+    function=print_registers_info
+    formal=struct ui_file *file, struct frame_info *frame, int regnum, int all
+    actual=file, frame, regnum, all
+    staticdefault=default_print_registers_info
+    predefault=default_print_registers_info
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M void print_float_info (struct ui_file *file, struct frame_info *frame, const char *args)
+    class=M
+    returntype=void
+    function=print_float_info
+    formal=struct ui_file *file, struct frame_info *frame, const char *args
+    actual=file, frame, args
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M void print_vector_info (struct ui_file *file, struct frame_info *frame, const char *args)
+    class=M
+    returntype=void
+    function=print_vector_info
+    formal=struct ui_file *file, struct frame_info *frame, const char *args
+    actual=file, frame, args
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m int register_sim_regno (int reg_nr)
+    class=m
+    returntype=int
+    function=register_sim_regno
+    formal=int reg_nr
+    actual=reg_nr
+    staticdefault=legacy_register_sim_regno
+    predefault=legacy_register_sim_regno
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int cannot_fetch_register (int regnum)
+    class=m
+    returntype=int
+    function=cannot_fetch_register
+    formal=int regnum
+    actual=regnum
+    staticdefault=cannot_register_not
+    predefault=cannot_register_not
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int cannot_store_register (int regnum)
+    class=m
+    returntype=int
+    function=cannot_store_register
+    formal=int regnum
+    actual=regnum
+    staticdefault=cannot_register_not
+    predefault=cannot_register_not
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F int get_longjmp_target (struct frame_info *frame, CORE_ADDR *pc)
+    class=F
+    returntype=int
+    function=get_longjmp_target
+    formal=struct frame_info *frame, CORE_ADDR *pc
+    actual=frame, pc
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int believe_pcc_promotion ()
+    class=v
+    returntype=int
+    function=believe_pcc_promotion
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m int convert_register_p (int regnum, struct type *type)
+    class=m
+    returntype=int
+    function=convert_register_p
+    formal=int regnum, struct type *type
+    actual=regnum, type
+    staticdefault=generic_convert_register_p
+    predefault=generic_convert_register_p
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f void register_to_value (struct frame_info *frame, int regnum, struct type *type, gdb_byte *buf)
+    class=f
+    returntype=void
+    function=register_to_value
+    formal=struct frame_info *frame, int regnum, struct type *type, gdb_byte *buf
+    actual=frame, regnum, type, buf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+f void value_to_register (struct frame_info *frame, int regnum, struct type *type, const gdb_byte *buf)
+    class=f
+    returntype=void
+    function=value_to_register
+    formal=struct frame_info *frame, int regnum, struct type *type, const gdb_byte *buf
+    actual=frame, regnum, type, buf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+f struct value * value_from_register (struct type *type, int regnum, struct frame_info *frame)
+    class=f
+    returntype=struct value *
+    function=value_from_register
+    formal=struct type *type, int regnum, struct frame_info *frame
+    actual=type, regnum, frame
+    staticdefault=0
+    predefault=default_value_from_register
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f CORE_ADDR pointer_to_address (struct type *type, const gdb_byte *buf)
+    class=f
+    returntype=CORE_ADDR
+    function=pointer_to_address
+    formal=struct type *type, const gdb_byte *buf
+    actual=type, buf
+    staticdefault=0
+    predefault=unsigned_pointer_to_address
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f void address_to_pointer (struct type *type, gdb_byte *buf, CORE_ADDR addr)
+    class=f
+    returntype=void
+    function=address_to_pointer
+    formal=struct type *type, gdb_byte *buf, CORE_ADDR addr
+    actual=type, buf, addr
+    staticdefault=0
+    predefault=unsigned_address_to_pointer
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR integer_to_address (struct type *type, const gdb_byte *buf)
+    class=M
+    returntype=CORE_ADDR
+    function=integer_to_address
+    formal=struct type *type, const gdb_byte *buf
+    actual=type, buf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M enum return_value_convention return_value (struct type *valtype, struct regcache *regcache, gdb_byte *readbuf, const gdb_byte *writebuf)
+    class=M
+    returntype=enum return_value_convention
+    function=return_value
+    formal=struct type *valtype, struct regcache *regcache, gdb_byte *readbuf, const gdb_byte *writebuf
+    actual=valtype, regcache, readbuf, writebuf
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m CORE_ADDR skip_prologue (CORE_ADDR ip)
+    class=m
+    returntype=CORE_ADDR
+    function=skip_prologue
+    formal=CORE_ADDR ip
+    actual=ip
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+f int inner_than (CORE_ADDR lhs, CORE_ADDR rhs)
+    class=f
+    returntype=int
+    function=inner_than
+    formal=CORE_ADDR lhs, CORE_ADDR rhs
+    actual=lhs, rhs
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m const gdb_byte * breakpoint_from_pc (CORE_ADDR *pcptr, int *lenptr)
+    class=m
+    returntype=const gdb_byte *
+    function=breakpoint_from_pc
+    formal=CORE_ADDR *pcptr, int *lenptr
+    actual=pcptr, lenptr
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR adjust_breakpoint_address (CORE_ADDR bpaddr)
+    class=M
+    returntype=CORE_ADDR
+    function=adjust_breakpoint_address
+    formal=CORE_ADDR bpaddr
+    actual=bpaddr
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m int memory_insert_breakpoint (struct bp_target_info *bp_tgt)
+    class=m
+    returntype=int
+    function=memory_insert_breakpoint
+    formal=struct bp_target_info *bp_tgt
+    actual=bp_tgt
+    staticdefault=default_memory_insert_breakpoint
+    predefault=default_memory_insert_breakpoint
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int memory_remove_breakpoint (struct bp_target_info *bp_tgt)
+    class=m
+    returntype=int
+    function=memory_remove_breakpoint
+    formal=struct bp_target_info *bp_tgt
+    actual=bp_tgt
+    staticdefault=default_memory_remove_breakpoint
+    predefault=default_memory_remove_breakpoint
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v CORE_ADDR decr_pc_after_break ()
+    class=v
+    returntype=CORE_ADDR
+    function=decr_pc_after_break
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v CORE_ADDR deprecated_function_start_offset ()
+    class=v
+    returntype=CORE_ADDR
+    function=deprecated_function_start_offset
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int remote_register_number (int regno)
+    class=m
+    returntype=int
+    function=remote_register_number
+    formal=int regno
+    actual=regno
+    staticdefault=default_remote_register_number
+    predefault=default_remote_register_number
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F CORE_ADDR fetch_tls_load_module_address (struct objfile *objfile)
+    class=F
+    returntype=CORE_ADDR
+    function=fetch_tls_load_module_address
+    formal=struct objfile *objfile
+    actual=objfile
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v CORE_ADDR frame_args_skip ()
+    class=v
+    returntype=CORE_ADDR
+    function=frame_args_skip
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR unwind_pc (struct frame_info *next_frame)
+    class=M
+    returntype=CORE_ADDR
+    function=unwind_pc
+    formal=struct frame_info *next_frame
+    actual=next_frame
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR unwind_sp (struct frame_info *next_frame)
+    class=M
+    returntype=CORE_ADDR
+    function=unwind_sp
+    formal=struct frame_info *next_frame
+    actual=next_frame
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+F int frame_num_args (struct frame_info *frame)
+    class=F
+    returntype=int
+    function=frame_num_args
+    formal=struct frame_info *frame
+    actual=frame
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M CORE_ADDR frame_align (CORE_ADDR address)
+    class=M
+    returntype=CORE_ADDR
+    function=frame_align
+    formal=CORE_ADDR address
+    actual=address
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m int stabs_argument_has_addr (struct type *type)
+    class=m
+    returntype=int
+    function=stabs_argument_has_addr
+    formal=struct type *type
+    actual=type
+    staticdefault=default_stabs_argument_has_addr
+    predefault=default_stabs_argument_has_addr
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int frame_red_zone_size ()
+    class=v
+    returntype=int
+    function=frame_red_zone_size
+    formal=
+    actual=
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m CORE_ADDR convert_from_func_ptr_addr (CORE_ADDR addr, struct target_ops *targ)
+    class=m
+    returntype=CORE_ADDR
+    function=convert_from_func_ptr_addr
+    formal=CORE_ADDR addr, struct target_ops *targ
+    actual=addr, targ
+    staticdefault=convert_from_func_ptr_addr_identity
+    predefault=convert_from_func_ptr_addr_identity
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f CORE_ADDR addr_bits_remove (CORE_ADDR addr)
+    class=f
+    returntype=CORE_ADDR
+    function=addr_bits_remove
+    formal=CORE_ADDR addr
+    actual=addr
+    staticdefault=0
+    predefault=core_addr_identity
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f CORE_ADDR smash_text_address (CORE_ADDR addr)
+    class=f
+    returntype=CORE_ADDR
+    function=smash_text_address
+    formal=CORE_ADDR addr
+    actual=addr
+    staticdefault=0
+    predefault=core_addr_identity
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F int software_single_step (struct frame_info *frame)
+    class=F
+    returntype=int
+    function=software_single_step
+    formal=struct frame_info *frame
+    actual=frame
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M int single_step_through_delay (struct frame_info *frame)
+    class=M
+    returntype=int
+    function=single_step_through_delay
+    formal=struct frame_info *frame
+    actual=frame
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+f int print_insn (bfd_vma vma, struct disassemble_info *info)
+    class=f
+    returntype=int
+    function=print_insn
+    formal=bfd_vma vma, struct disassemble_info *info
+    actual=vma, info
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+f CORE_ADDR skip_trampoline_code (struct frame_info *frame, CORE_ADDR pc)
+    class=f
+    returntype=CORE_ADDR
+    function=skip_trampoline_code
+    formal=struct frame_info *frame, CORE_ADDR pc
+    actual=frame, pc
+    staticdefault=0
+    predefault=generic_skip_trampoline_code
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m CORE_ADDR skip_solib_resolver (CORE_ADDR pc)
+    class=m
+    returntype=CORE_ADDR
+    function=skip_solib_resolver
+    formal=CORE_ADDR pc
+    actual=pc
+    staticdefault=generic_skip_solib_resolver
+    predefault=generic_skip_solib_resolver
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f int in_solib_return_trampoline (CORE_ADDR pc, char *name)
+    class=f
+    returntype=int
+    function=in_solib_return_trampoline
+    formal=CORE_ADDR pc, char *name
+    actual=pc, name
+    staticdefault=0
+    predefault=generic_in_solib_return_trampoline
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int in_function_epilogue_p (CORE_ADDR addr)
+    class=m
+    returntype=int
+    function=in_function_epilogue_p
+    formal=CORE_ADDR addr
+    actual=addr
+    staticdefault=generic_in_function_epilogue_p
+    predefault=generic_in_function_epilogue_p
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m char * construct_inferior_arguments (int argc, char **argv)
+    class=m
+    returntype=char *
+    function=construct_inferior_arguments
+    formal=int argc, char **argv
+    actual=argc, argv
+    staticdefault=construct_inferior_arguments
+    predefault=construct_inferior_arguments
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f void elf_make_msymbol_special (asymbol *sym, struct minimal_symbol *msym)
+    class=f
+    returntype=void
+    function=elf_make_msymbol_special
+    formal=asymbol *sym, struct minimal_symbol *msym
+    actual=sym, msym
+    staticdefault=0
+    predefault=default_elf_make_msymbol_special
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+f void coff_make_msymbol_special (int val, struct minimal_symbol *msym)
+    class=f
+    returntype=void
+    function=coff_make_msymbol_special
+    formal=int val, struct minimal_symbol *msym
+    actual=val, msym
+    staticdefault=0
+    predefault=default_coff_make_msymbol_special
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v const char * name_of_malloc ()
+    class=v
+    returntype=const char *
+    function=name_of_malloc
+    formal=
+    actual=
+    staticdefault="malloc"
+    predefault="malloc"
+    postdefault=
+    invalid_p=0
+    print=gdbarch->name_of_malloc
+    garbage_at_eol=
+
+v int cannot_step_breakpoint ()
+    class=v
+    returntype=int
+    function=cannot_step_breakpoint
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int have_nonsteppable_watchpoint ()
+    class=v
+    returntype=int
+    function=have_nonsteppable_watchpoint
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F int address_class_type_flags (int byte_size, int dwarf2_addr_class)
+    class=F
+    returntype=int
+    function=address_class_type_flags
+    formal=int byte_size, int dwarf2_addr_class
+    actual=byte_size, dwarf2_addr_class
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M const char * address_class_type_flags_to_name (int type_flags)
+    class=M
+    returntype=const char *
+    function=address_class_type_flags_to_name
+    formal=int type_flags
+    actual=type_flags
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M int address_class_name_to_type_flags (const char *name, int *type_flags_ptr)
+    class=M
+    returntype=int
+    function=address_class_name_to_type_flags
+    formal=const char *name, int *type_flags_ptr
+    actual=name, type_flags_ptr
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+m int register_reggroup_p (int regnum, struct reggroup *reggroup)
+    class=m
+    returntype=int
+    function=register_reggroup_p
+    formal=int regnum, struct reggroup *reggroup
+    actual=regnum, reggroup
+    staticdefault=default_register_reggroup_p
+    predefault=default_register_reggroup_p
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F CORE_ADDR fetch_pointer_argument (struct frame_info *frame, int argi, struct type *type)
+    class=F
+    returntype=CORE_ADDR
+    function=fetch_pointer_argument
+    formal=struct frame_info *frame, int argi, struct type *type
+    actual=frame, argi, type
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M const struct regset * regset_from_core_section (const char *sect_name, size_t sect_size)
+    class=M
+    returntype=const struct regset *
+    function=regset_from_core_section
+    formal=const char *sect_name, size_t sect_size
+    actual=sect_name, sect_size
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M LONGEST core_xfer_shared_libraries (gdb_byte *readbuf, ULONGEST offset, LONGEST len)
+    class=M
+    returntype=LONGEST
+    function=core_xfer_shared_libraries
+    formal=gdb_byte *readbuf, ULONGEST offset, LONGEST len
+    actual=readbuf, offset, len
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int vtable_function_descriptors ()
+    class=v
+    returntype=int
+    function=vtable_function_descriptors
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+v int vbit_in_delta ()
+    class=v
+    returntype=int
+    function=vbit_in_delta
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+F void skip_permanent_breakpoint (struct regcache *regcache)
+    class=F
+    returntype=void
+    function=skip_permanent_breakpoint
+    formal=struct regcache *regcache
+    actual=regcache
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+F void overlay_update (struct obj_section *osect)
+    class=F
+    returntype=void
+    function=overlay_update
+    formal=struct obj_section *osect
+    actual=osect
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+M const struct target_desc * core_read_description (struct target_ops *target, bfd *abfd)
+    class=M
+    returntype=const struct target_desc *
+    function=core_read_description
+    formal=struct target_ops *target, bfd *abfd
+    actual=target, abfd
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+F char * static_transform_name (char *name)
+    class=F
+    returntype=char *
+    function=static_transform_name
+    formal=char *name
+    actual=name
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
+v int sofun_address_maybe_missing ()
+    class=v
+    returntype=int
+    function=sofun_address_maybe_missing
+    formal=
+    actual=
+    staticdefault=0
+    predefault=0
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m enum target_signal target_signal_from_host (int signo)
+    class=m
+    returntype=enum target_signal
+    function=target_signal_from_host
+    formal=int signo
+    actual=signo
+    staticdefault=default_target_signal_from_host
+    predefault=default_target_signal_from_host
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+m int target_signal_to_host (enum target_signal ts)
+    class=m
+    returntype=int
+    function=target_signal_to_host
+    formal=enum target_signal ts
+    actual=ts
+    staticdefault=default_target_signal_to_host
+    predefault=default_target_signal_to_host
+    postdefault=
+    invalid_p=0
+    print=
+    garbage_at_eol=
+
+M void record_special_symbol (struct objfile *objfile, asymbol *sym)
+    class=M
+    returntype=void
+    function=record_special_symbol
+    formal=struct objfile *objfile, asymbol *sym
+    actual=objfile, sym
+    staticdefault=0
+    predefault=
+    postdefault=
+    invalid_p=
+    print=
+    garbage_at_eol=
+
