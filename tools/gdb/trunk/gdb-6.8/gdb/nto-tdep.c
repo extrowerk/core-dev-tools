@@ -237,8 +237,8 @@ nto_init_solib_absolute_prefix (void)
 }
 
 char **
-nto_parse_redirection (char *pargv[], const char **pin, 
-		       const char **pout, const char **perr)
+nto_parse_redirection (char *pargv[], const char **pin, const char **pout, 
+		       const char **perr)
 {
   char **argv;
   char *in, *out, *err, *p;
@@ -439,7 +439,7 @@ nto_relocate_section_addresses (struct so_list *so, struct section_table *sec)
 int
 nto_in_dynsym_resolve_code (CORE_ADDR pc)
 {
-  if (in_plt_section (pc, NULL)) 
+  if (in_plt_section (pc, NULL))
     return 1;
   return 0;
 }
