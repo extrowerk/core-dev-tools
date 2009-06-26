@@ -194,7 +194,8 @@ allocate_space_in_inferior (int len)
 
 /* Cast struct value VAL to type TYPE and return as a value.
    Both type and val must be of TYPE_CODE_STRUCT or TYPE_CODE_UNION
-   for this to work. Typedef to one of the codes is permitted.  */
+   for this to work.  Typedef to one of the codes is permitted.
+   Returns NULL if the cast is neither an upcast nor a downcast.  */
 
 static struct value *
 value_cast_structs (struct type *type, struct value *v2)
@@ -245,7 +246,8 @@ value_cast_structs (struct type *type, struct value *v2)
 	  return value_at (type, addr2);
 	}
     }
-  return v2;
+
+  return NULL;
 }
 
 /* Cast one pointer or reference type to another.  Both TYPE and
@@ -399,7 +401,12 @@ value_cast (struct type *type, struct value *arg2)
   if ((code1 == TYPE_CODE_STRUCT || code1 == TYPE_CODE_UNION)
       && (code2 == TYPE_CODE_STRUCT || code2 == TYPE_CODE_UNION)
       && TYPE_NAME (type) != 0)
-    return value_cast_structs (type, arg2);
+    {
+      struct value *v = value_cast_structs (type, arg2);
+      if (v)
+	return v;
+    }
+
   if (code1 == TYPE_CODE_FLT && scalar)
     return value_from_double (type, value_as_double (arg2));
   else if (code1 == TYPE_CODE_DECFLOAT && scalar)
@@ -615,9 +622,8 @@ int
 value_fetch_lazy (struct value *val)
 {
   CORE_ADDR addr = VALUE_ADDRESS (val) + value_offset (val);
-  int length = TYPE_LENGTH (value_enclosing_type (val));
+  int length = TYPE_LENGTH (check_typedef (value_enclosing_type (val)));
 
-  struct type *type = value_type (val);
   if (length)
     read_memory (addr, value_contents_all_raw (val), length);
 
