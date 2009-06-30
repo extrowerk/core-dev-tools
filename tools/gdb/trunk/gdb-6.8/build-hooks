@@ -1,8 +1,8 @@
 target=${PWD##*-}
 target_cpu=${target#nto*}
 srcdir=${PWD}/..
-qnx_target_version=6.3.0
-qnx_install_version=qnx630
+qnx_target_version=6.4.0
+qnx_install_version=qnx640
 host_target=${PWD##*/}
 host_cpu=${host_target#*-}
 host_cpu=${host_cpu%%-*}
