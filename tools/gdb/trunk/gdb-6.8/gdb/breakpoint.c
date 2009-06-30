@@ -1272,9 +1272,9 @@ Note: automatically using hardware breakpoints for read-only addresses.\n"));
 	  printf_unfiltered ("Changing watchpoint type to software and trying again.\n");
 	  bpt->owner->type = bp_watchpoint;
 	  bpt->loc_type = bp_loc_other;
-	  val = target_insert_watchpoint (bpt->address,
-					  bpt->length,
-					  bpt->watchpoint_type);
+	  val = insert_bp_location (bpt, tmp_error_stream,
+				    disabled_breaks, process_warning,
+				    hw_breakpoint_error);
 	}
 #endif /* __QNXTARGET__ */
       bpt->inserted = (val != -1);
