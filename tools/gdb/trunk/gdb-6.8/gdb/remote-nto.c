@@ -3003,7 +3003,7 @@ nto_find_new_threads ()
     if (recv.pkt.hdr.cmd != DSrMsg_okdata) 
     {
       errno = EOK;
-      internal_warning (__FILE__, __LINE__, "msg not DSrMsg_okdata!");
+      nto_trace (1) ("msg not DSrMsg_okdata!\n");
       return;
     }
     num_tids = EXTRACT_UNSIGNED_INTEGER (&pidlist->num_tids, 4); 
