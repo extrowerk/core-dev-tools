@@ -73,13 +73,13 @@ scm_inferior_print (struct type *type, LONGEST value, struct ui_file *stream,
 	  struct value *remote_buffer;
 
 	  read_memory (SYMBOL_VALUE_ADDRESS (gdb_output_len_sym),
-		       (char *) &output_len, sizeof (output_len));
+		       (gdb_byte *) &output_len, sizeof (output_len));
 
 	  output = (char *) alloca (output_len);
 	  remote_buffer = value_at (type,
 				    SYMBOL_VALUE_ADDRESS (gdb_output_sym));
 	  read_memory (value_as_address (remote_buffer),
-		       output, output_len);
+		       (gdb_byte *)output, output_len);
 
 	  ui_file_write (stream, output, output_len);
 	}

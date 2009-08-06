@@ -292,9 +292,6 @@ lookup_mem_region (CORE_ADDR addr)
 void
 invalidate_target_mem_regions (void)
 {
-  struct mem_region *m;
-  int ix;
-
   if (!target_mem_regions_valid)
     return;
 
@@ -497,6 +494,8 @@ mem_info_command (char *args, int from_tty)
 	case MEM_FLASH:
 	  printf_filtered ("flash blocksize 0x%x ", attrib->blocksize);
 	  break;
+	case MEM_NONE:
+	  break;
 	}
 
       switch (attrib->width)
@@ -655,7 +654,7 @@ mem_disable_command (char *args, int from_tty)
 static void
 mem_delete (int num)
 {
-  struct mem_region *m1, *m;
+  struct mem_region *m;
   int ix;
 
   if (!mem_region_list)

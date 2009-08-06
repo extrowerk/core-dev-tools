@@ -1170,7 +1170,6 @@ remote_query_attached (int pid)
 static struct inferior *
 remote_add_inferior (int pid, int attached)
 {
-  struct remote_state *rs = get_remote_state ();
   struct inferior *inf;
 
   /* Check whether this process we're learning about is to be
@@ -1207,8 +1206,6 @@ remote_add_thread (ptid_t ptid, int running)
 static void
 remote_notice_new_inferior (ptid_t currthread, int running)
 {
-  struct remote_state *rs = get_remote_state ();
-
   /* If this is a new thread, add it to GDB's thread list.
      If we leave it up to WFI to do this, bad things will happen.  */
 
@@ -1426,7 +1423,6 @@ static int
 remote_thread_alive (struct target_ops *ops, ptid_t ptid)
 {
   struct remote_state *rs = get_remote_state ();
-  int tid = ptid_get_tid (ptid);
   char *p, *endp;
 
   if (ptid_equal (ptid, magic_null_ptid))
@@ -1602,7 +1598,6 @@ read_ptid (char *buf, char **obuf)
   char *p = buf;
   char *pp;
   ULONGEST pid = 0, tid = 0;
-  ptid_t ptid;
 
   if (*p == 'p')
     {
@@ -2198,9 +2193,6 @@ static ptid_t
 remote_current_thread (ptid_t oldpid)
 {
   struct remote_state *rs = get_remote_state ();
-  char *p = rs->buf;
-  int tid;
-  int pid;
 
   putpkt ("qC");
   getpkt (&rs->buf, &rs->buf_size, 0);
@@ -3954,7 +3946,6 @@ remote_stop_ns (ptid_t ptid)
   struct remote_state *rs = get_remote_state ();
   char *p = rs->buf;
   char *endp = rs->buf + get_remote_packet_size ();
-  struct stop_reply *reply, *next;
 
   if (remote_protocol_packets[PACKET_vCont].support == PACKET_SUPPORT_UNKNOWN)
     remote_vcont_probe (rs);
@@ -4310,8 +4301,6 @@ remote_parse_stop_reply (char *buf, struct stop_reply *event)
     {
     case 'T':		/* Status with PC, SP, FP, ...	*/
       {
-	gdb_byte regs[MAX_REGISTER_SIZE];
-
 	/* Expedited reply, containing Signal, {regno, reg} repeat.  */
 	/*  format is:  'Tssn...:r...;n...:r...;n...:r...;#cc', where
 	   ss = signal number
@@ -4540,7 +4529,6 @@ static void
 remote_get_pending_stop_replies (void)
 {
   struct remote_state *rs = get_remote_state ();
-  int ret;
 
   if (pending_stop_reply)
     {
@@ -4634,8 +4622,6 @@ static ptid_t
 remote_wait_ns (ptid_t ptid, struct target_waitstatus *status, int options)
 {
   struct remote_state *rs = get_remote_state ();
-  struct remote_arch_state *rsa = get_remote_arch_state ();
-  ptid_t event_ptid = null_ptid;
   struct stop_reply *stop_reply;
   int ret;
 
@@ -4694,11 +4680,8 @@ static ptid_t
 remote_wait_as (ptid_t ptid, struct target_waitstatus *status, int options)
 {
   struct remote_state *rs = get_remote_state ();
-  struct remote_arch_state *rsa = get_remote_arch_state ();
   ptid_t event_ptid = null_ptid;
-  ULONGEST addr;
-  int solibs_changed = 0;
-  char *buf, *p;
+  char *buf;
   struct stop_reply *stop_reply;
 
  again:
@@ -4919,9 +4902,7 @@ static int
 send_g_packet (void)
 {
   struct remote_state *rs = get_remote_state ();
-  int i, buf_len;
-  char *p;
-  char *regs;
+  int buf_len;
 
   sprintf (rs->buf, "g");
   remote_send (&rs->buf, &rs->buf_size);
@@ -5052,7 +5033,6 @@ static void
 remote_fetch_registers (struct target_ops *ops,
 			struct regcache *regcache, int regnum)
 {
-  struct remote_state *rs = get_remote_state ();
   struct remote_arch_state *rsa = get_remote_arch_state ();
   int i;
 
@@ -5129,7 +5109,6 @@ store_register_using_P (const struct regcache *regcache,
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   struct remote_state *rs = get_remote_state ();
-  struct remote_arch_state *rsa = get_remote_arch_state ();
   /* Try storing a single register.  */
   char *buf = rs->buf;
   gdb_byte regp[MAX_REGISTER_SIZE];
@@ -5208,7 +5187,6 @@ static void
 remote_store_registers (struct target_ops *ops,
 			struct regcache *regcache, int regnum)
 {
-  struct remote_state *rs = get_remote_state ();
   struct remote_arch_state *rsa = get_remote_arch_state ();
   int i;
 
@@ -5568,7 +5546,8 @@ remote_write_bytes_aux (const char *header, CORE_ADDR memaddr,
       /* Binary mode.  Send target system values byte by byte, in
 	 increasing byte addresses.  Only escape certain critical
 	 characters.  */
-      payload_length = remote_escape_output (myaddr, todo, p, &nr_bytes,
+      payload_length = remote_escape_output (myaddr, todo, (gdb_byte *)p,
+					     &nr_bytes,
 					     payload_size);
 
       /* If not all TODO bytes fit, then we'll need another packet.  Make
@@ -5582,7 +5561,7 @@ remote_write_bytes_aux (const char *header, CORE_ADDR memaddr,
 			  - memaddr);
 	  if (new_nr_bytes != nr_bytes)
 	    payload_length = remote_escape_output (myaddr, new_nr_bytes,
-						   p, &nr_bytes,
+						   (gdb_byte *)p, &nr_bytes,
 						   payload_size);
 	}
 
@@ -6699,7 +6678,6 @@ static int
 extended_remote_run (char *args)
 {
   struct remote_state *rs = get_remote_state ();
-  char *p;
   int len;
 
   /* If the user has disabled vRun support, or we have detected that
@@ -6871,7 +6849,6 @@ remote_remove_breakpoint (struct gdbarch *gdbarch,
 {
   CORE_ADDR addr = bp_tgt->placed_address;
   struct remote_state *rs = get_remote_state ();
-  int bp_size;
 
   if (remote_protocol_packets[PACKET_Z0].support != PACKET_DISABLE)
     {
@@ -7237,7 +7214,6 @@ remote_write_qxfer (struct target_ops *ops, const char *object_name,
 {
   int i, buf_len;
   ULONGEST n;
-  gdb_byte *wbuf;
   struct remote_state *rs = get_remote_state ();
   int max_size = get_memory_write_packet_size (); 
 
@@ -7253,7 +7229,7 @@ remote_write_qxfer (struct target_ops *ops, const char *object_name,
 
   /* Escape as much data as fits into rs->buf.  */
   buf_len = remote_escape_output 
-    (writebuf, len, (rs->buf + i), &max_size, max_size);
+    (writebuf, len, (gdb_byte *)(rs->buf + i), &max_size, max_size);
 
   if (putpkt_binary (rs->buf, i + buf_len) < 0
       || getpkt_sane (&rs->buf, &rs->buf_size, 0) < 0
@@ -7282,7 +7258,6 @@ remote_read_qxfer (struct target_ops *ops, const char *object_name,
   static ULONGEST finished_offset;
 
   struct remote_state *rs = get_remote_state ();
-  unsigned int total = 0;
   LONGEST i, n, packet_len;
 
   if (packet->support == PACKET_DISABLE)
@@ -7333,7 +7308,8 @@ remote_read_qxfer (struct target_ops *ops, const char *object_name,
     error (_("Remote qXfer reply contained no data."));
 
   /* Got some data.  */
-  i = remote_unescape_input (rs->buf + 1, packet_len - 1, readbuf, n);
+  i = remote_unescape_input ((gdb_byte *)(rs->buf + 1), packet_len - 1,
+			     readbuf, n);
 
   /* 'l' is an EOF marker, possibly including a final block of data,
      or possibly empty.  If we have the final block of a non-empty
@@ -7572,7 +7548,7 @@ remote_search_memory (struct target_ops* ops,
 
   /* Escape as much data as fits into rs->buf.  */
   escaped_pattern_len =
-    remote_escape_output (pattern, pattern_len, (rs->buf + i),
+    remote_escape_output (pattern, pattern_len, (gdb_byte *)(rs->buf + i),
 			  &used_pattern_len, max_size);
 
   /* Bail if the pattern is too large.  */
@@ -8275,7 +8251,7 @@ remote_hostio_pwrite (int fd, const gdb_byte *write_buf, int len,
   remote_buffer_add_int (&p, &left, offset);
   remote_buffer_add_string (&p, &left, ",");
 
-  p += remote_escape_output (write_buf, len, p, &out_len,
+  p += remote_escape_output (write_buf, len, (gdb_byte*)p, &out_len,
 			     get_remote_packet_size () - (p - rs->buf));
 
   return remote_hostio_send_command (p - rs->buf, PACKET_vFile_pwrite,
@@ -8292,7 +8268,7 @@ remote_hostio_pread (int fd, gdb_byte *read_buf, int len,
 {
   struct remote_state *rs = get_remote_state ();
   char *p = rs->buf;
-  char *attachment;
+  gdb_byte *attachment;
   int left = get_remote_packet_size ();
   int ret, attachment_len;
   int read_len;
@@ -8308,7 +8284,7 @@ remote_hostio_pread (int fd, gdb_byte *read_buf, int len,
   remote_buffer_add_int (&p, &left, offset);
 
   ret = remote_hostio_send_command (p - rs->buf, PACKET_vFile_pread,
-				    remote_errno, &attachment,
+				    remote_errno, (char**)&attachment,
 				    &attachment_len);
 
   if (ret < 0)
@@ -8479,7 +8455,7 @@ remote_bfd_iovec_pread (struct bfd *abfd, void *stream, void *buf,
   pos = 0;
   while (nbytes > pos)
     {
-      bytes = remote_hostio_pread (fd, (char *)buf + pos, nbytes - pos,
+      bytes = remote_hostio_pread (fd, (gdb_byte *)buf + pos, nbytes - pos,
 				   offset + pos, &remote_errno);
       if (bytes == 0)
         /* Success, but no bytes, means end-of-file.  */
@@ -8613,7 +8589,7 @@ void
 remote_file_get (const char *remote_file, const char *local_file, int from_tty)
 {
   struct cleanup *back_to, *close_cleanup;
-  int retcode, fd, remote_errno, bytes, io_size;
+  int fd, remote_errno, bytes, io_size;
   FILE *file;
   gdb_byte *buffer;
   ULONGEST offset;

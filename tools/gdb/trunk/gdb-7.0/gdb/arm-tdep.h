@@ -164,9 +164,9 @@ struct gdbarch_tdep
   CORE_ADDR lowest_pc;		/* Lowest address at which instructions 
 				   will appear.  */
 
-  const char *arm_breakpoint;	/* Breakpoint pattern for an ARM insn.  */
+  const gdb_byte *arm_breakpoint; /* Breakpoint pattern for an ARM insn.  */
   int arm_breakpoint_size;	/* And its size.  */
-  const char *thumb_breakpoint;	/* Breakpoint pattern for an ARM insn.  */
+  const gdb_byte *thumb_breakpoint; /* Breakpoint pattern for an ARM insn.  */
   int thumb_breakpoint_size;	/* And its size.  */
 
   int jb_pc;			/* Offset to PC value in jump buffer. 

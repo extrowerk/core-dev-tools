@@ -591,7 +591,7 @@ cp_print_class_member (const gdb_byte *valaddr, struct type *type,
       return;
     }
 
-  cp_find_class_member (&domain, &fieldno, val << 3);
+  cp_find_class_member (&domain, (int *)&fieldno, val << 3);
 
   if (domain != NULL)
     {

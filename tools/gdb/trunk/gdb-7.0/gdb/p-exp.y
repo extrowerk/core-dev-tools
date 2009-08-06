@@ -1084,7 +1084,6 @@ yylex ()
   char *tokstart;
   char *uptokstart;
   char *tokptr;
-  char *p;
   int explen, tempbufindex;
   static char *tempbuf;
   static int tempbufsize;

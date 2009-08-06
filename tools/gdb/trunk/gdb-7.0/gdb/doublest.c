@@ -100,6 +100,10 @@ get_field (const bfd_byte *data, enum floatformat_byteorders order,
 	case floatformat_big:
 	  --cur_byte;
 	  break;
+	case floatformat_littlebyte_bigword:
+	case floatformat_vax:
+	  /* FIXME */
+	  break;
 	}
     }
   if (len < sizeof(result) * FLOATFORMAT_CHAR_BIT)

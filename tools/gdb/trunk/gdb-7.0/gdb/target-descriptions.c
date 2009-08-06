@@ -712,7 +712,6 @@ tdesc_register_size (const struct tdesc_feature *feature,
 static struct tdesc_arch_reg *
 tdesc_find_arch_register (struct gdbarch *gdbarch, int regno)
 {
-  struct tdesc_arch_reg *reg;
   struct tdesc_arch_data *data;
 
   data = gdbarch_data (gdbarch, tdesc_data);
@@ -951,7 +950,7 @@ tdesc_use_registers (struct gdbarch *gdbarch,
 		     struct tdesc_arch_data *early_data)
 {
   int num_regs = gdbarch_num_regs (gdbarch);
-  int i, ixf, ixr;
+  int ixf, ixr;
   struct tdesc_feature *feature;
   struct tdesc_reg *reg;
   struct tdesc_arch_data *data;

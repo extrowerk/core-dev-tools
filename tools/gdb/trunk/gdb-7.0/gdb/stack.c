@@ -861,9 +861,6 @@ parse_frame_specification_1 (const char *frame_exp, const char *message,
     numargs = 0;
   else
     {
-      char *addr_string;
-      struct cleanup *tmp_cleanup;
-
       numargs = 0;
       while (1)
 	{
@@ -990,7 +987,7 @@ frame_info (char *addr_exp, int from_tty)
   struct symbol *func;
   struct symtab *s;
   struct frame_info *calling_frame_info;
-  int i, count, numregs;
+  int numregs;
   char *funname = 0;
   enum language funlang = language_unknown;
   const char *pc_regname;
@@ -1461,7 +1458,6 @@ print_block_frame_locals (struct block *b, struct frame_info *frame,
   struct dict_iterator iter;
   struct symbol *sym;
   int values_printed = 0;
-  int j;
 
   ALL_BLOCK_SYMBOLS (b, iter, sym)
     {
@@ -1480,46 +1476,6 @@ print_block_frame_locals (struct block *b, struct frame_info *frame,
 	default:
 	  /* Ignore symbols which are not locals.  */
 	  break;
-	}
-    }
-
-  return values_printed;
-}
-
-/* Same, but print labels.  */
-
-static int
-print_block_frame_labels (struct gdbarch *gdbarch, struct block *b,
-			  int *have_default, struct ui_file *stream)
-{
-  struct dict_iterator iter;
-  struct symbol *sym;
-  int values_printed = 0;
-
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
-    {
-      if (strcmp (SYMBOL_LINKAGE_NAME (sym), "default") == 0)
-	{
-	  if (*have_default)
-	    continue;
-	  *have_default = 1;
-	}
-      if (SYMBOL_CLASS (sym) == LOC_LABEL)
-	{
-	  struct symtab_and_line sal;
-	  struct value_print_options opts;
-	  sal = find_pc_line (SYMBOL_VALUE_ADDRESS (sym), 0);
-	  values_printed = 1;
-	  fputs_filtered (SYMBOL_PRINT_NAME (sym), stream);
-	  get_user_print_options (&opts);
-	  if (opts.addressprint)
-	    {
-	      fprintf_filtered (stream, " ");
-	      fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_ADDRESS (sym)),
-			      stream);
-	    }
-	  fprintf_filtered (stream, " in file %s, line %d\n",
-			    sal.symtab->filename, sal.line);
 	}
     }
 
@@ -1648,8 +1604,6 @@ locals_info (char *args, int from_tty)
 static void
 catch_info (char *ignore, int from_tty)
 {
-  struct symtab_and_line *sal;
-
   /* Assume g++ compiled code; old GDB 4.16 behaviour.  */
   print_frame_label_vars (get_selected_frame (_("No frame selected.")),
                           0, gdb_stdout);

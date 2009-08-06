@@ -4127,7 +4127,6 @@ psymtab_to_symtab_1 (struct partial_symtab *pst, char *filename)
     {
       /* This symbol table contains ordinary ecoff entries.  */
 
-      int f_max;
       int maxlines;
       EXTR *ext_ptr;
 

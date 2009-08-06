@@ -180,8 +180,6 @@ static void stopat_command (char *arg, int from_tty);
 
 static char *ep_parse_optional_if_clause (char **arg);
 
-static char *ep_parse_optional_filename (char **arg);
-
 static void catch_exception_command_1 (enum exception_event_kind ex_event, 
 				       char *arg, int tempflag, int from_tty);
 
@@ -797,7 +795,6 @@ static void
 insert_catchpoint (struct ui_out *uo, void *args)
 {
   struct breakpoint *b = (struct breakpoint *) args;
-  int val = -1;
 
   gdb_assert (b->type == bp_catchpoint);
   gdb_assert (b->ops != NULL && b->ops->insert != NULL);
@@ -905,8 +902,6 @@ update_watchpoint (struct breakpoint *b, int reparse)
 {
   int within_current_scope;
   struct frame_id saved_frame_id;
-  struct bp_location *loc;
-  bpstat bs;
 
   /* We don't free locations.  They are stored in bp_location_chain and
      update_global_locations will eventually delete them and remove
@@ -1144,9 +1139,8 @@ insert_bp_location (struct bp_location *bpt,
 	    {
 	      if (automatic_hardware_breakpoints)
 		{
-		  int changed = 0;
 		  enum bp_loc_type new_type;
-		  
+
 		  if (mr->attrib.mode != MEM_RW)
 		    new_type = bp_loc_hardware_breakpoint;
 		  else 
@@ -1784,9 +1778,6 @@ remove_breakpoint (struct bp_location *b, insertion_state_t is)
     }
   else if (b->loc_type == bp_loc_hardware_watchpoint)
     {
-      struct value *v;
-      struct value *n;
-
       b->inserted = (is == mark_inserted);
       val = target_remove_watchpoint (b->address, b->length, 
 				      b->watchpoint_type);
@@ -2001,7 +1992,6 @@ int
 software_breakpoint_inserted_here_p (CORE_ADDR pc)
 {
   const struct bp_location *bpt;
-  int any_breakpoint_here = 0;
 
   ALL_BP_LOCATIONS (bpt)
     {
@@ -2756,7 +2746,6 @@ watchpoints_triggered (struct target_waitstatus *ws)
 	|| b->type == bp_access_watchpoint)
       {
 	struct bp_location *loc;
-	struct value *v;
 
 	b->watchpoint_triggered = watch_triggered_no;
 	for (loc = b->loc; loc; loc = loc->next)
@@ -2973,8 +2962,6 @@ bpstat_check_watchpoint (bpstat bs)
       || b->type == bp_access_watchpoint
       || b->type == bp_hardware_watchpoint)
     {
-      CORE_ADDR addr;
-      struct value *v;
       int must_check_value = 0;
       
       if (b->type == bp_watchpoint)
@@ -3575,7 +3562,6 @@ print_one_breakpoint_location (struct breakpoint *b,
 			       int print_address_bits)
 {
   struct command_line *l;
-  struct symbol *sym;
   struct ep_type_description
     {
       enum bptype type;
@@ -3747,6 +3733,8 @@ print_one_breakpoint_location (struct breakpoint *b,
 	  print_breakpoint_location (b, loc, wrap_indent, stb);
 	if (b->loc)
 	  *last_loc = b->loc;
+	break;
+      case bp_catchpoint:
 	break;
       }
 
@@ -4351,7 +4339,7 @@ adjust_breakpoint_address (struct gdbarch *gdbarch,
 static struct bp_location *
 allocate_bp_location (struct breakpoint *bpt)
 {
-  struct bp_location *loc, *loc_p;
+  struct bp_location *loc;
 
   loc = xmalloc (sizeof (struct bp_location));
   memset (loc, 0, sizeof (*loc));
@@ -5339,6 +5327,7 @@ mention (struct breakpoint *b)
       case bp_thread_event:
       case bp_overlay_event:
       case bp_longjmp_master:
+      case bp_catchpoint:
 	break;
       }
 
@@ -5905,7 +5894,6 @@ break_command_really (struct gdbarch *gdbarch,
   struct symtabs_and_lines sals;
   struct symtab_and_line pending_sal;
   char *copy_arg;
-  char *err_msg;
   char *addr_start = arg;
   char **addr_string;
   struct cleanup *old_chain;
@@ -6040,7 +6028,6 @@ break_command_really (struct gdbarch *gdbarch,
     }
   else
     {
-      struct symtab_and_line sal = {0};
       struct breakpoint *b;
 
       make_cleanup (xfree, copy_arg);
@@ -6781,42 +6768,6 @@ ep_parse_optional_if_clause (char **arg)
   return cond_string;
 }
 
-/* This function attempts to parse an optional filename from the arg
-   string.  If one is not found, it returns NULL.
-
-   Else, it returns a pointer to the parsed filename.  (This function
-   makes no attempt to verify that a file of that name exists, or is
-   accessible.)  And, it updates arg to point to the first character
-   following the parsed filename in the arg string.
-
-   Note that clients needing to preserve the returned filename for
-   future access should copy it to their own buffers. */
-static char *
-ep_parse_optional_filename (char **arg)
-{
-  static char filename[1024];
-  char *arg_p = *arg;
-  int i;
-  char c;
-
-  if ((*arg_p == '\0') || isspace (*arg_p))
-    return NULL;
-
-  for (i = 0;; i++)
-    {
-      c = *arg_p;
-      if (isspace (c))
-	c = '\0';
-      filename[i] = c;
-      if (c == '\0')
-	break;
-      arg_p++;
-    }
-  *arg = arg_p;
-
-  return filename;
-}
-
 /* Commands to deal with catching events, such as signals, exceptions,
    process start/exit, etc.  */
 
@@ -7010,7 +6961,6 @@ catch_exception_command_1 (enum exception_event_kind ex_event, char *arg,
 			   int tempflag, int from_tty)
 {
   char *cond_string = NULL;
-  struct symtab_and_line *sal = NULL;
 
   if (!arg)
     arg = "";
@@ -7109,7 +7059,6 @@ catch_ada_exception_command (char *arg, int from_tty,
   struct gdbarch *gdbarch = get_current_arch ();
   int tempflag;
   struct symtab_and_line sal;
-  enum bptype type;
   char *addr_string = NULL;
   char *exp_string = NULL;
   char *cond_string = NULL;
@@ -7357,7 +7306,6 @@ update_global_location_list (int should_insert)
   struct bp_location *loc;
   struct bp_location *loc2;
   VEC(bp_location_p) *old_locations = NULL;
-  int ret;
   int ix;
   struct cleanup *cleanups;
 
@@ -7546,7 +7494,6 @@ void
 delete_breakpoint (struct breakpoint *bpt)
 {
   struct breakpoint *b;
-  struct bp_location *loc, *next;
 
   gdb_assert (bpt != NULL);
 
@@ -7841,14 +7788,11 @@ breakpoint_re_set_one (void *bint)
 {
   /* get past catch_errs */
   struct breakpoint *b = (struct breakpoint *) bint;
-  struct value *mark;
-  int i;
   int not_found = 0;
   int *not_found_ptr = &not_found;
   struct symtabs_and_lines sals = {};
   struct symtabs_and_lines expanded;
   char *s;
-  enum enable_state save_enable;
   struct gdb_exception e;
   struct cleanup *cleanups;
 
@@ -8263,8 +8207,7 @@ disable_command (char *args, int from_tty)
 static void
 do_enable_breakpoint (struct breakpoint *bpt, enum bpdisp disposition)
 {
-  int target_resources_ok, other_type_used;
-  struct value *mark;
+  int target_resources_ok;
 
   if (bpt->type == bp_hardware_breakpoint)
     {

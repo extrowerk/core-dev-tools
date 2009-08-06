@@ -1690,7 +1690,6 @@ lookup_partial_symbol (struct partial_symtab *pst, const char *name,
 		       const char *linkage_name, int global,
 		       domain_enum domain)
 {
-  struct partial_symbol *temp;
   struct partial_symbol **start, **psym;
   struct partial_symbol **top, **real_top, **bottom, **center;
   int length = (global ? pst->n_global_syms : pst->n_static_syms);
@@ -2608,9 +2607,7 @@ skip_prologue_using_lineinfo (CORE_ADDR func_addr, struct symtab *symtab)
 {
   CORE_ADDR func_start, func_end;
   struct linetable *l;
-  int ind, i, len;
-  int best_lineno = 0;
-  CORE_ADDR best_pc = func_addr;
+  int i;
 
   /* Give up if this symbol has no lineinfo table.  */
   l = LINETABLE (symtab);
@@ -3582,7 +3579,6 @@ completion_list_add_name (char *symname, char *sym_text, int sym_text_len,
 			  char *text, char *word)
 {
   int newsize;
-  int i;
 
   /* clip symbols that cannot match */
 
@@ -4384,7 +4380,6 @@ skip_prologue_using_sal (struct gdbarch *gdbarch, CORE_ADDR func_addr)
       if (prologue_sal.symtab->language != language_asm)
 	{
 	  struct linetable *linetable = LINETABLE (prologue_sal.symtab);
-	  int exact;
 	  int idx = 0;
 
 	  /* Skip any earlier lines, and any end-of-sequence marker
@@ -4634,11 +4629,10 @@ append_exact_match_to_sals (char *filename, int lineno,
 struct symtabs_and_lines
 expand_line_sal (struct symtab_and_line sal)
 {
-  struct symtabs_and_lines ret, this_line;
+  struct symtabs_and_lines ret;
   int i, j;
   struct objfile *objfile;
   struct partial_symtab *psymtab;
-  struct symtab *symtab;
   int lineno;
   int deleted = 0;
   struct block **blocks = NULL;

@@ -1085,7 +1085,6 @@ ppc_deal_with_atomic_sequence (struct frame_info *frame)
   int index;
   int last_breakpoint = 0; /* Defaults to 0 (no breakpoints placed).  */  
   const int atomic_sequence_length = 16; /* Instruction sequence length.  */
-  int opcode; /* Branch instruction's OPcode.  */
   int bc_insn_count = 0; /* Conditional branch instruction count.  */
 
   /* Assume all atomic sequences start with a lwarx/ldarx instruction.  */
@@ -3451,10 +3450,6 @@ rs6000_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
 	"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
 	"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
-      };
-      static const char *const segment_regs[] = {
-	"sr0", "sr1", "sr2", "sr3", "sr4", "sr5", "sr6", "sr7",
-	"sr8", "sr9", "sr10", "sr11", "sr12", "sr13", "sr14", "sr15"
       };
       const struct tdesc_feature *feature;
       int i, valid_p;

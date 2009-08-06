@@ -271,7 +271,8 @@ find_command (char *args, int from_tty)
       ULONGEST next_iter_incr;
       CORE_ADDR found_addr;
       int found = target_search_memory (start_addr, search_space_len,
-					pattern_buf, pattern_len, &found_addr);
+					(gdb_byte *)pattern_buf, pattern_len,
+					&found_addr);
 
       if (found <= 0)
 	break;

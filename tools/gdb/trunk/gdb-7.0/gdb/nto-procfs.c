@@ -248,7 +248,6 @@ update_thread_private_data_name (struct thread_info *new_thread,
 				 const char *newname)
 {
   int newnamelen;
-  struct private_thread_info *pti;
 
   gdb_assert (newname != NULL);
   gdb_assert (new_thread != NULL);
@@ -872,6 +871,54 @@ procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
   return (nbytes);
 }
 
+static LONGEST
+procfs_xfer_partial (struct target_ops *ops, enum target_object object,
+		     const char *annex, gdb_byte *readbuf,
+		     const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+{
+  if (object == TARGET_OBJECT_MEMORY)
+    {
+      if (readbuf)
+	return (*ops->deprecated_xfer_memory) (offset, readbuf,
+					       len, 0, NULL, ops);
+      else if (writebuf)
+	return (*ops->deprecated_xfer_memory) (offset, (gdb_byte*) writebuf,
+					       len, 1, NULL, ops);
+      else
+	return 0;
+    }
+  else if (object == TARGET_OBJECT_AUXV && readbuf)
+    {
+      int err;
+      CORE_ADDR initial_stack;
+      debug_process_t procinfo;
+      /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+      const unsigned int sizeof_auxv_t = 8;
+      const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
+      int tempread;
+      gdb_byte *tempbuf = alloca (sizeof_tempbuf);
+
+      if (!tempbuf)
+	return -1;
+
+      err = devctl (ctl_fd, DCMD_PROC_INFO, &procinfo, sizeof procinfo, 0);
+      if (err != EOK)
+	return 0;
+
+      /* Similar as in the case of a core file, we read auxv from
+         initial_stack.  */
+      initial_stack = procinfo.initial_stack;
+
+      /* procfs is always 'self-hosted', no byte-order manipulation. */
+      tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
+						   sizeof_tempbuf);
+      tempread = min (tempread, len) - offset;
+      memcpy (readbuf, tempbuf + offset, tempread);
+      return tempread;
+    }
+  return -1;
+}
+
 /* Take a program previously attached to and detaches it.
    The program resumes execution and will no longer stop
    on signals, etc.  We'd better not have left any breakpoints
@@ -941,14 +988,6 @@ procfs_insert_hw_breakpoint (struct gdbarch *gdbarch,
 {
   return procfs_breakpoint (bp_tgt->placed_address,
 			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, 0);
-}
-
-static int
-procfs_remove_hw_breakpoint (struct gdbarch *gdbarch,
-			     struct bp_target_info *bp_tgt)
-{
-  return procfs_breakpoint (bp_tgt->placed_address,
-			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, -1);
 }
 
 static void
@@ -1280,7 +1319,6 @@ procfs_store_registers (struct target_ops *ops,
   reg;
   unsigned off;
   int len, regset, regsize, dev_set, err;
-  char *data;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -1359,19 +1397,11 @@ procfs_notice_signals (ptid_t ptid)
   notice_signals ();
 }
 
-static struct tidinfo *
-procfs_thread_info (pid_t pid, short tid)
-{
-/* NYI */
-  return NULL;
-}
-
 char *
 procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
 {
   static char buf[1024];
   int pid, tid, n;
-  struct tidinfo *tip;
 
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
@@ -1405,6 +1435,7 @@ init_procfs_ops (void)
   procfs_ops.to_store_registers = procfs_store_registers;
   procfs_ops.to_prepare_to_store = procfs_prepare_to_store;
   procfs_ops.deprecated_xfer_memory = procfs_xfer_memory;
+  procfs_ops.to_xfer_partial = procfs_xfer_partial;
   procfs_ops.to_files_info = procfs_files_info;
   procfs_ops.to_insert_breakpoint = procfs_insert_breakpoint;
   procfs_ops.to_remove_breakpoint = procfs_remove_breakpoint;

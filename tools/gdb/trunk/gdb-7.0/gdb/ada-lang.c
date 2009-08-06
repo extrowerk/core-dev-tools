@@ -65,9 +65,7 @@
 #define TRUNCATION_TOWARDS_ZERO ((-5 / 2) == -2)
 #endif
 
-static void extract_string (CORE_ADDR addr, char *buf);
-
-static void modify_general_field (struct type *, char *, LONGEST, int, int);
+static void modify_general_field (struct type *, gdb_byte *, LONGEST, int, int);
 
 static struct type *desc_base_type (struct type *);
 
@@ -350,24 +348,6 @@ ada_print_array_index (struct value *index_value, struct ui_file *stream,
   fprintf_filtered (stream, " => ");
 }
 
-/* Read the string located at ADDR from the inferior and store the
-   result into BUF.  */
-
-static void
-extract_string (CORE_ADDR addr, char *buf)
-{
-  int char_index = 0;
-
-  /* Loop, reading one byte at a time, until we reach the '\000'
-     end-of-string marker.  */
-  do
-    {
-      target_read_memory (addr + char_index * sizeof (char),
-                          buf + char_index * sizeof (char), sizeof (char));
-      char_index++;
-    }
-  while (buf[char_index - 1] != '\000');
-}
 
 /* Assuming VECT points to an array of *SIZE objects of size
    ELEMENT_SIZE, grow it to contain at least MIN_SIZE objects,
@@ -1214,7 +1194,7 @@ static char *bound_name[] = {
 /* Like modify_field, but allows bitpos > wordlength.  */
 
 static void
-modify_general_field (struct type *type, char *addr,
+modify_general_field (struct type *type, gdb_byte *addr,
 		      LONGEST fieldval, int bitpos, int bitsize)
 {
   modify_field (type, addr + bitpos / 8, fieldval, bitpos % 8, bitsize);
@@ -1758,13 +1738,11 @@ static struct type *
 decode_packed_array_type (struct type *type)
 {
   struct symbol *sym;
-  struct block **blocks;
   char *raw_name = ada_type_name (ada_check_typedef (type));
   char *name;
   char *tail;
   struct type *shadow_type;
   long bits;
-  int i, n;
 
   if (!raw_name)
     raw_name = ada_type_name (desc_base_type (type));
@@ -2182,7 +2160,7 @@ ada_value_assign (struct value *toval, struct value *fromval)
       int len = (value_bitpos (toval)
 		 + bits + HOST_CHAR_BIT - 1) / HOST_CHAR_BIT;
       int from_size;
-      char *buffer = (char *) alloca (len);
+      gdb_byte *buffer = (gdb_byte *) alloca (len);
       struct value *val;
       CORE_ADDR to_addr = value_address (toval);
 
@@ -3987,7 +3965,6 @@ add_defn_to_vec (struct obstack *obstackp,
                  struct block *block)
 {
   int i;
-  size_t tmp;
   struct ada_symbol_info *prevDefns = defns_collected (obstackp, 0);
 
   /* Do not try to complete stub types, as the debugger is probably
@@ -5074,7 +5051,6 @@ symbol_completion_match (const char *sym_name,
                          const char *text, int text_len,
                          int wild_match, int encoded)
 {
-  char *result;
   const int verbatim_match = (text[0] == '<');
   int match = 0;
 
@@ -5461,8 +5437,9 @@ value_tag_from_contents_and_address (struct type *type,
 				     const gdb_byte *valaddr,
                                      CORE_ADDR address)
 {
-  int tag_byte_offset, dummy1, dummy2;
+  int tag_byte_offset;
   struct type *tag_type;
+
   if (find_struct_field ("_tag", type, 0, &tag_type, &tag_byte_offset,
                          NULL, NULL, NULL))
     {
@@ -7456,21 +7433,6 @@ ada_to_fixed_value (struct value *val)
                                     val);
 }
 
-/* A value representing VAL, but with a standard (static-sized) type
-   chosen to approximate the real type of VAL as well as possible, but
-   without consulting any runtime values.  For Ada dynamic-sized
-   types, therefore, the type of the result is likely to be inaccurate.  */
-
-static struct value *
-ada_to_static_fixed_value (struct value *val)
-{
-  struct type *type =
-    to_static_fixed_type (static_unwrap_type (value_type (val)));
-  if (type == value_type (val))
-    return val;
-  else
-    return coerce_unspec_val_to_type (val, type);
-}
 
 
 /* Attributes */
@@ -8036,7 +7998,6 @@ assign_aggregate (struct value *container,
   int max_indices, num_indices;
   int is_array_aggregate;
   int i;
-  struct value *mark = value_mark ();
 
   *pos += 3;
   if (noside != EVAL_NORMAL)
@@ -8519,7 +8480,7 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
                      int *pos, enum noside noside)
 {
   enum exp_opcode op;
-  int tem, tem2, tem3;
+  int tem;
   int pc;
   struct value *arg1 = NULL, *arg2 = NULL, *arg3;
   struct type *type;
@@ -10256,7 +10217,8 @@ print_it_exception (enum exception_catchpoint_kind ex, struct breakpoint *b)
 
   if (addr != 0)
     {
-      read_memory (addr, exception_name, sizeof (exception_name) - 1);
+      read_memory (addr, (gdb_byte *)exception_name,
+		   sizeof (exception_name) - 1);
       exception_name [sizeof (exception_name) - 1] = '\0';
     }
 

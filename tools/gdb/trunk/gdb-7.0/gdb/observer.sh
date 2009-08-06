@@ -137,6 +137,8 @@ observer_${event}_notification_stub (const void *data, const void *args_data)
   observer_${event}_ftype *notify = (observer_${event}_ftype *) data;
   const struct ${event}_args *args = args_data;
   notify (`echo ${actual} | sed -e 's/\([a-z0-9_][a-z0-9_]*\)/args->\1/g'`);
+  args = NULL; /* To avoid compiler warning for nitifications with no
+		  arguments.  */
 }
 
 struct observer *

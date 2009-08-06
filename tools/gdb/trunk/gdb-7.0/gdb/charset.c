@@ -591,7 +591,6 @@ wchar_iterate (struct wchar_iterator *iter,
       size_t orig_in = iter->bytes;
       size_t out_avail = out_request * sizeof (gdb_wchar_t);
       size_t num;
-      gdb_wchar_t result;
 
       size_t r = iconv (iter->desc,
 			(ICONV_CONST char **) &iter->input, &iter->bytes,
@@ -604,7 +603,7 @@ wchar_iterate (struct wchar_iterator *iter,
 	      /* Invalid input sequence.  Skip it, and let the caller
 		 know about it.  */
 	      *out_result = wchar_iterate_invalid;
-	      *ptr = iter->input;
+	      *ptr = (gdb_byte *)iter->input;
 	      *len = iter->width;
 	      iter->input += iter->width;
 	      iter->bytes -= iter->width;
@@ -630,7 +629,7 @@ wchar_iterate (struct wchar_iterator *iter,
 	      /* Incomplete input sequence.  Let the caller know, and
 		 arrange for future calls to see EOF.  */
 	      *out_result = wchar_iterate_incomplete;
-	      *ptr = iter->input;
+	      *ptr = (gdb_byte *)iter->input;
 	      *len = iter->bytes;
 	      iter->bytes = 0;
 	      return 0;
@@ -644,7 +643,7 @@ wchar_iterate (struct wchar_iterator *iter,
       num = out_request - out_avail / sizeof (gdb_wchar_t);
       *out_result = wchar_iterate_ok;
       *out_chars = iter->out;
-      *ptr = orig_inptr;
+      *ptr = (gdb_byte *)orig_inptr;
       *len = orig_in - iter->bytes;
       return num;
     }
@@ -732,7 +731,7 @@ find_charset_names (void)
 	  /* The size of buf is chosen arbitrarily.  */
 	  char buf[1024];
 	  char *start, *r;
-	  int len, keep_going;
+	  int len;
 
 	  r = fgets (buf, sizeof (buf), in);
 	  if (!r)
@@ -802,8 +801,6 @@ find_charset_names (void)
 void
 _initialize_charset (void)
 {
-  struct cmd_list_element *new_cmd;
-
   /* The first element is always "auto"; then we skip it for the
      commands where it is not allowed.  */
   VEC_safe_push (char_ptr, charsets, xstrdup ("auto"));

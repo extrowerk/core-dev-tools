@@ -108,7 +108,6 @@ add_pe_exported_sym (char *sym_name,
 
   char *qualified_name = 0;
   int dll_name_len = strlen (dll_name);
-  int count;
 
   /* Generate a (hopefully unique) qualified name using the first part
      of the dll name, e.g. KERNEL32!AddAtomA. This matches the style
@@ -283,7 +282,6 @@ read_pe_exported_syms (struct objfile *objfile)
       unsigned long secptr1 = secptr + 40 * i;
       unsigned long vsize = pe_get32 (dll, secptr1 + 8);
       unsigned long vaddr = pe_get32 (dll, secptr1 + 12);
-      unsigned long flags = pe_get32 (dll, secptr1 + 36);
       char sec_name[9];
       int sectix;
 
@@ -314,7 +312,7 @@ read_pe_exported_syms (struct objfile *objfile)
   exp_funcbase = pe_as32 (expdata + 28);
 
   /* Use internal dll name instead of full pathname. */
-  dll_name = pe_as32 (expdata + 12) + erva;
+  dll_name = (char *) (pe_as32 (expdata + 12) + erva);
 
   bfd_map_over_sections (dll, get_section_vmas, section_data);
 
@@ -348,7 +346,7 @@ read_pe_exported_syms (struct objfile *objfile)
 	  if ((func_rva >= section_data[sectix].rva_start)
 	      && (func_rva < section_data[sectix].rva_end))
 	    {
-	      add_pe_exported_sym (erva + name_rva,
+	      add_pe_exported_sym ((char *)(erva + name_rva),
 				   func_rva,
 				   section_data + sectix, dll_name, objfile);
 	      break;

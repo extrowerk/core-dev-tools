@@ -134,8 +134,9 @@ _STATEMENT_PROLOGUE;
 
 /* When non-zero, dump DIEs after they are read in.  */
 static int dwarf2_die_debug = 0;
-
+#ifdef HAVE_MMAP
 static int pagesize;
+#endif /* HAVE_MMAP */
 
 /* When set, the file that we're processing is known to have debugging
    info for C++ namespaces.  GCC 3.3.x did not produce this information,
@@ -634,9 +635,6 @@ struct dwarf_block
 #ifndef DW_FIELD_ALLOC_CHUNK
 #define DW_FIELD_ALLOC_CHUNK 4
 #endif
-
-/* A zeroed version of a partial die for initialization purposes.  */
-static struct partial_die_info zeroed_partial_die;
 
 /* FIXME: We might want to set this from BFD via bfd_arch_bits_per_byte,
    but this would require a corresponding change in unpack_field_as_long
@@ -1306,7 +1304,7 @@ zlib_decompress_section (struct objfile *objfile, asection *sectp,
   /* Read the zlib header.  In this case, it should be "ZLIB" followed
      by the uncompressed section size, 8 bytes in big-endian order.  */
   if (compressed_size < header_size
-      || strncmp (compressed_buffer, "ZLIB", 4) != 0)
+      || strncmp ((char *)compressed_buffer, "ZLIB", 4) != 0)
     error (_("Dwarf Error: Corrupt DWARF ZLIB header from '%s'"),
            bfd_get_filename (abfd));
   uncompressed_size = compressed_buffer[4]; uncompressed_size <<= 8;
@@ -1378,7 +1376,7 @@ dwarf2_read_section (struct objfile *objfile, struct dwarf2_section_info *info)
       && bfd_bread (header, sizeof (header), abfd) == sizeof (header))
     {
       /* Upon decompression, update the buffer and its size.  */
-      if (strncmp (header, "ZLIB", sizeof (header)) == 0)
+      if (strncmp ((char *)header, "ZLIB", sizeof (header)) == 0)
         {
           zlib_decompress_section (objfile, sectp, &info->buffer,
 				   &info->size);
@@ -1404,7 +1402,8 @@ dwarf2_read_section (struct objfile *objfile, struct dwarf2_section_info *info)
       if (retbuf != MAP_FAILED)
 	{
 	  info->was_mmapped = 1;
-	  info->buffer = retbuf + (sectp->filepos & (pagesize - 1)) ;
+	  info->buffer = (gdb_byte *) (retbuf + (sectp->filepos
+						 & (pagesize - 1)));
 	  return;
 	}
     }
@@ -1616,7 +1615,6 @@ read_type_comp_unit_head (struct comp_unit_head *cu_header,
 			  ULONGEST *signature,
 			  gdb_byte *types_ptr, bfd *abfd)
 {
-  unsigned int bytes_read;
   gdb_byte *initial_types_ptr = types_ptr;
 
   cu_header->offset = types_ptr - dwarf2_per_objfile->types.buffer;
@@ -2041,7 +2039,6 @@ dwarf2_build_psymtabs_hard (struct objfile *objfile, int mainline)
 {
   /* Instead of reading this into a big buffer, we should probably use
      mmap()  on architectures that support it. (FIXME) */
-  bfd *abfd = objfile->obfd;
   gdb_byte *info_ptr;
   struct cleanup *back_to;
 
@@ -2171,7 +2168,6 @@ create_all_comp_units (struct objfile *objfile)
   while (info_ptr < dwarf2_per_objfile->info.buffer + dwarf2_per_objfile->info.size)
     {
       unsigned int length, initial_length_size;
-      gdb_byte *beg_of_comp_unit;
       struct dwarf2_per_cu_data *this_cu;
       unsigned int offset;
 
@@ -2221,8 +2217,6 @@ static void
 scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 		      CORE_ADDR *highpc, int need_pc, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
-  bfd *abfd = objfile->obfd;
   struct partial_die_info *pdi;
 
   /* Now, march along the PDI's, descending into ones which have
@@ -2390,7 +2384,6 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
   struct objfile *objfile = cu->objfile;
   CORE_ADDR addr = 0;
   char *actual_name = NULL;
-  const char *my_prefix;
   const struct partial_symbol *psym = NULL;
   CORE_ADDR baseaddr;
   int built_actual_name = 0;
@@ -2586,8 +2579,6 @@ add_partial_namespace (struct partial_die_info *pdi,
 		       CORE_ADDR *lowpc, CORE_ADDR *highpc,
 		       int need_pc, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
-
   /* Add a symbol for the namespace.  */
 
   add_partial_symbol (pdi, cu);
@@ -2730,8 +2721,6 @@ static void
 add_partial_enumeration (struct partial_die_info *enum_pdi,
 			 struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
-  bfd *abfd = objfile->obfd;
   struct partial_die_info *pdi;
 
   if (enum_pdi->name != NULL)
@@ -3103,7 +3092,6 @@ load_full_comp_unit (struct dwarf2_per_cu_data *per_cu, struct objfile *objfile)
   gdb_byte *info_ptr, *beg_of_comp_unit;
   struct cleanup *back_to, *free_cu_cleanup;
   struct attribute *attr;
-  CORE_ADDR baseaddr;
 
   gdb_assert (! per_cu->from_debug_types);
 
@@ -3166,7 +3154,6 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu)
   struct partial_symtab *pst = per_cu->psymtab;
   struct dwarf2_cu *cu = per_cu->cu;
   struct objfile *objfile = pst->objfile;
-  bfd *abfd = objfile->obfd;
   CORE_ADDR lowpc, highpc;
   struct symtab *symtab;
   struct cleanup *back_to;
@@ -3317,9 +3304,7 @@ process_die (struct die_info *die, struct dwarf2_cu *cu)
 static const char *
 dwarf2_full_name (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct attribute *attr;
   char *prefix, *name;
-  struct ui_file *buf = NULL;
 
   name = dwarf2_name (die, cu);
   if (!name)
@@ -3450,7 +3435,6 @@ static void
 read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
 {
   struct objfile *objfile = cu->objfile;
-  struct comp_unit_head *cu_header = &cu->header;
   struct cleanup *back_to = make_cleanup (null_cleanup, 0);
   CORE_ADDR lowpc = ((CORE_ADDR) -1);
   CORE_ADDR highpc = ((CORE_ADDR) 0);
@@ -3580,7 +3564,6 @@ read_type_unit_scope (struct die_info *die, struct dwarf2_cu *cu)
   char *comp_dir = NULL;
   struct die_info *child_die;
   bfd *abfd = objfile->obfd;
-  struct line_header *line_header = 0;
 
   /* start_symtab needs a low pc, but we don't really have one.
      Do what read_file_scope would do in the absence of such info.  */
@@ -5055,7 +5038,6 @@ read_structure_type (struct die_info *die, struct dwarf2_cu *cu)
 static void
 process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
   struct die_info *child_die = die->child;
   struct type *this_type;
 
@@ -5197,7 +5179,6 @@ determine_class_name (struct die_info *die, struct dwarf2_cu *cu)
 static void
 process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
   struct die_info *child_die;
   struct field *fields;
   struct symbol *sym;
@@ -5492,7 +5473,6 @@ read_namespace_type (struct die_info *die, struct dwarf2_cu *cu)
 static void
 read_namespace (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
   const char *name;
   int is_anonymous;
 
@@ -5634,7 +5614,6 @@ read_tag_pointer_type (struct die_info *die, struct dwarf2_cu *cu)
 static struct type *
 read_tag_ptr_to_member_type (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = cu->objfile;
   struct type *type;
   struct type *to_type;
   struct type *domain;
@@ -5822,7 +5801,6 @@ static struct type *
 read_typedef (struct die_info *die, struct dwarf2_cu *cu)
 {
   struct objfile *objfile = cu->objfile;
-  struct attribute *attr;
   const char *name = NULL;
   struct type *this_type;
 
@@ -6612,7 +6590,7 @@ read_partial_die (struct partial_die_info *part_die,
 		  gdb_byte *buffer, gdb_byte *info_ptr,
 		  struct dwarf2_cu *cu)
 {
-  unsigned int bytes_read, i;
+  unsigned int i;
   struct attribute attr;
   int has_low_pc_attr = 0;
   int has_high_pc_attr = 0;
@@ -6857,7 +6835,7 @@ find_partial_die (unsigned int offset, struct dwarf2_cu *cu)
       struct partial_die_info comp_unit_die;
       struct abbrev_info *abbrev;
       unsigned int bytes_read;
-      char *info_ptr;
+      gdb_byte *info_ptr;
 
       per_cu->load_all_dies = 1;
 
@@ -10490,7 +10468,6 @@ static CORE_ADDR
 decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu)
 {
   struct objfile *objfile = cu->objfile;
-  struct comp_unit_head *cu_header = &cu->header;
   int i;
   int size = blk->size;
   gdb_byte *data = blk->data;
@@ -11114,11 +11091,6 @@ dwarf_decode_macros (struct line_header *lh, unsigned int offset,
 
       switch (macinfo_type)
 	{
-	  /* A zero macinfo type indicates the end of the macro
-	     information.  */
-	case 0:
-	  break;
-
         case DW_MACINFO_define:
         case DW_MACINFO_undef:
           {

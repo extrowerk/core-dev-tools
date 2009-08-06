@@ -440,10 +440,8 @@ call_function_by_hand (struct value *function, int nargs, struct value **args)
   struct frame_info *frame;
   struct gdbarch *gdbarch;
   struct breakpoint *terminate_bp = NULL;
-  struct minimal_symbol *tm;
   ptid_t call_thread_ptid;
   struct gdb_exception e;
-  const char *name;
   char name_buf[RAW_FUNCTION_ADDRESS_SIZE];
 
   if (TYPE_CODE (ftype) == TYPE_CODE_PTR)

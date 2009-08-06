@@ -152,7 +152,6 @@ reopen_exec_file (void)
   char *filename;
   int res;
   struct stat st;
-  long mtime;
   struct cleanup *cleanups;
 
   /* Don't do anything if there isn't an exec file. */
@@ -328,7 +327,7 @@ read_memory_string (CORE_ADDR memaddr, char *buffer, int max_len)
       cnt = max_len - (cp - buffer);
       if (cnt > 8)
 	cnt = 8;
-      read_memory (memaddr + (int) (cp - buffer), cp, cnt);
+      read_memory (memaddr + (int) (cp - buffer), (gdb_byte *)cp, cnt);
       for (i = 0; i < cnt && *cp; i++, cp++)
 	;			/* null body */
 

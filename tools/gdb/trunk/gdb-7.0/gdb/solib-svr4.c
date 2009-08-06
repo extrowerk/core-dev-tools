@@ -575,7 +575,6 @@ find_program_interpreter (void)
      interp_sect = bfd_get_section_by_name (exec_bfd, ".interp");
      if (interp_sect != NULL)
       {
-	CORE_ADDR sect_addr = bfd_section_vma (exec_bfd, interp_sect);
 	int sect_size = bfd_section_size (exec_bfd, interp_sect);
 
 	buf = xmalloc (sect_size);
@@ -1125,7 +1124,23 @@ svr4_current_sos (void)
 	 symbol information for the dynamic linker is quite crucial
 	 for skipping dynamic linker resolver code.  */
       if (lm == 0 && ldsomap == 0)
-	lm = ldsomap = solib_svr4_r_ldsomap (info);
+	{
+	  struct so_list *so = head;
+
+	  lm = ldsomap = solib_svr4_r_ldsomap (info);
+
+	  /* On some other systems, dynamic linker resides in libc.
+	     Make sure we do not add duplicated entry for it.  */
+	  while (so)
+	    {
+	      if (so->lm_info->lm_addr == lm)
+		{
+		  lm = ldsomap = 0;
+		  break;
+		}
+	      so = so->next;
+	    }
+	}
 
       discard_cleanups (old_chain);
     }
@@ -1265,7 +1280,6 @@ enable_break (struct svr4_info *info)
   asection *interp_sect;
   gdb_byte *interp_name;
   CORE_ADDR sym_addr;
-  struct inferior *inf = current_inferior ();
 
   /* First, remove all the solib event breakpoints.  Their addresses
      may have changed since the last time we ran the program.  */
@@ -1353,7 +1367,7 @@ enable_break (struct svr4_info *info)
 
       TRY_CATCH (ex, RETURN_MASK_ALL)
         {
-	  tmp_bfd = solib_bfd_open (interp_name);
+	  tmp_bfd = solib_bfd_open ((char *)interp_name);
 	}
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
@@ -1368,7 +1382,7 @@ enable_break (struct svr4_info *info)
       so = master_so_list ();
       while (so)
 	{
-	  if (svr4_same_1 (interp_name, so->so_original_name))
+	  if (svr4_same_1 ((const char *)interp_name, so->so_original_name))
 	    {
 	      load_addr_found = 1;
 	      loader_found_in_list = 1;
@@ -1401,7 +1415,7 @@ enable_break (struct svr4_info *info)
 
       if (!loader_found_in_list)
 	{
-	  info->debug_loader_name = xstrdup (interp_name);
+	  info->debug_loader_name = xstrdup ((const char *)interp_name);
 	  info->debug_loader_offset_p = 1;
 	  info->debug_loader_offset = load_addr;
 	  solib_add (NULL, 0, &current_target, auto_solib_add);
@@ -1682,8 +1696,6 @@ svr4_relocate_main_executable (void)
 static void
 svr4_solib_create_inferior_hook (void)
 {
-  struct inferior *inf;
-  struct thread_info *tp;
   struct svr4_info *info;
 
   info = get_svr4_info (PIDGET (inferior_ptid));

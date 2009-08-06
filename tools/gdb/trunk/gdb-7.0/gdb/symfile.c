@@ -508,7 +508,6 @@ place_section (bfd *abfd, asection *sect, void *obj)
     for (cur_sec = abfd->sections; cur_sec != NULL; cur_sec = cur_sec->next)
       {
 	int indx = cur_sec->index;
-	CORE_ADDR cur_offset;
 
 	/* We don't need to compare against ourself.  */
 	if (cur_sec == sect)
@@ -588,7 +587,6 @@ default_symfile_offsets (struct objfile *objfile,
       struct place_section_arg arg;
       bfd *abfd = objfile->obfd;
       asection *cur_sec;
-      CORE_ADDR lowest = 0;
 
       for (cur_sec = abfd->sections; cur_sec != NULL; cur_sec = cur_sec->next)
 	/* We do not expect this to happen; just skip this step if the
@@ -1276,7 +1274,6 @@ get_debug_link_info (struct objfile *objfile, unsigned long *crc32_out)
   unsigned long crc32;
   char *contents;
   int crc_offset;
-  unsigned char *p;
 
   sect = bfd_get_section_by_name (objfile->obfd, ".gnu_debuglink");
 
@@ -1340,13 +1337,10 @@ The directory where separate debug symbols are searched for is \"%s\".\n"),
 static char *
 find_separate_debug_file (struct objfile *objfile)
 {
-  asection *sect;
   char *basename;
   char *dir;
   char *debugfile;
-  char *name_copy;
   char *canon_name;
-  bfd_size_type debuglink_size;
   unsigned long crc32;
   int i;
   struct build_id *build_id;
@@ -2098,7 +2092,6 @@ add_symbol_file_command (char *args, int from_tty)
   char *filename = NULL;
   int flags = OBJF_USERLOADED;
   char *arg;
-  int expecting_option = 0;
   int section_index = 0;
   int argcnt = 0;
   int sec_num = 0;
@@ -2492,7 +2485,6 @@ static void
 reread_separate_symbols (struct objfile *objfile)
 {
   char *debug_file;
-  unsigned long crc32;
 
   /* Does the updated objfile's debug info live in a
      separate file?  */
@@ -3041,7 +3033,12 @@ again2:
   /* FIXME, what about the minimal symbol table? */
   return blewit;
 #else
-  return (0);
+  if (1)
+    return (0);
+
+/* workaround gcc warning while #if 0 above exists. */
+  else
+    cashier_psymtab (NULL);
 #endif
 }
 
@@ -3272,7 +3269,6 @@ section_is_overlay (struct obj_section *section)
 {
   if (overlay_debugging && section)
     {
-      bfd *abfd = section->objfile->obfd;
       asection *bfd_section = section->the_bfd_section;
   
       if (bfd_section_lma (abfd, bfd_section) != 0
@@ -3348,7 +3344,6 @@ pc_in_unmapped_range (CORE_ADDR pc, struct obj_section *section)
 {
   if (section_is_overlay (section))
     {
-      bfd *abfd = section->objfile->obfd;
       asection *bfd_section = section->the_bfd_section;
 
       /* We assume the LMA is relocated by the same offset as the VMA.  */
@@ -3402,7 +3397,6 @@ overlay_unmapped_address (CORE_ADDR pc, struct obj_section *section)
 {
   if (section_is_overlay (section) && pc_in_mapped_range (pc, section))
     {
-      bfd *abfd = section->objfile->obfd;
       asection *bfd_section = section->the_bfd_section;
 
       return pc + bfd_section_lma (abfd, bfd_section)
@@ -3421,7 +3415,6 @@ overlay_mapped_address (CORE_ADDR pc, struct obj_section *section)
 {
   if (section_is_overlay (section) && pc_in_unmapped_range (pc, section))
     {
-      bfd *abfd = section->objfile->obfd;
       asection *bfd_section = section->the_bfd_section;
 
       return pc + bfd_section_vma (abfd, bfd_section)
@@ -3877,7 +3870,6 @@ static int
 simple_overlay_update_1 (struct obj_section *osect)
 {
   int i, size;
-  bfd *obfd = osect->objfile->obfd;
   asection *bsect = osect->the_bfd_section;
   struct gdbarch *gdbarch = get_objfile_arch (osect->objfile);
   int word_size = gdbarch_long_bit (gdbarch) / TARGET_CHAR_BIT;
@@ -3942,7 +3934,6 @@ simple_overlay_update (struct obj_section *osect)
     if (section_is_overlay (osect))
     {
       int i, size;
-      bfd *obfd = osect->objfile->obfd;
       asection *bsect = osect->the_bfd_section;
 
       size = bfd_get_section_size (bsect);
@@ -4094,7 +4085,6 @@ symfile_find_segment_sections (struct objfile *objfile)
 
   for (i = 0, sect = abfd->sections; sect != NULL; i++, sect = sect->next)
     {
-      CORE_ADDR vma;
       int which = data->segment_info[i];
 
       if (which == 1)

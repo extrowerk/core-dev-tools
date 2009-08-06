@@ -75,7 +75,6 @@ mi_cmd_break_insert (char *command, char **argv, int argc)
   int enabled = 1;
 
   struct gdb_exception e;
-  struct gdb_events *old_hooks;
   enum opt
     {
       HARDWARE_OPT, TEMP_OPT /*, REGEXP_OPT */ , CONDITION_OPT,

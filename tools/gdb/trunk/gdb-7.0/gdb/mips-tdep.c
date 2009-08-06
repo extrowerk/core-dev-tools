@@ -599,7 +599,7 @@ static int mips16_to_32_reg[8] = { 16, 17, 2, 3, 4, 5, 6, 7 };
    time across a 2400 baud serial line.  Allows the user to limit this
    search.  */
 
-static unsigned int heuristic_fence_post = 0;
+static int heuristic_fence_post = 0;
 
 /* Number of bytes of storage in the actual machine representation for
    register N.  NOTE: This defines the pseudo register type so need to
@@ -714,7 +714,6 @@ static struct type *
 mips_pseudo_register_type (struct gdbarch *gdbarch, int regnum)
 {
   const int num_regs = gdbarch_num_regs (gdbarch);
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   int rawnum = regnum % num_regs;
   struct type *rawtype;
 
@@ -834,7 +833,7 @@ mips_pc_is_mips16 (CORE_ADDR memaddr)
 static CORE_ADDR
 mips_read_pc (struct regcache *regcache)
 {
-  ULONGEST pc;
+  LONGEST pc;
   int regnum = mips_regnum (get_regcache_arch (regcache))->pc;
   regcache_cooked_read_signed (regcache, regnum, &pc);
   return pc;
@@ -2702,7 +2701,6 @@ mips_eabi_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   int argnum;
   int len = 0;
   int stack_offset = 0;
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR func_addr = find_function_addr (function, NULL);
   int regsize = mips_abi_regsize (gdbarch);
@@ -3093,7 +3091,6 @@ mips_n32n64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   int argnum;
   int len = 0;
   int stack_offset = 0;
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR func_addr = find_function_addr (function, NULL);
 
@@ -3535,7 +3532,6 @@ mips_o32_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   int argnum;
   int len = 0;
   int stack_offset = 0;
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR func_addr = find_function_addr (function, NULL);
 
@@ -3999,7 +3995,6 @@ mips_o64_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   int argnum;
   int len = 0;
   int stack_offset = 0;
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR func_addr = find_function_addr (function, NULL);
 
@@ -4226,8 +4221,6 @@ mips_o64_return_value (struct gdbarch *gdbarch, struct type *func_type,
 		       struct type *type, struct regcache *regcache,
 		       gdb_byte *readbuf, const gdb_byte *writebuf)
 {
-  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-
   if (TYPE_CODE (type) == TYPE_CODE_STRUCT
       || TYPE_CODE (type) == TYPE_CODE_UNION
       || TYPE_CODE (type) == TYPE_CODE_ARRAY)
@@ -6214,7 +6207,6 @@ void
 _initialize_mips_tdep (void)
 {
   static struct cmd_list_element *mipsfpulist = NULL;
-  struct cmd_list_element *c;
 
   mips_abi_string = mips_abi_strings[MIPS_ABI_UNKNOWN];
   if (MIPS_ABI_LAST + 1

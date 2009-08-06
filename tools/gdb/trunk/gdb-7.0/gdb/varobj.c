@@ -263,8 +263,10 @@ static int varobj_value_is_changeable_p (struct varobj *var);
 
 static int is_root_p (struct varobj *var);
 
+#ifdef HAVE_PYTHON
 static struct varobj *
 varobj_add_child (struct varobj *var, const char *name, struct value *value);
+#endif /* HAVE_PYTHON */
 
 /* C implementation */
 
@@ -723,12 +725,12 @@ varobj_delete (struct varobj *var, char ***dellist, int only_children)
   return delcount;
 }
 
+#if HAVE_PYTHON
 /* Convenience function for varobj_set_visualizer.  Instantiate a
    pretty-printer for a given value.  */
 static PyObject *
 instantiate_pretty_printer (PyObject *constructor, struct value *value)
 {
-#if HAVE_PYTHON
   PyObject *val_obj = NULL; 
   PyObject *printer;
   volatile struct gdb_exception except;
@@ -746,9 +748,8 @@ instantiate_pretty_printer (PyObject *constructor, struct value *value)
   printer = PyObject_CallFunctionObjArgs (constructor, val_obj, NULL);
   Py_DECREF (val_obj);
   return printer;
-#endif
-  return NULL;
 }
+#endif /* HAVE_PYTHON */
 
 /* Set/Get variable object display format */
 
@@ -978,7 +979,6 @@ varobj_get_num_children (struct varobj *var)
 VEC (varobj_p)*
 varobj_list_children (struct varobj *var)
 {
-  struct varobj *child;
   char *name;
   int i, children_changed;
 
@@ -1022,6 +1022,7 @@ varobj_list_children (struct varobj *var)
   return var->children;
 }
 
+#ifdef HAVE_PYTHON
 static struct varobj *
 varobj_add_child (struct varobj *var, const char *name, struct value *value)
 {
@@ -1032,6 +1033,7 @@ varobj_add_child (struct varobj *var, const char *name, struct value *value)
   install_default_visualizer (v);
   return v;
 }
+#endif /* HAVE_PYTHON */
 
 /* Obtain the type of an object Variable as a string similar to the one gdb
    prints on the console */
@@ -1112,8 +1114,6 @@ int
 varobj_set_value (struct varobj *var, char *expression)
 {
   struct value *val;
-  int offset = 0;
-  int error = 0;
 
   /* The argument "expression" contains the variable's new value.
      We need to first construct a legal expression for this -- ugh! */
@@ -1122,7 +1122,6 @@ varobj_set_value (struct varobj *var, char *expression)
   struct value *value;
   int saved_input_radix = input_radix;
   char *s = expression;
-  int i;
 
   gdb_assert (varobj_editable_p (var));
 
@@ -1333,10 +1332,10 @@ install_new_value (struct varobj *var, struct value *value, int initial)
   return changed;
 }
 
+#if HAVE_PYTHON
 static void
 install_visualizer (struct varobj *var, PyObject *visualizer)
 {
-#if HAVE_PYTHON
   /* If there are any children now, wipe them.  */
   varobj_delete (var, NULL, 1 /* children only */);
   var->num_children = -1;
@@ -1352,10 +1351,9 @@ install_visualizer (struct varobj *var, PyObject *visualizer)
      because updating will recompute dynamic children.  */
   if (!visualizer && var->children_requested)
     varobj_list_children (var);
-#else
-  error (_("Python support required"));
-#endif
 }
+#endif
+
 
 static void
 install_default_visualizer (struct varobj *var)
@@ -1394,7 +1392,7 @@ varobj_set_visualizer (struct varobj *var, const char *visualizer)
 {
 #if HAVE_PYTHON
   PyObject *mainmod, *globals, *pretty_printer, *constructor;
-  struct cleanup *back_to, *value;
+  struct cleanup *back_to;
 
   back_to = varobj_ensure_python_env (var);
 
@@ -1453,17 +1451,11 @@ varobj_set_visualizer (struct varobj *var, const char *visualizer)
 
 VEC(varobj_update_result) *varobj_update (struct varobj **varp, int explicit)
 {
-  int changed = 0;
   int type_changed = 0;
   int i;
-  int vleft;
-  struct varobj *v;
-  struct varobj **cv;
-  struct varobj **templist = NULL;
   struct value *new;
   VEC (varobj_update_result) *stack = NULL;
   VEC (varobj_update_result) *result = NULL;
-  struct frame_info *fi;
 
   /* Frozen means frozen -- we don't check for any change in
      this varobj, including its going out of scope, or
@@ -2232,7 +2224,7 @@ value_get_print_value (struct value *value, enum varobj_display_formats format,
 	if (thevalue && !string_print)
 	  {
 	    do_cleanups (back_to);
-	    return thevalue;
+	    return (char *)thevalue;
 	  }
 	if (replacement)
 	  value = replacement;
@@ -2256,17 +2248,16 @@ value_get_print_value (struct value *value, enum varobj_display_formats format,
     }
   else
     common_val_print (value, stb, 0, &opts, current_language);
-  thevalue = ui_file_xstrdup (stb, &dummy);
+  thevalue = (gdb_byte *)ui_file_xstrdup (stb, &dummy);
 
   do_cleanups (old_chain);
-  return thevalue;
+  return (char *)thevalue;
 }
 
 int
 varobj_editable_p (struct varobj *var)
 {
   struct type *type;
-  struct value *value;
 
   if (!(var->root->is_valid && var->value && VALUE_LVAL (var->value)))
     return 0;
@@ -2640,7 +2631,6 @@ c_value_of_root (struct varobj **var_handle)
 {
   struct value *new_val = NULL;
   struct varobj *var = *var_handle;
-  struct frame_info *fi;
   int within_scope = 0;
   struct cleanup *back_to;
 								 
@@ -2881,7 +2871,6 @@ cplus_describe_child (struct varobj *parent, int index,
 		      char **cname, struct value **cvalue, struct type **ctype,
 		      char **cfull_expression)
 {
-  char *name = NULL;
   struct value *value;
   struct type *type;
   int was_ptr;
