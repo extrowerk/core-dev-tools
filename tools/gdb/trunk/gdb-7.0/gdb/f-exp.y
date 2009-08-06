@@ -567,6 +567,13 @@ ptype	:	typebase
 		      case tp_function:
 			follow_type = lookup_function_type (follow_type);
 			break;
+		      case tp_const:
+			/* FIXME: */
+		      case tp_volatile:
+			/* FIXME: */
+		      case tp_space_identifier:
+			/* FIXME: */
+			break;
 		      }
 		  $$ = follow_type;
 		}

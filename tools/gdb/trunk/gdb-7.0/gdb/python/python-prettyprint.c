@@ -69,7 +69,6 @@ find_pretty_printer (PyObject *value)
   PyObject *pp_list = NULL;
   PyObject *function = NULL;
   struct objfile *obj;
-  volatile struct gdb_exception except;
 
   /* Look at the pretty-printer dictionary for each objfile.  */
   ALL_OBJFILES (obj)
@@ -194,12 +193,12 @@ print_string_repr (PyObject *printer, const char *hint,
       PyObject *string = python_string_to_target_python_string (py_str);
       if (string)
 	{
-	  gdb_byte *output = PyString_AsString (string);
+	  char *output = PyString_AsString (string);
 	  int len = PyString_Size (string);
 	  
 	  if (hint && !strcmp (hint, "string"))
 	    LA_PRINT_STRING (stream, builtin_type (gdbarch)->builtin_char,
-			     output, len, 0, options);
+			     (gdb_byte *)output, len, 0, options);
 	  else
 	    fputs_filtered (output, stream);
 	  Py_DECREF (string);
@@ -535,7 +534,6 @@ PyObject *
 apply_varobj_pretty_printer (PyObject *printer_obj,
 			     struct value **replacement)
 {
-  int size = 0;
   PyObject *py_str = NULL;
 
   *replacement = NULL;
@@ -581,7 +579,7 @@ PyObject *
 gdbpy_default_visualizer (PyObject *self, PyObject *args)
 {
   PyObject *val_obj;
-  PyObject *cons, *printer = NULL;
+  PyObject *cons;
   struct value *value;
 
   if (! PyArg_ParseTuple (args, "O", &val_obj))

@@ -514,9 +514,7 @@ coff_symfile_read (struct objfile *objfile, int mainline)
   int stringtab_offset;
   struct cleanup *back_to, *cleanup_minimal_symbols;
   int stabstrsize;
-  int len;
-  char * target;
-  
+
   info = (struct coff_symfile_info *) objfile->deprecated_sym_private;
   dbxinfo = objfile->deprecated_sym_stab_info;
   symfile_bfd = abfd;		/* Kludge for swap routines */

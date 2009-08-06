@@ -247,6 +247,9 @@ parameter_to_python (struct cmd_list_element *cmd)
 	  Py_RETURN_NONE;
 	return PyLong_FromUnsignedLong (val);
       }
+    case var_zuinteger:
+      /* FIXME: do what? */
+      break;
     }
 
   return PyErr_Format (PyExc_RuntimeError, "programmer error: unhandled type");
@@ -288,8 +291,7 @@ gdbpy_parameter (PyObject *self, PyObject *args)
 static PyObject *
 execute_gdb_command (PyObject *self, PyObject *args)
 {
-  struct cmd_list_element *alias, *prefix, *cmd;
-  char *arg, *newarg;
+  char *arg;
   PyObject *from_tty_obj = NULL;
   int from_tty;
   int cmp;

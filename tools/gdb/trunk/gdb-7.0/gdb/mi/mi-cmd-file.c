@@ -33,9 +33,7 @@ void
 mi_cmd_file_list_exec_source_file (char *command, char **argv, int argc)
 {
   struct symtab_and_line st;
-  int optind = 0;
-  char *optarg;
-  
+
   if (!mi_valid_noargs ("mi_cmd_file_list_exec_source_file", argc, argv))
     error (_("mi_cmd_file_list_exec_source_file: Usage: No args"));
 

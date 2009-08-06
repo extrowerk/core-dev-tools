@@ -1607,7 +1607,7 @@ monitor_write_memory_longlongs (CORE_ADDR memaddr, char *myaddr, int len)
 {
   static char hexstage[20];	/* At least 16 digits required, plus null */
   char *endstring;
-  long long *llptr;
+  unsigned long long *llptr;
   long long value;
   int written = 0;
   llptr = (unsigned long long *) myaddr;
@@ -1985,13 +1985,13 @@ monitor_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int write,
   if (write)
     {
       if (current_monitor->flags & MO_HAS_BLOCKWRITES)
-	res = monitor_write_memory_block(memaddr, myaddr, len);
+	res = monitor_write_memory_block(memaddr, (char *)myaddr, len);
       else
-	res = monitor_write_memory(memaddr, myaddr, len);
+	res = monitor_write_memory(memaddr, (char *)myaddr, len);
     }
   else
     {
-      res = monitor_read_memory(memaddr, myaddr, len);
+      res = monitor_read_memory(memaddr, (char *)myaddr, len);
     }
 
   return res;

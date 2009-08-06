@@ -1199,14 +1199,12 @@ static struct symtabs_and_lines
 decode_compound (char **argptr, int funfirstline, char ***canonical,
 		 char *saved_arg, char *p, int *not_found_ptr)
 {
-  struct symtabs_and_lines values;
   char *p2;
   char *saved_arg2 = *argptr;
   char *temp_end;
   struct symbol *sym;
   char *copy;
   struct symbol *sym_class;
-  struct symbol **sym_arr;
   struct type *t;
 
   /* First check for "global" namespace specification, of the form

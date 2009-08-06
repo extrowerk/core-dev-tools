@@ -206,9 +206,9 @@ PyObject *
 target_string_to_unicode (const gdb_byte *str, int length)
 {
   if (length == -1)
-    length = strlen (str);
+    length = strlen ((const char *)str);
 
-  return PyUnicode_Decode (str, length, target_charset (), NULL);
+  return PyUnicode_Decode ((const char *)str, length, target_charset (), NULL);
 }
 
 /* Return true if OBJ is a Python string or unicode object, false

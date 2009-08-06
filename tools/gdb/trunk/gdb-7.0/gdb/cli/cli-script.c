@@ -999,7 +999,6 @@ recurse_read_control_structure (char * (*read_next_line_func) (),
   enum misc_command_type val;
   enum command_control_type ret;
   struct command_line **body_ptr, *child_tail, *next;
-  char *p;
 
   child_tail = NULL;
   current_body = 1;
@@ -1350,8 +1349,8 @@ define_command (char *comname, int from_tty)
       CMD_POST_HOOK
     };
   struct command_line *cmds;
-  struct cmd_list_element *c, *newc, *oldc, *hookc = 0, **list;
-  char *tem, *tem2, *comfull;
+  struct cmd_list_element *c, *newc, *hookc = 0, **list;
+  char *tem, *comfull;
   char tmpbuf[MAX_TMPBUF];
   int  hook_type      = CMD_NO_HOOK;
   int  hook_name_size = 0;
@@ -1530,7 +1529,6 @@ script_from_file (FILE *stream, char *file)
 {
   struct cleanup *old_cleanups;
   struct source_cleanup_lines_args old_lines;
-  int needed_length;
 
   if (stream == NULL)
     internal_error (__FILE__, __LINE__, _("called with NULL file pointer!"));

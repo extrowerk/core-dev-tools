@@ -418,6 +418,8 @@ typy_lookup_type (struct demangle_component *demangled)
 	  return make_cv_type (1, 0, type, NULL);
 	case DEMANGLE_COMPONENT_VOLATILE:
 	  return make_cv_type (0, 1, type, NULL);
+	default:
+	  break;
 	}
     }
 
@@ -431,7 +433,7 @@ typy_lookup_type (struct demangle_component *demangled)
 static PyObject *
 typy_template_argument (PyObject *self, PyObject *args)
 {
-  int i, argno, n_pointers;
+  int i, argno;
   struct type *type = ((type_object *) self)->type;
   struct demangle_component *demangled;
   const char *err;

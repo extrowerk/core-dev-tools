@@ -250,7 +250,6 @@ struct value *
 allocate_value_lazy (struct type *type)
 {
   struct value *val;
-  struct type *atype = check_typedef (type);
 
   val = (struct value *) xzalloc (sizeof (struct value));
   val->contents = NULL;
@@ -1460,6 +1459,11 @@ preserve_one_internalvar (struct internalvar *var, struct objfile *objfile,
     case INTERNALVAR_VALUE:
       preserve_one_value (var->u.value, objfile, copied_types);
       break;
+    case INTERNALVAR_VOID:
+    case INTERNALVAR_FUNCTION:
+    case INTERNALVAR_STRING:
+    case INTERNALVAR_MAKE_VALUE:
+      break;
     }
 }
 
@@ -2220,7 +2224,6 @@ value_from_double (struct type *type, DOUBLEST num)
   struct value *val = allocate_value (type);
   struct type *base_type = check_typedef (type);
   enum type_code code = TYPE_CODE (base_type);
-  int len = TYPE_LENGTH (base_type);
 
   if (code == TYPE_CODE_FLT)
     {

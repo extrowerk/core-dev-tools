@@ -143,7 +143,6 @@ mangled_name_to_comp (const char *mangled_name, int options,
 {
   struct demangle_component *ret;
   char *demangled_name;
-  int len;
 
   /* If it looks like a v3 mangled name, then try to go directly
      to trees.  */
@@ -327,7 +326,6 @@ method_name_from_physname (const char *physname)
   void *storage = NULL;
   char *demangled_name = NULL, *ret;
   struct demangle_component *ret_comp;
-  int done;
 
   ret_comp = mangled_name_to_comp (physname, DMGL_ANSI, &storage,
 				   &demangled_name);
@@ -358,7 +356,6 @@ cp_func_name (const char *full_name)
 {
   char *ret;
   struct demangle_component *ret_comp;
-  int done;
 
   ret_comp = cp_demangled_name_to_comp (full_name, NULL);
   if (!ret_comp)

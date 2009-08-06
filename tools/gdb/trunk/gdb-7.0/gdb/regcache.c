@@ -218,7 +218,7 @@ regcache_xmalloc (struct gdbarch *gdbarch)
   regcache->registers
     = XCALLOC (descr->sizeof_raw_registers, gdb_byte);
   regcache->register_valid_p
-    = XCALLOC (descr->sizeof_raw_register_valid_p, gdb_byte);
+    = (signed char *) XCALLOC (descr->sizeof_raw_register_valid_p, gdb_byte);
   regcache->readonly_p = 1;
   regcache->ptid = minus_one_ptid;
   return regcache;
@@ -338,8 +338,6 @@ do_cooked_read (void *src, int regnum, gdb_byte *buf)
 void
 regcache_cpy (struct regcache *dst, struct regcache *src)
 {
-  int i;
-  gdb_byte *buf;
   gdb_assert (src != NULL && dst != NULL);
   gdb_assert (src->descr->gdbarch == dst->descr->gdbarch);
   gdb_assert (src != dst);
@@ -355,7 +353,6 @@ regcache_cpy (struct regcache *dst, struct regcache *src)
 void
 regcache_cpy_no_passthrough (struct regcache *dst, struct regcache *src)
 {
-  int i;
   gdb_assert (src != NULL && dst != NULL);
   gdb_assert (src->descr->gdbarch == dst->descr->gdbarch);
   /* NOTE: cagney/2002-05-17: Don't let the caller do a no-passthrough

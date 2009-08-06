@@ -93,9 +93,6 @@ static int print_symbol (void *);
 void
 free_symtab (struct symtab *s)
 {
-  int i, n;
-  struct blockvector *bv;
-
   switch (s->free_code)
     {
     case free_nothing:
@@ -414,7 +411,7 @@ dump_symtab_1 (struct objfile *objfile, struct symtab *symtab,
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
   int i;
   struct dict_iterator iter;
-  int len, blen;
+  int len;
   struct linetable *l;
   struct blockvector *bv;
   struct symbol *sym;

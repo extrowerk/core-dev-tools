@@ -1569,7 +1569,7 @@ static int
 parse_string_or_char (char *tokptr, char **outptr, struct typed_stoken *value,
 		      int *host_chars)
 {
-  int quote, i;
+  int quote;
   enum c_string_type type;
 
   /* Build the gdb internal form of the input string in tempbuf.  Note

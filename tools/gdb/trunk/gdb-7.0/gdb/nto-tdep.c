@@ -398,6 +398,84 @@ nto_initialize_signals (void)
 #endif
 }
 
+LONGEST
+nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
+				  LONGEST len)
+{
+  gdb_byte targ32[4]; /* For 32 bit target values.  */
+  CORE_ADDR data_ofs = 0;
+  ULONGEST anint;
+  LONGEST len_read = 0;
+  gdb_byte *buff;
+  /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+  const unsigned int sizeof_auxv_t = 8;
+  enum bfd_endian byte_order;
+
+  /* Skip over argc, argv and envp... Comment from ldd.c:
+
+     The startup frame is set-up so that we have:
+     auxv
+     NULL
+     ...
+     envp2
+     envp1 <----- void *frame + (argc + 2) * sizeof(char *)
+     NULL
+     ...
+     argv2
+     argv1
+     argc  <------ void * frame
+
+     On entry to ldd, frame gives the address of argc on the stack.  */
+  if (target_read_memory (initial_stack + data_ofs, targ32, sizeof (targ32))
+      != 0)
+    return 0;
+
+  byte_order = gdbarch_byte_order (target_gdbarch);
+
+  anint = extract_unsigned_integer (targ32, sizeof (targ32), byte_order);
+
+  /* Size of pointer is assumed to be 4 bytes (32 bit arch.) */
+  data_ofs += (anint + 2) * sizeof (targ32); /* + 2 comes from argc itself and
+						NULL terminating pointer in
+						argv.  */
+
+  /* Now loop over env table:  */
+  while (target_read_memory (initial_stack + data_ofs, targ32, sizeof (targ32))
+	 == 0)
+    {
+      anint = extract_unsigned_integer (targ32, sizeof (targ32), byte_order);
+      data_ofs += sizeof (targ32);
+      if (anint == 0)
+	break;
+    }
+  initial_stack += data_ofs;
+
+  memset (readbuf, 0, len);
+  buff = readbuf;
+  while (len_read <= len-sizeof_auxv_t)
+    {
+      /* Search backwards until we have read AT_PHDR (num. 3),
+	 AT_PHENT (num 4), AT_PHNUM (num 5)  */
+      if (target_read_memory (initial_stack, buff, sizeof_auxv_t)
+	  == 0)
+	{
+	  ULONGEST a_type = extract_unsigned_integer (buff, sizeof (targ32),
+						      byte_order);
+	  if (a_type != AT_NULL)
+	    {
+	      buff += sizeof_auxv_t;
+	      len_read += sizeof_auxv_t;
+	    }
+	  if (a_type == AT_PHNUM) /* That's all we need.  */
+	    break;
+	  initial_stack += sizeof_auxv_t;
+	}
+      else
+	break;
+    }
+  return len_read;
+}
+
 /* Provide a prototype to silence -Wmissing-prototypes.  */
 extern initialize_file_ftype _initialize_nto_tdep;
 

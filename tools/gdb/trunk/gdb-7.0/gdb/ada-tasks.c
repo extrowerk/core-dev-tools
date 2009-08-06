@@ -271,7 +271,7 @@ read_fat_string_value (char *dest, struct value *val, int max_len)
 
   /* Extract LEN characters from the fat string.  */
   array_val = value_ind (value_field (val, array_fieldno));
-  read_memory (value_address (array_val), dest, len);
+  read_memory (value_address (array_val), (gdb_byte *)dest, len);
 
   /* Add the NUL character to close the string.  */
   dest[len] = '\0';
@@ -292,7 +292,6 @@ get_known_tasks_addr (void)
 
   if (ada_tasks_check_symbol_table)
     {
-      struct symbol *sym;
       struct minimal_symbol *msym;
 
       msym = lookup_minimal_symbol (KNOWN_TASKS_NAME, NULL, NULL);

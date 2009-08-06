@@ -534,7 +534,6 @@ arm_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
   unsigned long inst;
   CORE_ADDR skip_pc;
   CORE_ADDR func_addr, limit_pc;
-  struct symtab_and_line sal;
 
   /* If we're in a dummy frame, don't even try to skip the prologue.  */
   if (deprecated_pc_in_call_dummy (gdbarch, pc))
@@ -655,7 +654,6 @@ thumb_scan_prologue (struct gdbarch *gdbarch, CORE_ADDR prev_pc,
 {
   CORE_ADDR prologue_start;
   CORE_ADDR prologue_end;
-  CORE_ADDR current_pc;
 
   if (find_pc_partial_function (block_addr, NULL, &prologue_start,
 				&prologue_end))
@@ -1151,9 +1149,7 @@ struct frame_unwind arm_prologue_unwind = {
 static struct arm_prologue_cache *
 arm_make_stub_cache (struct frame_info *this_frame)
 {
-  int reg;
   struct arm_prologue_cache *cache;
-  CORE_ADDR unwound_fp;
 
   cache = FRAME_OBSTACK_ZALLOC (struct arm_prologue_cache);
   cache->saved_regs = trad_frame_alloc_saved_regs (this_frame);
@@ -1185,7 +1181,7 @@ arm_stub_unwind_sniffer (const struct frame_unwind *self,
 			 void **this_prologue_cache)
 {
   CORE_ADDR addr_in_block;
-  char dummy[4];
+  gdb_byte dummy[4];
 
   addr_in_block = get_frame_address_in_block (this_frame);
   if (in_plt_section (addr_in_block, NULL)
@@ -3656,7 +3652,7 @@ cleanup_block_load_pc (struct gdbarch *gdbarch ATTRIBUTE_UNUSED,
 {
   ULONGEST from = dsc->insn_addr;
   uint32_t status = displaced_read_reg (regs, from, ARM_PS_REGNUM);
-  int load_executed = condition_true (dsc->u.block.cond, status), i;
+  int load_executed = condition_true (dsc->u.block.cond, status);
   unsigned int mask = dsc->u.block.regmask, write_reg = 15;
   unsigned int regs_loaded = bitcount (mask);
   unsigned int num_to_shuffle = regs_loaded, clobbered;
@@ -3788,8 +3784,8 @@ copy_block_xfer (struct gdbarch *gdbarch, uint32_t insn, struct regcache *regs,
 	     contiguous chunk r0...rX before doing the transfer, then shuffling
 	     registers into the correct places in the cleanup routine.  */
 	  unsigned int regmask = insn & 0xffff;
-	  unsigned int num_in_list = bitcount (regmask), new_regmask, bit = 1;
-	  unsigned int to = 0, from = 0, i, new_rn;
+	  unsigned int num_in_list = bitcount (regmask), new_regmask;
+	  unsigned int from = 0, i;
 
 	  for (i = 0; i < num_in_list; i++)
 	    dsc->tmp[i] = displaced_read_reg (regs, from, i);
@@ -3863,8 +3859,6 @@ static int
 copy_svc (struct gdbarch *gdbarch, uint32_t insn, CORE_ADDR to,
 	  struct regcache *regs, struct displaced_step_closure *dsc)
 {
-  CORE_ADDR from = dsc->insn_addr;
-
   /* Allow OS-specific code to override SVC handling.  */
   if (dsc->u.svc.copy_svc_os)
     return dsc->u.svc.copy_svc_os (gdbarch, insn, to, regs, dsc);
@@ -4069,7 +4063,6 @@ decode_miscellaneous (struct gdbarch *gdbarch, uint32_t insn,
 {
   unsigned int op2 = bits (insn, 4, 6);
   unsigned int op = bits (insn, 21, 22);
-  unsigned int op1 = bits (insn, 16, 19);
 
   switch (op2)
     {
@@ -4164,7 +4157,6 @@ decode_ld_st_word_ubyte (struct gdbarch *gdbarch, uint32_t insn,
 {
   int a = bit (insn, 25), b = bit (insn, 4);
   uint32_t op1 = bits (insn, 20, 24);
-  int rn_f = bits (insn, 16, 19) == 0xf;
 
   if ((!a && (op1 & 0x05) == 0x00 && (op1 & 0x17) != 0x02)
       || (a && (op1 & 0x05) == 0x00 && (op1 & 0x17) != 0x02 && !b))
@@ -4298,7 +4290,6 @@ decode_svc_copro (struct gdbarch *gdbarch, uint32_t insn, CORE_ADDR to,
   unsigned int op1 = bits (insn, 20, 25);
   int op = bit (insn, 4);
   unsigned int coproc = bits (insn, 8, 11);
-  unsigned int rn = bits (insn, 16, 19);
 
   if ((op1 & 0x20) == 0x00 && (op1 & 0x3a) != 0x00 && (coproc & 0xe) == 0xa)
     return decode_ext_reg_ld_st (gdbarch, insn, regs, dsc);
@@ -4532,10 +4523,10 @@ gdb_print_insn_arm (bfd_vma memaddr, disassemble_info *info)
 #define THUMB_LE_BREAKPOINT {0xbe,0xbe}
 #define THUMB_BE_BREAKPOINT {0xbe,0xbe}
 
-static const char arm_default_arm_le_breakpoint[] = ARM_LE_BREAKPOINT;
-static const char arm_default_arm_be_breakpoint[] = ARM_BE_BREAKPOINT;
-static const char arm_default_thumb_le_breakpoint[] = THUMB_LE_BREAKPOINT;
-static const char arm_default_thumb_be_breakpoint[] = THUMB_BE_BREAKPOINT;
+static const gdb_byte arm_default_arm_le_breakpoint[] = ARM_LE_BREAKPOINT;
+static const gdb_byte arm_default_arm_be_breakpoint[] = ARM_BE_BREAKPOINT;
+static const gdb_byte arm_default_thumb_le_breakpoint[] = THUMB_LE_BREAKPOINT;
+static const gdb_byte arm_default_thumb_be_breakpoint[] = THUMB_BE_BREAKPOINT;
 
 /* Determine the type and size of breakpoint to insert at PCPTR.  Uses
    the program counter value to determine whether a 16-bit or 32-bit
@@ -4769,7 +4760,7 @@ arm_store_return_value (struct type *type, struct regcache *regs,
 
   if (TYPE_CODE (type) == TYPE_CODE_FLT)
     {
-      char buf[MAX_REGISTER_SIZE];
+      gdb_byte buf[MAX_REGISTER_SIZE];
 
       switch (gdbarch_tdep (gdbarch)->fp_model)
 	{
@@ -4926,7 +4917,7 @@ arm_get_longjmp_target (struct frame_info *frame, CORE_ADDR *pc)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR jb_addr;
-  char buf[INT_REGISTER_SIZE];
+  gdb_byte buf[INT_REGISTER_SIZE];
   
   jb_addr = get_frame_register_unsigned (frame, ARM_A1_REGNUM);
 
@@ -5118,8 +5109,6 @@ static void
 arm_show_fallback_mode (struct ui_file *file, int from_tty,
 			struct cmd_list_element *c, const char *value)
 {
-  struct gdbarch_tdep *tdep = gdbarch_tdep (target_gdbarch);
-
   fprintf_filtered (file, _("\
 The current execution mode assumed (when symbols are unavailable) is \"%s\".\n"),
 		    arm_fallback_mode_string);
@@ -5129,8 +5118,6 @@ static void
 arm_show_force_mode (struct ui_file *file, int from_tty,
 		     struct cmd_list_element *c, const char *value)
 {
-  struct gdbarch_tdep *tdep = gdbarch_tdep (target_gdbarch);
-
   fprintf_filtered (file, _("\
 The current execution mode assumed (even when symbols are available) is \"%s\".\n"),
 		    arm_force_mode_string);
@@ -5395,7 +5382,6 @@ arm_neon_quad_write (struct gdbarch *gdbarch, struct regcache *regcache,
 		     int regnum, const gdb_byte *buf)
 {
   char name_buf[4];
-  gdb_byte reg_buf[8];
   int offset, double_regnum;
 
   sprintf (name_buf, "d%d", regnum << 1);
@@ -6019,11 +6005,10 @@ _initialize_arm_tdep (void)
 {
   struct ui_file *stb;
   long length;
-  struct cmd_list_element *new_set, *new_show;
   const char *setname;
   const char *setdesc;
   const char *const *regnames;
-  int numregs, i, j;
+  int numregs, i;
   static char *helptext;
   char regdesc[1024], *rdptr = regdesc;
   size_t rest = sizeof (regdesc);

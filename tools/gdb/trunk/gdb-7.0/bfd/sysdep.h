@@ -199,4 +199,18 @@ extern int fseeko64 (FILE *stream, off64_t offset, int whence);
 # define N_(String) (String)
 #endif
 
+/* FIXME: QNX specific;
+ * When PR 39349 gets resolved remove NULL definition */
+#undef NULL
+#ifdef __GNUG__
+#define NULL __null
+#else
+#ifndef __cplusplus
+#define NULL ((void *)0)
+#else
+#define NULL 0
+#endif
+#endif
+
+
 #endif /* ! defined (BFD_SYSDEP_H) */

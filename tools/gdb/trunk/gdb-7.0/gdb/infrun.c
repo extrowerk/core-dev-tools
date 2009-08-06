@@ -67,8 +67,6 @@ static int hook_stop_stub (void *);
 
 static int restore_selected_frame (void *);
 
-static void build_infrun (void);
-
 static int follow_fork (void);
 
 static void set_schedlock_func (char *args, int from_tty,
@@ -465,7 +463,6 @@ follow_inferior_reset_breakpoints (void)
 static void
 follow_exec (ptid_t pid, char *execd_pathname)
 {
-  struct target_ops *tgt;
   struct thread_info *th = inferior_thread ();
 
   /* This is an exec event that we actually wish to pay attention to.
@@ -1765,8 +1762,6 @@ struct execution_control_state
   int wait_some_more;
 };
 
-static void init_execution_control_state (struct execution_control_state *ecs);
-
 static void handle_inferior_event (struct execution_control_state *ecs);
 
 static void handle_step_into_function (struct gdbarch *gdbarch,
@@ -2164,15 +2159,6 @@ set_step_info (struct frame_info *frame, struct symtab_and_line sal)
 
   tp->current_symtab = sal.symtab;
   tp->current_line = sal.line;
-}
-
-/* Prepare an execution control state for looping through a
-   wait_for_inferior-type loop.  */
-
-static void
-init_execution_control_state (struct execution_control_state *ecs)
-{
-  ecs->random_signal = 0;
 }
 
 /* Clear context switchable stepping state.  */
@@ -4280,7 +4266,7 @@ handle_step_into_function_backward (struct gdbarch *gdbarch,
 				    struct execution_control_state *ecs)
 {
   struct symtab *s;
-  struct symtab_and_line stop_func_sal, sr_sal;
+  struct symtab_and_line stop_func_sal;
 
   s = find_pc_symtab (stop_pc);
   if (s && s->language != language_asm)
@@ -5781,7 +5767,6 @@ _initialize_infrun (void)
 {
   int i;
   int numsigs;
-  struct cmd_list_element *c;
 
   add_info ("signals", signals_info, _("\
 What debugger does when program gets various signals.\n\

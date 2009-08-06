@@ -377,7 +377,7 @@ execute_cfa_program (struct dwarf2_fde *fde, gdb_byte *insn_ptr,
 {
   int eh_frame_p = fde->eh_frame_p;
   CORE_ADDR pc = get_frame_pc (this_frame);
-  int bytes_read;
+  unsigned int bytes_read;
   struct gdbarch *gdbarch = get_frame_arch (this_frame);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
 
@@ -411,7 +411,8 @@ execute_cfa_program (struct dwarf2_fde *fde, gdb_byte *insn_ptr,
 	    case DW_CFA_set_loc:
 	      fs->pc = read_encoded_value (fde->cie->unit, fde->cie->encoding,
 					   fde->cie->addr_size, insn_ptr,
-					   &bytes_read, fde->initial_location);
+					   &bytes_read,
+					   fde->initial_location);
 	      /* Apply the objfile offset for relocatable objects.  */
 	      fs->pc += ANOFFSET (fde->cie->unit->objfile->section_offsets,
 				  SECT_OFF_TEXT (fde->cie->unit->objfile));
@@ -640,7 +641,7 @@ bad CFI data; mismatched DW_CFA_restore_state at %s"),
 	    case DW_CFA_GNU_negative_offset_extended:
 	      insn_ptr = read_uleb128 (insn_ptr, insn_end, &reg);
 	      reg = dwarf2_frame_adjust_regnum (gdbarch, reg, eh_frame_p);
-	      insn_ptr = read_uleb128 (insn_ptr, insn_end, &offset);
+	      insn_ptr = read_uleb128 (insn_ptr, insn_end, (ULONGEST*)&offset);
 	      offset *= fs->data_align;
 	      dwarf2_frame_state_alloc_regs (&fs->regs, reg + 1);
 	      fs->regs.reg[reg].how = DWARF2_FRAME_REG_SAVED_OFFSET;
@@ -1814,7 +1815,6 @@ decode_frame_entry (struct comp_unit *unit, gdb_byte *start, int eh_frame_p)
 {
   enum { NONE, ALIGN4, ALIGN8, FAIL } workaround = NONE;
   gdb_byte *ret;
-  const char *msg;
   ptrdiff_t start_offset;
 
   while (1)

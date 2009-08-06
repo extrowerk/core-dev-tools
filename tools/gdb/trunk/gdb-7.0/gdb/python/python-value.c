@@ -198,7 +198,7 @@ valpy_get_type (PyObject *self, void *closure)
 static PyObject *
 valpy_string (PyObject *self, PyObject *args, PyObject *kw)
 {
-  int length = -1, ret = 0;
+  int length = -1;
   gdb_byte *buffer;
   struct value *value = ((value_object *) self)->value;
   volatile struct gdb_exception except;
@@ -220,7 +220,7 @@ valpy_string (PyObject *self, PyObject *args, PyObject *kw)
   GDB_PY_HANDLE_EXCEPTION (except);
 
   encoding = (user_encoding && *user_encoding) ? user_encoding : la_encoding;
-  unicode = PyUnicode_Decode (buffer, length, encoding, errors);
+  unicode = PyUnicode_Decode ((char *)buffer, length, encoding, errors);
   xfree (buffer);
 
   return unicode;
@@ -827,7 +827,6 @@ struct value *
 convert_value_from_python (PyObject *obj)
 {
   struct value *value = NULL; /* -Wall */
-  PyObject *target_str, *unicode_str;
   struct cleanup *old;
   volatile struct gdb_exception except;
   int cmp;

@@ -891,7 +891,6 @@ print_command_1 (char *exp, int inspect, int voidprint)
 
   if (exp && *exp)
     {
-      struct type *type;
       expr = parse_expression (exp);
       old_chain = make_cleanup (free_current_contents, &expr);
       cleanup = 1;
@@ -1854,7 +1853,6 @@ static void
 clear_dangling_display_expressions (struct so_list *solib)
 {
   struct display *d;
-  struct objfile *objfile = NULL;
 
   for (d = display_chain; d; d = d->next)
     {

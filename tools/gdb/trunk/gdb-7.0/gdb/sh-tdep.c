@@ -1031,8 +1031,6 @@ sh_next_flt_argreg (struct gdbarch *gdbarch, int len, struct type *func_type)
 static int
 sh_treat_as_flt_p (struct type *type)
 {
-  int len = TYPE_LENGTH (type);
-
   /* Ordinary float types are obviously treated as float.  */
   if (TYPE_CODE (type) == TYPE_CODE_FLT)
     return 1;
@@ -1128,14 +1126,15 @@ sh_push_dummy_call_fpu (struct gdbarch *gdbarch,
 	    {
 	      /* The data goes entirely on the stack, 4-byte aligned. */
 	      reg_size = (len + 3) & ~3;
-	      write_memory (sp + stack_offset, val, reg_size);
+	      write_memory (sp + stack_offset, (gdb_byte *)val, reg_size);
 	      stack_offset += reg_size;
 	    }
 	  else if (treat_as_flt && flt_argreg <= FLOAT_ARGLAST_REGNUM)
 	    {
 	      /* Argument goes in a float argument register.  */
 	      reg_size = register_size (gdbarch, flt_argreg);
-	      regval = extract_unsigned_integer (val, reg_size, byte_order);
+	      regval = extract_unsigned_integer ((gdb_byte *)val, reg_size,
+						 byte_order);
 	      /* In little endian mode, float types taking two registers
 	         (doubles on sh4, long doubles on sh2e, sh3e and sh4) must
 		 be stored swapped in the argument registers.  The below
@@ -1150,7 +1149,8 @@ sh_push_dummy_call_fpu (struct gdbarch *gdbarch,
 						  regval);
 		  val += reg_size;
 		  len -= reg_size;
-		  regval = extract_unsigned_integer (val, reg_size, byte_order);
+		  regval = extract_unsigned_integer ((gdb_byte *)val, reg_size,
+						     byte_order);
 		}
 	      regcache_cooked_write_unsigned (regcache, flt_argreg++, regval);
 	    }
@@ -1158,7 +1158,8 @@ sh_push_dummy_call_fpu (struct gdbarch *gdbarch,
 	    {
 	      /* there's room in a register */
 	      reg_size = register_size (gdbarch, argreg);
-	      regval = extract_unsigned_integer (val, reg_size, byte_order);
+	      regval = extract_unsigned_integer ((gdb_byte *)val, reg_size,
+						 byte_order);
 	      regcache_cooked_write_unsigned (regcache, argreg++, regval);
 	    }
 	  /* Store the value one register at a time or in one step on stack.  */
@@ -1252,14 +1253,15 @@ sh_push_dummy_call_nofpu (struct gdbarch *gdbarch,
 	      /* The remainder of the data goes entirely on the stack,
 	         4-byte aligned. */
 	      reg_size = (len + 3) & ~3;
-	      write_memory (sp + stack_offset, val, reg_size);
+	      write_memory (sp + stack_offset, (gdb_byte *)val, reg_size);
 	      stack_offset += reg_size;
 	    }
 	  else if (argreg <= ARGLAST_REGNUM)
 	    {
 	      /* there's room in a register */
 	      reg_size = register_size (gdbarch, argreg);
-	      regval = extract_unsigned_integer (val, reg_size, byte_order);
+	      regval = extract_unsigned_integer ((gdb_byte *)val, reg_size,
+						 byte_order);
 	      regcache_cooked_write_unsigned (regcache, argreg++, regval);
 	    }
 	  /* Store the value reg_size bytes at a time.  This means that things
@@ -1304,8 +1306,6 @@ sh_extract_return_value_nofpu (struct type *type, struct regcache *regcache,
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   int len = TYPE_LENGTH (type);
-  int return_register = R0_REGNUM;
-  int offset;
 
   if (len <= 4)
     {
@@ -1318,7 +1318,7 @@ sh_extract_return_value_nofpu (struct type *type, struct regcache *regcache,
     {
       int i, regnum = R0_REGNUM;
       for (i = 0; i < len; i += 4)
-	regcache_raw_read (regcache, regnum++, (char *) valbuf + i);
+	regcache_raw_read (regcache, regnum++, (gdb_byte *) valbuf + i);
     }
   else
     error (_("bad size for return value"));
@@ -1335,9 +1335,10 @@ sh_extract_return_value_fpu (struct type *type, struct regcache *regcache,
       int i, regnum = gdbarch_fp0_regnum (gdbarch);
       for (i = 0; i < len; i += 4)
 	if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_LITTLE)
-	  regcache_raw_read (regcache, regnum++, (char *) valbuf + len - 4 - i);
+	  regcache_raw_read (regcache, regnum++, (gdb_byte *) valbuf + len - 4
+			     - i);
 	else
-	  regcache_raw_read (regcache, regnum++, (char *) valbuf + i);
+	  regcache_raw_read (regcache, regnum++, (gdb_byte *) valbuf + i);
     }
   else
     sh_extract_return_value_nofpu (type, regcache, valbuf);
@@ -1367,7 +1368,7 @@ sh_store_return_value_nofpu (struct type *type, struct regcache *regcache,
     {
       int i, regnum = R0_REGNUM;
       for (i = 0; i < len; i += 4)
-	regcache_raw_write (regcache, regnum++, (char *) valbuf + i);
+	regcache_raw_write (regcache, regnum++, (gdb_byte *) valbuf + i);
     }
 }
 
@@ -1383,9 +1384,9 @@ sh_store_return_value_fpu (struct type *type, struct regcache *regcache,
       for (i = 0; i < len; i += 4)
 	if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_LITTLE)
 	  regcache_raw_write (regcache, regnum++,
-			      (char *) valbuf + len - 4 - i);
+			      (gdb_byte *) valbuf + len - 4 - i);
 	else
-	  regcache_raw_write (regcache, regnum++, (char *) valbuf + i);
+	  regcache_raw_write (regcache, regnum++, (gdb_byte *) valbuf + i);
     }
   else
     sh_store_return_value_nofpu (type, regcache, valbuf);
@@ -1709,8 +1710,6 @@ sh2a_show_regs (struct frame_info *frame)
 static void
 sh2a_nofpu_show_regs (struct frame_info *frame)
 {
-  int pr = get_frame_register_unsigned (frame, FPSCR_REGNUM) & 0x80000;
-
   printf_filtered
     ("      PC %s       SR %08lx       PR %08lx     MACH %08lx\n",
      phex (get_frame_register_unsigned (frame,
@@ -2304,7 +2303,7 @@ sh_pseudo_register_read (struct gdbarch *gdbarch, struct regcache *regcache,
 			 int reg_nr, gdb_byte *buffer)
 {
   int base_regnum, portion;
-  char temp_buffer[MAX_REGISTER_SIZE];
+  gdb_byte temp_buffer[MAX_REGISTER_SIZE];
 
   if (reg_nr == PSEUDO_BANK_REGNUM)
     regcache_raw_read (regcache, BANK_REGNUM, buffer);
@@ -2323,7 +2322,7 @@ sh_pseudo_register_read (struct gdbarch *gdbarch, struct regcache *regcache,
       /* We must pay attention to the endiannes. */
       sh_register_convert_to_virtual (reg_nr,
 				      register_type (gdbarch, reg_nr),
-				      temp_buffer, buffer);
+				      (char *)temp_buffer, (char *)buffer);
     }
   else if (reg_nr >= FV0_REGNUM && reg_nr <= FV_LAST_REGNUM)
     {
@@ -2332,7 +2331,7 @@ sh_pseudo_register_read (struct gdbarch *gdbarch, struct regcache *regcache,
       /* Read the real regs for which this one is an alias.  */
       for (portion = 0; portion < 4; portion++)
 	regcache_raw_read (regcache, base_regnum + portion,
-			   ((char *) buffer
+			   (gdb_byte *)((char *) buffer
 			    + register_size (gdbarch,
 					     base_regnum) * portion));
     }
@@ -2368,7 +2367,7 @@ sh_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
       /* Write the real regs for which this one is an alias.  */
       for (portion = 0; portion < 2; portion++)
 	regcache_raw_write (regcache, base_regnum + portion,
-			    (temp_buffer
+			    (gdb_byte *)(temp_buffer
 			     + register_size (gdbarch,
 					      base_regnum) * portion));
     }
@@ -2379,7 +2378,7 @@ sh_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
       /* Write the real regs for which this one is an alias.  */
       for (portion = 0; portion < 4; portion++)
 	regcache_raw_write (regcache, base_regnum + portion,
-			    ((char *) buffer
+			    (gdb_byte *)((char *) buffer
 			     + register_size (gdbarch,
 					      base_regnum) * portion));
     }
@@ -2970,8 +2969,6 @@ extern initialize_file_ftype _initialize_sh_tdep;	/* -Wmissing-prototypes */
 void
 _initialize_sh_tdep (void)
 {
-  struct cmd_list_element *c;
-
   gdbarch_register (bfd_arch_sh, sh_gdbarch_init, NULL);
 
   add_com ("regs", class_vars, sh_show_regs_command, _("Print all registers"));

@@ -209,7 +209,6 @@ elf_symtab_read (struct objfile *objfile, int type,
 		 long number_of_symbols, asymbol **symbol_table)
 {
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
-  long storage_needed;
   asymbol *sym;
   long i;
   CORE_ADDR symaddr;
@@ -592,7 +591,6 @@ elf_symfile_read (struct objfile *objfile, int mainline)
   bfd *abfd = objfile->obfd;
   struct elfinfo ei;
   struct cleanup *back_to;
-  CORE_ADDR offset;
   long symcount = 0, dynsymcount = 0, synthcount, storage_needed;
   asymbol **symbol_table = NULL, **dyn_symbol_table = NULL;
   asymbol *synthsyms;

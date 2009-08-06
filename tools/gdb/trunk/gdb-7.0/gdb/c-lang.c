@@ -76,7 +76,6 @@ static enum c_string_type
 classify_type (struct type *elttype, enum bfd_endian byte_order,
 	       const char **encoding)
 {
-  struct type *saved_type;
   enum c_string_type result;
 
   /* We loop because ELTTYPE may be a typedef, and we want to
@@ -325,7 +324,7 @@ c_emit_char (int c, struct type *type, struct ui_file *stream, int quoter)
   make_cleanup_obstack_free (&output);
 
   convert_between_encodings (INTERMEDIATE_ENCODING, host_charset (),
-			     obstack_base (&wchar_buf),
+			     (gdb_byte *)obstack_base (&wchar_buf),
 			     obstack_object_size (&wchar_buf),
 			     1, &output, translit_char);
   obstack_1grow (&output, '\0');
@@ -353,6 +352,11 @@ c_printchar (int c, struct type *type, struct ui_file *stream)
       break;
     case C_CHAR_32:
       fputc_filtered ('U', stream);
+      break;
+    case C_STRING:
+    case C_WIDE_STRING:
+    case C_STRING_16:
+    case C_STRING_32:
       break;
     }
 
@@ -408,6 +412,11 @@ c_printstr (struct ui_file *stream, struct type *type, const gdb_byte *string,
       break;
     case C_STRING_32:
       fputs_filtered ("U", stream);
+      break;
+    case C_CHAR:
+    case C_WIDE_CHAR:
+    case C_CHAR_16:
+    case C_CHAR_32:
       break;
     }
 
@@ -573,6 +582,10 @@ c_printstr (struct ui_file *stream, struct type *type, const gdb_byte *string,
 	  obstack_grow_wstr (&wchar_buf, LCST (">"));
 	  finished = 1;
 	  break;
+
+	case wchar_iterate_ok:
+	case wchar_iterate_eof:
+	  break;
 	}
     }
 
@@ -593,7 +606,7 @@ c_printstr (struct ui_file *stream, struct type *type, const gdb_byte *string,
   make_cleanup_obstack_free (&output);
 
   convert_between_encodings (INTERMEDIATE_ENCODING, host_charset (),
-			     obstack_base (&wchar_buf),
+			     (gdb_byte *)obstack_base (&wchar_buf),
 			     obstack_object_size (&wchar_buf),
 			     1, &output, translit_char);
   obstack_1grow (&output, '\0');
@@ -911,7 +924,8 @@ parse_one_string (struct obstack *output, char *data, int len,
       /* If we saw a run of characters, convert them all.  */
       if (p > data)
 	convert_between_encodings (host_charset (), dest_charset,
-				   data, p - data, 1, output, translit_none);
+				   (gdb_byte *)data, p - data, 1, output,
+				   translit_none);
       /* If we saw an escape, convert it.  */
       if (p < limit)
 	p = convert_escape (type, dest_charset, p, limit, output);
@@ -1014,7 +1028,7 @@ evaluate_subexp_c (struct type *expect_type, struct expression *exp,
 
 	    if (obstack_object_size (&output) != TYPE_LENGTH (type))
 	      error (_("Could not convert character constant to target character set"));
-	    value = unpack_long (type, obstack_base (&output));
+	    value = unpack_long (type, (gdb_byte *)obstack_base (&output));
 	    result = value_from_longest (type, value);
 	  }
 	else

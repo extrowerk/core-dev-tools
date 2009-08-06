@@ -1220,4 +1220,19 @@ extern ULONGEST align_down (ULONGEST v, int n);
 void *hashtab_obstack_allocate (void *data, size_t size, size_t count);
 void dummy_obstack_deallocate (void *object, void *data);
 
+/* FIXME: QNX specific;
+ * When PR 39349 gets resolved remove NULL definition */
+#undef NULL
+#ifdef __GNUG__
+#define NULL __null
+#else
+#ifndef __cplusplus
+#define NULL ((void *)0)
+#else
+#define NULL 0
+#endif
+#endif
+
+
+
 #endif /* #ifndef DEFS_H */
