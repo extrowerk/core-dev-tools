@@ -1,1 +1,0 @@
-#define __QNXNTO_USE_PROCFS__

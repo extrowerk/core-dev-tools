@@ -1,8 +1,0 @@
-# Host: PowerPC running QNX
-
-MH_CFLAGS=-DNEED_SYS_SELECT_H
-
-XM_FILE= xm-qnx.h
-
-NAT_FILE= nm-qnx.h
-NATDEPFILES= nto_procfs.o ser-qnxpty.o
