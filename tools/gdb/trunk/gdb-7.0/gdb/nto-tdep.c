@@ -1129,8 +1129,8 @@ nto_solib_added_listener (struct so_list *solib)
 					p_filesz, p_memsz, p_flags, p_align); 
 	  if (file_phdr == NULL)
 	    {
-	      warning ("Host file %s does not match target file.",
-		       solib->so_name);
+	      warning ("Host file %s does not match target file %s.",
+		       solib->so_name, solib->so_original_name);
 	      break;
 	    }
 	}

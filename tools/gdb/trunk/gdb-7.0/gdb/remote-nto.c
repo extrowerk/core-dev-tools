@@ -114,7 +114,8 @@ static int getpkt (int forever);
 
 static unsigned nto_send (unsigned, int);
 
-static int nto_write_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len);
+static int nto_write_bytes (CORE_ADDR memaddr, const gdb_byte *myaddr,
+			    int len);
 
 static int nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len);
 
@@ -122,10 +123,6 @@ static void nto_files_info (struct target_ops *ignore);
 
 static ptid_t nto_parse_notify (struct target_ops *,
 				struct target_waitstatus *status);
-
-static int nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
-			    int should_write, struct mem_attrib *attrib,
-			    struct target_ops *target);
 
 void nto_outgoing_text (char *buf, int nbytes);
 
@@ -1387,6 +1384,7 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
   current_session->has_execution = 1;
   current_session->has_stack = 1;
   current_session->has_registers = 1;
+  current_session->has_memory = 1;
   current_session->target_has_stack_frame = 1;
 }
 
@@ -1441,6 +1439,7 @@ nto_detach (struct target_ops *ops, char *args, int from_tty)
   current_session->has_execution = 0;
   current_session->has_stack = 0;
   current_session->has_registers = 0;
+  current_session->has_memory = 0;
   current_session->target_has_stack_frame = 0;
 }
 
@@ -1835,6 +1834,7 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
       current_session->has_execution = 0;
       current_session->has_stack = 0;
       current_session->has_registers = 0;
+      current_session->has_memory = 0;
       current_session->target_has_stack_frame = 0;
       break;
     case DSMSG_NOTIFY_BRK:
@@ -1875,6 +1875,7 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
       current_session->has_execution = 1;
       current_session->has_stack = 1;
       current_session->has_registers = 1;
+      current_session->has_memory = 1;
       current_session->target_has_stack_frame = 0;
       status->kind = TARGET_WAITKIND_LOADED;
       break;
@@ -2077,7 +2078,7 @@ nto_store_registers (struct target_ops *ops,
 
    Returns number of bytes transferred, or 0 for error.  */
 static int
-nto_write_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len)
+nto_write_bytes (CORE_ADDR memaddr, const gdb_byte *myaddr, int len)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
   long long addr;
@@ -2154,42 +2155,6 @@ nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len)
   return (tot_len);
 }
 
-/* Read or write LEN bytes from inferior memory at MEMADDR, transferring
-   to or from debugger address MYADDR.  Write to inferior if SHOULD_WRITE is
-   nonzero.  Returns length of data written or read; 0 for error.  */
-static int
-nto_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int should_write,
-		 struct mem_attrib *attrib, struct target_ops *ops)
-{
-  int res;
-  if (remote_debug)
-    {
-      printf_unfiltered
-	("nto_xfer_memory(memaddr %s, myaddr %p, len %d, should_write %d, target %p)\n",
-	 paddress (target_gdbarch, memaddr), myaddr, len, should_write, ops);
-    }
-  if (ptid_equal (inferior_ptid, null_ptid))
-    {
-      /* Pretend to read if no inferior but fail on write.  */
-      if (should_write)
-	return 0;
-      if (ops->beneath != NULL)
-	/* FIXME remove deprecated_xfer_memory */
-	return ops->beneath->deprecated_xfer_memory (memaddr, myaddr, len, should_write, attrib,
-			    ops->beneath);
-      else
-	{
-	  memset (myaddr, 0, len);
-	  return len;
-	}
-    }
-  if (should_write)
-    res = nto_write_bytes (memaddr, myaddr, len);
-  else
-    res = nto_read_bytes (memaddr, myaddr, len);
-  return res;
-}
-
 static LONGEST
 nto_xfer_partial (struct target_ops *ops, enum target_object object,
 		  const char *annex, gdb_byte *readbuf,
@@ -2197,17 +2162,49 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
 
-  if (object == TARGET_OBJECT_AUXV
-      && readbuf)
+  if (object == TARGET_OBJECT_MEMORY)
     {
-      if (offset > 0)
-	return 0;
+      if (readbuf != NULL)
+	return nto_read_bytes (offset, readbuf, len);
+      else if (writebuf != NULL)
+	return nto_write_bytes (offset, writebuf, len);
+    }
+  else if (object == TARGET_OBJECT_AUXV
+	   && readbuf)
+    {
+      /* If there is no exec_bfd, but there is inferior, we try to 
+	 read auxv using initial stack.  The problem is, older pdebug-s don't
+	 support reading procfs_info.  */
+      nto_procfs_info procfs_info;
 
-      /* Once we have transfer of procfs_info over pdebug protocol in
-         place, we should use that here.  */
-      if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
-	  && exec_bfd->tdata.elf_obj_data->phdr != NULL)
+      if (nto_read_procfsinfo (&procfs_info))
 	{
+	  CORE_ADDR initial_stack;
+	  /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+	  const unsigned int sizeof_auxv_t = 8;
+	  const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
+	  int tempread;
+	  gdb_byte *tempbuf = alloca (sizeof_tempbuf);
+
+	  if (!tempbuf)
+	    return -1;
+
+	  initial_stack =
+	    EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
+				    sizeof_auxv_t, byte_order);
+
+	  tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
+						       sizeof_tempbuf);
+	  tempread = min (tempread, len) - offset;
+	  memcpy (readbuf, tempbuf + offset, tempread);
+	  return tempread;
+	}
+      else if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
+	       && exec_bfd->tdata.elf_obj_data->phdr != NULL)
+	{
+	  /* Fallback for older pdebug-s. They do not support
+	     procfsinfo transfer, so we have to read auxv from
+	     executable file.  */
 	  unsigned int phdr = 0, phnum = 0;
 	  gdb_byte *buff = readbuf;
 
@@ -2219,8 +2216,6 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 	      phnum++;
 	    }
 
-	  /* FIXME: instead of sizeof(int) there should be target's int size
-	   * */
 	  /* Create artificial auxv, with AT_PHDR, AT_PHENT and AT_PHNUM
 	     elements.  */
 	  *(int*)buff = AT_PHNUM;
@@ -2252,27 +2247,7 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 
 	  return (buff - readbuf);
 	}
-      else
-	{
-	  /* If there is no exec_bfd, but there is inferior, we try to 
-	     read auxv using initial stack.
-	     The problem is, older pdebug-s don't support reading
-	     procfs_info.  */
-	  nto_procfs_info procfs_info;
-
-	  if (nto_read_procfsinfo (&procfs_info))
-	    {
-	      CORE_ADDR initial_stack;
-
-	      initial_stack =
-		EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
-					8, byte_order);
-
-	      return nto_read_auxv_from_initial_stack (initial_stack,
-						       readbuf, len);
-	    }
-	}
-    }
+    }  /* TARGET_OBJECT_AUXV */
   
   if (ops->beneath && ops->beneath->to_xfer_partial)
     return ops->beneath->to_xfer_partial (ops, object, annex, readbuf,
@@ -3013,7 +2988,6 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_fetch_registers = nto_fetch_registers;
   nto_ops.to_store_registers = nto_store_registers;
   nto_ops.to_prepare_to_store = nto_prepare_to_store;
-  nto_ops.deprecated_xfer_memory = nto_xfer_memory;
   nto_ops.to_xfer_partial = nto_xfer_partial;
   nto_ops.to_files_info = nto_files_info;
   nto_ops.to_can_use_hw_breakpoint = nto_can_use_hw_breakpoint;

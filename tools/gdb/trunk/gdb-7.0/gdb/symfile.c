@@ -1373,13 +1373,21 @@ find_separate_debug_file (struct objfile *objfile)
   /* Strip off the final filename part, leaving the directory name,
      followed by a slash.  Objfile names should always be absolute and
      tilde-expanded, so there should always be a slash in there
-     somewhere.  */
-  for (i = strlen(dir) - 1; i >= 0; i--)
+     somewhere, unless there isn't.  See allocate_objfile.  */
+  for (i = strlen (dir) - 1; i >= 0; i--)
     {
       if (IS_DIR_SEPARATOR (dir[i]))
 	break;
     }
-  gdb_assert (i >= 0 && IS_DIR_SEPARATOR (dir[i]));
+  if (i < 0)
+    {
+      /* We are dealing with base name only.  Make it current dir.  */
+      if (strlen (dir) < 2)
+	dir = xrealloc (dir, 3);
+      dir[0] = '.';
+      dir[1] = '/';
+      i = 1;
+    }
   dir[i+1] = '\0';
 
   /* Set I to max (strlen (canon_name), strlen (dir)). */
