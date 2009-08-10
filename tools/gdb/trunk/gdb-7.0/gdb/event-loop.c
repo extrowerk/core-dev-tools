@@ -825,7 +825,6 @@ gdb_wait_for_event (int block)
   file_handler *file_ptr;
   gdb_event *file_event_ptr;
   int num_found = 0;
-  int i;
 
   /* Make sure all output is done before getting another event. */
   gdb_flush (gdb_stdout);
@@ -898,6 +897,8 @@ gdb_wait_for_event (int block)
   if (use_poll)
     {
 #ifdef HAVE_POLL
+      int i;
+
       for (i = 0; (i < gdb_notifier.num_fds) && (num_found > 0); i++)
 	{
 	  if ((gdb_notifier.poll_fds + i)->revents)

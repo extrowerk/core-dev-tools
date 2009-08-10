@@ -49,14 +49,14 @@ struct nto_target_ops
    regset it came from.  If reg == -1 update all regsets.  */
   int (*regset_id) (int);
 
-  void (*supply_gregset) (struct regcache *, char *);
+  void (*supply_gregset) (struct regcache *, const gdb_byte *);
 
-  void (*supply_fpregset) (struct regcache *, char *);
+  void (*supply_fpregset) (struct regcache *, const gdb_byte *);
 
-  void (*supply_altregset) (struct regcache *, char *);
+  void (*supply_altregset) (struct regcache *, const gdb_byte *);
 
 /* Given a regset, tell gdb about registers stored in data.  */
-  void (*supply_regset) (struct regcache *, int, char *);
+  void (*supply_regset) (struct regcache *, int, const gdb_byte *);
 
 /* Given a register and regset, calculate the offset into the regset
    and stuff it into the last argument.  If regno is -1, calculate the
@@ -66,7 +66,7 @@ struct nto_target_ops
 
 /* Build the Neutrino register set info into the data buffer.  
    Return -1 if unknown regset, 0 otherwise.  */
-  int (*regset_fill) (const struct regcache *, int, char *);
+  int (*regset_fill) (const struct regcache *, int, gdb_byte *);
 
 /* Gives the fetch_link_map_offsets function exposure outside of
    solib-svr4.c so that we can override relocate_section_addresses().  */
@@ -103,6 +103,18 @@ extern struct nto_target_ops current_nto_target;
 (current_nto_target.fetch_link_map_offsets)
 
 #define nto_is_nto_target (current_nto_target.is_nto_target)
+
+#define nto_trace(level) \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered ("nto: "); \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered
+
+/* register supply helper macros*/
+#define NTO_ALL_REGS (-1)
+#define RAW_SUPPLY_IF_NEEDED(regcache, whichreg, dataptr) \
+  {if (!(NTO_ALL_REGS == regno || regno == (whichreg))) {} \
+    else regcache_raw_supply (regcache, whichreg, dataptr); }
 
 /* Keep this consistant with neutrino syspage.h.  */
 enum
@@ -163,18 +175,30 @@ int nto_find_and_open_solib (char *, unsigned, char **);
 
 enum gdb_osabi nto_elf_osabi_sniffer (bfd *abfd);
 
-void nto_initialize_signals (void);
+void nto_initialize_signals (struct gdbarch *gdbarch);
 
 /* Dummy function for initializing nto_target_ops on targets which do
    not define a particular regset.  */
-void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
+void nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
 char *nto_extra_thread_info (struct thread_info *);
 
+struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
+
+/* needed for remote protocol and for core files */
+enum target_signal target_signal_from_nto (struct gdbarch *, int sig);
+int target_signal_to_nto(struct gdbarch *, enum target_signal sig);
+
+int qnx_filename_cmp (const char *s1, const char *s2);
+
 LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
 					  gdb_byte *readbuf,
 					  LONGEST len);
+
+char *nto_pid_to_str (struct target_ops *ops, ptid_t);
+
+char *nto_gdbarch_core_pid_to_str (struct gdbarch *, ptid_t);
 
 #endif

@@ -287,9 +287,8 @@ ser_windows_read_prim (struct serial *scb, size_t count)
 {
   struct ser_windows_state *state;
   OVERLAPPED ov;
-  DWORD bytes_read, bytes_read_tmp;
+  DWORD bytes_read;
   HANDLE h;
-  gdb_byte *p;
 
   state = scb->state;
   if (state->in_progress)
@@ -317,7 +316,6 @@ ser_windows_read_prim (struct serial *scb, size_t count)
 static int
 ser_windows_write_prim (struct serial *scb, const void *buf, size_t len)
 {
-  struct ser_windows_state *state;
   OVERLAPPED ov;
   DWORD bytes_written;
   HANDLE h;
@@ -599,7 +597,6 @@ pipe_select_thread (void *arg)
 {
   struct serial *scb = arg;
   struct ser_console_state *state;
-  int event_index;
   HANDLE h;
 
   state = scb->state;
@@ -642,7 +639,6 @@ file_select_thread (void *arg)
 {
   struct serial *scb = arg;
   struct ser_console_state *state;
-  int event_index;
   HANDLE h;
 
   state = scb->state;
@@ -1127,7 +1123,6 @@ net_windows_open (struct serial *scb, const char *name)
 {
   struct net_windows_state *state;
   int ret;
-  DWORD threadId;
 
   ret = net_open (scb, name);
   if (ret != 0)

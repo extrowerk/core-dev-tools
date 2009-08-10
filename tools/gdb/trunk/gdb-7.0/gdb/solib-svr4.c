@@ -1931,6 +1931,14 @@ elf_lookup_lib_symbol (const struct objfile *objfile,
 		(objfile, name, linkage_name, domain);
 }
 
+#ifdef __QNXTARGET__
+CORE_ADDR
+svr4_fetch_r_debug (void)
+{
+  return elf_locate_base ();
+}
+#endif /* __QNXTARGET__ */
+
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 
 void

@@ -1560,11 +1560,13 @@ timestamp (struct mi_timestamp *tv)
     tv->stime.tv_sec = rusage.ru_stime.tv_sec;
     tv->stime.tv_usec = rusage.ru_stime.tv_usec;
 #else
-    usec = get_run_time ();
-    tv->utime.tv_sec = usec/1000000L;
-    tv->utime.tv_usec = usec - 1000000L*tv->utime.tv_sec;
-    tv->stime.tv_sec = 0;
-    tv->stime.tv_usec = 0;
+    {
+      long usec = get_run_time ();
+      tv->utime.tv_sec = usec/1000000L;
+      tv->utime.tv_usec = usec - 1000000L*tv->utime.tv_sec;
+      tv->stime.tv_sec = 0;
+      tv->stime.tv_usec = 0;
+    }
 #endif
   }
 

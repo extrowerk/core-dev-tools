@@ -333,7 +333,12 @@ net_close (struct serial *scb)
 int
 net_read_prim (struct serial *scb, size_t count)
 {
-  return recv (scb->fd, scb->buf, count, 0);
+#ifdef __MINGW32__
+  char *buf = (char *)scb->buf;
+#else
+  unsigned char *buf = scb->buf;
+#endif /* __MINGW32__ */
+  return recv (scb->fd, buf, count, 0);
 }
 
 int
