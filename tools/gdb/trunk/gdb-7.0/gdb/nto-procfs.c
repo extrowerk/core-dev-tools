@@ -59,10 +59,6 @@ static void procfs_open (char *, int);
 
 static int procfs_can_run (void);
 
-static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
-			       struct mem_attrib *attrib,
-			       struct target_ops *);
-
 static void notice_signals (void);
 
 static void init_procfs_ops (void);
@@ -845,32 +841,6 @@ procfs_fetch_registers (struct target_ops *ops,
     nto_supply_altregset (regcache, (const gdb_byte *)&reg.altreg);
 }
 
-/* Copy LEN bytes to/from inferior's memory starting at MEMADDR
-   from/to debugger memory starting at MYADDR.  Copy from inferior
-   if DOWRITE is zero or to inferior if DOWRITE is nonzero.
-
-   Returns the length copied, which is either the LEN argument or
-   zero.  This xfer function does not do partial moves, since procfs_ops
-   doesn't allow memory operations to cross below us in the target stack
-   anyway.  */
-static int
-procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
-		    struct mem_attrib *attrib, struct target_ops *target)
-{
-  int nbytes = 0;
-
-  if (lseek (ctl_fd, (off_t) memaddr, SEEK_SET) == (off_t) memaddr)
-    {
-      if (dowrite)
-	nbytes = write (ctl_fd, myaddr, len);
-      else
-	nbytes = read (ctl_fd, myaddr, len);
-      if (nbytes < 0)
-	nbytes = 0;
-    }
-  return (nbytes);
-}
-
 static LONGEST
 procfs_xfer_partial (struct target_ops *ops, enum target_object object,
 		     const char *annex, gdb_byte *readbuf,
@@ -878,6 +848,23 @@ procfs_xfer_partial (struct target_ops *ops, enum target_object object,
 {
   if (object == TARGET_OBJECT_MEMORY)
     {
+      if (lseek (ctl_fd, (off_t) offset, SEEK_SET) == (off_t) offset)
+	{
+	  int nbytes = 0;
+
+	  if (readbuf != NULL)
+	    nbytes = read (ctl_fd, readbuf, len);
+	  else if (writebuf != NULL)
+	    nbytes = write (ctl_fd, writebuf, len);
+	  if (nbytes < 0)
+	    {
+	      nbytes = 0;
+
+	      nto_trace (0) ("read or write operation failed: addr=0x%s\n",
+			     paddress (target_gdbarch, offset));
+	    }
+	  return nbytes;
+	}
       if (readbuf)
 	return (*ops->deprecated_xfer_memory) (offset, readbuf,
 					       len, 0, NULL, ops);
@@ -1435,7 +1422,6 @@ init_procfs_ops (void)
   procfs_ops.to_fetch_registers = procfs_fetch_registers;
   procfs_ops.to_store_registers = procfs_store_registers;
   procfs_ops.to_prepare_to_store = procfs_prepare_to_store;
-  procfs_ops.deprecated_xfer_memory = procfs_xfer_memory;
   procfs_ops.to_xfer_partial = procfs_xfer_partial;
   procfs_ops.to_files_info = procfs_files_info;
   procfs_ops.to_insert_breakpoint = procfs_insert_breakpoint;

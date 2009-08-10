@@ -375,9 +375,6 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
 }
 
-/* Provide a prototype to silence -Wmissing-prototypes.  */
-extern initialize_file_ftype _initialize_i386nto_tdep;
-
 void
 _initialize_i386nto_tdep (void)
 {
