@@ -1,0 +1,10 @@
+load_generic_config "unix"
+load_lib libqnx.exp
+
+process_multilib_options ""
+
+global qnx_target_host
+global qnx_target_port
+set qnx_target_host tarmbe
+set qnx_target_port 8000
+

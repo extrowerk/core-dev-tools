@@ -1,0 +1,299 @@
+<?xml version="1.0"?>
+<module name="gcc">
+
+	<type>Element</type>
+
+	<classification>Runtime</classification>
+
+	<supports>
+		<availability ref="toolshosts"/>
+	</supports>
+
+	<targets>
+		<availability ref="ostargets"/>
+	</targets>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+
+
+	<GroupOwner>tools</GroupOwner>
+	<contents>
+		<package isHost="true">
+		<component id="specs" generated="false">
+				<location type="install">/usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5/</location>
+				<location tisa="arm" os="any" basedir="nto-x86-o-ntoarm/gcc" runtime="false">specs</location>
+		</component>
+		<component id="specs" generated="false">
+				<location type="install">/usr/lib/gcc-lib/i386-pc-nto-qnx6.3.0/3.3.5/</location>
+				<location tisa="x86" os="any" basedir="nto-x86-o-ntox86/gcc" runtime="false">specs</location>
+		</component>
+		<component id="specs" generated="false">
+				<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5/</location>
+				<location tisa="mips" os="any" basedir="nto-x86-o-ntomips/gcc" runtime="false">specs</location>
+		</component>
+		<component id="specs" generated="false">
+				<location type="install">/usr/lib/gcc-lib/powerpc-unknown-nto-qnx6.3.0/3.3.5/</location>
+				<location tisa="ppc" os="any" basedir="nto-x86-o-ntoppc/gcc" runtime="false">specs</location>
+		</component>
+		<component id="specs" generated="false">
+				<location type="install">/usr/lib/gcc-lib/sh-unknown-nto-qnx6.3.0/3.3.5/</location>
+				<location tisa="sh" os="any" basedir="nto-x86-o-ntosh/gcc" runtime="false">specs</location>
+		</component>
+		<component id="cc1" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">cc1</location>
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">cc1plus</location>
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">collect2</location>
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">xgcc</location>
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">g++</location>
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gcc" runtime="true">gcov</location>
+
+			<link runtime="true" os="nto" src="arm-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoarm-gcov-3.3.5"/> 
+			<link runtime="true" os="nto" src="arm-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoarm-gcc-3.3.5"/> 
+			<link runtime="true" os="nto" src="arm-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoarm-g++-3.3.5"/> 
+			<link runtime="true" os="nto" src="mips-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntomips-gcov-3.3.5"/> 
+			<link runtime="true" os="nto" src="mips-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntomips-gcc-3.3.5"/> 
+			<link runtime="true" os="nto" src="mips-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntomips-g++-3.3.5"/> 
+			<link runtime="true" os="nto" src="powerpc-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoppc-gcov-3.3.5"/> 
+			<link runtime="true" os="nto" src="powerpc-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoppc-gcc-3.3.5"/> 
+			<link runtime="true" os="nto" src="powerpc-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoppc-g++-3.3.5"/> 
+			<link runtime="true" os="nto" src="sh-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntosh-gcov-3.3.5"/> 
+			<link runtime="true" os="nto" src="sh-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntosh-gcc-3.3.5"/> 
+			<link runtime="true" os="nto" src="sh-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntosh-g++-3.3.5"/> 
+			<link runtime="true" os="nto" src="i386-pc-nto-qnx6.3.0-gcov" dst="/usr/bin/ntox86-gcov-3.3.5"/> 
+			<link runtime="true" os="nto" src="i386-pc-nto-qnx6.3.0-gcc" dst="/usr/bin/ntox86-gcc-3.3.5"/> 
+			<link runtime="true" os="nto" src="i386-pc-nto-qnx6.3.0-g++" dst="/usr/bin/ntox86-g++-3.3.5"/> 
+
+			<link runtime="true" os="linux" src="arm-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoarm-gcov-3.3.5"/> 
+			<link runtime="true" os="linux" src="arm-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoarm-gcc-3.3.5"/> 
+			<link runtime="true" os="linux" src="arm-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoarm-g++-3.3.5"/> 
+			<link runtime="true" os="linux" src="mips-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntomips-gcov-3.3.5"/> 
+			<link runtime="true" os="linux" src="mips-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntomips-gcc-3.3.5"/> 
+			<link runtime="true" os="linux" src="mips-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntomips-g++-3.3.5"/> 
+			<link runtime="true" os="linux" src="powerpc-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoppc-gcov-3.3.5"/> 
+			<link runtime="true" os="linux" src="powerpc-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoppc-gcc-3.3.5"/> 
+			<link runtime="true" os="linux" src="powerpc-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoppc-g++-3.3.5"/> 
+			<link runtime="true" os="linux" src="sh-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntosh-gcov-3.3.5"/> 
+			<link runtime="true" os="linux" src="sh-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntosh-gcc-3.3.5"/> 
+			<link runtime="true" os="linux" src="sh-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntosh-g++-3.3.5"/> 
+			<link runtime="true" os="linux" src="i386-pc-nto-qnx6.3.0-gcov" dst="/usr/bin/ntox86-gcov-3.3.5"/> 
+			<link runtime="true" os="linux" src="i386-pc-nto-qnx6.3.0-gcc" dst="/usr/bin/ntox86-gcc-3.3.5"/> 
+			<link runtime="true" os="linux" src="i386-pc-nto-qnx6.3.0-g++" dst="/usr/bin/ntox86-g++-3.3.5"/> 
+
+			<link runtime="true" os="solaris" src="arm-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoarm-gcov-3.3.5"/> 
+			<link runtime="true" os="solaris" src="arm-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoarm-gcc-3.3.5"/> 
+			<link runtime="true" os="solaris" src="arm-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoarm-g++-3.3.5"/> 
+			<link runtime="true" os="solaris" src="mips-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntomips-gcov-3.3.5"/> 
+			<link runtime="true" os="solaris" src="mips-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntomips-gcc-3.3.5"/> 
+			<link runtime="true" os="solaris" src="mips-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntomips-g++-3.3.5"/> 
+			<link runtime="true" os="solaris" src="powerpc-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntoppc-gcov-3.3.5"/> 
+			<link runtime="true" os="solaris" src="powerpc-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntoppc-gcc-3.3.5"/> 
+			<link runtime="true" os="solaris" src="powerpc-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntoppc-g++-3.3.5"/> 
+			<link runtime="true" os="solaris" src="sh-unknown-nto-qnx6.3.0-gcov" dst="/usr/bin/ntosh-gcov-3.3.5"/> 
+			<link runtime="true" os="solaris" src="sh-unknown-nto-qnx6.3.0-gcc" dst="/usr/bin/ntosh-gcc-3.3.5"/> 
+			<link runtime="true" os="solaris" src="sh-unknown-nto-qnx6.3.0-g++" dst="/usr/bin/ntosh-g++-3.3.5"/> 
+			<link runtime="true" os="solaris" src="i386-pc-nto-qnx6.3.0-gcov" dst="/usr/bin/ntox86-gcov-3.3.5"/> 
+			<link runtime="true" os="solaris" src="i386-pc-nto-qnx6.3.0-gcc" dst="/usr/bin/ntox86-gcc-3.3.5"/> 
+			<link runtime="true" os="solaris" src="i386-pc-nto-qnx6.3.0-g++" dst="/usr/bin/ntox86-g++-3.3.5"/> 
+
+			<link runtime="true" os="win32" src="arm-unknown-nto-qnx6.3.0-gcov.exe" dst="/usr/bin/ntoarm-gcov-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="arm-unknown-nto-qnx6.3.0-gcc.exe" dst="/usr/bin/ntoarm-gcc-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="arm-unknown-nto-qnx6.3.0-g++.exe" dst="/usr/bin/ntoarm-g++-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="mips-unknown-nto-qnx6.3.0-gcov.exe" dst="/usr/bin/ntomips-gcov-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="mips-unknown-nto-qnx6.3.0-gcc.exe" dst="/usr/bin/ntomips-gcc-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="mips-unknown-nto-qnx6.3.0-g++.exe" dst="/usr/bin/ntomips-g++-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="powerpc-unknown-nto-qnx6.3.0-gcov.exe" dst="/usr/bin/ntoppc-gcov-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="powerpc-unknown-nto-qnx6.3.0-gcc.exe" dst="/usr/bin/ntoppc-gcc-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="powerpc-unknown-nto-qnx6.3.0-g++.exe" dst="/usr/bin/ntoppc-g++-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="sh-unknown-nto-qnx6.3.0-gcov.exe" dst="/usr/bin/ntosh-gcov-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="sh-unknown-nto-qnx6.3.0-gcc.exe" dst="/usr/bin/ntosh-gcc-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="sh-unknown-nto-qnx6.3.0-g++.exe" dst="/usr/bin/ntosh-g++-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="i386-pc-nto-qnx6.3.0-gcov.exe" dst="/usr/bin/ntox86-gcov-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="i386-pc-nto-qnx6.3.0-gcc.exe" dst="/usr/bin/ntox86-gcc-3.3.5.exe"/> 
+			<link runtime="true" os="win32" src="i386-pc-nto-qnx6.3.0-g++.exe" dst="/usr/bin/ntox86-g++-3.3.5.exe"/> 
+		</component>
+		<component id="libgcc" generated="false">
+			<location type="install">usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5/pic</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic">libgcc.a</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic">crtend.o</location>
+		</component>
+	
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5/pic/be</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic/be">libgcc.a</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic/be">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/pic/be">crtend.o</location>
+		</component>
+		
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5/be</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/be">libgcc.a</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/be">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/be">crtend.o</location>
+		</component>
+		
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc">libgcc.a</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5/pic</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic">libgcc.a</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5/pic/be</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic/be">libgcc.a</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic/be">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/pic/be">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5/be</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/be">libgcc.a</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/be">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/be">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc">libgcc.a</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/powerpc-unknown-nto-qnx6.3.0/3.3.5</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc">libgcc.a</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/powerpc-unknown-nto-qnx6.3.0/3.3.5/pic</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/pic">libgcc.a</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/pic">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/pic">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/sh-unknown-nto-qnx6.3.0/3.3.5</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc">libgcc.a</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/sh-unknown-nto-qnx6.3.0/3.3.5/pic</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/pic">libgcc.a</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/pic">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/pic">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/i386-pc-nto-qnx6.3.0/3.3.5</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc">libgcc.a</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc">crtend.o</location>
+		</component>
+
+		<component id="libgcc" generated="false">
+			<location type="install">/usr/lib/gcc-lib/i386-pc-nto-qnx6.3.0/3.3.5/pic</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/pic">libgcc.a</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/pic">crtbegin.o</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/pic">crtend.o</location>
+		</component>
+		
+		<component id="libgccheader" generated="false">
+			<location type="install">/usr/lib/gcc-lib/i386-pc-nto-qnx6.3.0/3.3.5/include/</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/include">iso646.h</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/include">stdbool.h</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/include">stddef.h</location>
+			<location os="any" runtime="false" tisa="x86" basedir="nto-x86-o-ntox86/gcc/include">varargs.h</location>
+		</component>
+
+		<component id="libgccheader" generated="false">
+			<location type="install">/usr/lib/gcc-lib/mips-unknown-nto-qnx6.3.0/3.3.5/include/</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/include">iso646.h</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/include">stdbool.h</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/include">stddef.h</location>
+			<location os="any" runtime="false" tisa="mips" basedir="nto-x86-o-ntomips/gcc/include">varargs.h</location>
+		</component>
+
+		<component id="libgccheader" generated="false">
+			<location type="install">/usr/lib/gcc-lib/powerpc-unknown-nto-qnx6.3.0/3.3.5/include/</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/include">iso646.h</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/include">stdbool.h</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/include">stddef.h</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/include">varargs.h</location>
+			<location os="any" runtime="false" tisa="ppc" basedir="nto-x86-o-ntoppc/gcc/include">altivec.h</location>
+		</component>
+
+		<component id="libgccheader" generated="false">
+			<location type="install">/usr/lib/gcc-lib/sh-unknown-nto-qnx6.3.0/3.3.5/include/</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/include">iso646.h</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/include">stdbool.h</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/include">stddef.h</location>
+			<location os="any" runtime="false" tisa="sh" basedir="nto-x86-o-ntosh/gcc/include">varargs.h</location>
+		</component>
+
+		<component id="libgccheader" generated="false">
+			<location type="install">/usr/lib/gcc-lib/arm-unknown-nto-qnx6.3.0/3.3.5/include/</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/include">iso646.h</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/include">stdbool.h</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/include">stddef.h</location>
+			<location os="any" runtime="false" tisa="arm" basedir="nto-x86-o-ntoarm/gcc/include">varargs.h</location>
+		</component>
+		</package>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="arm" byteorder="le" basedir="nto-x86-o-ntoarm/arm-unknown-nto-qnx6.3.0/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="arm" byteorder="be" basedir="nto-x86-o-ntoarm/arm-unknown-nto-qnx6.3.0/be/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="mips" byteorder="le" basedir="nto-x86-o-ntomips/mips-unknown-nto-qnx6.3.0/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="mips" byteorder="be" basedir="nto-x86-o-ntomips/mips-unknown-nto-qnx6.3.0/be/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="ppc" byteorder="be" basedir="nto-x86-o-ntoppc/powerpc-unknown-nto-qnx6.3.0/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="sh" byteorder="le" basedir="nto-x86-o-ntosh/sh-unknown-nto-qnx6.3.0/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+		<component id="libiberty" generated="false">
+			<kind type="library"/>
+			<location type="install">/lib/3.3.5</location>
+			<location os="any" isa="x86" basedir="nto-x86-o-ntox86/i386-pc-nto-qnx6.3.0/libiberty" runtime="true">libiberty.a</location>
+		</component>
+
+	</contents>
+</module>
