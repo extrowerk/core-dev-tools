@@ -99,7 +99,9 @@ inferior_process_group (void)
    to SIG_IGN.  */
 
 static void (*sigint_ours) ();
+#ifdef SIGQUIT
 static void (*sigquit_ours) ();
+#endif
 
 /* The name of the tty (from the `tty' command) that we're giving to
    the inferior when starting it up.  This is only (and should only
@@ -373,7 +375,6 @@ terminal_ours_1 (int output_only)
          pgrp.  */
       void (*osigttou) () = NULL;
 #endif
-      int result;
 
 #ifdef SIGTTOU
       if (job_control)
@@ -411,7 +412,7 @@ terminal_ours_1 (int output_only)
       if (job_control)
 	{
 #ifdef HAVE_TERMIOS
-	  result = tcsetpgrp (0, our_terminal_info.process_group);
+	  (void) tcsetpgrp (0, our_terminal_info.process_group);
 #if 0
 	  /* This fails on Ultrix with EINVAL if you run the testsuite
 	     in the background with nohup, and then log out.  GDB never
@@ -424,7 +425,7 @@ terminal_ours_1 (int output_only)
 #endif /* termios */
 
 #ifdef HAVE_SGTTY
-	  result = ioctl (0, TIOCSPGRP, &our_terminal_info.process_group);
+	  (void) ioctl (0, TIOCSPGRP, &our_terminal_info.process_group);
 #endif
 	}
 
@@ -447,8 +448,8 @@ terminal_ours_1 (int output_only)
       /* Is there a reason this is being done twice?  It happens both
          places we use F_SETFL, so I'm inclined to think perhaps there
          is some reason, however perverse.  Perhaps not though...  */
-      result = fcntl (0, F_SETFL, our_terminal_info.tflags);
-      result = fcntl (0, F_SETFL, our_terminal_info.tflags);
+      (void) fcntl (0, F_SETFL, our_terminal_info.tflags);
+      (void) fcntl (0, F_SETFL, our_terminal_info.tflags);
 #endif
     }
 }
@@ -599,7 +600,7 @@ new_tty_prefork (const char *ttyname)
   inferior_thisrun_terminal = ttyname;
 }
 
-
+#if !defined(__GO32__) && !defined(_WIN32)
 /* If RESULT, assumed to be the return value from a system call, is
    negative, print the error message indicated by errno and exit.
    MSG should identify the operation that failed.  */
@@ -612,15 +613,18 @@ check_syscall (const char *msg, int result)
       _exit (1);
     }
 }
+#endif /* !defined(__GO32__) && !defined(_WIN32)  */
+
 
 void
 new_tty (void)
 {
-  int tty;
-
   if (inferior_thisrun_terminal == 0)
     return;
 #if !defined(__GO32__) && !defined(_WIN32)
+  { 
+    int tty;
+
 #ifdef TIOCNOTTY
   /* Disconnect the child process from our controlling terminal.  On some
      systems (SVR4 for example), this may cause a SIGTTOU, so temporarily
@@ -669,6 +673,8 @@ new_tty (void)
 
   if (tty > 2)
     close (tty);
+
+  }
 #endif /* !go32 && !win32 */
 }
 

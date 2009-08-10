@@ -836,13 +836,13 @@ procfs_fetch_registers (struct target_ops *ops,
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset (regcache, (char *) &reg.greg);
+    nto_supply_gregset (regcache, (const gdb_byte *)&reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset (regcache, (char *) &reg.fpreg);
+    nto_supply_fpregset (regcache, (const gdb_byte *)&reg.fpreg);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset (regcache, (char *) &reg.altreg);
+    nto_supply_altregset (regcache, (const gdb_byte *)&reg.altreg);
 }
 
 /* Copy LEN bytes to/from inferior's memory starting at MEMADDR
@@ -1060,6 +1060,7 @@ procfs_mourn_inferior (struct target_ops *ops)
     {
       SignalKill (nto_node (), PIDGET (inferior_ptid), 0, SIGKILL, 0, 0);
       close (ctl_fd);
+      delete_inferior (ptid_get_pid (inferior_ptid));
     }
   inferior_ptid = null_ptid;
   init_thread_list ();
@@ -1333,7 +1334,7 @@ procfs_store_registers (struct target_ops *ops,
 	  if (dev_set == -1)
 	    continue;
 
-	  if (nto_regset_fill (regcache, regset, (char *) &reg) == -1)
+	  if (nto_regset_fill (regcache, regset, (gdb_byte *)&reg) == -1)
 	    continue;
 
 	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
