@@ -1,0 +1,48 @@
+
+set timeout 300
+
+#Test: Sanity
+#Purpose: sanity check to see if gdb can connect to a remote target and run an app on it.
+#Date: Nov 2,2007
+#Author: Wade Hawkins
+
+#check if we are testing with a remote target.  These tests require one.
+ 
+   set testfile sanity
+   set srcfile ${srcdir}/${subdir}/${testfile}.c
+   set binfile ${objdir}/${subdir}/${testfile}
+
+   # clean up any old gdbs running
+   gdb_exit
+
+   # compile the program into a binary
+   if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags="-w"}] != "" } {
+       gdb_suppress_entire_file "Testcase compile failed, so all tests in this file will automatically fail."
+       }
+
+	if [get_compiler_info ${binfile}] {
+	    return -1
+	}
+	
+	# start a fresh gdb then connect and upload our sanity test
+	# finish it up by running our sanity and checking its output with the gdb_test func
+	gdb_start
+	
+	gdb_load ${binfile}
+
+	send_user "Off to testing...\n"
+
+	gdb_test "break main" "Breakpoint.*" "Set breakpoint at main"
+
+	verbose "Running to breakpoint...\n"
+
+	gdb_test "run /tmp/${testfile}\r" "Breakpoint.*" "Run to breakpoint"
+	
+	verbose "Stopped at breakpint, continuing...\n"
+	send_gdb "continue\r"
+	gdb_expect {
+	  -re "hello world*" { pass "Targeting qnx debug Sanity." }
+	  timeout { fail "Targeting qnx debug Sanity." }
+	}	
+      
+gdb_exit

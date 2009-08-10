@@ -1,0 +1,140 @@
+<QPG:Generation>
+   <QPG:Owner file="owner.qpg"/>
+   <QPG:Values>
+      <QPG:Files>
+<QPG:Add file="nto-*-ntomulti/bfd/.libs/libbfd.a" install="/usr/lib/"/>
+<QPG:Add file="nto-*-ntomulti/bfd/libbfd.la" install="/usr/lib/"/>
+<QPG:Add file="nto-*-ntomulti/bfd/bfd.h" install="/usr/include/"/>
+<QPG:Add file="include/bfdlink.h" install="/usr/include/"/>
+
+<QPG:Add file="nto-*-ntomulti/opcodes/libopcodes.la" install="/usr/lib/"/>
+<QPG:Add file="nto-*-ntomulti/opcodes/.libs/libopcodes.a" install="/usr/lib/"/>
+
+<QPG:Add file="nto-*-ntomulti/libiberty/libiberty.a" install="/usr/lib/"/>
+<QPG:Add file="include/ansidecl.h" install="/usr/include/"/>
+
+<QPG:Add file="nto-*-ntomulti/binutils/size" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/objdump" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/ar" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/ranlib" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/strings" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/objcopy" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/strip-new" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/addr2line" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/nm-new" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/readelf" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/binutils/cxxfilt" pinfo="$" permissions="u+t" />
+
+<QPG:Add file="nto-*-ntomulti/gprof/gprof" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/ld/ld-new" pinfo="$" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/gas/ntox86/gasp-new" pinfo="$" permissions="u+t" />
+
+<QPG:Add file="nto-*-ntomulti/gas/ntoarm/as-new" pinfo="$" target="arm" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/gas/ntomips/as-new" pinfo="$" target="mips" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/gas/ntoppc/as-new" pinfo="$" target="ppc" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/gas/ntosh/as-new" pinfo="$" target="sh" permissions="u+t" />
+<QPG:Add file="nto-*-ntomulti/gas/ntox86/as-new" pinfo="$" target="x86" permissions="u+t" />
+
+<QPG:Add file="nto-*-ntomulti/ld/ldscripts/arm*" install="/usr/lib/ldscripts/" target="arm"/>
+<QPG:Add file="nto-*-ntomulti/ld/ldscripts/*mip*" install="/usr/lib/ldscripts/" target="mips"/>
+<QPG:Add file="nto-*-ntomulti/ld/ldscripts/*ppc*" install="/usr/lib/ldscripts/" target="ppc"/>
+<QPG:Add file="nto-*-ntomulti/ld/ldscripts/sh*" install="/usr/lib/ldscripts/" target="sh"/>
+<QPG:Add file="nto-*-ntomulti/ld/ldscripts/i386*" install="/usr/lib/ldscripts/" target="x86"/>
+
+<QPG:Add file="binutils/doc/*.1" install="/usr/man/man1/"/>
+
+<QPG:Add file="nto-x86-o-ntomulti/binutils/doc/c++filt.1" install="/usr/man/man1/"/>
+<QPG:Add file="gas/doc/as.1" install="/usr/man/man1/"/>
+<QPG:Add file="gprof/gprof.1" install="/usr/man/man1/"/>
+<QPG:Add file="ld/ld.1" install="/usr/man/man1/"/>
+
+<QPG:Add file="include/bfdlink.h" install="/usr/include/"/>
+<QPG:Add file="include/ansidecl.h" install="/usr/include/"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-size" install="/usr/bin/" filetype="symlink" linkto="size" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-size" install="/usr/bin/" filetype="symlink" linkto="size" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-size" install="/usr/bin/" filetype="symlink" linkto="size" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-size" install="/usr/bin/" filetype="symlink" linkto="size" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-size" install="/usr/bin/" filetype="symlink" linkto="size" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-objdump" install="/usr/bin/" filetype="symlink" linkto="objdump" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-objdump" install="/usr/bin/" filetype="symlink" linkto="objdump" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-objdump" install="/usr/bin/" filetype="symlink" linkto="objdump" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-objdump" install="/usr/bin/" filetype="symlink" linkto="objdump" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-objdump" install="/usr/bin/" filetype="symlink" linkto="objdump" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-ar" install="/usr/bin/" filetype="symlink" linkto="ar" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-ar" install="/usr/bin/" filetype="symlink" linkto="ar" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-ar" install="/usr/bin/" filetype="symlink" linkto="ar" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-ar" install="/usr/bin/" filetype="symlink" linkto="ar" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-ar" install="/usr/bin/" filetype="symlink" linkto="ar" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-ranlib" install="/usr/bin/" filetype="symlink" linkto="ranlib" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-ranlib" install="/usr/bin/" filetype="symlink" linkto="ranlib" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-ranlib" install="/usr/bin/" filetype="symlink" linkto="ranlib" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-ranlib" install="/usr/bin/" filetype="symlink" linkto="ranlib" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-ranlib" install="/usr/bin/" filetype="symlink" linkto="ranlib" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-strings" install="/usr/bin/" filetype="symlink" linkto="strings" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-strings" install="/usr/bin/" filetype="symlink" linkto="strings" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-strings" install="/usr/bin/" filetype="symlink" linkto="strings" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-strings" install="/usr/bin/" filetype="symlink" linkto="strings" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-strings" install="/usr/bin/" filetype="symlink" linkto="strings" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-objcopy" install="/usr/bin/" filetype="symlink" linkto="objcopy" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-objcopy" install="/usr/bin/" filetype="symlink" linkto="objcopy" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-objcopy" install="/usr/bin/" filetype="symlink" linkto="objcopy" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-objcopy" install="/usr/bin/" filetype="symlink" linkto="objcopy" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-objcopy" install="/usr/bin/" filetype="symlink" linkto="objcopy" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-strip" install="/usr/bin/" filetype="symlink" linkto="strip" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-strip" install="/usr/bin/" filetype="symlink" linkto="strip" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-strip" install="/usr/bin/" filetype="symlink" linkto="strip" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-strip" install="/usr/bin/" filetype="symlink" linkto="strip" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-strip" install="/usr/bin/" filetype="symlink" linkto="strip" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-addr2line" install="/usr/bin/" filetype="symlink" linkto="addr2line" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-addr2line" install="/usr/bin/" filetype="symlink" linkto="addr2line" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-addr2line" install="/usr/bin/" filetype="symlink" linkto="addr2line" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-addr2line" install="/usr/bin/" filetype="symlink" linkto="addr2line" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-addr2line" install="/usr/bin/" filetype="symlink" linkto="addr2line" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-nm" install="/usr/bin/" filetype="symlink" linkto="nm" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-nm" install="/usr/bin/" filetype="symlink" linkto="nm" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-nm" install="/usr/bin/" filetype="symlink" linkto="nm" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-nm" install="/usr/bin/" filetype="symlink" linkto="nm" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-nm" install="/usr/bin/" filetype="symlink" linkto="nm" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-c++filt" install="/usr/bin/" filetype="symlink" linkto="c++filt" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-c++filt" install="/usr/bin/" filetype="symlink" linkto="c++filt" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-c++filt" install="/usr/bin/" filetype="symlink" linkto="c++filt" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-c++filt" install="/usr/bin/" filetype="symlink" linkto="c++filt" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-c++filt" install="/usr/bin/" filetype="symlink" linkto="c++filt" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-readelf" install="/usr/bin/" filetype="symlink" linkto="readelf" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-readelf" install="/usr/bin/" filetype="symlink" linkto="readelf" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-readelf" install="/usr/bin/" filetype="symlink" linkto="readelf" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-readelf" install="/usr/bin/" filetype="symlink" linkto="readelf" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-readelf" install="/usr/bin/" filetype="symlink" linkto="readelf" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-gprof" install="/usr/bin/" filetype="symlink" linkto="gprof" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-gprof" install="/usr/bin/" filetype="symlink" linkto="gprof" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-gprof" install="/usr/bin/" filetype="symlink" linkto="gprof" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-gprof" install="/usr/bin/" filetype="symlink" linkto="gprof" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-gprof" install="/usr/bin/" filetype="symlink" linkto="gprof" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-ld" install="/usr/bin/" filetype="symlink" linkto="ld" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-ld" install="/usr/bin/" filetype="symlink" linkto="ld" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-ld" install="/usr/bin/" filetype="symlink" linkto="ld" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-ld" install="/usr/bin/" filetype="symlink" linkto="ld" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-ld" install="/usr/bin/" filetype="symlink" linkto="ld" target="x86"/>
+
+<QPG:Add filter="exact" proc="none" file="ntoarm-gasp" install="/usr/bin/" filetype="symlink" linkto="gasp" target="arm"/>
+<QPG:Add filter="exact" proc="none" file="ntomips-gasp" install="/usr/bin/" filetype="symlink" linkto="gasp" target="mips"/>
+<QPG:Add filter="exact" proc="none" file="ntoppc-gasp" install="/usr/bin/" filetype="symlink" linkto="gasp" target="ppc"/>
+<QPG:Add filter="exact" proc="none" file="ntosh-gasp" install="/usr/bin/" filetype="symlink" linkto="gasp" target="sh"/>
+<QPG:Add filter="exact" proc="none" file="ntox86-gasp" install="/usr/bin/" filetype="symlink" linkto="gasp" target="x86"/>
+
+      </QPG:Files>
+   </QPG:Values>
+</QPG:Generation>

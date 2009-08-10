@@ -1,0 +1,16 @@
+<QPG:Generation>
+   <QPG:Owner file="owner.qpg"/>
+   <QPG:Values>
+      <QPG:Files>
+         <!-- All binaries and shared objects that need pinfo files -->
+         <QPG:Add file="nto-*/make" pinfo="$" target="none" permissions="u+t" />
+         <QPG:Add hos="solaris" proc="sparc" file="solaris-*/make" pinfo="$" target="none" permissions="u+t" />
+         <QPG:Add hos="linux" file="linux-*/make" pinfo="$" target="none" permissions="u+t" />
+         <QPG:Add hos="win32" file="win32-x86-o/make.exe" install="/usr/bin/" target="none" />
+
+
+         <!-- Next, man pages -->
+         <QPG:Add file="make.1" install="/usr/man/man1/" target="none" proc="none" />
+      </QPG:Files>
+   </QPG:Values>
+</QPG:Generation>

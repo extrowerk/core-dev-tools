@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<module name="gdb">
+
+	<type>Element</type>
+
+	<classification>Runtime</classification>
+
+	<supports>
+		<availability ref="toolshosts"/>
+	</supports>
+
+	<targets>
+		<availability ref="ostargets"/>
+	</targets>
+
+	<source available="false">
+		<location type="">.</location>
+	</source>
+
+
+<GroupOwner>tools</GroupOwner>
+	<contents>
+		<package isHost="true">
+		<component id="gdb" generated="true">
+			<location basedir="{os}-{cpu}-o-nto{tcpu}/gdb" runtime="true">
+				gdb
+			</location>
+			<link src="ntox86-gdb" dst="/usr/bin/gdb" os="nto" isa="x86" tisa="x86"/>
+		</component>
+		</package>
+
+	</contents>
+
+</module>

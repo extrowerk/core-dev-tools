@@ -1,0 +1,66 @@
+#Test: Symbol table bug.
+#Purpose: PR:56132
+#Date: March 12,2008
+#Author: Aleksandar Ristovski
+load_lib "mi-support.exp"
+set test "PR55343"
+
+gdb_exit
+
+set testfile multithr
+set srcfile ${srcdir}/${subdir}/${testfile}.c
+set binfile ${objdir}/${subdir}/${testfile}
+
+if { [gdb_compile "$srcfile" "$binfile" executable { debug additional_flags="-w" "c"}] != "" } {
+  gdb_suppress_entire_file "Testcse $test compile failed."
+  return 1
+}
+
+if [get_compiler_info ${binfile}] {
+  return -1
+}
+
+set timeout 60
+set dec "\[0-9\]+"
+set BKPTRESP "\\^done,bkpt=\{number=\"$dec\",type=\"breakpoint\",disp=\"del\",enabled=\"y\",addr=\"$hex\",func=\".*\",file=\".*$testfile.c\",fullname=\".*$testfile.c\",line=\"$dec\",times=\"0\"\}" \
+
+
+mi_gdb_start
+
+mi_gdb_load $binfile
+send_user "Run to main...\n"
+mi_gdb_test "101-break-insert -t main" \
+	    "101$BKPTRESP" \
+	    "$test: break-insert -t (@main)"
+send_user "Set breakpoint @24.\n"
+mi_gdb_test "222-break-insert -t  $testfile.c:24" \
+            "222$BKPTRESP" \
+            "$test: break-insert -t  operation @24 \n---\n$expect_out(buffer)\n---\n"
+
+mi_gdb_test "102-exec-run" "102.*running" "$test: exec-run"
+send_user "Wait until breakpoint hit.\n"
+gdb_expect $timeout {
+  -re ".*stopped,reason=.*,line=\"$dec\"\}.*$mi_gdb_prompt"
+    { continue }
+  timeout {
+    fail "$test: Wait for breakpoint hit failed \n---\n$expect_out(buffer)\n...\n"
+  }
+}
+send_user "Continue.\n"
+mi_gdb_test "104-exec-continue" ".*104.running" "$test: exec-continue"
+send_user "Wait for the breakpoint hit. (bkpt 2).\n"
+gdb_expect $timeout {
+  -re ".*\\*stopped,reason=.*" 
+    {continue}
+  timeout {
+    fail "$test: Wait for breakpoint hit."
+  }
+}
+mi_gdb_test "info threads" ".*" "$test: info threads"
+mi_gdb_test "109-thread-select 1" ".*109.done,.*{.*}" "$test: thread-select 1"
+mi_gdb_test "110-stack-info-depth" "110.done,depth=\"\[0-9\]+\"" "$test: stack-info-depth"
+
+
+
+
+mi_gdb_exit

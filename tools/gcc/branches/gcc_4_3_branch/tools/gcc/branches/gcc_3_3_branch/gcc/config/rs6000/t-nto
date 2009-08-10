@@ -1,0 +1,53 @@
+# Build libgcc.a with different options.  With gas, build pic libraries
+# as well no floating point
+
+# put this in if you want g++ to use the Dinkum lib
+#T_CFLAGS = -D__QNXTARGET__ -DLIBSTDCXX=\"-lcpp\"
+
+# This allows us to use a staging area and find the new header files.
+# TCFLAGS is used by xgcc.
+TCFLAGS = -I $(shell echo ${QNX_TARGET})/usr/include
+
+CRTSTUFF_T_CFLAGS = -msdata=none -fno-omit-frame-pointer -fpic
+TARGET_LIBGCC2_CFLAGS = -Dinhibit_libc -fexceptions
+
+# Use unwind-dw2-fde
+LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde.c \
+  $(srcdir)/unwind-sjlj.c
+LIB2ADDEHDEP = unwind.inc unwind-dw2-fde.h
+
+# Don't run fixproto or fixinc
+STMP_FIXPROTO =
+STMP_FIXINC =
+
+ifeq "X$(QNX_SYSTEM_ROOT)" "X"
+ T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"\" -DTARGET_ALIAS=\"$(target_alias)\"
+else
+ ifeq "$(QNX_SYSTEM_ROOT)" "/"
+  T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"\" -DTARGET_ALIAS=\"$(target_alias)\"
+ else
+  T_CPPFLAGS=-DQNX_SYSTEM_ROOT=\"$(QNX_SYSTEM_ROOT)\" -DTARGET_ALIAS=\"$(target_alias)\"
+ endif
+endif
+
+MULTILIB_OPTIONS = fpic
+MULTILIB_DIRNAMES = pic
+MULTILIB_MATCHES = fpic=shared
+
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
+
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
+
+LIB2FUNCS_EXTRA=embed-bb.c tramp.S
+
+embed-bb.c: $(srcdir)/libgcc2.c
+	echo '#ifdef inhibit_libc' > $@
+	echo '#define L_bb' >> $@
+	echo '#undef inhibit_libc' >> $@
+	cat $< >> $@
+	echo '#endif' >> $@
+
+tramp.S: $(srcdir)/config/rs6000/tramp.asm
+	cat $(srcdir)/config/rs6000/tramp.asm > tramp.S
+
