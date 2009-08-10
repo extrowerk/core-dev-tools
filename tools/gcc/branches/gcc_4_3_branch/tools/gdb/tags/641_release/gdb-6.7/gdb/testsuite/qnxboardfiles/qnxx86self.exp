@@ -1,8 +1,0 @@
-load_generic_config "unix"
-
-process_multilib_options ""
-
-set CXX_FOR_TARGET [find_g++]
-set CC_FOR_TARGET [find_gcc]
-
-
