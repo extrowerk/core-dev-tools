@@ -8269,6 +8269,7 @@ remote_hostio_pread (int fd, gdb_byte *read_buf, int len,
   struct remote_state *rs = get_remote_state ();
   char *p = rs->buf;
   gdb_byte *attachment;
+  gdb_byte **pattachment = &attachment;
   int left = get_remote_packet_size ();
   int ret, attachment_len;
   int read_len;
@@ -8284,7 +8285,7 @@ remote_hostio_pread (int fd, gdb_byte *read_buf, int len,
   remote_buffer_add_int (&p, &left, offset);
 
   ret = remote_hostio_send_command (p - rs->buf, PACKET_vFile_pread,
-				    remote_errno, (char**)&attachment,
+				    remote_errno, (char**)pattachment,
 				    &attachment_len);
 
   if (ret < 0)

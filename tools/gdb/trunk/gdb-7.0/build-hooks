@@ -127,7 +127,7 @@ function hook_preconfigure {
 	
 	case ${target} in 
 	  *-nto-*)
-	  CFLAGS="-D__QNXTARGET__ -ggdb3 -O0 -D_LARGEFILE64_SOURCE"; export CFLAGS
+	  CFLAGS="-D__QNXTARGET__ -g0 -O2 -D_LARGEFILE64_SOURCE"; export CFLAGS
 	  ;;
 	esac
 }

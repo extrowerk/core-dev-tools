@@ -189,7 +189,9 @@ char *lim_at_start;
 #ifndef STOP_SIGNAL
 #ifdef SIGTSTP
 #define STOP_SIGNAL SIGTSTP
+#if 0
 static void stop_sig (int);
+#endif
 #endif
 #endif
 
@@ -773,6 +775,7 @@ gdb_readline_wrapper (char *prompt)
 }
 
 
+#if 0
 #ifdef STOP_SIGNAL
 static void
 stop_sig (int signo)
@@ -823,6 +826,7 @@ do_nothing (int signo)
      it unconditionally. */
   signal (signo, do_nothing);
 }
+#endif
 
 /* The current saved history number from operate-and-get-next.
    This is -1 if not valid.  */
