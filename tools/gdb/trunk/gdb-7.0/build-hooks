@@ -115,7 +115,7 @@ function hook_preconfigure {
 	# own, but the only thing we can do is point it at a safe place.
 	#configure_opts="${configure_opts} --includedir=."
 	configure_opts="${configure_opts} --enable-gdbmi"
-	configure_opts="${configure_opts} --enable-build-warnings=-Wall"
+#	configure_opts="${configure_opts} --enable-build-warnings=-Wall"
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tui"
 	configure_opts="${configure_opts} --disable-sim --without-sim"
