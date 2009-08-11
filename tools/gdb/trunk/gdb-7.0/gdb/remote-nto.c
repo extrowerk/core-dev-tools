@@ -2158,7 +2158,8 @@ nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len)
 static LONGEST
 nto_xfer_partial (struct target_ops *ops, enum target_object object,
 		  const char *annex, gdb_byte *readbuf,
-		  const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+		  const gdb_byte *writebuf, const ULONGEST offset,
+		  const LONGEST len)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
 
@@ -2172,32 +2173,29 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
   else if (object == TARGET_OBJECT_AUXV
 	   && readbuf)
     {
-      /* If there is no exec_bfd, but there is inferior, we try to 
-	 read auxv using initial stack.  The problem is, older pdebug-s don't
-	 support reading procfs_info.  */
+      /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+      const unsigned int sizeof_auxv_t = 8;
+      const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
+      int tempread = 0;
+      gdb_byte *tempbuf = alloca (sizeof_tempbuf);
       nto_procfs_info procfs_info;
+
+      if (!tempbuf)
+        return -1;
+
+      /* We first try to read auxv using initial stack.  The problem is, older
+         pdebug-s don't support reading procfs_info.  */
 
       if (nto_read_procfsinfo (&procfs_info))
 	{
 	  CORE_ADDR initial_stack;
-	  /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
-	  const unsigned int sizeof_auxv_t = 8;
-	  const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
-	  int tempread;
-	  gdb_byte *tempbuf = alloca (sizeof_tempbuf);
-
-	  if (!tempbuf)
-	    return -1;
-
+	  
 	  initial_stack =
 	    EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
 				    sizeof_auxv_t, byte_order);
 
 	  tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
 						       sizeof_tempbuf);
-	  tempread = min (tempread, len) - offset;
-	  memcpy (readbuf, tempbuf + offset, tempread);
-	  return tempread;
 	}
       else if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
 	       && exec_bfd->tdata.elf_obj_data->phdr != NULL)
@@ -2244,9 +2242,11 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 	  *(int*)buff = extract_signed_integer (buff, sizeof (int),
 						byte_order);
 	  buff += 4;
-
-	  return (buff - readbuf);
+	  tempread = (int)(buff - readbuf);
 	}
+	tempread = min (tempread, len) - offset;
+	memcpy (readbuf, tempbuf + offset, tempread);
+	return tempread;
     }  /* TARGET_OBJECT_AUXV */
   
   if (ops->beneath && ops->beneath->to_xfer_partial)
