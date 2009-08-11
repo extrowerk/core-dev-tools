@@ -298,23 +298,22 @@ armnto_regset_from_core_section (struct gdbarch *gdbarch,
 /* Signal trampoline sniffer.  */
 
 static CORE_ADDR
-armnto_sigcontext_addr (struct frame_info *next_frame)
+armnto_sigcontext_addr (struct frame_info *this_frame)
 {
-  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch *gdbarch = get_frame_arch (this_frame);
   CORE_ADDR ptrctx, sp;
 
   nto_trace (0) ("%s ()\n", __func__);
 
   /* stack pointer for _signalstub frame.  */
-  sp = frame_unwind_register_unsigned (next_frame, 
-				       gdbarch_sp_regnum (gdbarch));
+  sp = get_frame_sp (this_frame);
 
   /*  read base from r5 of the sigtramp frame:
    we store base + 4 (addr of r1, not r0) in r5. 
    stmia	lr, {r1-r12} 
    mov	r5, lr 
   */
-  ptrctx = frame_unwind_register_unsigned (next_frame, ARM_A1_REGNUM + 5);
+  get_frame_register (this_frame, ARM_A1_REGNUM + 5, (gdb_byte *)&ptrctx);
   ptrctx -= 4;
 
   nto_trace (0) ("context addr: 0x%s\n", paddress (gdbarch, ptrctx));
@@ -329,12 +328,11 @@ struct arm_nto_sigtramp_cache
 };
 
 static struct arm_nto_sigtramp_cache *
-armnto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
+armnto_sigtramp_cache (struct frame_info *this_frame, void **this_cache)
 {
   CORE_ADDR ptrctx;
   int i;
   struct arm_nto_sigtramp_cache *cache;
-  struct gdbarch *gdbarch = get_frame_arch (next_frame);
   const int REGSIZE = 4;
 
   nto_trace (0) ("%s ()\n", __func__);
@@ -343,10 +341,9 @@ armnto_sigtramp_cache (struct frame_info *next_frame, void **this_cache)
     return (*this_cache);
   cache = FRAME_OBSTACK_ZALLOC (struct arm_nto_sigtramp_cache);
   (*this_cache) = cache;
-  cache->saved_regs = trad_frame_alloc_saved_regs (next_frame);
-  cache->base = frame_unwind_register_unsigned (next_frame,
-						gdbarch_pc_regnum (gdbarch));
-  ptrctx = armnto_sigcontext_addr (next_frame);
+  cache->saved_regs = trad_frame_alloc_saved_regs (this_frame);
+  cache->base = get_frame_pc (this_frame);
+  ptrctx = armnto_sigcontext_addr (this_frame);
 
   /* Registers from before signal. */
   for (i = ARM_A1_REGNUM; i != ARM_F0_REGNUM; ++i)
@@ -365,8 +362,7 @@ armnto_sigtramp_this_id (struct frame_info *this_frame,
   struct arm_nto_sigtramp_cache *info =
 	armnto_sigtramp_cache (this_frame, this_prologue_cache);
   nto_trace (0) ("%s ()\n", __func__);
-  (*this_id) = frame_id_build (info->base, gdbarch_unwind_pc (target_gdbarch,
-							      this_frame));
+  (*this_id) = frame_id_build (info->base, get_frame_pc (this_frame));
 }
 
 static struct value *
@@ -374,8 +370,8 @@ armnto_sigtramp_prev_register (struct frame_info *this_frame,
 			       void **this_prologue_cache,
 			       int regnum)
 {
-  struct arm_nto_sigtramp_cache *info = armnto_sigtramp_cache (this_frame,
-							       this_prologue_cache);
+  struct arm_nto_sigtramp_cache *info =
+	    armnto_sigtramp_cache (this_frame, this_prologue_cache);
   nto_trace (0) ("%s ()\n", __func__);
   trad_frame_get_prev_register (this_frame, info->saved_regs, regnum);
   return NULL;
@@ -386,7 +382,7 @@ armnto_sigtramp_sniffer (const struct frame_unwind *self,
 			 struct frame_info *this_frame,
 			 void **this_prolobue_cache)
 {
-  CORE_ADDR pc = gdbarch_unwind_pc (target_gdbarch, this_frame);
+  CORE_ADDR pc = get_frame_pc (this_frame);
   char *name;
 
   nto_trace (0) ("%s ()\n", __func__);
@@ -414,11 +410,11 @@ static const struct frame_unwind arm_nto_sigtramp_unwind =
 
 static void
 armnto_sigtramp_cache_init (const struct tramp_frame *self,
-                            struct frame_info *next_frame,
+                            struct frame_info *this_frame,
 			    struct trad_frame_cache *this_cache,
 			    CORE_ADDR func)
 {
-  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch *gdbarch = get_frame_arch (this_frame);
   CORE_ADDR ptrctx, sp;
   int regi;
   const int REGSIZE = 4;
@@ -427,8 +423,7 @@ armnto_sigtramp_cache_init (const struct tramp_frame *self,
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddress (gdbarch, func));
 
   /* stack pointer for __signal_stub frame */
-  sp = frame_unwind_register_unsigned (next_frame,
-                                         gdbarch_sp_regnum (gdbarch));
+  sp = get_frame_sp (this_frame);
 
   nto_trace (0) ("sp: 0x%s\n", paddress (gdbarch, sp));
 
@@ -436,15 +431,7 @@ armnto_sigtramp_cache_init (const struct tramp_frame *self,
 
   /* Construct the frame ID using the function start. */
   trad_frame_set_id (this_cache, frame_id_build (sp, func));
-
-  /*  read base from r5 of the sigtramp frame:
-   we store base + 4 (addr of r1, not r0) in r5. 
-   stmia	lr, {r1-r12} 
-   mov	r5, lr 
-  */
-  ptrctx = frame_unwind_register_unsigned (next_frame, ARM_A1_REGNUM + 5);
-  ptrctx -= 4;
-
+  ptrctx = armnto_sigcontext_addr (this_frame);
   nto_trace (0) ("context addr: 0x%s\n", paddress (gdbarch, ptrctx));
 
   /* retrieve registers */
