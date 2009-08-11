@@ -1276,7 +1276,7 @@ sh64_store_return_value (struct type *type, struct regcache *regcache,
       for (i = 0; i < len; i += 4)
 	if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_LITTLE)
 	  regcache_raw_write (regcache, regnum++,
-			      valbuf + len - 4 - i);
+			      (gdb_byte *) valbuf + len - 4 - i);
 	else
 	  regcache_raw_write (regcache, regnum++, (gdb_byte *) valbuf + i);
     }
