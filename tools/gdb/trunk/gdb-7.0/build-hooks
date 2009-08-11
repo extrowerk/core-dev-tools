@@ -2,7 +2,7 @@ target=${PWD##*-}
 target_cpu=${target#nto*}
 srcdir=${PWD}/..
 qnx_target_version=6.4.0
-qnx_install_version=qnx640
+qnx_install_version=qnx642
 host_target=${PWD##*/}
 host_cpu=${host_target#*-}
 host_cpu=${host_cpu%%-*}
@@ -59,32 +59,23 @@ function hook_preconfigure {
 		;;
 	esac
 
-        if [ ${TARGET_SYSNAME} != ${SYSNAME} ]; then
-	  case ${TARGET_SYSNAME} in
-		nto*)
-                  if [ $SYSNAME != "nto" ]; then
-                      if [ x$INSTALL_ROOT = x ]; then
-                         INSTALL_ROOT=/usr/$qnx_install_version/host
-                      fi
-                   fi
-  		  ;;
-		linux*) 
-		  # basedir=${INSTALL_ROOT_linux}/${SYSNAME}/${host_cpu}/usr
-		  # /opt/QNXsdk/host/linux/${host_cpu}/usr
-		  # execdir=/opt/qnx630/host/linux/${host_cpu}/usr
-                  INSTALL_ROOT=/opt/$qnx_install_version/host
-		  ;;
-		win32*)
-		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
-		  #execdir=/c/qnx630/host/win32/x86/usr
-                  if [ $SYSNAME != "win32" ]; then
-                     if [ x$INSTALL_ROOT = x ]; then
-                        INSTALL_ROOT=/c/$qnx_install_version/host
-                     fi
-                  fi
-		;;
- 	  esac
-	fi  
+	# Setup install dirs.
+	case ${TARGET_SYSNAME} in
+	nto*)
+	  root_dir="/usr"
+	  ;;
+	win32*)
+	  root_dir="/c"
+	  ;;
+	*)
+	  root_dir="/opt"
+	  ;;
+	esac
+	
+	/* INSTALL_ROOT can override build-hooks setting.  */
+	if [ x$INSTALL_ROOT = x ]; then
+	  INSTALL_ROOT=$root_dir/$qnx_install_version/host
+	fi
 
 	case ${host_cpu} in
            i[34567]86) 
@@ -92,17 +83,7 @@ function hook_preconfigure {
 		;;
 	esac
 
-	if [ ${TARGET_SYSNAME} = nto ]; then
-          basedir=${INSTALL_ROOT}/qnx6/${host_cpu}/usr
-	else
-          basedir=${INSTALL_ROOT}/${TARGET_SYSNAME}/${host_cpu}/usr
-	fi
-
-	if [ x$INSTALL_ROOT = x ]; then
-	  echo "Using QNX_HOST as install dir: ${QNX_HOST}"
-	  basedir=${QNX_HOST}/usr
-	fi
-	echo ${basedir}
+	basedir=${INSTALL_ROOT}/${TARGET_SYSNAME}/${host_cpu}/usr
 
 	configure_opts="${configure_opts} --target=${target}"
 	configure_opts="${configure_opts} --prefix=${basedir}"
@@ -127,7 +108,7 @@ function hook_preconfigure {
 	
 	case ${target} in 
 	  *-nto-*)
-	  CFLAGS="-D__QNXTARGET__ -g0 -O2 -D_LARGEFILE64_SOURCE"; export CFLAGS
+	  CFLAGS="-D__QNXTARGET__ -g0 -O2 -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
 	  ;;
 	esac
 }
