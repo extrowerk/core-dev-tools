@@ -83,7 +83,14 @@ function hook_preconfigure {
 		;;
 	esac
 
-	basedir=${INSTALL_ROOT}/${TARGET_SYSNAME}/${host_cpu}/usr
+	case ${TARGET_SYSNAME} in
+	nto*)
+	  basedir=${INSTALL_ROOT}/qnx6/${host_cpu}/usr
+	  ;;
+	*)
+	  basedir=${INSTALL_ROOT}/${TARGET_SYSNAME}/${host_cpu}/usr
+	  ;;
+	esac
 
 	configure_opts="${configure_opts} --target=${target}"
 	configure_opts="${configure_opts} --prefix=${basedir}"
