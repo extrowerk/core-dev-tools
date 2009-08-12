@@ -344,12 +344,8 @@ shnto_sigcontext_addr (struct frame_info *next_frame)
 
   nto_trace (0) ("sp: 0x%s\n", paddress (gdbarch, sp));
  
-  /* we store context addr in [r8]. The address is really address
-   * of reg 5, we need to back-up for 5 * 4 bytes to point
-   * at the begining. */
+  /* we store context addr in [r8].*/
   ptrctx = frame_unwind_register_unsigned (next_frame, R0_REGNUM + 8);
-  nto_trace (0) ("r8: 0x%s\n", paddress (gdbarch, ptrctx));
-  ptrctx -= 20;
   nto_trace (0) ("context address: 0x%s\n", paddress (gdbarch, ptrctx));
 
   return ptrctx;
@@ -466,31 +462,23 @@ static const struct frame_unwind sh_nto_sigtramp_unwind =
 
 static void
 shnto_sigtramp_cache_init (const struct tramp_frame *self,
-                            struct frame_info *next_frame,
+                            struct frame_info *this_frame,
 			    struct trad_frame_cache *this_cache,
 			    CORE_ADDR func)
 {
-  struct gdbarch *gdbarch = get_frame_arch (next_frame);
+  struct gdbarch *gdbarch = get_frame_arch (this_frame);
   CORE_ADDR sp, ptrctx;
   int regi;
   
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddress (gdbarch, func));
 
-  sp = frame_unwind_register_unsigned (next_frame, 
-                                      gdbarch_sp_regnum (gdbarch));
+  sp = get_frame_register_unsigned (this_frame, gdbarch_sp_regnum (gdbarch));
 
   nto_trace (0) ("sp: 0x%s\n", paddress (gdbarch, sp));
  
   /* Construct the frame ID using the function start. */
   trad_frame_set_id (this_cache, frame_id_build (sp, func));
- 
-  /* we store context addr in [r8]. The address is really address
-   * of reg 5, we need to back-up for 5 * 4 bytes to point
-   * at the begining. */
-  ptrctx = frame_unwind_register_unsigned (next_frame, R0_REGNUM + 8);
-  nto_trace (0) ("r8: 0x%s\n", paddress (gdbarch, ptrctx));
-  ptrctx -= 20;
-  nto_trace (0) ("context address: 0x%s\n", paddress (gdbarch, ptrctx));
+  ptrctx = shnto_sigcontext_addr (this_frame);
 
   for (regi = 0; regi < 16; regi++)
     {
