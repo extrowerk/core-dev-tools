@@ -215,8 +215,8 @@ ppcnto_sigcontext_addr (struct frame_info *this_frame)
   nto_trace (0) ("%s ()\n", __func__);
 
   /* Read base from r31 of the sigtramp frame (see ppc/sigstub.S)  */
-  ptrctx = frame_unwind_register_unsigned (this_frame,
-					   tdep->ppc_gp0_regnum + 31);
+  ptrctx = get_frame_register_unsigned (this_frame, tdep->ppc_gp0_regnum + 31);
+  nto_trace (0) ("context addr: %s\n", paddress (gdbarch, ptrctx));
   if (ptrctx == 0)
     warning ("Unable to retrieve sigstack_context pointer.");
   return ptrctx;
@@ -786,8 +786,7 @@ ppcnto_sigtramp_cache_init (const struct tramp_frame *self,
 
   nto_trace (0) ("%s () funcaddr=0x%s\n", __func__, paddress (gdbarch, func));
 
-  sp = frame_unwind_register_unsigned (this_frame,
-				       gdbarch_sp_regnum (gdbarch));
+  sp = get_frame_register_unsigned (this_frame, gdbarch_sp_regnum (gdbarch));
 
   nto_trace (0) ("sp: 0x%s\n", paddress (gdbarch, sp));
 
