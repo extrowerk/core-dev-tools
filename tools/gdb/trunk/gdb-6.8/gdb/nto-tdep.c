@@ -543,11 +543,37 @@ nto_elf_osabi_sniffer (bfd *abfd)
   return osabi;
 }
 
-char *
-nto_target_extra_thread_info (struct thread_info *ti)
+static const char *nto_thread_state_str[] =
 {
-  if (ti && ti->private && ti->private->name[0])
-    return ti->private->name;
+  "DEAD",		/* 0  0x00 */
+  "RUNNING",	/* 1  0x01 */
+  "READY",	/* 2  0x02 */
+  "STOPPED",	/* 3  0x03 */
+  "SEND",		/* 4  0x04 */
+  "RECEIVE",	/* 5  0x05 */
+  "REPLY",	/* 6  0x06 */
+  "STACK",	/* 7  0x07 */
+  "WAITTHREAD",	/* 8  0x08 */
+  "WAITPAGE",	/* 9  0x09 */
+  "SIGSUSPEND",	/* 10 0x0a */
+  "SIGWAITINFO",	/* 11 0x0b */
+  "NANOSLEEP",	/* 12 0x0c */
+  "MUTEX",	/* 13 0x0d */
+  "CONDVAR",	/* 14 0x0e */
+  "JOIN",		/* 15 0x0f */
+  "INTR",		/* 16 0x10 */
+  "SEM",		/* 17 0x11 */
+  "WAITCTX",	/* 18 0x12 */
+  "NET_SEND",	/* 19 0x13 */
+  "NET_REPLY"	/* 20 0x14 */
+};
+
+char *
+nto_extra_thread_info (struct thread_info *ti)
+{
+  if (ti && ti->private
+      && ti->private->state < ARRAY_SIZE (nto_thread_state_str))
+    return (char *)nto_thread_state_str [ti->private->state];
   return "";
 }
 
@@ -633,11 +659,31 @@ nto_pid_to_str (ptid_t ptid)
   static char buf[1024];
   int pid, tid, n;
   struct tidinfo *tip;
+  char thread_id[50];
+  char thread_name[17];
+  struct thread_info *ti;
 
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
 
-  n = sprintf (buf, "process %d thread %d", pid, tid);
+  ti = find_thread_pid (ptid);
+  if (ti && ti->private && ti->private->name[0])
+    {
+      int n;
+
+      n = snprintf (thread_name, ARRAY_SIZE (thread_name), "%s",
+		    ti->private->name);
+      if (n >= ARRAY_SIZE (thread_name))
+	/* Name did not fit, append ellipses.  */
+	snprintf (&thread_name [ARRAY_SIZE (thread_name) - 4], 4, "%s",
+		  "...");
+      snprintf (thread_id, ARRAY_SIZE (thread_id), "%d name \"%s\"",
+		tid, thread_name);
+    }
+  else
+    snprintf (thread_id, ARRAY_SIZE (thread_id), "%d", tid);
+
+  n = sprintf (buf, "pid %d tid %s", pid, thread_id);
 
   return buf;
 }
@@ -984,7 +1030,7 @@ init_nto_core_ops ()
   gdb_assert (core_ops.to_shortname != NULL 
 	      && !!"core_ops must be initialized first!");
   original_core_ops = core_ops;
-  core_ops.to_extra_thread_info = nto_target_extra_thread_info;
+  core_ops.to_extra_thread_info = nto_extra_thread_info;
   core_ops.to_open = nto_core_open;
   core_ops.to_close = nto_core_close;
   core_ops.to_xfer_partial = nto_core_xfer_partial;

@@ -104,7 +104,7 @@ sig_map[] =
   {NTO_SIGXCPU, TARGET_SIGNAL_XCPU},
   {NTO_SIGXFSZ, TARGET_SIGNAL_XFSZ}
 };
-#endif // ndef __QNXNTO__
+#endif // ! __QNXNTO__
 
 /* Convert nto signal to gdb signal.  */
 enum target_signal

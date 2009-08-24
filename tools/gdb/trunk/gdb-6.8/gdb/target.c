@@ -2674,7 +2674,7 @@ debug_to_pid_to_exec_file (int pid)
   exec_file = debug_target.to_pid_to_exec_file (pid);
 
   fprintf_unfiltered (gdb_stdlog, "target_pid_to_exec_file (%d) = %s\n",
-		      pid, exec_file);
+		      pid, exec_file ? exec_file : "\"\"");
 
   return exec_file;
 }
