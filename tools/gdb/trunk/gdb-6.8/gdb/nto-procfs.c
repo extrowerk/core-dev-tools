@@ -347,14 +347,10 @@ procfs_find_new_threads (void)
 	      != EOK))
 	break;
       if (status.tid != tid)
-	{
 	/* The reason why this would not be equal is that devctl might have 
 	   returned different tid, meaning the requested tid no longer exists
 	   (e.g. thread exited).  */
-	  /* if (in_thread_list (ptid))
-	    delete_thread (ptid);  */
-	  continue;
-	}
+	continue;
       ptid = ptid_build (pid, 0, tid);
       new_thread = find_thread_pid (ptid);
       if (!new_thread)
@@ -796,7 +792,7 @@ procfs_wait (ptid_t ptid, struct target_waitstatus *ourstatus)
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  ourstatus->value.sig =
 	    target_signal_from_host (status.info.si_signo);
-	  exit_signo = 0;
+	  exit_signo = ourstatus->value.sig;
 	  break;
 	case _DEBUG_WHY_FAULTED:
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
@@ -1429,27 +1425,6 @@ procfs_thread_info (pid_t pid, short tid)
   return NULL;
 }
 
-char *
-procfs_pid_to_str (ptid_t ptid)
-{
-  static char buf[1024];
-  int pid, tid, n;
-  struct tidinfo *tip;
-
-  pid = ptid_get_pid (ptid);
-  tid = ptid_get_tid (ptid);
-
-  n = snprintf (buf, 1023, "process %d", pid);
-
-#if 0				/* NYI */
-  tip = procfs_thread_info (pid, tid);
-  if (tip != NULL)
-    snprintf (&buf[n], 1023, " (state = 0x%02x)", tip->state);
-#endif
-
-  return buf;
-}
-
 static void
 init_procfs_ops (void)
 {
@@ -1491,7 +1466,7 @@ init_procfs_ops (void)
   procfs_ops.to_notice_signals = procfs_notice_signals;
   procfs_ops.to_thread_alive = procfs_thread_alive;
   procfs_ops.to_find_new_threads = procfs_find_new_threads;
-  procfs_ops.to_pid_to_str = procfs_pid_to_str;
+  procfs_ops.to_pid_to_str = nto_pid_to_str;
   procfs_ops.to_stop = procfs_stop;
   procfs_ops.to_stratum = process_stratum;
   procfs_ops.to_has_all_memory = 1;
@@ -1501,7 +1476,7 @@ init_procfs_ops (void)
   procfs_ops.to_has_execution = 1;
   procfs_ops.to_magic = OPS_MAGIC;
   procfs_ops.to_have_continuable_watchpoint = 1;
-  procfs_ops.to_extra_thread_info = nto_target_extra_thread_info;
+  procfs_ops.to_extra_thread_info = nto_extra_thread_info;
 }
 
 #define OSTYPE_NTO 1

@@ -185,7 +185,7 @@ void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
-char *nto_target_extra_thread_info (struct thread_info *);
+char *nto_extra_thread_info (struct thread_info *);
 
 struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 
