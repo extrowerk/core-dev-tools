@@ -2,7 +2,7 @@ target=${PWD##*-}
 target_cpu=${target#nto*}
 srcdir=${PWD}/..
 qnx_target_version=6.4.0
-qnx_install_version=qnx640
+qnx_install_version=qnx642
 host_target=${PWD##*/}
 host_cpu=${host_target#*-}
 host_cpu=${host_cpu%%-*}
@@ -154,5 +154,5 @@ function hook_postconfigure {
 
 function hook_pinfo {
 	cd gdb
-	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 6.7"
+	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 6.8"
 }
