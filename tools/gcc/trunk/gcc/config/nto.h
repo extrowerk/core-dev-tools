@@ -19,6 +19,10 @@ along with GCC; see the file COPYING.  If not, write to
 the Free Software Foundation, 51 Franklin Street, Fifth Floor,
 Boston, MA 02110-1301, USA.  */
 
+/* Assert that we are targetting VxWorks.  */
+#undef TARGET_NEUTRINO
+#define TARGET_NEUTRINO 1
+
 #undef GCC_DRIVER_HOST_INITIALIZATION
 #define GCC_DRIVER_HOST_INITIALIZATION \
 do { \
@@ -64,6 +68,7 @@ do { \
 #undef  HANDLE_SYSV_PRAGMA
 #define HANDLE_SYSV_PRAGMA 1
 #define HANDLE_PRAGMA_PACK 1
+#undef HANDLE_PRAGMA_PACK_PUSH_POP
 #define HANDLE_PRAGMA_PACK_PUSH_POP 1 
 #define SUPPORTS_WEAK 1
 

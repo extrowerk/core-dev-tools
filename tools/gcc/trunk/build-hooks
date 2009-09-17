@@ -80,8 +80,8 @@ function hook_preconfigure {
 	case ${target} in
 	*nto-qnx*)	
 		configure_opts="${configure_opts} --enable-cheaders=c"
-		configure_opts="${configure_opts} --with-as=${nto_target}-as-2.19"
-		configure_opts="${configure_opts} --with-ld=${nto_target}-ld-2.19"
+		configure_opts="${configure_opts} --with-as=${nto_target}-as"
+		configure_opts="${configure_opts} --with-ld=${nto_target}-ld"
 	esac 
 
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
@@ -132,30 +132,19 @@ function hook_premake {
 }
 
 function hook_postmake {
-	if [ ${SYSNAME} = nto ]; then
+	if [ ${TARGET_SYSNAME} = nto ]; then
 		ldrel -L -S $STACKSIZE gcc/cc1
 		ldrel -L -S $STACKSIZE gcc/cc1plus
 		echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
 		${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
-		# If we are mips or arm, also weaken the be variant
+		# If we are mips weaken the be variant
 		case ${nto_target} in
-		ntoarm | ntomips)
+		ntomips)
 			echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
 			${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a
 			;;	
 		esac
 	fi
-}
-
-function want_library {
-	# If it's not little endian on the SH, we don't want it
-	case ${nto_target} in
-	ntosh)
-		test "$(echo $1 | fgrep /ml)" != ""
-		return $?
-		;;
-	esac
-	return 0
 }
 
 function hook_pinfo {
