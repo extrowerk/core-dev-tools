@@ -84,6 +84,13 @@ case "${host}" in
     ;;
 esac
 
+dnl Add for mingw targets GC_BUILD option
+case "${host}" in
+  *-*-mingw*)
+    gc_cflags="${gc_cflags} -DGC_BUILD=1"
+    ;;
+esac
+
 dnl gc_cflags="${gc_cflags} -fno-builtin"
 
 GC_CFLAGS=${gc_cflags}
@@ -547,5 +554,5 @@ fi
 
 AC_CONFIG_HEADERS([include/gc_config.h include/gc_ext_config.h])
 
-AC_CONFIG_FILES(Makefile include/Makefile)
+AC_CONFIG_FILES(Makefile include/Makefile threads.mk)
 AC_OUTPUT

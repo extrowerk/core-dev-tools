@@ -190,6 +190,7 @@ call_ ## FUNC (void)                                    \
 	fputc ( '\n', FILE);						\
  } while (0)
 
+/*
 #undef ASM_DECLARE_FUNCTION_NAME
 #define ASM_DECLARE_FUNCTION_NAME(STREAM, NAME, DECL)			\
   do {									\
@@ -213,8 +214,10 @@ call_ ## FUNC (void)                                    \
 	putc ('\n', STREAM);						\
       }									\
   } while (0)
-
+*/
 /* Tell function_prologue in mips.c that we have already output the .ent/.end
    pseudo-ops.  */
+/*
 #undef FUNCTION_NAME_ALREADY_DECLARED
 #define FUNCTION_NAME_ALREADY_DECLARED 1
+*/

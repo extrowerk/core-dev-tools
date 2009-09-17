@@ -11,3 +11,4 @@ B bar(A* a) {
     return baz(a);
 }
 extern const double NaN = (__builtin_nanf(""));
+

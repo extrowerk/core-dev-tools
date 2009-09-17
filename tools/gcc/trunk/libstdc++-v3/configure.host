@@ -91,7 +91,7 @@ case "${host_cpu}" in
   alpha*)
     try_cpu=alpha
     ;;
-  arm* | xscale | ep9312)
+  arm*)
     try_cpu=arm
     ;;
   crisv32)
@@ -105,9 +105,6 @@ case "${host_cpu}" in
     ;;
   mips*)
     try_cpu=mips
-    ;;
-  m680[246]0)
-    try_cpu=m68k
     ;;
   powerpc* | rs6000)
     try_cpu=powerpc
@@ -261,21 +258,16 @@ case "${host_os}" in
   netbsd*)
     os_include_dir="os/bsd/netbsd"
     ;;
-  qnx6.[1234]*)
+  qnx6.[1234]* | nto-qnx6.[1234]* )
     os_include_dir="os/qnx/qnx6.1"
     c_model=c
+    c_compatibility=yes
     ;;
   solaris2)
     # This too-vague configuration does not provide enough information
     # to select a ctype include, and thus os_include_dir is a crap shoot.
     echo "Please specify the full version of Solaris, ie. solaris2.9 " 1>&2
     exit 1
-    ;;
-  solaris2.5 | solaris2.5.[0-9])
-    os_include_dir="os/solaris/solaris2.5"
-    ;;
-  solaris2.6)
-    os_include_dir="os/solaris/solaris2.6"
     ;;
   solaris2.[789] | solaris2.1[0-9])
     os_include_dir="os/solaris/solaris2.7"
@@ -285,9 +277,6 @@ case "${host_os}" in
     ;;
   vxworks)
     os_include_dir="os/vxworks"
-    ;;
-  windiss*)
-    os_include_dir="os/windiss"
     ;;
   *)
     os_include_dir="os/generic"
@@ -303,6 +292,9 @@ case "${host}" in
       i[567]86)
         abi_baseline_pair=i486-linux-gnu
         ;;
+      mips64*)
+	abi_baseline_pair=mips64-linux-gnu
+	;;
       powerpc64)
         abi_baseline_pair=powerpc64-linux-gnu
         ;;
@@ -320,14 +312,10 @@ case "${host}" in
           abi_baseline_pair=${try_cpu}-linux-gnu
         fi
     esac
-    ;;
-  mips*-*-*)
-    case "${host_os}" in
-      gnu* | linux* | irix*)
-        ;;
-      *)
-        atomicity_dir="cpu/generic"
-        ;;
+    case "${host}" in
+      arm*-*-linux-*eabi)
+	port_specific_symbol_files="\$(srcdir)/../config/os/gnu-linux/arm-eabi-extra.ver"
+	;;
     esac
     ;;
   powerpc*-*-darwin*)

@@ -12,29 +12,19 @@ target=fixinc.sh
 # Check for special fix rules for particular targets
 case $machine in
     alpha*-dec-*vms* | \
-    arm-*-nto-qnx* | \
-    arm-semi-aof | \
-    hppa1.1-*-osf* | \
-    hppa1.1-*-bsd* | \
-    i370-*-openedition | \
     i?86-moss-msdos* | \
-    i?86-*-moss* | \
     i?86-*-pe | \
     i?86-*-cygwin* | \
-    i?86-*-nto-qnx* | \
     i?86-*-mingw32* | \
     x86_64-*-mingw32* | \
-    i?86-*-uwin* | \
     i?86-*-interix* | \
     *-*-vxworks* | \
-    powerpc-*-eabiaix* | \
+    *-*-nto-qnx* | \
     powerpc-*-eabisim* | \
     powerpc-*-eabi*    | \
     powerpc-*-rtems*   | \
-    powerpc-*-nto-qnx* | \
     powerpcle-*-eabisim* | \
-    powerpcle-*-eabi* | \
-    sh-*-nto-qnx* ) 
+    powerpcle-*-eabi* ) 
 	#  IF there is no include fixing,
 	#  THEN create a no-op fixer and exit
 	(echo "#! /bin/sh" ; echo "exit 0" ) > ${target}
