@@ -1951,7 +1951,7 @@ __mfu_report ()
 
 extern char *__progname;
 
-char **
+static char **
 backtrace_symbols(void **pc_array, unsigned remaining_size) 
 {
     char **pointers;
@@ -1979,6 +1979,8 @@ backtrace_symbols(void **pc_array, unsigned remaining_size)
 	      }
 	    else
 	      fname = __progname;
+
+	    linelen += strlen (fname);
 
 	    if (info.dli_sname != NULL)
 	      {
