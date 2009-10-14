@@ -2458,7 +2458,7 @@ load_symbols (lang_input_statement_type *entry,
       lang_statement_list_type *hold;
       bfd_boolean bad_load = TRUE;
       bfd_boolean save_ldlang_sysrooted_script;
-      bfd_boolean save_as_needed, save_add_needed;
+      bfd_boolean save_as_needed, save_add_needed, save_whole_archive;
 
       err = bfd_get_error ();
 
@@ -2496,6 +2496,8 @@ load_symbols (lang_input_statement_type *entry,
       as_needed = entry->as_needed;
       save_add_needed = add_needed;
       add_needed = entry->add_needed;
+      save_whole_archive = whole_archive;
+      whole_archive = entry->whole_archive;
 
       ldfile_assumed_script = TRUE;
       parser_input = input_script;
@@ -2508,6 +2510,7 @@ load_symbols (lang_input_statement_type *entry,
       ldlang_sysrooted_script = save_ldlang_sysrooted_script;
       as_needed = save_as_needed;
       add_needed = save_add_needed;
+      whole_archive = save_whole_archive;
       stat_ptr = hold;
 
       return ! bad_load;
