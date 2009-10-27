@@ -460,10 +460,12 @@ ppcnto_regset_id (int regno)
   struct gdbarch_tdep *tdep = gdbarch_tdep (current_gdbarch);
 
   /* Floating point registers.  */
-  if (regno == tdep->ppc_fpscr_regnum
-      || (regno >= gdbarch_fp0_regnum (current_gdbarch)
-	  && regno < FPLAST_REGNUM))
-    return NTO_REG_FLOAT;
+  if (ppc_floating_point_unit_p (current_gdbarch)) {
+    if (regno == tdep->ppc_fpscr_regnum
+	|| (regno >= gdbarch_fp0_regnum (current_gdbarch)
+	    && regno < FPLAST_REGNUM))
+      return NTO_REG_FLOAT;
+  }
 
   /* General purpose registers.  */
   if (regno < GPLAST_REGNUM)
