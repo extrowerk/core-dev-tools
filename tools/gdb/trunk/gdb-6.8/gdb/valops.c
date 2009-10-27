@@ -727,6 +727,12 @@ value_assign (struct value *toval, struct value *fromval)
 	/* Figure out which frame this is in currently.  */
 	frame = frame_find_by_id (VALUE_FRAME_ID (toval));
 	value_reg = VALUE_REGNUM (toval);
+	
+	/* Get sentinel frame.  For remote targets that just
+	   booted, there will be no frame to work with.  Use registers
+	   instead (sentinel frame).  */
+	if (!frame)
+	  frame = get_current_frame ();
 
 	if (!frame)
 	  error (_("Value being assigned to is no longer active."));
