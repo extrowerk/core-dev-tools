@@ -179,7 +179,6 @@ QNX_SYSTEM_LIBDIRS \
 #undef TARGET_FPRS
 #undef TARGET_E500_SINGLE
 #undef TARGET_E500_DOUBLE
-#undef TARGET_NO_LWSYNC
 
 #define TARGET_SPE_ABI rs6000_spe_abi
 #define TARGET_SPE rs6000_spe
@@ -188,3 +187,6 @@ QNX_SYSTEM_LIBDIRS \
 #define TARGET_FPRS (!rs6000_float_gprs)
 #define TARGET_E500_SINGLE (TARGET_HARD_FLOAT && rs6000_float_gprs == 1)
 #define TARGET_E500_DOUBLE (TARGET_HARD_FLOAT && rs6000_float_gprs == 2)
+
+#undef TARGET_NO_LWSYNC
+#define TARGET_NO_LWSYNC 1
