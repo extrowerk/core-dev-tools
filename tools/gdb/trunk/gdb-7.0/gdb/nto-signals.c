@@ -63,12 +63,15 @@
 #define NTO_SIGPROF     29  /* profileing timer expired */
 #define NTO_SIGXCPU     30  /* exceded cpu limit */
 #define NTO_SIGXFSZ     31  /* exceded file size limit */
+#define NTO_SIGRTMIN    41  /* Realtime signal 41 (SIGRTMIN) */
+#define NTO_SIGRTMAX    56  /* Realtime signal 56 (SIGRTMAX) */
+#define NTO_SIGSELECT   (NTO_SIGRTMAX + 1)
+#define NTO_SIGPHOTON   (NTO_SIGRTMAX + 2)
 
 static struct
   {
     int nto_sig;
     enum target_signal gdb_sig;
-
   }
 sig_map[] =
 {
@@ -120,6 +123,10 @@ target_signal_from_nto(struct gdbarch *gdbarch, int sig)
       if (sig_map[i].nto_sig == sig)
         return sig_map[i].gdb_sig;
     }
+
+  if (sig >= NTO_SIGRTMIN && sig <= NTO_SIGRTMAX)
+    return TARGET_SIGNAL_REALTIME_41 + sig - NTO_SIGRTMIN;
+
 #endif /* __QNXNTO__ */
   return target_signal_from_host(sig);
 }
@@ -139,6 +146,10 @@ target_signal_to_nto(struct gdbarch *gdbarch, enum target_signal sig)
       if (sig_map[i].gdb_sig == sig)
         return sig_map[i].nto_sig;
     }
+
+  if (sig >= TARGET_SIGNAL_REALTIME_41
+      && sig <= TARGET_SIGNAL_REALTIME_41 + (NTO_SIGRTMAX - NTO_SIGRTMIN + 1))
+    return (sig - TARGET_SIGNAL_REALTIME_41 + NTO_SIGRTMIN);
 #endif /* __QNXNTO__ */
   return target_signal_to_host(sig);
 }
