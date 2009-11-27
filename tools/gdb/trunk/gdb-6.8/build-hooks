@@ -152,6 +152,17 @@ function hook_postconfigure {
 	fi
 }
 
+function hook_postmake {
+	# Modify stack limit for selfhosted gdb
+	case $host_target in
+		nto*)
+			echo "Setting stack limit to 4M..."
+			ldrel -L -S 4M gdb/gdb
+		;;
+	esac;
+         
+}
+
 function hook_pinfo {
 	cd gdb
 	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 6.8"
