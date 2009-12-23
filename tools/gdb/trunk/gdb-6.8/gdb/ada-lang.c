@@ -3988,7 +3988,7 @@ static struct symbol *
 standard_lookup (const char *name, const struct block *block,
                  domain_enum domain)
 {
-  struct symbol *sym;
+  struct symbol *sym = NULL;
   struct symtab *symtab;
 
   if (lookup_cached_symbol (name, domain, &sym, NULL, NULL))
