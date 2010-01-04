@@ -201,7 +201,7 @@ nto_init_solib_absolute_prefix (void)
 {
   /* If it was nto_init_solib_absolute_prefix that set the path,
      the following variable will be set to 1.  */
-  static int nto_set_gdb_sysroot;
+  static char *nto_gdb_sysroot;
 
   char *buf, *arch_path;
 
@@ -212,7 +212,7 @@ nto_init_solib_absolute_prefix (void)
   /* Do not change it if already set.  */
   if ((!gdb_sysroot
       || strlen (gdb_sysroot) == 0)
-      || nto_set_gdb_sysroot)
+      || (nto_gdb_sysroot == gdb_sysroot))
     {
       buf = alloca (26 /* set solib-absolute-prefix */ 
 		    + strlen (arch_path) + 1);
@@ -225,9 +225,10 @@ nto_init_solib_absolute_prefix (void)
       else
 	{
 	  sprintf (buf, "set solib-absolute-prefix %s", arch_path);
+	  nto_gdb_sysroot = arch_path;
 	  execute_command (buf, 0);
 	}
-      nto_set_gdb_sysroot = 1;
+      nto_gdb_sysroot = gdb_sysroot;
     }
   free (arch_path);
 }
