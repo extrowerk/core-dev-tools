@@ -52,7 +52,7 @@ do {                                            \
  %{mapcs-float:-mfloat} \
  %{marmv7-vfp: %{!mfloat-abi=*: -mfloat-abi=softfp} \
 	      %{!march=*: -march=armv7-a} \
-	      %{!fpu=*: -mfpu=vfpv3-d16}}" 
+	      %{!fpu=*: -mfpu=vfpv3-d16} -meabi=5}" 
 
 #define QNX_SYSTEM_LIBDIRS \
 "-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/gcc/%v1.%v2.%v3 \
