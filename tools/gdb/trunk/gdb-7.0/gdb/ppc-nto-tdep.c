@@ -680,6 +680,21 @@ ppcnto_regset_fill (const struct regcache *regcache, int regset,
   return 0;
 }
 
+static const char *
+ppcnto_variant_directory_suffix (void)
+{
+  struct bfd_arch_info const *info = 
+    gdbarch_bfd_arch_info (target_gdbarch);
+
+  if (info->mach == bfd_mach_ppc_e500)
+    {
+      nto_trace (1) ("Selecting -spe variant\n");
+      return "-spe";
+    }
+
+  return "";
+}
+
 static void
 init_ppcnto_ops ()
 {
@@ -691,6 +706,7 @@ init_ppcnto_ops ()
   nto_register_area = ppcnto_register_area;
   nto_regset_fill = ppcnto_regset_fill;
   nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
+  nto_variant_directory_suffix = ppcnto_variant_directory_suffix;
 }
 
 /* Core file support */

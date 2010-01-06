@@ -135,16 +135,8 @@ nto_build_arch_path ()
 	       == BFD_ENDIAN_BIG ? "be" : "le";
     }
 
-  if (strcmp (arch, "ppc") == 0)
-    {
-      struct bfd_arch_info const *info = 
-	gdbarch_bfd_arch_info (target_gdbarch);
-
-      nto_trace (1) ("Selecting -spe variant\n");
-
-      if (info->mach == bfd_mach_ppc_e500)
-	variant_suffix = "-spe";
-    }
+  if (nto_variant_directory_suffix)
+    variant_suffix = nto_variant_directory_suffix ();
 
   /* In case nto_root is short, add strlen(solib)
      so we can reuse arch_path below.  */
