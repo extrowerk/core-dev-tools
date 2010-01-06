@@ -37,6 +37,8 @@
 #include "frame-unwind.h"
 #include "solib.h"
 
+#include "elf-bfd.h"
+
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
 #define PS_OFF (16*4)
@@ -167,6 +169,21 @@ ntoarm_elf_osabi_sniffer (bfd *abfd)
     return GDB_OSABI_QNXNTO;
 }
 
+static const char *
+armnto_variant_directory_suffix (void)
+{
+  const struct gdbarch_tdep *const tdep = gdbarch_tdep (current_gdbarch);
+
+  if (tdep->arm_abi == ARM_ABI_AAPCS
+      && tdep->fp_model == ARM_FLOAT_SOFT_VFP)
+    {
+      nto_trace(1) ("Selecting -v7 variant\n");
+      return "-v7";
+    }
+
+  return "";
+}
+
 static void
 init_armnto_ops ()
 {
@@ -178,6 +195,7 @@ init_armnto_ops ()
   nto_register_area = armnto_register_area;
   nto_regset_fill = armnto_regset_fill;
   nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
+  nto_variant_directory_suffix = armnto_variant_directory_suffix;
 }
 
 /* */

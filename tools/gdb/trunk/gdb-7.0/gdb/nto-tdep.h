@@ -75,6 +75,9 @@ struct nto_target_ops
 /* Used by nto_elf_osabi_sniffer to determine if we're connected to an
    Neutrino target.  */
   enum gdb_osabi (*is_nto_target) (bfd *abfd);
+
+  /* Variant specific directory extension. e.g. -spe, -v7... */
+  const char *(*variant_directory_suffix)(void);
 };
 
 extern struct nto_target_ops current_nto_target;
@@ -103,6 +106,8 @@ extern struct nto_target_ops current_nto_target;
 (current_nto_target.fetch_link_map_offsets)
 
 #define nto_is_nto_target (current_nto_target.is_nto_target)
+
+#define nto_variant_directory_suffix (current_nto_target.variant_directory_suffix)
 
 #define nto_trace(level) \
   if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
