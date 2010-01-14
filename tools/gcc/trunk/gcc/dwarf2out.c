@@ -12116,7 +12116,7 @@ tree_add_const_value_attribute (dw_die_ref var_die, tree decl)
    DW_OP_call_frame_cfa.  OFFSET is a constant to be added to all CFA
    expressions.  */
 
-#ifndef USE_OLD_ATBASE_TMP
+#ifndef USE_OLD_ATBASE
 static dw_loc_list_ref
 convert_cfa_to_fb_loc_list (HOST_WIDE_INT offset)
 {
@@ -13782,7 +13782,7 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 
       cfa_fb_offset = CFA_FRAME_BASE_OFFSET (decl);
 
-#ifndef  USE_OLD_ATBASE_TMP 
+#ifndef  USE_OLD_ATBASE
       /* We define the "frame base" as the function's CFA.  This is more
 	 convenient for several reasons: (1) It's stable across the prologue
 	 and epilogue, which makes it better than just a frame pointer,
@@ -13818,7 +13818,7 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
      {
 	rtx fp_reg
 	  = frame_pointer_needed ? hard_frame_pointer_rtx : stack_pointer_rtx;
-	add_AT_loc (subr_die, DW_AT_frame_base, reg_loc_descriptor (fp_reg));
+	add_AT_loc (subr_die, DW_AT_frame_base, reg_loc_descriptor (fp_reg, VAR_INIT_STATUS_UNKNOWN));
       }
 #endif
 
