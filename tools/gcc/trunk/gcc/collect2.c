@@ -727,7 +727,7 @@ prefix_from_env1(const char *env, const char *suffix, struct path_prefix *pprefi
    GET_ENVIRONMENT (p, env);
    if (p)
      {
-      nstore = XNEWVEC (char, strlen (suffix) + strlen(p) + 1);
+      nstore = XNEWVEC (char, strlen (suffix) + strlen(p) + 2);
       sprintf(nstore, "%s/%s", p, suffix);
       prefix_from_string(nstore, pprefix);
      }
