@@ -704,7 +704,7 @@ arm*-*-netbsd*)
 	;;
 arm*-*-nto-qnx*)
         tm_file="dbxelf.h tm-dwarf2.h elfos.h arm/elf.h arm/aout.h arm/arm.h nto.h arm/nto.h"
-        tmake_file="arm/t-arm arm/t-nto"
+        tmake_file="arm/t-arm arm/t-bpabi arm/t-nto"
         gnu_ld=yes
         gas=yes
         case x${enable_threads} in
