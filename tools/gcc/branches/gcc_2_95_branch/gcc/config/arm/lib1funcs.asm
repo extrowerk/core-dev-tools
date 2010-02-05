@@ -221,6 +221,13 @@ Loop3:
 	@ then none of the below will match, since the bit in ip will not be
 	@ in the bottom nibble.
 	ands	overdone, overdone, #0xe0000000
+	@ If we terminated early, because dividend became zero, then the 
+	@ bit in ip will not be in the bottom nibble, and we should not
+	@ perform the additions below.  We must test for this though
+	@ (rather relying upon the TSTs to prevent the additions) since
+	@ the bit in ip could be in the top two bits which might then match
+	@ with one of the smaller RORs.
+	tstne   ip, #0x7
 	RETc(eq)	pc, lr				@ No fixups needed
 	tst	overdone, ip, ror #3
 	addne	dividend, dividend, divisor, lsr #3
@@ -403,6 +410,13 @@ Loop3:
 	@ then none of the below will match, since the bit in ip will not be
 	@ in the bottom nibble.
 	ands	overdone, overdone, #0xe0000000
+	@ If we terminated early, because dividend became zero, then the 
+	@ bit in ip will not be in the bottom nibble, and we should not
+	@ perform the additions below.  We must test for this though
+	@ (rather relying upon the TSTs to prevent the additions) since
+	@ the bit in ip could be in the top two bits which might then match
+	@ with one of the smaller RORs.
+	tstne   ip, #0x7
 	beq	Lgot_result
 	tst	overdone, ip, ror #3
 	addne	dividend, dividend, divisor, lsr #3
