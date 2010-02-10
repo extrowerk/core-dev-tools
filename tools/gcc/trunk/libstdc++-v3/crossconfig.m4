@@ -171,7 +171,7 @@ case "${host}" in
     AC_DEFINE(HAVE_ISINF)
     AC_DEFINE(HAVE_ISNAN)
     ;;
-  *-qnx6.1* | *-qnx6.2* | *-qnx6.3* | *-qnx6.4*)
+  *-qnx6.1* | *-qnx6.2* | *-qnx6.3* | *-qnx6.4* | *-qnx6.5*)
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
     AC_SUBST(SECTION_FLAGS) 
     GLIBCXX_CHECK_LINKER_FEATURES
