@@ -126,8 +126,8 @@ do {                                            \
 /* Call the function profiler with a given profile label. 
    This is _mcount on other nto's.  It is mcount on ntoarm.  Leave it,
    or make sure it is also changed in lib/c/prof/arm/profile.h.  */
-#undef FUNCTION_PROFILER
-#define FUNCTION_PROFILER(STREAM, LABELNO)  				\
+#undef ARM_FUNCTION_PROFILER
+#define ARM_FUNCTION_PROFILER(STREAM, LABELNO)  				\
 {									\
   fprintf (STREAM, "\tbl\tmcount%s\n", NEED_PLT_RELOC ? "(PLT)" : "");	\
 }
@@ -167,10 +167,5 @@ do {                                            \
 
 #undef FPUTYPE_DEFAULT
 #define FPUTYPE_DEFAULT FPUTYPE_VFP
-
-#undef INIT_SECTION_ASM_OP
-#undef FINI_SECTION_ASM_OP
-#define INIT_ARRAY_SECTION_ASM_OP ARM_EABI_CTORS_SECTION_OP
-#define FINI_ARRAY_SECTION_ASM_OP ARM_EABI_DTORS_SECTION_OP
 
 #define USE_OLD_ATBASE
