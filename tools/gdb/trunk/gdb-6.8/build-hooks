@@ -1,14 +1,17 @@
 target=${PWD##*-}
 target_cpu=${target#nto*}
 srcdir=${PWD}/..
-qnx_target_version=6.4.0
-qnx_install_version=qnx642
+qnx_target_version=6.5.0
+qnx_install_version=qnx650
 host_target=${PWD##*/}
 host_cpu=${host_target#*-}
 host_cpu=${host_cpu%%-*}
 
 if [ $target_cpu = x86 ]; then
-	target_cpu=i386
+   case ${qnx_target_version} in
+     6.[234].*) target_cpu=i386 ;;
+     *) target_cpu=i486 ;;
+   esac
 fi
 case ${host_target} in
   *-nto*)
