@@ -18,9 +18,6 @@ along with GNU CC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-/* Turn on shared libraries for Neutrino. */
-
-#define SHARED_LIB_SUPPORT 
 #define HAVE_ATEXIT
 
 #undef TARGET_VERSION
@@ -96,6 +93,9 @@ do {                                            \
 %{profile: -p} \
 %{EL:} %{EB:}"
 
+#undef  LINK_SHLIB_SPEC
+#define LINK_SHLIB_SPEC "%{shared:-shared} %{!shared: %{static:-static}}"
+
 #undef LINK_SPEC
 #define LINK_SPEC "\
 %{h*} %{v:-V} %{!msdata=none:%{G*}} %{msdata=none:-G0} \
@@ -153,7 +153,7 @@ QNX_SYSTEM_INCLUDES \
 %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3:\
 %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib:\
 %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/usr/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib} "
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib "
 
 #undef	LIB_SPEC
 #define LIB_SPEC \
