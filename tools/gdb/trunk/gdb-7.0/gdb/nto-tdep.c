@@ -916,8 +916,7 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
     {
       /* Search backwards until we have read AT_PHDR (num. 3),
 	 AT_PHENT (num 4), AT_PHNUM (num 5)  */
-      if (target_read_memory (initial_stack, buff, sizeof_auxv_t)
-	  == 0)
+      if (target_read_memory (initial_stack, buff, sizeof_auxv_t) == 0)
 	{
 	  ULONGEST a_type = extract_unsigned_integer (buff, sizeof (targ32),
 						      byte_order);
@@ -1122,6 +1121,9 @@ nto_solib_added_listener (struct so_list *solib)
 					p_filesz, p_memsz, p_flags, p_align); 
 	  if (file_phdr == NULL)
 	    {
+	      /* This warning is being parsed by the IDE, the 
+	       * format should not change without consultations with 
+	       * IDE team.  */
 	      warning ("Host file %s does not match target file %s.",
 		       solib->so_name, solib->so_original_name);
 	      break;
