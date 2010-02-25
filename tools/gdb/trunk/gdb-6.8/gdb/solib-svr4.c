@@ -1455,6 +1455,9 @@ enable_break (void)
 	if (sym_addr != 0
 	    && cmp_host_to_target_word (tmp_bfd, sym_addr,
 					sym_addr+load_addr) != 0)
+	  /* This warning is being parsed by the IDE, the 
+	   * format should not change without consultations with 
+	   * IDE team.  */
 	  warning ("Host file %s does not match target file %s",
 		   tmp_pathname, buf);
 
