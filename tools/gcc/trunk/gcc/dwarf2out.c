@@ -10007,6 +10007,66 @@ tls_mem_loc_descriptor (rtx mem)
   return loc_result;
 }
 
+/* Helper function for const_ok_for_output, called either directly
+   or via for_each_rtx.  */
+
+static int
+const_ok_for_output_1 (rtx *rtlp, void *data ATTRIBUTE_UNUSED)
+{
+  rtx rtl = *rtlp;
+
+  if (GET_CODE (rtl) != SYMBOL_REF)
+    return 0;
+
+  if (CONSTANT_POOL_ADDRESS_P (rtl))
+    {
+      bool marked;
+      get_pool_constant_mark (rtl, &marked);
+      /* If all references to this pool constant were optimized away,
+	 it was not output and thus we can't represent it.  */
+      if (!marked)
+	{
+	  return 1;
+	}
+    }
+
+  if (SYMBOL_REF_TLS_MODEL (rtl) != TLS_MODEL_NONE)
+    return 1;
+
+  /* Avoid references to external symbols in debug info, on several targets
+     the linker might even refuse to link when linking a shared library,
+     and in many other cases the relocations for .debug_info/.debug_loc are
+     dropped, so the address becomes zero anyway.  Hidden symbols, guaranteed
+     to be defined within the same shared library or executable are fine.  */
+  if (SYMBOL_REF_EXTERNAL_P (rtl))
+    {
+      tree decl = SYMBOL_REF_DECL (rtl);
+
+      if (decl == NULL || !targetm.binds_local_p (decl))
+	{
+	  return 1;
+	}
+    }
+
+  return 0;
+}
+
+/* Return true if constant RTL can be emitted in DW_OP_addr or
+   DW_AT_const_value.  TLS SYMBOL_REFs, external SYMBOL_REFs or
+   non-marked constant pool SYMBOL_REFs can't be referenced in it.  */
+
+static bool
+const_ok_for_output (rtx rtl)
+{
+  if (GET_CODE (rtl) == SYMBOL_REF)
+    return const_ok_for_output_1 (&rtl, NULL) == 0;
+
+  if (GET_CODE (rtl) == CONST)
+    return for_each_rtx (&XEXP (rtl, 0), const_ok_for_output_1, NULL) == 0;
+
+  return true;
+}
+
 /* The following routine converts the RTL for a variable or parameter
    (resident in memory) into an equivalent Dwarf representation of a
    mechanism for getting the address of that same variable onto the top of a
@@ -10130,6 +10190,9 @@ mem_loc_descriptor (rtx rtl, enum machine_mode mode,
 	  if (!marked)
 	    return 0;
 	}
+
+      if (!const_ok_for_output (rtl))
+	break;
 
       mem_loc_result = new_loc_descr (DW_OP_addr, 0, 0);
       mem_loc_result->dw_loc_oprnd1.val_class = dw_val_class_addr;
@@ -10383,7 +10446,9 @@ loc_descriptor (rtx rtl, enum var_init_status initialized)
 	  }
       }
       break;
-
+    case SYMBOL_REF:
+      if (!const_ok_for_output (rtl))
+        break;
     default:
       gcc_unreachable ();
     }
@@ -11323,6 +11388,8 @@ add_const_value_attribute (dw_die_ref die, rtx rtl)
       break;
 
     case SYMBOL_REF:
+      if (!const_ok_for_output (rtl))
+        break;
     case LABEL_REF:
     case CONST:
       add_AT_addr (die, DW_AT_const_value, rtl);
