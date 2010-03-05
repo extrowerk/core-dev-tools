@@ -134,12 +134,8 @@ QNX_SYSTEM_LIBDIRS \
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
 "%{!shared: %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crti.o \
-%{!fno-exceptions: crtbegin.o%s} \
-%{fno-exceptions: %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crtbegin.o}"
+%$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crti.o crtbegin.o%s"
 
 #undef  ENDFILE_SPEC
-#define ENDFILE_SPEC \
-"%{!fno-exceptions: crtend.o%s} \
-%{fno-exceptions: %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crtend.o} \
+#define ENDFILE_SPEC "crtend.o%s \
 %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crtn.o"

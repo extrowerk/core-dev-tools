@@ -47,15 +47,10 @@ QNX_SYSTEM_INCLUDES \
     %{!pg:%{p:%$QNX_TARGET/x86/lib/mcrt1.o%s} \
     %{!p:%$QNX_TARGET/x86/lib/crt1.o%s}} \
     }} \
-%$QNX_TARGET/x86/lib/crti.o%s \
-%{!fno-exceptions: crtbegin.o%s} \
-%{fno-exceptions: %$QNX_TARGET/x86/lib/crtbegin.o}"
+%$QNX_TARGET/x86/lib/crti.o%s crtbegin.o%s" 
 
 #undef ENDFILE_SPEC
-#define ENDFILE_SPEC \
-"%{!fno-exceptions: crtend.o%s} \
-%{fno-exceptions: %$QNX_TARGET/x86/lib/crtend.o} \
-%$QNX_TARGET/x86/lib/crtn.o"
+#define ENDFILE_SPEC "crtend.o%s %$QNX_TARGET/x86/lib/crtn.o"
 
 #define QNX_SYSTEM_LIBDIRS \
 "-L %$QNX_TARGET/x86/lib/gcc/%v1.%v2.%v3 \
