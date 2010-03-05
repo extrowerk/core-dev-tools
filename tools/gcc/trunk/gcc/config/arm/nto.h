@@ -77,14 +77,11 @@ do {                                            \
 "%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/%{pg:m}%{p:m}crt1.o \
   } \
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crti.o \
-%{fexceptions: crtbegin.o%s} \
-%{!fexceptions: %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crtbegin.o}"
+crtbegin.o%s " 
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
-"%{fexceptions: crtend.o%s} \
-%{!fexceptions: %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crtend.o} \
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crtn.o"
+"crtend.o%s %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crtn.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC \

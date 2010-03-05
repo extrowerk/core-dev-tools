@@ -115,33 +115,13 @@ QNX_SYSTEM_INCLUDES \
 "%{posix: -D_POSIX_SOURCE} \
 %{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}" 
 
-/*
-%(cpp_sysv) %(cpp_endian) %(cpp_cpu) \
-%{mads: %(cpp_os_ads) } \
-%{myellowknife: %(cpp_os_yellowknife) } \
-%{mmvme: %(cpp_os_mvme) } \
-%{msim: %(cpp_os_sim) } \
-%{mcall-freebsd: %(cpp_os_freebsd) } \
-%{mcall-linux: %(cpp_os_linux) } \
-%{mcall-gnu: %(cpp_os_gnu) } \
-%{mcall-netbsd: %(cpp_os_netbsd) } \
-%{!mads: %{!myellowknife: %{!mmvme: %{!msim: %{!mcall-freebsd: \
-%{!mcall-linux: %{!mcall-gnu: %{!mcall-netbsd: %(cpp_os_default) }}}}}}}} \
-%{EL:-D__LITTLEENDIAN__} %{!EL:-D__BIGENDIAN__}" 
-
-*/
-
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
 "%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crti.o \
-%{!fno-exceptions: crtbegin.o%s} \
-%{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtbegin.o}" 
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crti.o  crtbegin.o%s" \
 
 #undef  ENDFILE_SPEC
-#define ENDFILE_SPEC \
-"%{!fno-exceptions: crtend.o%s} \
- %{fno-exceptions: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtend.o} \
+#define ENDFILE_SPEC "crtend.o%s \
 %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtn.o"
 
 #define QNX_SYSTEM_LIBDIRS \

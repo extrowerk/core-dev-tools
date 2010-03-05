@@ -84,13 +84,11 @@ Boston, MA 02111-1307, USA.  */
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
 "%{!shared: %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crti_PIC.o \
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtbegin.o"
+%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crti_PIC.o crtbegin.o"
 
 #undef ENDFILE_SPEC
-#define ENDFILE_SPEC "\
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtend.o \
-%$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtn_PIC.o"
+#define ENDFILE_SPEC \
+"crtend.o %$QNX_TARGET/mips%{EL:le}%{!EL:be}/lib/crtn_PIC.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC "-mips2 \
