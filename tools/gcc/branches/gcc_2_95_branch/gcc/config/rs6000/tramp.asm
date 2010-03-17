@@ -115,6 +115,10 @@ FUNC_START(__trampoline_setup)
 	blr
 
 .Labort:
+#if defined __PIC__ || defined __pic__
+        bl      abort@plt
+#else
 	bl	abort
+#endif
 FUNC_END(__trampoline_setup)
 /* END CYGNUS LOCAL -- waiting for FSF sources to be restored/meissner */
