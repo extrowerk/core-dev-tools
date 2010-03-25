@@ -1504,6 +1504,9 @@ _initialize_procfs (void)
 
   add_info ("pidlist", procfs_pidlist, _("pidlist"));
   add_info ("meminfo", procfs_meminfo, _("memory information"));
+
+  /* Append LD_BIND_NOW=1 by default. */
+  setenv("LD_BIND_NOW", "1", 1);
 }
 
 
