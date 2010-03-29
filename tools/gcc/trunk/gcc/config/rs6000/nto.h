@@ -33,6 +33,8 @@ Boston, MA 02111-1307, USA.  */
 #define TARGET_OS_CPP_BUILTINS()                \
 do {                                            \
 	NTO_TARGET_OS_CPP_BUILTINS();           \
+	builtin_assert ("cpu=powerpc");		\
+	builtin_assert ("machine=powerpc");	\
 	builtin_define_std ("PPC");             \
 	builtin_define ("__PPC__");             \
 } while (0)
