@@ -69,8 +69,7 @@ Boston, MA 02111-1307, USA.  */
 
 #undef SUBTARGET_CC1_SPEC
 #define SUBTARGET_CC1_SPEC "%{!mips*: %{!march*: -mips2}} \
-UBTARGET_CC1_SPEC/qnx
-
+%{mshared|mno-shared|fpic|fPIC|fpie|fPIE:;:-mno-shared -mplt}"
 
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()                  \
