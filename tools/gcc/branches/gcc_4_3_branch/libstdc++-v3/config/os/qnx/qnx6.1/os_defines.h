@@ -30,6 +30,9 @@
 #ifndef _GLIBCXX_OS_DEFINES
 #define _GLIBCXX_OS_DEFINES 1
 
+// Neutrino has pthread routines in libc so weak routines are not needed 
+#define _GLIBCXX_GTHREAD_USE_WEAK 0
+
 // System-specific #define, typedefs, corrections, etc, go here.  This
 #define _QNX_SOURCE 1
 
