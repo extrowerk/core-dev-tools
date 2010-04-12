@@ -92,7 +92,7 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-QNXLDFLAGS = -Wl,-Bstatic -Wl,-lbacktrace -Wl,-Bdynamic
+QNXLDFLAGS = -Wl,-Bstatic -Wl,-lbacktraceS -Wl,-Bdynamic
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) $(QNXLDFLAGS) -o $@
 SOURCES = $(libmudflap_la_SOURCES) $(libmudflapth_la_SOURCES)
