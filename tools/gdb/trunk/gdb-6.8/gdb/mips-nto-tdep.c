@@ -108,19 +108,28 @@ mipsnto_supply_gregset (struct regcache *regcache, char *data)
 static void
 mipsnto_supply_reg_fpregset (struct regcache *regcache, int regno, char *data)
 {
-  int regi, off = 0;
-  nto_reg64 *regs = (nto_reg64 *)data;
+  int regi;
+  char *regs = (char *)data;
 
   nto_trace (0) ("%s ()\n", __func__);
-  
+
+  /*
   if(gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG &&
      register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
           off = 4;
-  
-  for(regi = gdbarch_fp0_regnum (current_gdbarch); regi < gdbarch_fp0_regnum (current_gdbarch) + 16; regi++)
-    regcache_raw_supply (regcache, regi, &regs[regi - gdbarch_fp0_regnum (current_gdbarch)][off]);
+	  */
 
-  regcache_raw_supply (regcache, mips_regnum(current_gdbarch)->fp_control_status, data + FPCR31_OFF);
+  for(regi = 0; regi < 32; regi++) {
+    int off, size, regno;
+
+    regno = regi + gdbarch_fp0_regnum (current_gdbarch);
+    size = nto_register_area (current_gdbarch, regno, NTO_REG_FLOAT, &off);
+    regcache_raw_supply (regcache, regno, &regs[off]);
+  }
+
+  regcache_raw_supply (regcache,
+		       mips_regnum(current_gdbarch)->fp_control_status,
+		       data + FPCR31_OFF);
 }
 
 static void
@@ -151,7 +160,7 @@ mipsnto_regset_id( int regno )
 		return NTO_REG_END;
 	else if( regno < gdbarch_fp0_regnum (current_gdbarch) )
 		return NTO_REG_GENERAL;
-	else if( regno >= gdbarch_fp0_regnum (current_gdbarch) && regno <= gdbarch_fp0_regnum (current_gdbarch) + 16)
+	else if( regno >= gdbarch_fp0_regnum (current_gdbarch) && regno <= gdbarch_fp0_regnum (current_gdbarch) + 32)
 		return  NTO_REG_FLOAT;
 	else if (regno == mips_regnum(current_gdbarch)->fp_control_status)
 		return NTO_REG_FLOAT;
@@ -165,8 +174,8 @@ mipsnto_regset_id( int regno )
 }
 
 static int 
-mipsnto_register_area(struct gdbarch *gdbarch,
-		      int regno, int regset, unsigned *off)
+mipsnto_register_area (struct gdbarch *gdbarch,
+		       int regno, int regset, unsigned *off)
 {
   *off = 0;
   if (regset == NTO_REG_GENERAL)
@@ -183,7 +192,7 @@ mipsnto_register_area(struct gdbarch *gdbarch,
 	  *off = offset;
         }
       else
-	      return 0;
+	return 0;
       return 4;
     }
   else if (regset == NTO_REG_FLOAT)
@@ -193,17 +202,22 @@ mipsnto_register_area(struct gdbarch *gdbarch,
       
       if (regno >= gdbarch_fp0_regnum (current_gdbarch) && regno <= gdbarch_fp0_regnum (current_gdbarch) + 32)
         {
-	  ULONGEST offset = (regno - gdbarch_fp0_regnum (current_gdbarch)) * 8;
-	  if (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG
-	      && register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4)
-	    offset += 4;
+	  ULONGEST offset = ((regno & ~1)
+			     - gdbarch_fp0_regnum (current_gdbarch)) * 8;
+
+	  if (register_size (current_gdbarch, MIPS_ZERO_REGNUM) == 4) {
+	    if (gdbarch_byte_order (current_gdbarch) == BFD_ENDIAN_BIG)
+	      offset += (regno & 1) ? 0 : 4;
+	    else
+	      offset += (regno & 1) ? 4 : 0;
+	  }
 
 	  *off = offset;
         }
       else if (regno == mips_regnum(current_gdbarch)->fp_control_status)
-	      *off = FPCR31_OFF;
+	*off = FPCR31_OFF;
       else
-	      return 0;
+	return 0;
       return 4;
     }
   /* NYI: ALT and tx79 stuffies.  */
@@ -233,13 +247,19 @@ mipsnto_regset_fill (const struct regcache *regcache, int regset, char *data)
     }
   else if (regset == NTO_REG_FLOAT)
     {
-      for (regno = 0; regno < 16; regno++)
+      int regi;
+
+      for (regi = 0; regi < 32; regi++)
 	{
-	  regcache_raw_collect (regcache, regno
-				+ gdbarch_fp0_regnum (current_gdbarch),
-				regs + regno * sizeof (nto_reg64) + off);
+	  int off, size;
+
+	  regno = regi + gdbarch_fp0_regnum (current_gdbarch);
+	  size = nto_register_area (current_gdbarch, regno, NTO_REG_FLOAT, &off);
+	  regcache_raw_collect (regcache, regno, &regs[off]);
 	}
-      regcache_raw_collect (regcache, mips_regnum(current_gdbarch)->fp_control_status, data + FPCR31_OFF);
+      regcache_raw_collect (regcache,
+			    mips_regnum(current_gdbarch)->fp_control_status,
+			    data + FPCR31_OFF);
     }
   else
     return -1;
