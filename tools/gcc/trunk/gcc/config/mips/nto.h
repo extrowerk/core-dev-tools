@@ -83,7 +83,7 @@ do                                                \
   while (0)
 
 #undef SUBTARGET_CPP_SPEC
-#define SUBTARGET_CPP_SPEC QNX_SYSTEM_INCLUDES "\
+#define SUBTARGET_CPP_SPEC QNX_SYSTEM_INCLUDES " \
 %{!EL:-D__BIGENDIAN__} \
 %{EL:-D__LITTLEENDIAN__} \
 %{fpic: -D__PIC__} %{fPIC: -D__PIC__} \
