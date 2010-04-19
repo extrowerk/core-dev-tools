@@ -43,11 +43,12 @@ do { \
 } while (0)
 
 #define QNX_SYSTEM_INCLUDES \
-"-isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
- -idirafter %$QNX_TARGET/usr/include "
+"%{!nostdinc: \
+-isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
+-isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
+-isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
+-isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
+-idirafter %$QNX_TARGET/usr/include}"
 
 /* Don't assume anything about the header files.  */
 #undef NO_IMPLICIT_EXTERN_C
