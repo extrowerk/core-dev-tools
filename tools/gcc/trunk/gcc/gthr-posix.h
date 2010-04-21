@@ -40,6 +40,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 #if defined (__QNXNTO__)
 #define __EXT_XOPEN_EX
+#define __EXT_POSIX1_200112
 #endif
 
 #include <pthread.h>
