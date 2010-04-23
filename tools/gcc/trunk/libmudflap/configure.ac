@@ -71,10 +71,13 @@ AC_CHECK_FUNCS(strnlen memrchr strncpy memmem sethostname)
 AC_CHECK_FUNCS(__ctype_b_loc __ctype_tolower_loc __ctype_toupper_loc)
 AC_CHECK_FUNCS(getlogin cuserid getpwnam getpwuid getpwent getgrnam getgrgid getgrent)
 AC_CHECK_FUNCS(getlogin_r getpwnam_r getpwuid_r getgrnam_r getgrgid_r)
+oldLIBS="$LIBS"
+LIBS="$LIBS -lsocket"
 AC_CHECK_FUNCS(getservent getservbyname getservbyport getaddrinfo gai_strerror)
 AC_CHECK_FUNCS(getprotoent getprotobyname getprotobynumber)
 AC_CHECK_FUNCS(getmntent setmntent addmntent)
 AC_CHECK_FUNCS(inet_ntoa mmap munmap)
+LIBS="$oldLIBS"
 AC_CHECK_FUNCS(__libc_freeres)
 
 AC_TRY_COMPILE([#include <sys/types.h>
