@@ -4724,7 +4724,8 @@ done
 
 
 
-
+oldLIBS="$LIBS"
+LIBS="$LIBS -lsocket"
 for ac_func in getservent getservbyname getservbyport getaddrinfo gai_strerror
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -5138,6 +5139,7 @@ _ACEOF
 fi
 done
 
+LIBS="$oldLIBS"
 
 for ac_func in __libc_freeres
 do
