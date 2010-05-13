@@ -24,6 +24,13 @@ ENTRY=_start
 
 # This sets the stack to the top of the simulator memory (2^19 bytes).
 STACK_ADDR=0x80000
+TARGET2_TYPE=got-rel
+
+OTHER_READONLY_SECTIONS="
+  .ARM.extab ${RELOCATING-0} : { *(.ARM.extab${RELOCATING+* .gnu.linkonce.armextab.*}) }
+  ${RELOCATING+ __exidx_start = .; }
+  .ARM.exidx ${RELOCATING-0} : { *(.ARM.exidx${RELOCATING+* .gnu.linkonce.armexidx.*}) }
+  ${RELOCATING+ __exidx_end = .; }"
 
 # ARM does not support .s* sections.
 NO_SMALL_DATA=yes

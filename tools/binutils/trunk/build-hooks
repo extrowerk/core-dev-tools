@@ -1,20 +1,26 @@
 srcdir=${PWD}/..
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
-qnx_target_version=6.4.0
+qnx_target_version=6.5.0
 
 if [ ${nto_target} != ntomulti ]; then
   cpu_string=`echo ${nto_target} | sed 's/nto//'`
   if [ $cpu_string = x86 ]; then
-    cpu_string=i386
+    cpu_string=i486
   fi
-  tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}`
+  if [ $cpu_string = armeabi ]; then
+  nto_target=ntoarm
+  cpu_string=arm
+  variant=eabi
+  fi
+
+  tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}${variant}`
   target=`${srcdir}/config.sub ${tmpstring}`
 else
   target=`${srcdir}/config.sub ${nto_target}`
 fi
 
-targets="i686-pc-linux-gnu i686-pc-cygwin arm-unknown-nto-qnx${qnx_target_version} mips-unknown-nto-qnx${qnx_target_version} powerpc-unknown-nto-qnx${qnx_target_version} sh-unknown-nto-qnx${qnx_target_version} i386-pc-nto-qnx${qnx_target_version}"
+targets="i686-pc-linux-gnu i686-pc-cygwin arm-unknown-nto-qnx${qnx_target_version} mips-unknown-nto-qnx${qnx_target_version} powerpc-unknown-nto-qnx${qnx_target_version} sh-unknown-nto-qnx${qnx_target_version} i486-pc-nto-qnx${qnx_target_version}"
 
 function hook_preconfigure {
 	case ${nto_target} in
@@ -26,9 +32,9 @@ function hook_preconfigure {
         case ${SYSNAME} in
         nto)
                 case "${nto_target}" in
-                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/qnx640/host/qnx6/x86}}
+                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/qnx650/host/qnx6/x86}}
 			execdir=${TOOL_PATH}/usr ;;
-                *)      execdir=/usr/qnx640/host/qnx6/x86/usr ;;
+                *)      execdir=/usr/qnx650/host/qnx6/x86/usr ;;
                 esac
                 ;;
         solaris)
@@ -36,14 +42,14 @@ function hook_preconfigure {
                 case ${host_cpu} in
         i[34567]86) host_cpu=x86 ;;
                 esac
-                execdir=/opt/qnx640/host/solaris/${host_cpu}/usr
+                execdir=/opt/qnx650/host/solaris/${host_cpu}/usr
                 ;;
         linux)
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
 		case  $host_target in 
 		nto*) 
-			configure_opts="${configure_opts} --host=i386-pc-nto-qnx6.4.0" 
-			execdir=/usr/qnx640/host/qnx6/x86/usr/ 
+			configure_opts="${configure_opts} --host=i486-pc-nto-qnx6.5.0" 
+			execdir=/usr/qnx650/host/qnx6/x86/usr/ 
 		;;
 		
 		linux*)
@@ -51,16 +57,16 @@ function hook_preconfigure {
                 case ${host_cpu} in
 			i[34567]86) host_cpu=x86 ;;
 			esac
-			execdir=/opt/qnx640/host/linux/${host_cpu}/usr
+			execdir=/opt/qnx650/host/linux/${host_cpu}/usr
 		;;
 		win32*) 
 			configure_opts="${configure_opts} --host=i386-mingw32msvc"
-			execdir=/c/qnx640/host/win32/x86/usr
+			execdir=/c/qnx650/host/win32/x86/usr
                 ;;
 		esac
 	;;
         win32)
-                execdir=/cygdrive/c/qnx640/host/win32/x86/usr
+                execdir=/cygdrive/c/qnx650/host/win32/x86/usr
                 ;;
         *)
                 echo "Don't have config for ${SYSNAME}"
