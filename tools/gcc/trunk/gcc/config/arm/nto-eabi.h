@@ -19,10 +19,6 @@
 
 #define	OBJECT_FORMAT_ELF
 
-/*
-#undef	DEFAULT_VTABLE_THUNKS
-#define DEFAULT_VTABLE_THUNKS   1
-*/
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()                \
 do {                                            \
@@ -37,15 +33,6 @@ do {                                            \
 	builtin_define ("__ARM__");             \
 } while (0)
 
-/*
-#define TARGET_OS_CPP_BUILTINS()                \
-do {                                            \
-	NTO_TARGET_OS_CPP_BUILTINS();           \
-	TARGET_BPABI_CPP_BUILTINS();		\
-	builtin_define ("__ARM__");             \
-} while (0)
-
-*/
 #undef ASM_SPEC
 #define ASM_SPEC \
 "%{EB:-EB} %{!EB:-EL} %{EL:-EL} \
@@ -54,9 +41,9 @@ do {                                            \
  %{march=*:-march=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
- %{marmv7-vfp: %{!mfloat-abi=*: -mfloat-abi=softfp} \
-	      %{!march=*: -march=armv7-a} \
-	      %{!fpu=*: -mfpu=vfpv3-d16} -meabi=5} \
+ %{!mfloat-abi=*: -mfloat-abi=softfp} \
+ %{!march=*: -march=armv7-a} \
+ %{!mfpu=*: -mfpu=vfpv3-d16} \
  -meabi=5" 
 
 #define QNX_SYSTEM_LIBDIRS \
@@ -112,11 +99,9 @@ do {                                            \
 
 #undef	CC1_SPEC
 #define	CC1_SPEC " \
-%{marmv7-vfp: %{!mfloat-abi=*: -mfloat-abi=softfp} \
-	      %{!march=*: -march=armv7-a} \
-	      %{!fpu=*: -mfpu=vfpv3-d16}  \
-	      %{!mabi=*: -mabi=aapcs} \
-}\
+%{!mfloat-abi=*: -mfloat-abi=softfp} \
+%{!march=*: -march=armv7-a} \
+%{!mfpu=*: -mfpu=vfpv3-d16}  \
 %{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
 /* Call the function profiler with a given profile label. 
@@ -149,6 +134,5 @@ do {                                            \
 
 #undef  DEFAULT_STRUCTURE_SIZE_BOUNDARY
 #define DEFAULT_STRUCTURE_SIZE_BOUNDARY 8
-
 
 #undef HANDLE_PRAGMA_PACK_PUSH_POP
