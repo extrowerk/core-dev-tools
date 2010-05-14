@@ -1,5 +1,10 @@
 #define HAVE_ATEXIT
 
+/* We default to the "aapcs-linux" ABI so that enums are int-sized by
+   default.  */
+#undef  ARM_DEFAULT_ABI
+#define ARM_DEFAULT_ABI ARM_ABI_AAPCS_LINUX
+
 #undef SIZE_TYPE
 #define SIZE_TYPE "unsigned int"
 
