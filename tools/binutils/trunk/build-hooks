@@ -9,12 +9,11 @@ if [ ${nto_target} != ntomulti ]; then
     cpu_string=i486
   fi
   if [ $cpu_string = armeabi ]; then
-  nto_target=ntoarm
-  cpu_string=arm
-  variant=eabi
+    nto_target=ntoarm
+    cpu_string=arm
+    os_variant=eabi
   fi
-
-  tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}${variant}`
+  tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}${os_variant}`
   target=`${srcdir}/config.sub ${tmpstring}`
 else
   target=`${srcdir}/config.sub ${nto_target}`
