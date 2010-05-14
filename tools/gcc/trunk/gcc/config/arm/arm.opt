@@ -51,9 +51,6 @@ Specify the name of the target architecture
 marm
 Target RejectNegative InverseMask(THUMB) Undocumented
 
-marmv7-vfp
-Target RejectNegative Undocumented
-
 mbig-endian
 Target Report RejectNegative Mask(BIG_END)
 Assume target CPU is configured as big endian

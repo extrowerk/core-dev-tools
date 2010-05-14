@@ -50,20 +50,17 @@ do {                                            \
  %{march=*:-march=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
- %{marmv7-vfp: %{!mfloat-abi=*: -mfloat-abi=softfp} \
-	      %{!march=*: -march=armv7-a} \
-	      %{!fpu=*: -mfpu=vfpv3-d16} -meabi=5} \
- %{!mhard-float: %{!marmv7-vfp: -mfpu=softvfp}}" 
+ %{!mhard-float: -mfpu=softvfp}" 
 
 #define QNX_SYSTEM_LIBDIRS \
-"-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/gcc/%v1.%v2.%v3 \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/usr/lib \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/opt/lib \
- -rpath-link %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/usr/lib:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/opt/lib "
+"-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3 \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/usr/lib \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/opt/lib \
+ -rpath-link %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}/usr/lib:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}/opt/lib "
 
 #undef LIB_SPEC
 #define LIB_SPEC \
@@ -75,14 +72,14 @@ do {                                            \
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/%{pg:m}%{p:m}crt1.o \
+"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/%{pg:m}%{p:m}crt1.o \
   } \
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crti.o \
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/crti.o \
 crtbegin.o%s " 
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
-"crtend.o%s %$QNX_TARGET/arm%{EB:be}%{!EB:le}%{marmv7*:-v7}/lib/crtn.o"
+"crtend.o%s %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/crtn.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC \
@@ -108,13 +105,7 @@ crtbegin.o%s "
  %{posix:-D_POSIX_SOURCE}"
 
 #undef	CC1_SPEC
-#define	CC1_SPEC " \
-%{marmv7-vfp: %{!mfloat-abi=*: -mfloat-abi=softfp} \
-	      %{!march=*: -march=armv7-a} \
-	      %{!fpu=*: -mfpu=vfpv3-d16}  \
-	      %{!mabi=*: -mabi=aapcs} \
-}\
-%{EB:-mbig-endian} %{!EB:-mlittle-endian}"
+#define	CC1_SPEC "%{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
 /*
  * Keep floating point word order the same as multi-word integers

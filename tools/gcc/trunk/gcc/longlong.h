@@ -244,7 +244,7 @@ UDItype __umulsidi3 (USItype, USItype);
 #define UDIV_TIME 100
 #endif /* __arm__ */
 
-#if defined(__arm__)
+#if defined(__arm__) && !defined(__QNXNTO__)
 /* Let gcc decide how best to implement count_leading_zeros.  */
 #define count_leading_zeros(COUNT,X)	((COUNT) = __builtin_clz (X))
 #define COUNT_LEADING_ZEROS_0 32
