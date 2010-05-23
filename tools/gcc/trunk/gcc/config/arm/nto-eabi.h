@@ -23,13 +23,7 @@
 #define TARGET_OS_CPP_BUILTINS()                \
 do {                                            \
  	TARGET_BPABI_CPP_BUILTINS(); 		\
-        builtin_define ("__QNX__");             \
-        builtin_define ("__QNXNTO__");          \
-        builtin_define ("__ELF__");             \
-        builtin_assert ("system=posix");        \
-        builtin_assert ("system=qnx");          \
-        builtin_assert ("system=nto");          \
-        builtin_assert ("system=qnxnto");       \
+	NTO_TARGET_OS_CPP_BUILTINS();		\
 	builtin_define ("__ARM__");             \
 } while (0)
 
@@ -134,5 +128,3 @@ do {                                            \
 
 #undef  DEFAULT_STRUCTURE_SIZE_BOUNDARY
 #define DEFAULT_STRUCTURE_SIZE_BOUNDARY 8
-
-#undef HANDLE_PRAGMA_PACK_PUSH_POP

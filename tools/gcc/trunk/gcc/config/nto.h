@@ -85,8 +85,7 @@ do {                                            \
         builtin_assert ("system=qnx");          \
         builtin_assert ("system=nto");          \
         builtin_assert ("system=qnxnto");       \
-	if (HANDLE_PRAGMA_PACK_PUSH_POP)	\
-	   builtin_define ("__PRAGMA_PACK_PUSH_POP__"); \
+	builtin_define ("__PRAGMA_PACK_PUSH_POP__"); \
     } while (0)
 
 /* Determine whether the entire c99 runtime
