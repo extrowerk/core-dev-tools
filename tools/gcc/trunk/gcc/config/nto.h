@@ -19,7 +19,6 @@ along with GCC; see the file COPYING.  If not, write to
 the Free Software Foundation, 51 Franklin Street, Fifth Floor,
 Boston, MA 02110-1301, USA.  */
 
-/* Assert that we are targetting VxWorks.  */
 #undef TARGET_NEUTRINO
 #define TARGET_NEUTRINO 1
 
@@ -123,3 +122,8 @@ do {                                            \
  %{static:%(link_gcc_c_sequence) -lmudflap -lsocket -lbacktrace}} \
  %{fmudflapth: -export-dynamic -lmudflapth -lsocket\
  %{static:%(link_gcc_c_sequence) -lmudflapth -lsocket -lbacktrace}} "
+
+#undef LINK_GCC_C_SEQUENCE_SPEC
+#define LINK_GCC_C_SEQUENCE_SPEC \
+  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
+
