@@ -245,8 +245,10 @@ extern void __mf_set_state (enum __mf_state_enum);
 #else
 # ifdef LIBMUDFLAPTH
 extern __thread enum __mf_state_enum __mf_state_1;
+extern __thread int __mf_tracing;
 # else
 extern enum __mf_state_enum __mf_state_1;
+extern int __mf_tracing;
 # endif
 static inline enum __mf_state_enum __mf_get_state (void)
 {
@@ -255,6 +257,14 @@ static inline enum __mf_state_enum __mf_get_state (void)
 static inline void __mf_set_state (enum __mf_state_enum s)
 {
   __mf_state_1 = s;
+}
+static inline int __mf_get_tracing (void)
+{
+  return __mf_tracing;
+}
+static inline void __mf_set_tracing (int t)
+{
+  __mf_tracing = t;
 }
 #endif
 
@@ -272,25 +282,33 @@ extern struct __mf_options __mf_opts;
 
 #ifdef LIBMUDFLAPTH
 #define VERBOSE_TRACE(...) \
-  do { if (UNLIKELY (__mf_opts.verbose_trace)) {  \
+  do { if (UNLIKELY (__mf_opts.verbose_trace && !__mf_get_tracing())) {  \
+      __mf_set_tracing(1);	\
       fprintf (stderr, "mf(%u): ", (unsigned) pthread_self ()); \
       fprintf (stderr, __VA_ARGS__); \
+      __mf_set_tracing(0); \
     } } while (0)
 #define TRACE(...) \
-  do { if (UNLIKELY (__mf_opts.trace_mf_calls)) { \
+  do { if (UNLIKELY (__mf_opts.trace_mf_calls && !__mf_get_tracing())) { \
+      __mf_set_tracing(1);	\
       fprintf (stderr, "mf(%u): ", (unsigned) pthread_self ()); \
       fprintf (stderr, __VA_ARGS__); \
+      __mf_set_tracing(0); \
     } } while (0)
 #else
 #define VERBOSE_TRACE(...) \
-  do { if (UNLIKELY (__mf_opts.verbose_trace)) {  \
+  do { if (UNLIKELY (__mf_opts.verbose_trace && !__mf_get_tracing())) {  \
+      __mf_set_tracing(1);	\
       fprintf (stderr, "mf: "); \
       fprintf (stderr, __VA_ARGS__); \
+      __mf_set_tracing(0); \
     } } while (0)
 #define TRACE(...) \
-  do { if (UNLIKELY (__mf_opts.trace_mf_calls)) { \
+  do { if (UNLIKELY (__mf_opts.trace_mf_calls && !__mf_get_tracing())) { \
+      __mf_set_tracing(1);	\
       fprintf (stderr, "mf: "); \
       fprintf (stderr, __VA_ARGS__); \
+      __mf_set_tracing(0); \
     } } while (0)
 #endif
 
