@@ -186,6 +186,7 @@ __thread enum __mf_state_enum __mf_state_1 = reentrant;
 #endif
 #else
 enum __mf_state_enum __mf_state_1 = reentrant;
+int __mf_tracing = 0;
 #endif
 
 #ifdef LIBMUDFLAPTH
@@ -622,8 +623,6 @@ __mfu_set_options (const char *optstr)
 void
 __mf_resolve_single_dynamic (struct __mf_dynamic_entry *e)
 {
-  char *err;
-
   assert (e);
   if (e->pointer) return;
 

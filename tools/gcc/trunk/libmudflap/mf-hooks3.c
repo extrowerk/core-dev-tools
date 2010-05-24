@@ -100,6 +100,7 @@ struct mf_thread_data
   pthread_t self;
   unsigned char used_p;
   unsigned char state;
+  unsigned char tracing;
 };
 
 static struct mf_thread_data mf_thread_data[LIBMUDFLAPTH_THREADS_MAX];
@@ -192,6 +193,21 @@ __mf_set_state (enum __mf_state_enum new_state)
   struct mf_thread_data *data = __mf_find_threadinfo (1);
   data->state = new_state;
 }
+
+void
+__mf_set_tracing (int tracing)
+{
+  struct mf_thread_data *data = __mf_find_threadinfo (1);
+  data->tracing = tracing;
+}
+
+int __mf_get_tracing (void)
+{
+  struct mf_thread_data *data = __mf_find_threadinfo (0);
+  if (data)
+    return data->tracing;
+}
+
 #endif
 
 /* The following two functions are used only with __mf_opts.heur_std_data.
