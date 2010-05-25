@@ -458,6 +458,21 @@ tdesc_numbered_register (const struct tdesc_feature *feature,
   return 1;
 }
 
+/* Search FEATURE for a register named NAME, but do not assign a fixed
+   register number to it.  */
+
+int
+tdesc_unnumbered_register (const struct tdesc_feature *feature,
+			   const char *name)
+{
+  struct tdesc_reg *reg = tdesc_find_register_early (feature, name);
+
+  if (reg == NULL)
+    return 0;
+
+  return 1;
+}
+
 /* Search FEATURE for a register whose name is in NAMES and assign
    REGNO to it.  */
 
@@ -526,7 +541,7 @@ tdesc_register_name (struct gdbarch *gdbarch, int regno)
   return "";
 }
 
-static struct type *
+struct type *
 tdesc_register_type (struct gdbarch *gdbarch, int regno)
 {
   struct tdesc_reg *reg = tdesc_find_register (gdbarch, regno);

@@ -39,14 +39,20 @@
 
 #include "elf-bfd.h"
 
+#include <features/arm-with-iwmmxt.c>
+#include <features/arm-with-neon.c>
+
+
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
 #define PS_OFF (16*4)
 /* Our FP register size. See arm/context.h  */
-#define NTO_FP_REGISTER_SIZE 8
+#define NTO_FP_REGISTER_SIZE 8 /* 64-bit */
+
+#define NTO_FP_REGISTER_NUM 32
 
 /* FP registers - see context.h, Largest register file size + status regs. */
-#define FP_REGSET_SIZE (NTO_FP_REGISTER_SIZE * 32 + STATUS_REGISTER_SIZE * 4) 
+#define FP_REGSET_SIZE (NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM + STATUS_REGISTER_SIZE * 4) 
 
 
 static void
@@ -66,16 +72,32 @@ static void
 armnto_supply_reg_fpregset (struct regcache *regcache, int regno, char *regs)
 {
   int regi;
+  const struct gdbarch_tdep *const tdep = gdbarch_tdep (current_gdbarch);
 
-  for (regi = ARM_F0_REGNUM; regi <= ARM_F7_REGNUM; regi++)
+  if (tdep->have_vfp_registers)
     {
-      gdb_byte gdbbuf[FP_REGISTER_SIZE]; /* This is GDB's register size. */
+      for (regi = ARM_D0_REGNUM; regi != ARM_D31_REGNUM; ++regi)
+	{
+	  const unsigned int offset = (regi - ARM_D0_REGNUM) * NTO_FP_REGISTER_SIZE;
 
-      memset (gdbbuf, 0, 12);
-      memcpy (gdbbuf + 4, regs, NTO_FP_REGISTER_SIZE);
-      RAW_SUPPLY_IF_NEEDED (regcache, regi, gdbbuf);
-      regs += NTO_FP_REGISTER_SIZE;     
+	  RAW_SUPPLY_IF_NEEDED (regcache, regi, &regs[offset]);
+	}
     }
+  else
+    {
+      for (regi = ARM_F0_REGNUM; regi <= ARM_F7_REGNUM; regi++)
+	{
+	  gdb_byte gdbbuf[FP_REGISTER_SIZE]; /* This is GDB's register size. */
+
+	  memset (gdbbuf, 0, 12);
+	  memcpy (gdbbuf + 4, regs, NTO_FP_REGISTER_SIZE);
+	  RAW_SUPPLY_IF_NEEDED (regcache, regi, gdbbuf);
+	  regs += NTO_FP_REGISTER_SIZE;
+	}
+    }
+
+  RAW_SUPPLY_IF_NEEDED (regcache, ARM_FPS_REGNUM, regs);
+
   /* Status registers. */
   /* FPSCR a.k.a. ARM_FPS_REGNUM (24) */
   /* FPEXC */
@@ -119,6 +141,9 @@ armnto_regset_id (int regno)
     return NTO_REG_GENERAL;
   else if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
     return NTO_REG_FLOAT;
+  /* VFP registers are mapped into FPU registers. */
+  else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+    return NTO_REG_FLOAT;
   return -1;
 }
 
@@ -141,6 +166,41 @@ armnto_register_area (struct gdbarch *gdbarch,
 	return 0;
       return 4;
     }
+  else if (regset == NTO_REG_FLOAT)
+    {
+      int regsize = -1;
+
+      if (regno == -1)
+	return FP_REGSET_SIZE;
+      /* Both regular FP registers and VFP/NEON are in the same
+      context.  Therefore, we siply check for all regnos.  It is
+      up to architecture to not tell gdb there are both regular
+      FP and VFP registers on the target.  */
+      /* Regular float registers: */
+      if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
+	{
+	  regsize = NTO_FP_REGISTER_SIZE;
+	  *off = (regno - ARM_F0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	}
+      else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+	{
+	  regsize = NTO_FP_REGISTER_SIZE;
+	  *off = (regno - ARM_D0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	}
+      else switch (regno)
+	{
+	case ARM_FPS_REGNUM:
+	  regsize = STATUS_REGISTER_SIZE;
+	  *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM; /* fpscr */
+	  break;
+	case ARM_PS_REGNUM:
+	  regsize = STATUS_REGISTER_SIZE;
+	  *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM
+		 + STATUS_REGISTER_SIZE; /* fpexc */
+	  break;
+	}
+      return regsize;
+  }
   return -1;
 }
 
@@ -184,6 +244,51 @@ armnto_variant_directory_suffix (void)
   return "";
 }
 
+
+/* From sys/syspage.h: */
+#define CPU_FLAG_FPU	(1UL <<  31)  /* CPU has floating point support */
+
+/* From arm/syspage.h: */
+/*
+ * CPU capability/state flags
+ */
+#define ARM_CPU_FLAG_XSCALE_CP0	    0x0001    /* Xscale CP0 MAC unit */
+#define ARM_CPU_FLAG_V6		    0x0002    /* ARMv6 architecture */
+#define ARM_CPU_FLAG_V6_ASID	    0x0004    /* use ARMv6 MMU ASID */
+#define ARM_CPU_FLAG_SMP	    0x0008	/* multiprocessor system */
+#define ARM_CPU_FLAG_V7_MP	    0x0010    /* ARMv7 multiprocessor extenstions */
+#define ARM_CPU_FLAG_V7		    0x0020	  /* ARMv7 architecture */
+#define ARM_CPU_FLAG_NEON	    0x0040    /* Neon Media Engine */
+#define ARM_CPU_FLAG_WMMX2	    0x0080    /* iWMMX2 coprocessor */
+
+static const struct target_desc *
+armnto_read_description (struct target_ops *ops)
+{
+  if (nto_cpuinfo_valid)
+    {
+      if (nto_cpuinfo_flags & ARM_CPU_FLAG_NEON)
+	{
+	  if (!tdesc_arm_with_neon)
+	    initialize_tdesc_arm_with_neon ();
+	  return tdesc_arm_with_neon;
+	}
+      if (nto_cpuinfo_flags & ARM_CPU_FLAG_WMMX2)
+	{
+	  if (!tdesc_arm_with_iwmmxt)
+	    initialize_tdesc_arm_with_iwmmxt ();
+	  return tdesc_arm_with_iwmmxt;
+	}
+      if (nto_cpuinfo_flags & CPU_FLAG_FPU)
+	{
+	  if (!tdesc_arm_with_vfp)
+	    initialize_tdesc_arm_with_vfp ();
+	  return tdesc_arm_with_vfp;
+	}
+    }
+
+  return NULL;
+}
+
 static void
 init_armnto_ops ()
 {
@@ -196,6 +301,7 @@ init_armnto_ops ()
   nto_regset_fill = armnto_regset_fill;
   nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
   nto_variant_directory_suffix = armnto_variant_directory_suffix;
+  ntoops_read_description = armnto_read_description;
 }
 
 /* */

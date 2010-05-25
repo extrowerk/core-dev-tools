@@ -27,6 +27,8 @@
 #include "regset.h"
 #include "gdbthread.h"
 
+struct target_ops;
+
 /* Target operations defined for Neutrino targets (<target>-nto-tdep.c).  */
 
 struct nto_target_ops
@@ -78,6 +80,9 @@ struct nto_target_ops
 
   /* Variant specific directory extension. e.g. -spe, -v7... */
   const char *(*variant_directory_suffix)(void);
+
+  /* Read description. */
+  const struct target_desc *(*read_description) (struct target_ops *ops);
 };
 
 extern struct nto_target_ops current_nto_target;
@@ -108,6 +113,8 @@ extern struct nto_target_ops current_nto_target;
 #define nto_is_nto_target (current_nto_target.is_nto_target)
 
 #define nto_variant_directory_suffix (current_nto_target.variant_directory_suffix)
+
+#define ntoops_read_description (current_nto_target.read_description)
 
 #define nto_trace(level) \
   if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
@@ -206,6 +213,7 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack,
 
 char *nto_pid_to_str (ptid_t);
 
+const struct target_desc *nto_read_description (struct target_ops *ops);
 
 
 #endif

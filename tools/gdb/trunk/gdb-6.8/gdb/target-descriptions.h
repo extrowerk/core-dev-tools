@@ -98,6 +98,12 @@ int tdesc_numbered_register (const struct tdesc_feature *feature,
 			     struct tdesc_arch_data *data,
 			     int regno, const char *name);
 
+/* Search FEATURE for a register named NAME, but do not assign a fixed
+   register number to it.  */
+
+int tdesc_unnumbered_register (const struct tdesc_feature *feature,
+			       const char *name);
+
 /* Search FEATURE for a register named NAME, and return its size in
    bits.  The register must exist.  */
 
@@ -177,5 +183,7 @@ void tdesc_record_type (struct tdesc_feature *feature, struct type *type);
 void tdesc_create_reg (struct tdesc_feature *feature, const char *name,
 		       int regnum, int save_restore, const char *group,
 		       int bitsize, const char *type);
+
+struct type *tdesc_register_type (struct gdbarch *gdbarch, int regno);
 
 #endif /* TARGET_DESCRIPTIONS_H */
