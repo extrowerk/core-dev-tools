@@ -2844,8 +2844,7 @@ strip_main (int argc, char *argv[])
 
       if (tmpname == NULL)
 	{
-	  bfd_nonfatal_message (argv[i], NULL, NULL,
-				_("could not create temporary file to hold stripped copy"));
+	  non_fatal(_("%s: could not create temporary file to hold stripped copy: %s"), argv[i], strerror(errno));
 	  status = 1;
 	  continue;
 	}
