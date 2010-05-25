@@ -42,6 +42,7 @@
 #include "prologue-value.h"
 #include "target-descriptions.h"
 #include "user-regs.h"
+#include "reggroups.h"
 
 #include "arm-tdep.h"
 #include "gdb/sim-arm.h"
@@ -180,6 +181,13 @@ static void convert_from_extended (const struct floatformat *, const void *,
 				   void *, int);
 static void convert_to_extended (const struct floatformat *, void *,
 				 const void *, int);
+
+static void arm_neon_quad_read (struct gdbarch *gdbarch,
+				struct regcache *regcache,
+				int regnum, gdb_byte *buf);
+static void arm_neon_quad_write (struct gdbarch *gdbarch,
+				 struct regcache *regcache,
+				 int regnum, const gdb_byte *buf);
 
 struct arm_prologue_cache
 {
@@ -1407,18 +1415,119 @@ arm_print_float_info (struct gdbarch *gdbarch, struct ui_file *file,
   print_fpu_flags (status);
 }
 
+/* FIXME: The vector types are not correctly ordered on big-endian
+   targets.  Just as s0 is the low bits of d0, d0[0] is also the low
+   bits of d0 - regardless of what unit size is being held in d0.  So
+   the offset of the first uint8 in d0 is 7, but the offset of the
+   first float is 4.  This code works as-is for little-endian
+   targets.  */
+
+static struct type *
+arm_neon_quad_type (struct gdbarch *gdbarch)
+{
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  if (tdep->neon_quad_type == NULL)
+    {
+      struct type *t, *elem;
+
+      t = init_composite_type ("__gdb_builtin_type_neon_q",
+			       TYPE_CODE_UNION);
+      elem = builtin_type_int8;
+      append_composite_type_field (t, "u8", init_vector_type (elem, 16));
+      elem = builtin_type_uint16;
+      append_composite_type_field (t, "u16", init_vector_type (elem, 8));
+      elem = builtin_type_uint32;
+      append_composite_type_field (t, "u32", init_vector_type (elem, 4));
+      elem = builtin_type_uint64;
+      append_composite_type_field (t, "u64", init_vector_type (elem, 2));
+      elem = builtin_type_float;
+      append_composite_type_field (t, "f32", init_vector_type (elem, 4));
+      elem = builtin_type_double;
+      append_composite_type_field (t, "f64", init_vector_type (elem, 2));
+
+      TYPE_NAME (t) = xstrdup ("neon_q");
+      tdep->neon_quad_type = t;
+    }
+
+  return tdep->neon_quad_type;
+}
+
+static struct type *
+arm_neon_double_type (struct gdbarch *gdbarch)
+{
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  if (tdep->neon_double_type == NULL)
+    {
+      struct type *t, *elem;
+
+      t = init_composite_type ("__gdb_builtin_type_neon_d",
+			       TYPE_CODE_UNION);
+      elem = builtin_type_int8;
+      append_composite_type_field (t, "u8", init_vector_type (elem, 8));
+      elem = builtin_type_uint16;
+      append_composite_type_field (t, "u16", init_vector_type (elem, 4));
+      elem = builtin_type_uint32;
+      append_composite_type_field (t, "u32", init_vector_type (elem, 2));
+      elem = builtin_type_uint64;
+      append_composite_type_field (t, "u64", elem);
+      elem = builtin_type_float;
+      append_composite_type_field (t, "f32", init_vector_type (elem, 2));
+      elem = builtin_type_double;
+      append_composite_type_field (t, "f64", elem);
+
+      TYPE_NAME (t) = "neon_d";
+      tdep->neon_double_type = t;
+    }
+
+  return tdep->neon_double_type;
+}
+
 /* Return the GDB type object for the "standard" data type of data in
    register N.  */
 
 static struct type *
 arm_register_type (struct gdbarch *gdbarch, int regnum)
 {
+  int num_regs = gdbarch_num_regs (gdbarch);
+
+  if (gdbarch_tdep (gdbarch)->have_vfp_pseudos
+      && regnum >= num_regs && regnum < num_regs + 32)
+    return builtin_type (gdbarch)->builtin_float;
+
+  if (gdbarch_tdep (gdbarch)->have_neon_pseudos
+      && regnum >= num_regs + 32 && regnum < num_regs + 32 + 16)
+    return arm_neon_quad_type (gdbarch);
+
+  /* If the target description has register information, we are only
+     in this function so that we can override the types of
+     double-precision registers for NEON.  */
+  if (tdesc_has_registers (gdbarch_target_desc (gdbarch)))
+    {
+      struct type *t = tdesc_register_type (gdbarch, regnum);
+
+      if (regnum >= ARM_D0_REGNUM && regnum < ARM_D0_REGNUM + 32
+	  && TYPE_CODE (t) == TYPE_CODE_FLT
+	  && gdbarch_tdep (gdbarch)->have_neon)
+	return arm_neon_double_type (gdbarch);
+      else
+	return t;
+    }
+
   if (regnum >= ARM_F0_REGNUM && regnum < ARM_F0_REGNUM + NUM_FREGS)
-    return builtin_type_arm_ext;
+    {
+      if (!gdbarch_tdep (gdbarch)->have_fpa_registers)
+	return builtin_type_void;
+
+      /* We do not have FPA registers, so we don't care
+	 about ext. float types. */
+      return builtin_type_void;
+    }
   else if (regnum == ARM_SP_REGNUM)
-    return builtin_type_void_data_ptr;
+    return builtin_type (gdbarch)->builtin_data_ptr;
   else if (regnum == ARM_PC_REGNUM)
-    return builtin_type_void_func_ptr;
+    return builtin_type (gdbarch)->builtin_func_ptr;
   else if (regnum >= ARRAY_SIZE (arm_register_names))
     /* These registers are only supported on targets which supply
        an XML description.  */
@@ -2607,6 +2716,32 @@ set_disassembly_style_sfunc (char *args, int from_tty,
 static const char *
 arm_register_name (struct gdbarch *gdbarch, int i)
 {
+  const int num_regs = gdbarch_num_regs (current_gdbarch);
+
+  if (gdbarch_tdep (gdbarch)->have_vfp_pseudos
+      && i >= num_regs && i < num_regs + 32)
+    {
+      static const char *const vfp_pseudo_names[] = {
+	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+	"s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
+	"s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23",
+	"s24", "s25", "s26", "s27", "s28", "s29", "s30", "s31",
+      };
+
+      return vfp_pseudo_names[i - num_regs];
+    }
+
+  if (gdbarch_tdep (gdbarch)->have_neon_pseudos
+      && i >= num_regs + 32 && i < num_regs + 32 + 16)
+    {
+      static const char *const neon_pseudo_names[] = {
+	"q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+	"q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15",
+      };
+
+      return neon_pseudo_names[i - num_regs - 32];
+    }
+
   if (i >= ARRAY_SIZE (arm_register_names))
     /* These registers are only supported on targets which supply
        an XML description.  */
@@ -2685,6 +2820,132 @@ arm_write_pc (struct regcache *regcache, CORE_ADDR pc)
     }
 }
 
+static void
+arm_neon_quad_read (struct gdbarch *gdbarch, struct regcache *regcache,
+		    int regnum, gdb_byte *buf)
+{
+  char name_buf[4];
+  gdb_byte reg_buf[8];
+  int offset, double_regnum;
+
+  sprintf (name_buf, "d%d", regnum << 1);
+  double_regnum = user_reg_map_name_to_regnum (gdbarch, name_buf,
+					       strlen (name_buf));
+
+  /* d0 is always the least significant half of q0.  */
+  if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
+    offset = 8;
+  else
+    offset = 0;
+
+  regcache_raw_read (regcache, double_regnum, reg_buf);
+  memcpy (buf + offset, reg_buf, 8);
+
+  offset = 8 - offset;
+  regcache_raw_read (regcache, double_regnum + 1, reg_buf);
+  memcpy (buf + offset, reg_buf, 8);
+}
+
+static void
+arm_pseudo_read (struct gdbarch *gdbarch, struct regcache *regcache,
+		 int regnum, gdb_byte *buf)
+{
+  const int num_regs = gdbarch_num_regs (gdbarch);
+  char name_buf[4];
+  gdb_byte reg_buf[8];
+  int offset, double_regnum;
+
+  gdb_assert (regnum >= num_regs);
+  regnum -= num_regs;
+
+  if (gdbarch_tdep (gdbarch)->have_neon_pseudos && regnum >= 32 && regnum < 48)
+    /* Quad-precision register.  */
+    arm_neon_quad_read (gdbarch, regcache, regnum - 32, buf);
+  else
+    {
+      /* Single-precision register.  */
+      gdb_assert (regnum < 32);
+
+      /* s0 is always the least significant half of d0.  */
+      if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
+	offset = (regnum & 1) ? 0 : 4;
+      else
+	offset = (regnum & 1) ? 4 : 0;
+
+      sprintf (name_buf, "d%d", regnum >> 1);
+      double_regnum = user_reg_map_name_to_regnum (gdbarch, name_buf,
+						   strlen (name_buf));
+
+      regcache_raw_read (regcache, double_regnum, reg_buf);
+      memcpy (buf, reg_buf + offset, 4);
+    }
+}
+
+/* Store the contents of BUF to a NEON quad register, by writing to
+   two double registers.  This is used to implement the quad pseudo
+   registers, and for argument passing in case the quad registers are
+   missing; vectors are passed in quad registers when using the VFP
+   ABI, even if a NEON unit is not present.  REGNUM is the index
+   of the quad register, in [0, 15].  */
+
+static void
+arm_neon_quad_write (struct gdbarch *gdbarch, struct regcache *regcache,
+		     int regnum, const gdb_byte *buf)
+{
+  char name_buf[4];
+  int offset, double_regnum;
+
+  sprintf (name_buf, "d%d", regnum << 1);
+  double_regnum = user_reg_map_name_to_regnum (gdbarch, name_buf,
+					       strlen (name_buf));
+
+  /* d0 is always the least significant half of q0.  */
+  if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
+    offset = 8;
+  else
+    offset = 0;
+
+  regcache_raw_write (regcache, double_regnum, buf + offset);
+  offset = 8 - offset;
+  regcache_raw_write (regcache, double_regnum + 1, buf + offset);
+}
+
+static void
+arm_pseudo_write (struct gdbarch *gdbarch, struct regcache *regcache,
+		  int regnum, const gdb_byte *buf)
+{
+  const int num_regs = gdbarch_num_regs (gdbarch);
+  char name_buf[4];
+  gdb_byte reg_buf[8];
+  int offset, double_regnum;
+
+  gdb_assert (regnum >= num_regs);
+  regnum -= num_regs;
+
+  if (gdbarch_tdep (gdbarch)->have_neon_pseudos && regnum >= 32 && regnum < 48)
+    /* Quad-precision register.  */
+    arm_neon_quad_write (gdbarch, regcache, regnum - 32, buf);
+  else
+    {
+      /* Single-precision register.  */
+      gdb_assert (regnum < 32);
+
+      /* s0 is always the least significant half of d0.  */
+      if (gdbarch_byte_order (gdbarch) == BFD_ENDIAN_BIG)
+	offset = (regnum & 1) ? 0 : 4;
+      else
+	offset = (regnum & 1) ? 4 : 0;
+
+      sprintf (name_buf, "d%d", regnum >> 1);
+      double_regnum = user_reg_map_name_to_regnum (gdbarch, name_buf,
+						   strlen (name_buf));
+
+      regcache_raw_read (regcache, double_regnum, reg_buf);
+      memcpy (reg_buf + offset, buf, 4);
+      regcache_raw_write (regcache, double_regnum, reg_buf);
+    }
+}
+
 static struct value *
 value_of_arm_user_reg (struct frame_info *frame, const void *baton)
 {
@@ -2711,6 +2972,19 @@ arm_elf_osabi_sniffer (bfd *abfd)
   return osabi;
 }
 
+
+static int
+arm_with_neon_reggroup_p (struct gdbarch *gdbarch, int regnum, struct reggroup *reggroup)
+{
+  if (regnum >= ARM_NUM_REGS && regnum < ARM_NUM_REGS + 48)
+    {
+      if (reggroup == all_reggroup || reggroup == vector_reggroup)
+	return 1;
+    }
+
+  return 0;
+}
+
 
 /* Initialize the current architecture based on INFO.  If possible,
    re-use an architecture from ARCHES, which is a list of
@@ -2729,6 +3003,8 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   enum arm_float_model fp_model = arm_fp_model;
   struct tdesc_arch_data *tdesc_data = NULL;
   int i;
+  int have_vfp_registers = 0, have_vfp_pseudos = 0, have_neon_pseudos = 0;
+  int have_neon = 0;
   int have_fpa_registers = 1;
 
   /* Check any target description for validity.  */
@@ -2823,7 +3099,69 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 	      return NULL;
 	    }
 	}
+
+      /* If we have a VFP unit, check whether the single precision registers
+	 are present.  If not, then we will synthesize them as pseudo
+	 registers.  */
+      feature = tdesc_find_feature (info.target_desc,
+				    "org.gnu.gdb.arm.vfp");
+      if (feature != NULL)
+	{
+	  static const char *const vfp_double_names[] = {
+	    "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+	    "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
+	    "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23",
+	    "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
+	  };
+
+	  /* Require the double precision registers.  There must be either
+	     16 or 32.  */
+	  valid_p = 1;
+	  for (i = 0; i < 32; i++)
+	    {
+	      valid_p &= tdesc_numbered_register (feature, tdesc_data,
+						  ARM_D0_REGNUM + i,
+						  vfp_double_names[i]);
+	      if (!valid_p)
+		break;
+	    }
+
+	  if (!valid_p && i != 16)
+	    {
+	      tdesc_data_cleanup (tdesc_data);
+	      return NULL;
+	    }
+
+	  if (tdesc_unnumbered_register (feature, "s0") == 0)
+	    have_vfp_pseudos = 1;
+
+	  have_vfp_registers = 1;
+
+	  /* If we have VFP, also check for NEON.  The architecture allows
+	     NEON without VFP (integer vector operations only), but GDB
+	     does not support that.  */
+	  feature = tdesc_find_feature (info.target_desc,
+					"org.gnu.gdb.arm.neon");
+	  if (feature != NULL)
+	    {
+	      /* NEON requires 32 double-precision registers.  */
+	      if (i != 32)
+		{
+		  tdesc_data_cleanup (tdesc_data);
+		  return NULL;
+		}
+
+	      /* If there are quad registers defined by the stub, use
+		 their type; otherwise (normally) provide them with
+		 the default type.  */
+	      if (tdesc_unnumbered_register (feature, "q0") == 0)
+		have_neon_pseudos = 1;
+
+	      have_neon = 1;
+	    }
+	}
     }
+
 
   /* If we have an object to base this architecture on, try to determine
      its ABI.  */
@@ -2945,6 +3283,10 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   tdep->arm_abi = arm_abi;
   tdep->fp_model = fp_model;
   tdep->have_fpa_registers = have_fpa_registers;
+  tdep->have_vfp_registers = have_vfp_registers;
+  tdep->have_vfp_pseudos = have_vfp_pseudos;
+  tdep->have_neon_pseudos = have_neon_pseudos;
+  tdep->have_neon = have_neon;
 
   /* Breakpoints.  */
   switch (info.byte_order)
@@ -3082,8 +3424,32 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
       set_gdbarch_long_double_format (gdbarch, floatformats_ieee_double);
     }
 
+  if (have_vfp_pseudos)
+    {
+      /* NOTE: These are the only pseudo registers used by
+	 the ARM target at the moment.  If more are added, a
+	 little more care in numbering will be needed.  */
+
+      int num_pseudos = 32;
+      if (have_neon_pseudos)
+	num_pseudos += 16;
+      set_gdbarch_num_pseudo_regs (gdbarch, num_pseudos);
+      set_gdbarch_pseudo_register_read (gdbarch, arm_pseudo_read);
+      set_gdbarch_pseudo_register_write (gdbarch, arm_pseudo_write);
+    }
+
   if (tdesc_data)
-    tdesc_use_registers (gdbarch, info.target_desc, tdesc_data);
+    {
+      set_tdesc_pseudo_register_name (gdbarch, arm_register_name);
+
+      tdesc_use_registers (gdbarch, info.target_desc, tdesc_data);
+
+      /* Override tdesc_register_type to adjust the types of VFP
+	 registers for NEON.  */
+      set_gdbarch_register_type (gdbarch, arm_register_type);
+
+      set_tdesc_pseudo_register_reggroup_p (gdbarch, arm_with_neon_reggroup_p);
+    }
 
   /* Add standard register aliases.  We add aliases even for those
      nanes which are used by the current architecture - it's simpler,

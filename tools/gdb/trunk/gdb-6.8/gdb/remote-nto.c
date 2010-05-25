@@ -2904,6 +2904,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_magic = OPS_MAGIC;
   nto_ops.to_have_continuable_watchpoint = 1;
   nto_ops.to_extra_thread_info = nto_extra_thread_info;
+  nto_ops.to_read_description = nto_read_description;
 }
 
 static void

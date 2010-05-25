@@ -840,6 +840,7 @@ monitor_h = monitor.h
 nbsd_nat_h = nbsd-nat.h
 nbsd_tdep_h = nbsd-tdep.h
 nto_tdep_h = nto-tdep.h $(solist_h) $(osabi_h) $(regset_h)
+nto_share_dsmsgs_h = nto-share/dsmsgs.h
 objc_lang_h = objc-lang.h
 objfiles_h = objfiles.h $(gdb_obstack_h) $(symfile_h)
 obsd_tdep_h = obsd-tdep.h
@@ -957,6 +958,7 @@ tui_winsource_h = $(srcdir)/tui/tui-winsource.h $(tui_data_h)
 # gdb/features preparsed descriptions
 features_headers = $(defs_h) $(gdbtypes_h) $(target_descriptions_h)
 arm_with_iwmmxt_c = $(srcdir)/features/arm-with-iwmmxt.c $(features_headers)
+arm_with_neon_c = $(srcdir)/features/arm-with-neon.c $(features_headers)
 mips_linux_c = $(srcdir)/features/mips-linux.c $(features_headers)
 mips64_linux_c = $(srcdir)/features/mips64-linux.c $(features_headers)
 powerpc_32_c = $(srcdir)/features/rs6000/powerpc-32.c $(features_headers)
@@ -1357,7 +1359,7 @@ gdb1$(EXEEXT): gdb$(EXEEXT)
 
 TAGS: $(DEPFILES) $(TAGFILES_NO_SRCDIR) $(TAGFILES_WITH_SRCDIR)
 	@echo Making TAGS
-	@etags $(srcdir)/$(NAT_FILE) \
+	@ctags $(srcdir)/$(NAT_FILE) \
 	`(for i in $(DEPFILES) $(TAGFILES_NO_SRCDIR); do \
 		echo $(srcdir)/$$i ; \
 	done ; for i in $(TAGFILES_WITH_SRCDIR); do \
@@ -1910,7 +1912,8 @@ arm-linux-tdep.o: arm-linux-tdep.c $(defs_h) $(target_h) $(value_h) \
 	$(glibc_tdep_h) $(trad_frame_h) $(tramp_frame_h) $(gdb_string_h)
 arm-nto-tdep.o: arm-nto-tdep.c $(defs_h) $(frame_h) $(target_h) $(regcache_h) \
 	$(solib-svr4_h) $(arm_tdep_h) $(nto_tdep_h) $(osabi_h) $(trad_frame_h)\
-	$(tramp_frame_h) $(gdbcore_h) $(frame_unwind_h)
+	$(tramp_frame_h) $(gdbcore_h) $(frame_unwind_h) $(target_descriptions) \
+	$(arm_with_iwmmxt_c) $(arm_with_neon_c)
 armnbsd-nat.o: armnbsd-nat.c $(defs_h) $(gdbcore_h) $(inferior_h) \
 	$(regcache_h) $(target_h) $(gdb_string_h) $(arm_tdep_h) $(inf_ptrace_h)
 armbsd-tdep.o: armbsd-tdep.c $(defs_h) $(osabi_h) $(regcache_h) $(regset_h) \
@@ -1927,7 +1930,8 @@ arm-tdep.o: arm-tdep.c $(defs_h) $(frame_h) $(inferior_h) $(gdbcmd_h) \
 	$(gdb_sim_arm_h) $(elf_bfd_h) $(coff_internal_h) $(elf_arm_h) \
 	$(gdb_assert_h) $(bfd_in2_h) $(libcoff_h) $(objfiles_h) \
 	$(dwarf2_frame_h) $(gdbtypes_h) $(prologue_value_h) \
-	$(target_descriptions_h) $(user_regs_h)
+	$(target_descriptions_h) $(user_regs_h) $(reggroups_h) \
+	$(elf_bfd_h) $(elf_arm_h)
 arm-wince-tdep.o: arm-wince-tdep.c $(defs_h) $(osabi_h) \
 	$(gdbcore_h) $(target_h) $(solib_h) $(solib_target_h) \
 	$(gdb_string_h) $(arm_tdep_h)
@@ -2640,6 +2644,10 @@ remote-mips.o: remote-mips.c $(defs_h) $(inferior_h) $(bfd_h) $(symfile_h) \
 	$(gdbcmd_h) $(gdbcore_h) $(serial_h) $(target_h) $(exceptions_h) \
 	$(gdb_string_h) $(gdb_stat_h) $(regcache_h) \
 	$(mips_tdep_h)
+remote-nto.o: remote-nto.c $(defs_h) $(exceptions_h) $(gdb_string_h) \
+	$(terminal_h) $(inferior_h) $(target_h) $(gdbcmd_h) $(objfiles_h) \
+	$(gdbthread_h) $(completer_h) $(cli_cli_decode_h) $(regcache_h) $(gdbcore_h) \
+	$(serial_h) $(elf_common_h) $(elf_bfd_h) $(nto_share_dsmsgs_h) $(nto_tdep_h)
 remote-sim.o: remote-sim.c $(defs_h) $(inferior_h) $(value_h) \
 	$(gdb_string_h) $(terminal_h) $(target_h) $(gdbcore_h) \
 	$(gdb_callback_h) $(gdb_remote_sim_h) $(command_h) \

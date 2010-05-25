@@ -41,6 +41,7 @@
 #include "gdb_assert.h"
 
 #include "observer.h"
+#include "target.h"
 
 #ifdef __QNX__
 #include <sys/debug.h>
@@ -1121,6 +1122,14 @@ nto_architecture_changed_listener (struct gdbarch *newarch)
   nto_init_solib_absolute_prefix ();
 }
 
+const struct target_desc *
+nto_read_description (struct target_ops *ops)
+{
+  if (ntoops_read_description)
+    return ntoops_read_description (ops);
+  else
+    return NULL;
+}
 
 /* Prevent corelow.c from adding core_ops target. We will do it
    after overriding some of the default functions. See comment in

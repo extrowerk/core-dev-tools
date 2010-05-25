@@ -1477,6 +1477,7 @@ init_procfs_ops (void)
   procfs_ops.to_magic = OPS_MAGIC;
   procfs_ops.to_have_continuable_watchpoint = 1;
   procfs_ops.to_extra_thread_info = nto_extra_thread_info;
+  procfs_ops.to_read_description = nto_read_description;
 }
 
 #define OSTYPE_NTO 1
