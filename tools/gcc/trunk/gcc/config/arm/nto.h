@@ -50,7 +50,7 @@ do {                                            \
  %{march=*:-march=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
- %{!mhard-float: -mfpu=softvfp}" 
+ %{!mhard-float: %{!mfpu=*:-mfpu=softvfp}}" 
 
 #define QNX_SYSTEM_LIBDIRS \
 "-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3 \
