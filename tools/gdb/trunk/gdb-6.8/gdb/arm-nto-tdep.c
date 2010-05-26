@@ -54,6 +54,12 @@
 /* FP registers - see context.h, Largest register file size + status regs. */
 #define FP_REGSET_SIZE (NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM + STATUS_REGISTER_SIZE * 4) 
 
+#define ARM_NTO_WMMX_WR_REGSIZE 8
+#define ARM_NTO_WMMX_WC_REGSIZE 4
+#define ARM_NTO_WMMX_WCSSF_OFFSET 0x80
+#define ARM_NTO_WMMX_WCASF_OFFSET 0x84
+#define ARM_NTO_WMMX_WCGR0_OFFSET 0x88
+
 
 static void
 armnto_supply_reg_gregset (struct regcache *regcache, int regno, char *regs)
@@ -104,6 +110,25 @@ armnto_supply_reg_fpregset (struct regcache *regcache, int regno, char *regs)
 }
 
 static void
+armnto_supply_reg_altregset (struct regcache *regcache, int regno, char *regs)
+{
+    int regi;
+
+    /* WMMX data registers: */
+    for (regi = ARM_WR0_REGNUM; regi <= ARM_WR15_REGNUM; ++regi)
+      RAW_SUPPLY_IF_NEEDED (regcache, regi, &regs[(regi - ARM_WR0_REGNUM)
+						  * ARM_NTO_WMMX_WR_REGSIZE]);
+    /* WMMX control registers: */
+    RAW_SUPPLY_IF_NEEDED (regcache, ARM_WCSSF_REGNUM,
+			  &regs[ARM_NTO_WMMX_WCSSF_OFFSET]);
+    RAW_SUPPLY_IF_NEEDED (regcache, ARM_WCASF_REGNUM,
+			  &regs[ARM_NTO_WMMX_WCASF_OFFSET]);
+    for (regi = ARM_WCGR0_REGNUM; regi <= ARM_WCGR3_REGNUM; ++regi)
+      RAW_SUPPLY_IF_NEEDED (regcache, regi, &regs[(regi - ARM_WCGR0_REGNUM)
+						  * ARM_NTO_WMMX_WC_REGSIZE]);
+}
+
+static void
 armnto_supply_gregset (struct regcache *regcache, char *regs)
 {
   armnto_supply_reg_gregset (regcache, NTO_ALL_REGS, regs);
@@ -116,6 +141,12 @@ armnto_supply_fpregset (struct regcache *regcache, char *regs)
 }
 
 static void
+armnto_supply_altregset (struct regcache *regcache, char *regs)
+{
+  armnto_supply_reg_altregset (regcache, NTO_ALL_REGS, regs);
+}
+
+static void
 armnto_supply_regset (struct regcache *regcache, int regset, char *data)
 {
   switch (regset)
@@ -125,6 +156,9 @@ armnto_supply_regset (struct regcache *regcache, int regset, char *data)
       break;
     case NTO_REG_FLOAT:
       armnto_supply_fpregset (regcache, data);
+      break;
+    case NTO_REG_ALT:
+      armnto_supply_altregset (regcache, data);
       break;
     default:
       gdb_assert (0);
@@ -144,6 +178,8 @@ armnto_regset_id (int regno)
   /* VFP registers are mapped into FPU registers. */
   else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
     return NTO_REG_FLOAT;
+  else if (regno >= ARM_WR0_REGNUM && regno < ARM_NUM_REGS)
+    return NTO_REG_ALT;
   return -1;
 }
 
@@ -153,8 +189,9 @@ armnto_register_area (struct gdbarch *gdbarch,
 {
   *off = 0;
 
-  if (regset == NTO_REG_GENERAL)
+  switch (regset)
     {
+    case NTO_REG_GENERAL:
       if (regno == -1)
 	return GP_REGSET_SIZE;
 
@@ -165,41 +202,69 @@ armnto_register_area (struct gdbarch *gdbarch,
       else
 	return 0;
       return 4;
-    }
-  else if (regset == NTO_REG_FLOAT)
-    {
-      int regsize = -1;
+      break;
+    case NTO_REG_FLOAT:
+      {
+	int regsize = -1;
 
-      if (regno == -1)
-	return FP_REGSET_SIZE;
-      /* Both regular FP registers and VFP/NEON are in the same
-      context.  Therefore, we siply check for all regnos.  It is
-      up to architecture to not tell gdb there are both regular
-      FP and VFP registers on the target.  */
-      /* Regular float registers: */
-      if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
+	if (regno == -1)
+	  return FP_REGSET_SIZE;
+	/* Both regular FP registers and VFP/NEON are in the same
+	   context.  Therefore, we siply check for all regnos.  It is
+	   up to architecture to not tell gdb there are both regular
+	   FP and VFP registers on the target.  */
+	/* Regular float registers: */
+	if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
+	  {
+	    regsize = NTO_FP_REGISTER_SIZE;
+	    *off = (regno - ARM_F0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	  }
+	else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+	  {
+	    regsize = NTO_FP_REGISTER_SIZE;
+	    *off = (regno - ARM_D0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	  }
+	else switch (regno)
+	  {
+	  case ARM_FPS_REGNUM:
+	    regsize = STATUS_REGISTER_SIZE;
+	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM; /* fpscr */
+	    break;
+	  case ARM_PS_REGNUM:
+	    regsize = STATUS_REGISTER_SIZE;
+	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM
+		   + STATUS_REGISTER_SIZE; /* fpexc */
+	    break;
+	  }
+	return regsize;
+	break;
+      }
+    case NTO_REG_ALT:
+      if (regno <= ARM_WR15_REGNUM)
 	{
-	  regsize = NTO_FP_REGISTER_SIZE;
-	  *off = (regno - ARM_F0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	  *off = (regno - ARM_WR0_REGNUM) * ARM_NTO_WMMX_WR_REGSIZE;
+	  return ARM_NTO_WMMX_WR_REGSIZE;
 	}
-      else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+      else
 	{
-	  regsize = NTO_FP_REGISTER_SIZE;
-	  *off = (regno - ARM_D0_REGNUM) * NTO_FP_REGISTER_SIZE;
+	  switch (regno)
+	    {
+	    case ARM_WCSSF_REGNUM:
+	      *off = ARM_NTO_WMMX_WCSSF_OFFSET;
+	      break;
+	    case ARM_WCASF_REGNUM:
+	      *off = ARM_NTO_WMMX_WCASF_OFFSET;
+	      break;
+	    default:
+	      if (regno >= ARM_WCGR0_REGNUM && regno <= ARM_WCGR3_REGNUM)
+		*off = (regno - ARM_WCGR0_REGNUM) * ARM_NTO_WMMX_WC_REGSIZE
+		       + ARM_NTO_WMMX_WCGR0_OFFSET;
+	      else
+		return -1;
+	    }
+	  return ARM_NTO_WMMX_WC_REGSIZE;
 	}
-      else switch (regno)
-	{
-	case ARM_FPS_REGNUM:
-	  regsize = STATUS_REGISTER_SIZE;
-	  *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM; /* fpscr */
-	  break;
-	case ARM_PS_REGNUM:
-	  regsize = STATUS_REGISTER_SIZE;
-	  *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM
-		 + STATUS_REGISTER_SIZE; /* fpexc */
-	  break;
-	}
-      return regsize;
+      break;
   }
   return -1;
 }
@@ -379,6 +444,16 @@ armnto_core_supply_fpregset (const struct regset *regset,
   armnto_supply_reg_fpregset (regcache, regnum, (char *)preg);
 }
 
+static void
+armnto_core_supply_altregset (const struct regset *regset,
+			      struct regcache *regcache,
+			      int regnum, const void *preg,
+			      size_t len)
+{
+  nto_trace (0) ("%s () regnum=%d\n", __func__, regnum);
+   /* NYI */
+}
+
 static struct regset armnto_gregset =
 {
   NULL,
@@ -391,6 +466,14 @@ static struct regset armnto_fpregset =
 {
   NULL,
   armnto_core_supply_fpregset,
+  NULL,
+  NULL
+};
+
+static struct regset armnto_altregset =
+{
+  NULL,
+  armnto_core_supply_altregset,
   NULL,
   NULL
 };
