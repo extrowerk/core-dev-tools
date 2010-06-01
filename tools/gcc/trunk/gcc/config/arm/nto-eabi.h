@@ -128,3 +128,5 @@ do {                                            \
 
 #undef  DEFAULT_STRUCTURE_SIZE_BOUNDARY
 #define DEFAULT_STRUCTURE_SIZE_BOUNDARY 8
+
+#define USE_OLD_ATBASE
