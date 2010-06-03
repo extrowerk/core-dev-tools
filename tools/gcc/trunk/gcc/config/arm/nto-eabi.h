@@ -104,6 +104,7 @@ do {                                            \
 #undef ARM_FUNCTION_PROFILER
 #define ARM_FUNCTION_PROFILER(STREAM, LABELNO)  				\
 {									\
+  fprintf (STREAM, "\tmov\tip, lr\n");  	    			\
   fprintf (STREAM, "\tbl\tmcount%s\n", NEED_PLT_RELOC ? "(PLT)" : "");	\
 }
 
