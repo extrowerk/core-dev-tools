@@ -2017,7 +2017,7 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   pc_array_size = backtrace (pc_array, pc_array_size);
 #else
 
-#   ifdef __QNXNTO__
+#if defined(__QNXNTO__) && !defined(__ARM_EABI__)
   bt_init_accessor (&acc, BT_SELF);
   pc_array_size = bt_get_backtrace (&acc, (bt_addr_t *) pc_array, 
 				    pc_array_size);
