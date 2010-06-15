@@ -39,9 +39,8 @@
 
 #include "elf-bfd.h"
 
-#include <features/arm-with-iwmmxt.c>
 #include <features/arm-with-neon.c>
-
+#include <features/arm-with-iwmmxt.c>
 
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
@@ -334,13 +333,13 @@ armnto_read_description (struct target_ops *ops)
       if (nto_cpuinfo_flags & ARM_CPU_FLAG_NEON)
 	{
 	  if (!tdesc_arm_with_neon)
-	    initialize_tdesc_arm_with_neon ();
+	    initialize_tdesc_arm_with_neon (nto_cpuinfo_flags & CPU_FLAG_FPU);
 	  return tdesc_arm_with_neon;
 	}
       if (nto_cpuinfo_flags & ARM_CPU_FLAG_WMMX2)
 	{
 	  if (!tdesc_arm_with_iwmmxt)
-	    initialize_tdesc_arm_with_iwmmxt ();
+	    initialize_tdesc_arm_with_iwmmxt (nto_cpuinfo_flags & CPU_FLAG_FPU);
 	  return tdesc_arm_with_iwmmxt;
 	}
       if (nto_cpuinfo_flags & CPU_FLAG_FPU)
