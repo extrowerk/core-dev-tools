@@ -129,6 +129,7 @@ ALL_MACHINES = \
 	cpu-tic30.lo \
 	cpu-tic4x.lo \
 	cpu-tic54x.lo \
+	cpu-tic6x.lo \
 	cpu-tic80.lo \
 	cpu-v850.lo \
 	cpu-vax.lo \
@@ -201,6 +202,7 @@ ALL_MACHINES_CFILES = \
 	cpu-tic30.c \
 	cpu-tic4x.c \
 	cpu-tic54x.c \
+	cpu-tic6x.c \
 	cpu-tic80.c \
 	cpu-v850.c \
 	cpu-vax.c \
@@ -317,6 +319,7 @@ BFD32_BACKENDS = \
 	elf32-sh64.lo \
 	elf32-sparc.lo \
 	elf32-spu.lo \
+	elf32-tic6x.lo \
 	elf32-v850.lo \
 	elf32-vax.lo \
 	elf32-xc16x.lo \
@@ -388,11 +391,9 @@ BFD32_BACKENDS = \
 	vaxbsd.lo \
 	vaxnetbsd.lo \
 	versados.lo \
-	vms-gsd.lo \
-	vms-hdr.lo \
+	vms-alpha.lo \
+	vms-lib.lo \
 	vms-misc.lo \
-	vms-tir.lo \
-	vms.lo \
 	xcofflink.lo \
 	xsym.lo \
 	xtensa-isa.lo \
@@ -501,6 +502,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-sh64.c \
 	elf32-sparc.c \
 	elf32-spu.c \
+	elf32-tic6x.c \
 	elf32-v850.c \
 	elf32-vax.c \
 	elf32-xc16x.c \
@@ -571,11 +573,9 @@ BFD32_BACKENDS_CFILES = \
 	vaxbsd.c \
 	vaxnetbsd.c \
 	versados.c \
-	vms-gsd.c \
-	vms-hdr.c \
+	vms-alpha.c \
+	vms-lib.c \
 	vms-misc.c \
-	vms-tir.c \
-	vms.c \
 	xcofflink.c \
 	xsym.c \
 	xtensa-isa.c \
@@ -682,8 +682,10 @@ ALL_BACKENDS = @all_backends@
 BFD_BACKENDS = @bfd_backends@
 BFD_MACHINES = @bfd_machines@
 TDEFAULTS = @tdefaults@
+HAVEVECS = @havevecs@
 
-INCLUDES = @HDEFINES@ @COREFLAG@ @TDEFINES@ $(CSEARCH) $(CSWITCHES) @INCINTL@
+INCLUDES = @HDEFINES@ @COREFLAG@ @TDEFINES@ $(CSEARCH) $(CSWITCHES) \
+	$(HAVEVECS) @INCINTL@
 
 # C source files that correspond to .o's.
 SOURCE_CFILES = \

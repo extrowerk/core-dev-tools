@@ -23,37 +23,64 @@
 #define MEM_BREAK_H
 
 /* Breakpoints are opaque.  */
+struct breakpoint;
+
+/* Create a new GDB breakpoint at WHERE.  Returns -1 if breakpoints
+   are not supported on this target, 0 otherwise.  */
+
+int set_gdb_breakpoint_at (CORE_ADDR where);
+
+/* Returns TRUE if there's any breakpoint at ADDR in our tables,
+   inserted, or not.  */
+
+int breakpoint_here (CORE_ADDR addr);
+
+/* Returns TRUE if there's any inserted breakpoint set at ADDR.  */
+
+int breakpoint_inserted_here (CORE_ADDR addr);
+
+/* Returns TRUE if there's a GDB breakpoint set at ADDR.  */
+
+int gdb_breakpoint_here (CORE_ADDR where);
 
 /* Create a new breakpoint at WHERE, and call HANDLER when
    it is hit.  HANDLER should return 1 if the breakpoint
    should be deleted, 0 otherwise.  */
 
-void set_breakpoint_at (CORE_ADDR where,
-			int (*handler) (CORE_ADDR));
+struct breakpoint *set_breakpoint_at (CORE_ADDR where,
+				      int (*handler) (CORE_ADDR));
 
-/* Delete a breakpoint previously inserted at ADDR with
-   set_breakpoint_at.  */
+/* Delete a GDB breakpoint previously inserted at ADDR with
+   set_gdb_breakpoint_at.  */
 
-void delete_breakpoint_at (CORE_ADDR addr);
+int delete_gdb_breakpoint_at (CORE_ADDR addr);
 
-/* Create a reinsertion breakpoint at STOP_AT for the breakpoint
-   currently at STOP_PC (and temporarily remove the breakpoint at
-   STOP_PC).  */
+/* Delete a breakpoint.  */
 
-void reinsert_breakpoint_by_bp (CORE_ADDR stop_pc, CORE_ADDR stop_at);
+int delete_breakpoint (struct breakpoint *bkpt);
 
-/* Change the status of the breakpoint at WHERE to inserted.  */
+/* Set a reinsert breakpoint at STOP_AT.  */
 
-void reinsert_breakpoint (CORE_ADDR where);
+void set_reinsert_breakpoint (CORE_ADDR stop_at);
 
-/* Change the status of the breakpoint at WHERE to uninserted.  */
+/* Delete all reinsert breakpoints.  */
 
-void uninsert_breakpoint (CORE_ADDR where);
+void delete_reinsert_breakpoints (void);
+
+/* Reinsert breakpoints at WHERE (and change their status to
+   inserted).  */
+
+void reinsert_breakpoints_at (CORE_ADDR where);
+
+/* Uninsert breakpoints at WHERE (and change their status to
+   uninserted).  This still leaves the breakpoints in the table.  */
+
+void uninsert_breakpoints_at (CORE_ADDR where);
 
 /* See if any breakpoint claims ownership of STOP_PC.  Call the handler for
    the breakpoint, if found.  */
 
-int check_breakpoints (CORE_ADDR stop_pc);
+void check_breakpoints (CORE_ADDR stop_pc);
 
 /* See if any breakpoints shadow the target memory area from MEM_ADDR
    to MEM_ADDR + MEM_LEN.  Update the data already read from the target
@@ -76,9 +103,17 @@ void set_breakpoint_data (const unsigned char *bp_data, int bp_len);
 
 void delete_all_breakpoints (void);
 
+/* Clear the "inserted" flag in all breakpoints of PROC.  */
+
+void mark_breakpoints_out (struct process_info *proc);
+
 /* Delete all breakpoints, but do not try to un-insert them from the
    inferior.  */
 
 void free_all_breakpoints (struct process_info *proc);
+
+/* Check if breakpoints still seem to be inserted in the inferior.  */
+
+void validate_breakpoints (void);
 
 #endif /* MEM_BREAK_H */

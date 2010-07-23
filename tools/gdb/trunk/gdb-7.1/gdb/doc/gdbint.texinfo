@@ -781,11 +781,6 @@ inferior after a watchpoint has been hit.  This is usually set
 when watchpoints trigger at the instruction following an interesting
 read or write.
 
-@findex CANNOT_STEP_HW_WATCHPOINTS
-@item CANNOT_STEP_HW_WATCHPOINTS
-If this is defined to a non-zero value, @value{GDBN} will remove all
-watchpoints before stepping the inferior.
-
 @findex STOPPED_BY_WATCHPOINT
 @item STOPPED_BY_WATCHPOINT (@var{wait_status})
 Return non-zero if stopped by a watchpoint.  @var{wait_status} is of
@@ -2294,6 +2289,12 @@ and all the psymbols themselves are allocated in a pair of large arrays
 on an obstack, so there is little to be gained by trying to free them
 unless you want to do a lot more work.
 
+Whether or not psymtabs are created depends on the objfile's symbol
+reader.  The core of @value{GDBN} hides the details of partial symbols
+and partial symbol tables behind a set of function pointers known as
+the @dfn{quick symbol functions}.  These are documented in
+@file{symfile.h}.
+
 @section Types
 
 @unnumberedsubsec Fundamental Types (e.g., @code{FT_VOID}, @code{FT_BOOLEAN}).
@@ -2782,19 +2783,6 @@ the printf format conversion specifier @code{ll}.  This is set by the
 Define this if @code{lseek (n)} does not necessarily move to byte number
 @code{n} in the file.  This is only used when reading source files.  It
 is normally faster to define @code{CRLF_SOURCE_FILES} when possible.
-
-@item NORETURN
-If defined, this should be one or more tokens, such as @code{volatile},
-that can be used in both the declaration and definition of functions to
-indicate that they never return.  The default is already set correctly
-if compiling with GCC.  This will almost never need to be defined.
-
-@item ATTR_NORETURN
-If defined, this should be one or more tokens, such as
-@code{__attribute__ ((noreturn))}, that can be used in the declarations
-of functions to indicate that they never return.  The default is already
-set correctly if compiling with GCC.  This will almost never need to be
-defined.
 
 @item lint
 Define this to help placate @code{lint} in some situations.
@@ -7820,7 +7808,7 @@ appear anywhere else in the directory.
 * Debugging GDB::		Debugging @value{GDBN} with itself
 @end menu
 
-@node Getting Started,,, Hints
+@node Getting Started
 
 @section Getting Started
 
@@ -7903,7 +7891,7 @@ wondering if anyone could give me some tips about understanding
 @value{GDBN}''---if we had some magic secret we would put it in this manual.
 Suggestions for improving the manual are always welcome, of course.
 
-@node Debugging GDB,,,Hints
+@node Debugging GDB
 
 @section Debugging @value{GDBN} with itself
 @cindex debugging @value{GDBN}

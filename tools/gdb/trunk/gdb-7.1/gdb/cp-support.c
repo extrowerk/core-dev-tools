@@ -38,6 +38,8 @@
 
 #include "safe-ctype.h"
 
+#include "psymtab.h"
+
 #define d_left(dc) (dc)->u.s_binary.left
 #define d_right(dc) (dc)->u.s_binary.right
 
@@ -50,7 +52,7 @@ static void demangled_name_complaint (const char *name);
 
 /* Functions/variables related to overload resolution.  */
 
-static int sym_return_val_size;
+static int sym_return_val_size = -1;
 static int sym_return_val_index;
 static struct symbol **sym_return_val;
 
@@ -61,8 +63,6 @@ static void make_symbol_overload_list_using (const char *func_name,
 					     const char *namespace);
 
 static void make_symbol_overload_list_qualified (const char *func_name);
-
-static void read_in_psymtabs (const char *oload_name);
 
 /* The list of "maint cplus" commands.  */
 
@@ -158,7 +158,6 @@ mangled_name_to_comp (const char *mangled_name, int options,
 {
   struct demangle_component *ret;
   char *demangled_name;
-  int len;
 
   /* If it looks like a v3 mangled name, then try to go directly
      to trees.  */
@@ -342,7 +341,6 @@ method_name_from_physname (const char *physname)
   void *storage = NULL;
   char *demangled_name = NULL, *ret;
   struct demangle_component *ret_comp;
-  int done;
 
   ret_comp = mangled_name_to_comp (physname, DMGL_ANSI, &storage,
 				   &demangled_name);
@@ -373,7 +371,6 @@ cp_func_name (const char *full_name)
 {
   char *ret;
   struct demangle_component *ret_comp;
-  int done;
 
   ret_comp = cp_demangled_name_to_comp (full_name, NULL);
   if (!ret_comp)
@@ -712,6 +709,87 @@ make_symbol_overload_list (const char *func_name,
   return sym_return_val;
 }
 
+/* Adds the function FUNC_NAME from NAMESPACE to the overload set.  */
+
+static void
+make_symbol_overload_list_namespace (const char *func_name,
+                                     const char *namespace)
+{
+  if (namespace[0] == '\0')
+    make_symbol_overload_list_qualified (func_name);
+  else
+    {
+      char *concatenated_name
+	= alloca (strlen (namespace) + 2 + strlen (func_name) + 1);
+
+      strcpy (concatenated_name, namespace);
+      strcat (concatenated_name, "::");
+      strcat (concatenated_name, func_name);
+      make_symbol_overload_list_qualified (concatenated_name);
+    }
+}
+
+/* Search the namespace of the given type and namespace of and public base
+ types.  */
+
+static void
+make_symbol_overload_list_adl_namespace (struct type *type,
+                                         const char *func_name)
+{
+  char *namespace;
+  char *type_name;
+  int i, prefix_len;
+
+  while (TYPE_CODE (type) == TYPE_CODE_PTR || TYPE_CODE (type) == TYPE_CODE_REF
+         || TYPE_CODE (type) == TYPE_CODE_ARRAY
+         || TYPE_CODE (type) == TYPE_CODE_TYPEDEF)
+    {
+      if (TYPE_CODE (type) == TYPE_CODE_TYPEDEF)
+	type = check_typedef(type);
+      else
+	type = TYPE_TARGET_TYPE (type);
+    }
+
+  type_name = TYPE_NAME (type);
+
+  prefix_len = cp_entire_prefix_len (type_name);
+
+  if (prefix_len != 0)
+    {
+      namespace = alloca (prefix_len + 1);
+      strncpy (namespace, type_name, prefix_len);
+      namespace[prefix_len] = '\0';
+
+      make_symbol_overload_list_namespace (func_name, namespace);
+    }
+
+  /* Check public base type */
+  if (TYPE_CODE (type) == TYPE_CODE_CLASS)
+    for (i = 0; i < TYPE_N_BASECLASSES (type); i++)
+      {
+	if (BASETYPE_VIA_PUBLIC (type, i))
+	  make_symbol_overload_list_adl_namespace (TYPE_BASECLASS (type, i),
+						   func_name);
+      }
+}
+
+/* Adds the the overload list overload candidates for FUNC_NAME found through
+   argument dependent lookup.  */
+
+struct symbol **
+make_symbol_overload_list_adl (struct type **arg_types, int nargs,
+                               const char *func_name)
+{
+  int i;
+
+  gdb_assert (sym_return_val_size != -1);
+
+  for (i = 1; i <= nargs; i++)
+    make_symbol_overload_list_adl_namespace (arg_types[i - 1], func_name);
+
+  return sym_return_val;
+}
+
 /* This applies the using directives to add namespaces to search in,
    and then searches for overloads in all of those namespaces.  It
    adds the symbols found to sym_return_val.  Arguments are as in
@@ -739,20 +817,7 @@ make_symbol_overload_list_using (const char *func_name,
     }
 
   /* Now, add names for this namespace.  */
-  
-  if (namespace[0] == '\0')
-    {
-      make_symbol_overload_list_qualified (func_name);
-    }
-  else
-    {
-      char *concatenated_name
-	= alloca (strlen (namespace) + 2 + strlen (func_name) + 1);
-      strcpy (concatenated_name, namespace);
-      strcat (concatenated_name, "::");
-      strcat (concatenated_name, func_name);
-      make_symbol_overload_list_qualified (concatenated_name);
-    }
+  make_symbol_overload_list_namespace (func_name, namespace);
 }
 
 /* This does the bulk of the work of finding overloaded symbols.
@@ -772,7 +837,11 @@ make_symbol_overload_list_qualified (const char *func_name)
   /* Look through the partial symtabs for all symbols which begin
      by matching FUNC_NAME.  Make sure we read that symbol table in. */
 
-  read_in_psymtabs (func_name);
+  ALL_OBJFILES (objfile)
+  {
+    if (objfile->sf)
+      objfile->sf->qf->expand_symtabs_for_function (objfile, func_name);
+  }
 
   /* Search upwards from currently selected frame (so that we can
      complete on local vars.  */
@@ -823,28 +892,6 @@ make_symbol_overload_list_qualified (const char *func_name)
     {
       overload_list_add_symbol (sym, func_name);
     }
-  }
-}
-
-/* Look through the partial symtabs for all symbols which begin
-   by matching FUNC_NAME.  Make sure we read that symbol table in. */
-
-static void
-read_in_psymtabs (const char *func_name)
-{
-  struct partial_symtab *ps;
-  struct objfile *objfile;
-
-  ALL_PSYMTABS (objfile, ps)
-  {
-    if (ps->readin)
-      continue;
-
-    if ((lookup_partial_symbol (ps, func_name, NULL, 1, VAR_DOMAIN)
-	 != NULL)
-	|| (lookup_partial_symbol (ps, func_name, NULL, 0, VAR_DOMAIN)
-	    != NULL))
-      psymtab_to_symtab (ps);
   }
 }
 
@@ -943,25 +990,26 @@ cp_validate_operator (const char *input)
   struct expression *expr;
   struct value *val;
   struct gdb_exception except;
-  struct cleanup *old_chain;
 
   p = input;
 
   if (strncmp (p, "operator", 8) == 0)
     {
       int valid = 0;
-      p += 8;
 
+      p += 8;
       SKIP_SPACE (p);
       for (i = 0; i < sizeof (operator_tokens) / sizeof (operator_tokens[0]);
 	   ++i)
 	{
 	  int length = strlen (operator_tokens[i]);
+
 	  /* By using strncmp here, we MUST have operator_tokens ordered!
 	     See additional notes where operator_tokens is defined above.  */
 	  if (strncmp (p, operator_tokens[i], length) == 0)
 	    {
 	      const char *op = p;
+
 	      valid = 1;
 	      p += length;
 

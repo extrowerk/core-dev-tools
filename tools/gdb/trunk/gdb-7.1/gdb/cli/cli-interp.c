@@ -99,7 +99,7 @@ cli_interpreter_exec (void *data, const char *command_str)
 
   /* FIXME: cagney/2003-02-01: Need to const char *propogate
      safe_execute_command.  */
-  char *str = strcpy (alloca (strlen (command_str) + 1), command_str);
+  char *str = strcpy (str = alloca (strlen (command_str) + 1), command_str);
 
   /* gdb_stdout could change between the time cli_uiout was initialized
      and now. Since we're probably using a different interpreter which has
@@ -118,6 +118,7 @@ do_captured_execute_command (struct ui_out *uiout, void *data)
 {
   struct captured_execute_command_args *args =
     (struct captured_execute_command_args *) data;
+
   execute_command (args->command, args->from_tty);
 }
 
@@ -126,6 +127,7 @@ safe_execute_command (struct ui_out *uiout, char *command, int from_tty)
 {
   struct gdb_exception e;
   struct captured_execute_command_args args;
+
   args.command = command;
   args.from_tty = from_tty;
   e = catch_exception (uiout, do_captured_execute_command, &args,

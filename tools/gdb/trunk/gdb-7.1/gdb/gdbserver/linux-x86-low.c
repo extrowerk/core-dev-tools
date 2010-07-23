@@ -24,17 +24,49 @@
 #include "linux-low.h"
 #include "i387-fp.h"
 #include "i386-low.h"
+#include "i386-xstate.h"
+#include "elf/common.h"
 
 #include "gdb_proc_service.h"
 
-/* Defined in auto-generated file reg-i386-linux.c.  */
+/* Defined in auto-generated file i386-linux.c.  */
 void init_registers_i386_linux (void);
-/* Defined in auto-generated file reg-x86-64-linux.c.  */
-void init_registers_x86_64_linux (void);
+/* Defined in auto-generated file amd64-linux.c.  */
+void init_registers_amd64_linux (void);
+/* Defined in auto-generated file i386-avx-linux.c.  */
+void init_registers_i386_avx_linux (void);
+/* Defined in auto-generated file amd64-avx-linux.c.  */
+void init_registers_amd64_avx_linux (void);
+/* Defined in auto-generated file i386-mmx-linux.c.  */
+void init_registers_i386_mmx_linux (void);
+
+/* Backward compatibility for gdb without XML support.  */
+
+static const char *xmltarget_i386_linux_no_xml = "@<target>\
+<architecture>i386</architecture>\
+<osabi>GNU/Linux</osabi>\
+</target>";
+
+#ifdef __x86_64__
+static const char *xmltarget_amd64_linux_no_xml = "@<target>\
+<architecture>i386:x86-64</architecture>\
+<osabi>GNU/Linux</osabi>\
+</target>";
+#endif
 
 #include <sys/reg.h>
 #include <sys/procfs.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
+
+#ifndef PTRACE_GETREGSET
+#define PTRACE_GETREGSET	0x4204
+#endif
+
+#ifndef PTRACE_SETREGSET
+#define PTRACE_SETREGSET	0x4205
+#endif
+
 
 #ifndef PTRACE_GET_THREAD_AREA
 #define PTRACE_GET_THREAD_AREA 25
@@ -252,6 +284,18 @@ x86_store_fpxregset (struct regcache *regcache, const void *buf)
 
 #endif
 
+static void
+x86_fill_xstateregset (struct regcache *regcache, void *buf)
+{
+  i387_cache_to_xsave (regcache, buf);
+}
+
+static void
+x86_store_xstateregset (struct regcache *regcache, const void *buf)
+{
+  i387_xsave_to_cache (regcache, buf);
+}
+
 /* ??? The non-biarch i386 case stores all the i387 regs twice.
    Once in i387_.*fsave.* and once in i387_.*fxsave.*.
    This is, presumably, to handle the case where PTRACE_[GS]ETFPXREGS
@@ -264,21 +308,23 @@ x86_store_fpxregset (struct regcache *regcache, const void *buf)
 struct regset_info target_regsets[] =
 {
 #ifdef HAVE_PTRACE_GETREGS
-  { PTRACE_GETREGS, PTRACE_SETREGS, sizeof (elf_gregset_t),
+  { PTRACE_GETREGS, PTRACE_SETREGS, 0, sizeof (elf_gregset_t),
     GENERAL_REGS,
     x86_fill_gregset, x86_store_gregset },
+  { PTRACE_GETREGSET, PTRACE_SETREGSET, NT_X86_XSTATE, 0,
+    EXTENDED_REGS, x86_fill_xstateregset, x86_store_xstateregset },
 # ifndef __x86_64__
 #  ifdef HAVE_PTRACE_GETFPXREGS
-  { PTRACE_GETFPXREGS, PTRACE_SETFPXREGS, sizeof (elf_fpxregset_t),
+  { PTRACE_GETFPXREGS, PTRACE_SETFPXREGS, 0, sizeof (elf_fpxregset_t),
     EXTENDED_REGS,
     x86_fill_fpxregset, x86_store_fpxregset },
 #  endif
 # endif
-  { PTRACE_GETFPREGS, PTRACE_SETFPREGS, sizeof (elf_fpregset_t),
+  { PTRACE_GETFPREGS, PTRACE_SETFPREGS, 0, sizeof (elf_fpregset_t),
     FP_REGS,
     x86_fill_fpregset, x86_store_fpregset },
 #endif /* HAVE_PTRACE_GETREGS */
-  { 0, 0, -1, -1, NULL, NULL }
+  { 0, 0, 0, -1, -1, NULL, NULL }
 };
 
 static CORE_ADDR
@@ -325,7 +371,7 @@ x86_breakpoint_at (CORE_ADDR pc)
 {
   unsigned char c;
 
-  read_inferior_memory (pc, &c, 1);
+  (*the_target->read_memory) (pc, &c, 1);
   if (c == 0xCC)
     return 1;
 
@@ -431,6 +477,8 @@ x86_insert_point (char type, CORE_ADDR addr, int len)
   struct process_info *proc = current_process ();
   switch (type)
     {
+    case '0':
+      return set_gdb_breakpoint_at (addr);
     case '2':
     case '3':
     case '4':
@@ -448,6 +496,8 @@ x86_remove_point (char type, CORE_ADDR addr, int len)
   struct process_info *proc = current_process ();
   switch (type)
     {
+    case '0':
+      return delete_gdb_breakpoint_at (addr);
     case '2':
     case '3':
     case '4':
@@ -507,10 +557,11 @@ x86_linux_new_thread (void)
 static void
 x86_linux_prepare_to_resume (struct lwp_info *lwp)
 {
+  ptid_t ptid = ptid_of (lwp);
+
   if (lwp->arch_private->debug_registers_changed)
     {
       int i;
-      ptid_t ptid = ptid_of (lwp);
       int pid = ptid_get_pid (ptid);
       struct process_info *proc = find_process_pid (pid);
       struct i386_debug_reg_state *state = &proc->private->arch_private->debug_reg_state;
@@ -522,6 +573,9 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
 
       lwp->arch_private->debug_registers_changed = 0;
     }
+
+  if (lwp->stopped_by_watchpoint)
+    x86_linux_dr_set (ptid, DR_STATUS, 0);
 }
 
 /* When GDBSERVER is built as a 64-bit application on linux, the
@@ -772,6 +826,168 @@ x86_siginfo_fixup (struct siginfo *native, void *inf, int direction)
   return 0;
 }
 
+static int use_xml;
+
+/* Update gdbserver_xmltarget.  */
+
+static void
+x86_linux_update_xmltarget (void)
+{
+  int pid;
+  struct regset_info *regset;
+  static unsigned long long xcr0;
+  static int have_ptrace_getregset = -1;
+#if !defined(__x86_64__) && defined(HAVE_PTRACE_GETFPXREGS)
+  static int have_ptrace_getfpxregs = -1;
+#endif
+
+  if (!current_inferior)
+    return;
+
+  /* Before changing the register cache internal layout or the target
+     regsets, flush the contents of the current valid caches back to
+     the threads.  */
+  regcache_invalidate ();
+
+  pid = pid_of (get_thread_lwp (current_inferior));
+#ifdef __x86_64__
+  if (num_xmm_registers == 8)
+    init_registers_i386_linux ();
+  else
+    init_registers_amd64_linux ();
+#else
+    {
+# ifdef HAVE_PTRACE_GETFPXREGS
+      if (have_ptrace_getfpxregs == -1)
+	{
+	  elf_fpxregset_t fpxregs;
+
+	  if (ptrace (PTRACE_GETFPXREGS, pid, 0, (int) &fpxregs) < 0)
+	    {
+	      have_ptrace_getfpxregs = 0;
+	      x86_xcr0 = I386_XSTATE_X87_MASK;
+
+	      /* Disable PTRACE_GETFPXREGS.  */
+	      for (regset = target_regsets;
+		   regset->fill_function != NULL; regset++)
+		if (regset->get_request == PTRACE_GETFPXREGS)
+		  {
+		    regset->size = 0;
+		    break;
+		  }
+	    }
+	  else
+	    have_ptrace_getfpxregs = 1;
+	}
+
+      if (!have_ptrace_getfpxregs)
+	{
+	  init_registers_i386_mmx_linux ();
+	  return;
+	}
+# endif
+      init_registers_i386_linux ();
+    }
+#endif
+
+  if (!use_xml)
+    {
+      /* Don't use XML.  */
+#ifdef __x86_64__
+      if (num_xmm_registers == 8)
+	gdbserver_xmltarget = xmltarget_i386_linux_no_xml;
+      else
+	gdbserver_xmltarget = xmltarget_amd64_linux_no_xml;
+#else
+      gdbserver_xmltarget = xmltarget_i386_linux_no_xml;
+#endif
+
+      x86_xcr0 = I386_XSTATE_SSE_MASK;
+
+      return;
+    }
+
+  /* Check if XSAVE extended state is supported.  */
+  if (have_ptrace_getregset == -1)
+    {
+      unsigned long long xstateregs[I386_XSTATE_SSE_SIZE / sizeof (long long)];
+      struct iovec iov;
+
+      iov.iov_base = xstateregs;
+      iov.iov_len = sizeof (xstateregs);
+
+      /* Check if PTRACE_GETREGSET works.  */
+      if (ptrace (PTRACE_GETREGSET, pid, (unsigned int) NT_X86_XSTATE,
+		  &iov) < 0)
+	{
+	  have_ptrace_getregset = 0;
+	  return;
+	}
+      else
+	have_ptrace_getregset = 1;
+
+      /* Get XCR0 from XSAVE extended state at byte 464.  */
+      xcr0 = xstateregs[464 / sizeof (long long)];
+
+      /* Use PTRACE_GETREGSET if it is available.  */
+      for (regset = target_regsets;
+	   regset->fill_function != NULL; regset++)
+	if (regset->get_request == PTRACE_GETREGSET)
+	  regset->size = I386_XSTATE_SIZE (xcr0);
+	else if (regset->type != GENERAL_REGS)
+	  regset->size = 0;
+    }
+
+  if (have_ptrace_getregset)
+    {
+      /* AVX is the highest feature we support.  */
+      if ((xcr0 & I386_XSTATE_AVX_MASK) == I386_XSTATE_AVX_MASK)
+	{
+	  x86_xcr0 = xcr0;
+
+#ifdef __x86_64__
+	  /* I386 has 8 xmm regs.  */
+	  if (num_xmm_registers == 8)
+	    init_registers_i386_avx_linux ();
+	  else
+	    init_registers_amd64_avx_linux ();
+#else
+	  init_registers_i386_avx_linux ();
+#endif
+	}
+    }
+}
+
+/* Process qSupported query, "xmlRegisters=".  Update the buffer size for
+   PTRACE_GETREGSET.  */
+
+static void
+x86_linux_process_qsupported (const char *query)
+{
+  /* Return if gdb doesn't support XML.  If gdb sends "xmlRegisters="
+     with "i386" in qSupported query, it supports x86 XML target
+     descriptions.  */
+  use_xml = 0;
+  if (query != NULL && strncmp (query, "xmlRegisters=", 13) == 0)
+    {
+      char *copy = xstrdup (query + 13);
+      char *p;
+
+      for (p = strtok (copy, ","); p != NULL; p = strtok (NULL, ","))
+	{
+	  if (strcmp (p, "i386") == 0)
+	    {
+	      use_xml = 1;
+	      break;
+	    }
+	} 
+
+      free (copy);
+    }
+
+  x86_linux_update_xmltarget ();
+}
+
 /* Initialize gdbserver for the architecture of the inferior.  */
 
 static void
@@ -792,8 +1008,6 @@ x86_arch_setup (void)
     }
   else if (use_64bit)
     {
-      init_registers_x86_64_linux ();
-
       /* Amd64 doesn't have HAVE_LINUX_USRREGS.  */
       the_low_target.num_regs = -1;
       the_low_target.regmap = NULL;
@@ -803,13 +1017,12 @@ x86_arch_setup (void)
       /* Amd64 has 16 xmm regs.  */
       num_xmm_registers = 16;
 
+      x86_linux_update_xmltarget ();
       return;
     }
 #endif
 
   /* Ok we have a 32-bit inferior.  */
-
-  init_registers_i386_linux ();
 
   the_low_target.num_regs = I386_NUM_REGS;
   the_low_target.regmap = i386_regmap;
@@ -818,6 +1031,14 @@ x86_arch_setup (void)
 
   /* I386 has 8 xmm regs.  */
   num_xmm_registers = 8;
+
+  x86_linux_update_xmltarget ();
+}
+
+static int
+x86_supports_tracepoints (void)
+{
+  return 1;
 }
 
 /* This is initialized assuming an amd64 target.
@@ -850,5 +1071,7 @@ struct linux_target_ops the_low_target =
   x86_siginfo_fixup,
   x86_linux_new_process,
   x86_linux_new_thread,
-  x86_linux_prepare_to_resume
+  x86_linux_prepare_to_resume,
+  x86_linux_process_qsupported,
+  x86_supports_tracepoints
 };

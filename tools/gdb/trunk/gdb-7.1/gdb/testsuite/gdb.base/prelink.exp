@@ -22,8 +22,6 @@ if $tracelevel then {
 	strace $tracelevel
 	}
 
-set prms_id 0
-set bug_id 0
 
 # are we on a target board
 if ![isnative] then {
@@ -112,15 +110,4 @@ gdb_load ${binfile}
 # Print the "adjusting expectations" message.
 gdb_test "set verbose on"
 
-set test "prelink"
-global gdb_prompt
-gdb_test_multiple "core-file $objdir/$subdir/prelink.core" "$test" {
-    -re "warning: \.dynamic section.*not at the expected address.*warning: difference.*caused by prelink, adjusting expectations.*$gdb_prompt $" {
-	pass "$test"
-    }
-}
-
-gdb_exit
-
-return 0
-
+gdb_test "core-file $objdir/$subdir/prelink.core" {Using PIC \(Position Independent Code\) prelink displacement.*} "prelink"

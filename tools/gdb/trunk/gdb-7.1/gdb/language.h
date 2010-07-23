@@ -258,7 +258,6 @@ struct language_defn
        variables.  */
 
     struct symbol *(*la_lookup_symbol_nonlocal) (const char *,
-						 const char *,
 						 const struct block *,
 						 const domain_enum);
 
@@ -382,9 +381,9 @@ struct type *language_lookup_primitive_type_by_name (const struct language_defn 
 
 /* "cast" really means conversion */
 /* FIXME -- should be a setting in language_defn */
-#define CAST_IS_CONVERSION (current_language->la_language == language_c  || \
-			    current_language->la_language == language_cplus || \
-			    current_language->la_language == language_objc)
+#define CAST_IS_CONVERSION(LANG) ((LANG)->la_language == language_c  || \
+				  (LANG)->la_language == language_cplus || \
+				  (LANG)->la_language == language_objc)
 
 extern void language_info (int);
 
@@ -462,9 +461,9 @@ extern void binop_type_check (struct value *, struct value *, int);
 
 /* Error messages */
 
-extern void type_error (const char *, ...) ATTR_FORMAT (printf, 1, 2);
+extern void type_error (const char *, ...) ATTRIBUTE_PRINTF (1, 2);
 
-extern void range_error (const char *, ...) ATTR_FORMAT (printf, 1, 2);
+extern void range_error (const char *, ...) ATTRIBUTE_PRINTF (1, 2);
 
 /* Data:  Does this value represent "truth" to the current language?  */
 

@@ -28,8 +28,6 @@ if { [skip_cplus_tests] } { continue }
 #
 # test running programs
 #
-set prms_id 0
-set bug_id 0
 
 set testfile "m-static"
 set srcfile  "${testfile}.cc"
@@ -131,6 +129,11 @@ gdb_test "print test4.nowhere" "field nowhere is nonexistent or has been optimis
 # const int that was initialized in the header file.  But I'm not sure
 # that GDB's current behavior in such situations is either consistent
 # across platforms or optimal, so I'm not including one now.
+
+# Step into test1.method and examine the method-scoped static.
+# This is a regression test for PR 9708.
+gdb_test "step" "gnu_obj_1::method.*"
+gdb_test "print svar" " = true"
 
 gdb_exit
 return 0

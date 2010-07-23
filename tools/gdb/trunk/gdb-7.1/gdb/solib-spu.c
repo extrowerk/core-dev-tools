@@ -124,6 +124,7 @@ spu_current_sos (void)
       if (size == 4)
 	{
 	  int fd = extract_unsigned_integer (buf, 4, byte_order);
+
 	  spu_relocate_main_executable (fd);
 
 	  /* Re-enable breakpoints after main SPU context was established;
@@ -161,7 +162,8 @@ spu_current_sos (void)
 
       /* Encode FD and object ID in path name.  Choose the name so as not
 	 to conflict with any (normal) SVR4 library path name.  */
-      xsnprintf (new->so_name, sizeof new->so_name, "@0x%llx <%d>", addr, fd);
+      xsnprintf (new->so_name, sizeof new->so_name, "@%s <%d>",
+		 hex_string (addr), fd);
       strcpy (new->so_original_name, new->so_name);
 
       *link_ptr = new;
@@ -306,9 +308,11 @@ spu_bfd_open (char *pathname)
   if (spu_name)
     {
       int sect_size = bfd_section_size (abfd, spu_name);
+
       if (sect_size > 20)
 	{
 	  char *buf = alloca (sect_size - 20 + strlen (original_name) + 1);
+
 	  bfd_get_section_contents (abfd, spu_name, buf, 20, sect_size - 20);
 	  buf[sect_size - 20] = '\0';
 
@@ -326,16 +330,13 @@ spu_bfd_open (char *pathname)
 static struct symbol *
 spu_lookup_lib_symbol (const struct objfile *objfile,
 		       const char *name,
-		       const char *linkage_name,
 		       const domain_enum domain)
 {
   if (bfd_get_arch (objfile->obfd) == bfd_arch_spu)
-    return lookup_global_symbol_from_objfile (objfile, name, linkage_name,
-					      domain);
+    return lookup_global_symbol_from_objfile (objfile, name, domain);
 
   if (svr4_so_ops.lookup_lib_global_symbol != NULL)
-    return svr4_so_ops.lookup_lib_global_symbol (objfile, name, linkage_name,
-						 domain);
+    return svr4_so_ops.lookup_lib_global_symbol (objfile, name, domain);
   return NULL;
 }
 
@@ -354,6 +355,7 @@ spu_enable_break (struct objfile *objfile)
   if (spe_event_sym)
     {
       CORE_ADDR addr = SYMBOL_VALUE_ADDRESS (spe_event_sym);
+
       addr = gdbarch_convert_from_func_ptr_addr (target_gdbarch, addr,
                                                  &current_target);
       create_solib_event_breakpoint (target_gdbarch, addr);
@@ -367,10 +369,6 @@ spu_enable_break (struct objfile *objfile)
 static void
 spu_solib_create_inferior_hook (int from_tty)
 {
-  /* Remove all previously installed solib breakpoints.  Both the SVR4
-     code and us will re-install all required breakpoints.  */
-  remove_solib_event_breakpoints ();
-
   /* Handle SPE stand-alone executables.  */
   if (spu_standalone_p ())
     {
@@ -434,7 +432,7 @@ spu_solib_loaded (struct so_list *so)
 {
   if (strstr (so->so_original_name, "/libspe") != NULL)
     {
-      solib_read_symbols (so, so->from_tty ? SYMFILE_VERBOSE : 0);
+      solib_read_symbols (so, 0);
       spu_enable_break (so->objfile);
     }
 }

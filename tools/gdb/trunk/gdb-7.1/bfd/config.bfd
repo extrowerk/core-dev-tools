@@ -499,15 +499,15 @@ case "${targ}" in
     targ_selvecs=i386coff_vec
     ;;
   i[3-7]86-*-solaris2*)
-    targ_defvec=bfd_elf32_i386_vec
-    targ_selvecs=i386coff_vec
-    targ64_selvecs="bfd_elf64_x86_64_vec bfd_elf64_l1om_vec"
+    targ_defvec=bfd_elf32_i386_sol2_vec
+    targ_selvecs="i386coff_vec"
+    targ64_selvecs="bfd_elf64_x86_64_sol2_vec bfd_elf64_l1om_vec"
     want64=true
     ;;
 #ifdef BFD64
   x86_64-*-solaris2*)
-    targ_defvec=bfd_elf32_i386_vec
-    targ_selvecs="bfd_elf64_x86_64_vec bfd_elf64_l1om_vec i386coff_vec"
+    targ_defvec=bfd_elf32_i386_sol2_vec
+    targ_selvecs="bfd_elf64_x86_64_sol2_vec bfd_elf64_l1om_vec i386coff_vec"
     want64=true
     ;;
 #endif
@@ -639,7 +639,7 @@ case "${targ}" in
     targ_defvec=x86_64pe_vec
     targ_selvecs="x86_64pe_vec x86_64pei_vec bfd_elf64_x86_64_vec bfd_elf64_l1om_vec"
     want64=true
-    targ_underscore=yes
+    targ_underscore=no
     ;;
 #endif
   i[3-7]86-*-lynxos*)
@@ -916,6 +916,10 @@ case "${targ}" in
     targ_defvec=bfd_elf32_tradbigmips_vec
     targ_selvecs="bfd_elf32_tradlittlemips_vec bfd_elf64_tradbigmips_vec bfd_elf64_tradlittlemips_vec ecoff_big_vec ecoff_little_vec"
     ;;
+   mips*-*-nto*)
+     targ_defvec=bfd_elf32_littlemips_vec
+     targ_selvecs="bfd_elf32_bigmips_vec"     
+     ;;
   mips*-dec-* | mips*el-*-ecoff*)
     targ_defvec=ecoff_little_vec
     targ_selvecs=ecoff_big_vec
@@ -1257,7 +1261,7 @@ case "${targ}" in
 
   sh-*-uclinux* | sh[12]-*-uclinux*)
     targ_defvec=bfd_elf32_sh_vec
-    targ_selvecs="bfd_elf32_shblin_vec bfd_elf32_shlin_vec"
+    targ_selvecs="bfd_elf32_shl_vec bfd_elf32_shblin_vec bfd_elf32_shlin_vec bfd_elf32_shfd_vec bfd_elf32_shbfd_vec"
 #ifdef BFD64
     targ_selvecs="${targ_selvecs} bfd_elf32_sh64lin_vec bfd_elf32_sh64blin_vec bfd_elf64_sh64lin_vec bfd_elf64_sh64blin_vec"
 #endif
@@ -1465,6 +1469,11 @@ case "${targ}" in
     ;;
 #endif
 
+  tic6x-*-elf)
+    targ_defvec=bfd_elf32_tic6x_le_vec
+    targ_selvecs=bfd_elf32_tic6x_be_vec
+    ;;
+
   tic80*-*-*)
     targ_defvec=tic80coff_vec
     targ_underscore=yes
@@ -1503,10 +1512,6 @@ case "${targ}" in
 
   vax-*-linux-*)
     targ_defvec=bfd_elf32_vax_vec
-    ;;
-
-  vax*-*-*vms*)
-    targ_defvec=vms_vax_vec
     ;;
 
   we32k-*-*)

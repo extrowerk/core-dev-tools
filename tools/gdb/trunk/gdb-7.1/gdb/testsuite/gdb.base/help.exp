@@ -21,8 +21,6 @@
 # test gdb help commands
 #
 
-set prms_id 0
-set bug_id 0
 
 gdb_start
 
@@ -201,25 +199,21 @@ gdb_test "help finish" "Execute until selected stack frame returns\.\[\r\n\]+Upo
 # test help forward-search
 gdb_test "help forward-search" "Search for regular expression \\(see regex\\(3\\)\\) from last line listed.*" "help forward-search"
 # test help gcore
-send_gdb "help gcore\n"
-gdb_expect {
+gdb_test_multiple "help gcore" "help gcore" {
     -re "Undefined command: \"gcore\"\.  Try \"help\".*$gdb_prompt $" {
 	pass "help gcore"
     }
     -re "Save a core file with the current state of the debugged process\.\[\r\n\]+Argument is optional filename\.  Default filename is 'core\.<process_id>'.*$gdb_prompt $" {
 	pass "help gcore"
     }
-    default { fail "help gcore" }
 }
-send_gdb "help generate-core-file\n"
-gdb_expect {
+gdb_test_multiple "help generate-core-file" "help generate-core-file" {
     -re "Undefined command: \"generate-core-file\"\.  Try \"help\".*$gdb_prompt $" {
 	pass "help gcore"
     }
     -re "Save a core file with the current state of the debugged process\.\[\r\n\]+Argument is optional filename\.  Default filename is 'core\.<process_id>'.*$gdb_prompt $" {
 	pass "help gcore"
     }
-    default { fail "help gcore" }
 }
 # test help help "h" abbreviation 
 gdb_test "help h" "Print list of commands\." "help help \"h\" abbreviation"
@@ -294,7 +288,7 @@ gdb_test "help info variables" "All global and static variable names, or those m
 # test help info warranty
 gdb_test "help info warranty" "Various kinds of warranty you do not have\." "help info warranty"
 # test help info watchpoints
-gdb_test "help info watchpoints" "Synonym for ``info breakpoints''\." "help info watchpoints"
+gdb_test "help info watchpoints" "Status of watchpoints, or watchpoint number NUMBER\." "help info watchpoints"
 # test help inspect
 gdb_test "help inspect" "Same as \"print\" command, except that if you are running in the epoch\[\r\n\]+environment, the value is printed in its own window\." "help inspect"
 # test help jump
@@ -606,7 +600,9 @@ gdb_test "help stepi" "Step one instruction exactly\.\[\r\n\]+Argument N means d
 gdb_test "help signal" "Continue program giving it signal.*" "help signal"
 # test help source
 # vxgdb reads .vxgdbinit
-gdb_test "help source" "Read commands from a file named FILE\.\[\r\n\]+Optional -v switch \\(before the filename\\) causes each command in\[\r\n\]+FILE to be echoed as it is executed\.\[\r\n\]+Note that the file \"\[^\"\]*\" is read automatically in this way\[\r\n\]+when GDB is started\." "help source"
+# ".-s. .-v." is written that way to avoid the complications of trying
+# to get "[-s] [-v]" through expect and tcl.
+gdb_test "help source" "Read commands from a file named FILE\.\[\r\n\]+Usage: source .-s. .-v. FILE\[\r\n\]+-s: search for the script in the source search path,\[\r\n\]+\[ \]+even if FILE contains directories\.\[\r\n\]+-v: each command in FILE is echoed as it is executed\.\[\r\n\]+Note that the file \"\[^\"\]*\" is read automatically in this way\[\r\n\]+when GDB is started\." "help source"
 # test help stack
 test_class_help "stack" {
     "Examining the stack\..*\[\r\n\]+"

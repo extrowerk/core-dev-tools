@@ -11491,7 +11491,19 @@ esac
 fi
 
 
-GCC_WARN_CFLAGS="-W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow"
+GCC_WARN_CFLAGS="-W -Wall -Wstrict-prototypes -Wmissing-prototypes"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+__GNUC__
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "^[0-3]$" >/dev/null 2>&1; then :
+
+else
+  GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Wshadow"
+fi
+rm -f conftest*
+
 
 # Check whether --enable-werror was given.
 if test "${enable_werror+set}" = set; then :
@@ -11503,7 +11515,7 @@ if test "${enable_werror+set}" = set; then :
 fi
 
 
-# Enable -Wno-format by default when using gcc on mingw
+# Disable -Wformat by default when using gcc on mingw
 case "${host}" in
   *-*-mingw32*)
     if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
@@ -12471,6 +12483,7 @@ if test x${all_targets} = xfalse ; then
 	bfd_tic30_arch)		ta="$ta tic30-dis.lo" ;;
         bfd_tic4x_arch)         ta="$ta tic4x-dis.lo" ;;
 	bfd_tic54x_arch)	ta="$ta tic54x-dis.lo tic54x-opc.lo" ;;
+	bfd_tic6x_arch)		ta="$ta tic6x-dis.lo" ;;
 	bfd_tic80_arch)		ta="$ta tic80-dis.lo tic80-opc.lo" ;;
 	bfd_v850_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
 	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;

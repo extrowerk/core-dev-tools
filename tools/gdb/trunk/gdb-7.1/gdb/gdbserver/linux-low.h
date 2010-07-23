@@ -35,6 +35,9 @@ enum regset_type {
 struct regset_info
 {
   int get_request, set_request;
+  /* If NT_TYPE isn't 0, it will be passed to ptrace as the 3rd
+     argument and the 4th argument should be "const struct iovec *".  */
+  int nt_type;
   int size;
   enum regset_type type;
   regset_fill_func fill_function;
@@ -111,6 +114,12 @@ struct linux_target_ops
 
   /* Hook to call prior to resuming a thread.  */
   void (*prepare_to_resume) (struct lwp_info *);
+
+  /* Hook to support target specific qSupported.  */
+  void (*process_qsupported) (const char *);
+
+  /* Returns true if the low target supports tracepoints.  */
+  int (*supports_tracepoints) (void);
 };
 
 extern struct linux_target_ops the_low_target;
@@ -137,7 +146,8 @@ struct lwp_info
      yet.  */
   int stop_expected;
 
-  /* True if this thread was suspended (with vCont;t).  */
+  /* When this is true, we shall not try to resume this thread, even
+     if last_resume_kind isn't resume_stop.  */
   int suspended;
 
   /* If this flag is set, the lwp is known to be stopped right now (stop
@@ -152,21 +162,31 @@ struct lwp_info
   /* When stopped is set, the last wait status recorded for this lwp.  */
   int last_status;
 
+  /* When stopped is set, this is where the lwp stopped, with
+     decr_pc_after_break already accounted for.  */
+  CORE_ADDR stop_pc;
+
   /* If this flag is set, STATUS_PENDING is a waitstatus that has not yet
      been reported.  */
   int status_pending_p;
   int status_pending;
 
-  /* If this flag is set, the pending status is a (GDB-placed) breakpoint.  */
-  int pending_is_breakpoint;
-  CORE_ADDR pending_stop_pc;
+  /* STOPPED_BY_WATCHPOINT is non-zero if this LWP stopped with a data
+     watchpoint trap.  */
+  int stopped_by_watchpoint;
+
+  /* On architectures where it is possible to know the data address of
+     a triggered watchpoint, STOPPED_DATA_ADDRESS is non-zero, and
+     contains such data address.  Only valid if STOPPED_BY_WATCHPOINT
+     is true.  */
+  CORE_ADDR stopped_data_address;
 
   /* If this is non-zero, it is a breakpoint to be reinserted at our next
      stop (SIGTRAP stops only).  */
   CORE_ADDR bp_reinsert;
 
-  /* If this flag is set, the last continue operation on this process
-     was a single-step.  */
+  /* If this flag is set, the last continue operation at the ptrace
+     level on this process was a single-step.  */
   int stepping;
 
   /* If this flag is set, we need to set the event request flags the
@@ -179,8 +199,11 @@ struct lwp_info
 
   /* A link used when resuming.  It is initialized from the resume request,
      and then processed and cleared in linux_resume_one_lwp.  */
-
   struct thread_resume *resume;
+
+  /* True if the LWP was seen stop at an internal breakpoint and needs
+     stepping over later when it is resumed.  */
+  int need_step_over;
 
   int thread_known;
 #ifdef HAVE_THREAD_DB_H
@@ -203,7 +226,9 @@ struct lwp_info *find_lwp_pid (ptid_t ptid);
 
 /* From thread-db.c  */
 int thread_db_init (int use_events);
-void thread_db_free (struct process_info *, int detaching);
+void thread_db_detach (struct process_info *);
+void thread_db_mourn (struct process_info *);
 int thread_db_handle_monitor_command (char *);
 int thread_db_get_tls_address (struct thread_info *thread, CORE_ADDR offset,
 			       CORE_ADDR load_module, CORE_ADDR *address);
+int thread_db_look_up_one_symbol (const char *name, CORE_ADDR *addrp);

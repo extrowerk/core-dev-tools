@@ -243,12 +243,10 @@ LM_ADDR_CHECK (struct so_list *so, bfd *abfd)
 	      l_addr = l_dynaddr - dynaddr;
 
 	      if (info_verbose)
-		{
-		  warning (_(".dynamic section for \"%s\" "
-			     "is not at the expected address"), so->so_name);
-		  warning (_("difference appears to be caused by prelink, "
-			     "adjusting expectations"));
-		}
+		printf_unfiltered (_("Using PIC (Position Independent Code) "
+				     "prelink displacement %s for \"%s\".\n"),
+				   paddress (target_gdbarch, l_addr),
+				   so->so_name);
 	    }
 	  else
 	    warning (_(".dynamic section for \"%s\" "
@@ -274,6 +272,16 @@ LM_NEXT (struct so_list *so)
 }
 
 static CORE_ADDR
+LM_PREV (struct so_list *so)
+{
+  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
+  struct type *ptr_type = builtin_type (target_gdbarch)->builtin_data_ptr;
+
+  return extract_typed_address (so->lm_info->lm + lmo->l_prev_offset,
+				ptr_type);
+}
+
+static CORE_ADDR
 LM_NAME (struct so_list *so)
 {
   struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
@@ -286,16 +294,12 @@ LM_NAME (struct so_list *so)
 static int
 IGNORE_FIRST_LINK_MAP_ENTRY (struct so_list *so)
 {
-  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
-  struct type *ptr_type = builtin_type (target_gdbarch)->builtin_data_ptr;
-
   /* Assume that everything is a library if the dynamic loader was loaded
      late by a static executable.  */
   if (exec_bfd && bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
     return 0;
 
-  return extract_typed_address (so->lm_info->lm + lmo->l_prev_offset,
-				ptr_type) == 0;
+  return LM_PREV (so) == 0;
 }
 
 /* Per pspace SVR4 specific data.  */
@@ -577,7 +581,6 @@ find_program_interpreter (void)
      interp_sect = bfd_get_section_by_name (exec_bfd, ".interp");
      if (interp_sect != NULL)
       {
-	CORE_ADDR sect_addr = bfd_section_vma (exec_bfd, interp_sect);
 	int sect_size = bfd_section_size (exec_bfd, interp_sect);
 
 	buf = xmalloc (sect_size);
@@ -720,6 +723,7 @@ scan_dyntag_auxv (int dyntag, CORE_ADDR *ptr)
     if (arch_size == 32)
       {
 	Elf32_External_Dyn *dynp = (Elf32_External_Dyn *) buf;
+
 	dyn_tag = extract_unsigned_integer ((gdb_byte *) dynp->d_tag,
 					    4, byte_order);
 	dyn_ptr = extract_unsigned_integer ((gdb_byte *) dynp->d_un.d_ptr,
@@ -728,6 +732,7 @@ scan_dyntag_auxv (int dyntag, CORE_ADDR *ptr)
     else
       {
 	Elf64_External_Dyn *dynp = (Elf64_External_Dyn *) buf;
+
 	dyn_tag = extract_unsigned_integer ((gdb_byte *) dynp->d_tag,
 					    8, byte_order);
 	dyn_ptr = extract_unsigned_integer ((gdb_byte *) dynp->d_un.d_ptr,
@@ -790,6 +795,7 @@ elf_locate_base (void)
       struct type *ptr_type = builtin_type (target_gdbarch)->builtin_data_ptr;
       gdb_byte *pbuf;
       int pbuf_size = TYPE_LENGTH (ptr_type);
+
       pbuf = alloca (pbuf_size);
       /* DT_MIPS_RLD_MAP contains a pointer to the address
 	 of the dynamic link structure.  */
@@ -865,7 +871,8 @@ locate_base (struct svr4_info *info)
 }
 
 /* Find the first element in the inferior's dynamic link map, and
-   return its address in the inferior.
+   return its address in the inferior.  Return zero if the address
+   could not be determined.
 
    FIXME: Perhaps we should validate the info somehow, perhaps by
    checking r_version for a known version number, or r_state for
@@ -876,9 +883,16 @@ solib_svr4_r_map (struct svr4_info *info)
 {
   struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
   struct type *ptr_type = builtin_type (target_gdbarch)->builtin_data_ptr;
+  CORE_ADDR addr = 0;
+  volatile struct gdb_exception ex;
 
-  return read_memory_typed_address (info->debug_base + lmo->r_map_offset,
-				    ptr_type);
+  TRY_CATCH (ex, RETURN_MASK_ERROR)
+    {
+      addr = read_memory_typed_address (info->debug_base + lmo->r_map_offset,
+                                        ptr_type);
+    }
+  exception_print (gdb_stderr, ex);
+  return addr;
 }
 
 /* Find r_brk from the inferior's debug base.  */
@@ -1096,7 +1110,7 @@ svr4_default_sos (void)
 static struct so_list *
 svr4_current_sos (void)
 {
-  CORE_ADDR lm;
+  CORE_ADDR lm, prev_lm;
   struct so_list *head = 0;
   struct so_list **link_ptr = &head;
   CORE_ADDR ldsomap = 0;
@@ -1115,6 +1129,7 @@ svr4_current_sos (void)
 
   /* Walk the inferior's link map list, and build our list of
      `struct so_list' nodes.  */
+  prev_lm = 0;
   lm = solib_svr4_r_map (info);
 
   while (lm)
@@ -1122,6 +1137,7 @@ svr4_current_sos (void)
       struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
       struct so_list *new = XZALLOC (struct so_list);
       struct cleanup *old_chain = make_cleanup (xfree, new);
+      CORE_ADDR next_lm;
 
       new->lm_info = xmalloc (sizeof (struct lm_info));
       make_cleanup (xfree, new->lm_info);
@@ -1133,7 +1149,14 @@ svr4_current_sos (void)
 
       read_memory (lm, new->lm_info->lm, lmo->link_map_size);
 
-      lm = LM_NEXT (new);
+      next_lm = LM_NEXT (new);
+
+      if (LM_PREV (new) != prev_lm)
+	{
+	  warning (_("Corrupted shared library list"));
+	  //free_so (new);
+	  //next_lm = 0;
+	}
 
       /* For SVR4 versions, the first entry in the link map is for the
          inferior executable, so we must ignore it.  For some versions of
@@ -1177,12 +1200,18 @@ svr4_current_sos (void)
 	    }
 	}
 
+      prev_lm = lm;
+      lm = next_lm;
+
       /* On Solaris, the dynamic linker is not in the normal list of
 	 shared objects, so make sure we pick it up too.  Having
 	 symbol information for the dynamic linker is quite crucial
 	 for skipping dynamic linker resolver code.  */
       if (lm == 0 && ldsomap == 0)
-	lm = ldsomap = solib_svr4_r_ldsomap (info);
+	{
+	  lm = ldsomap = solib_svr4_r_ldsomap (info);
+	  prev_lm = 0;
+	}
 
       discard_cleanups (old_chain);
     }
@@ -1322,10 +1351,6 @@ enable_break (struct svr4_info *info, int from_tty)
   asection *interp_sect;
   gdb_byte *interp_name;
   CORE_ADDR sym_addr;
-
-  /* First, remove all the solib event breakpoints.  Their addresses
-     may have changed since the last time we ran the program.  */
-  remove_solib_event_breakpoints ();
 
   info->interp_text_sect_low = info->interp_text_sect_high = 0;
   info->interp_plt_sect_low = info->interp_plt_sect_high = 0;
@@ -1497,6 +1522,7 @@ enable_break (struct svr4_info *info, int from_tty)
 	{
 	  struct regcache *regcache
 	    = get_thread_arch_regcache (inferior_ptid, target_gdbarch);
+
 	  load_addr = (regcache_read_pc (regcache)
 		       - exec_entry_point (tmp_bfd, tmp_bfd_target));
 	}
@@ -1764,6 +1790,18 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
 	return 0;
     }
 
+  if (info_verbose)
+    {
+      /* It can be printed repeatedly as there is no easy way to check
+	 the executable symbols/file has been already relocated to
+	 displacement.  */
+
+      printf_unfiltered (_("Using PIE (Position Independent Executable) "
+			   "displacement %s for \"%s\".\n"),
+			 paddress (target_gdbarch, displacement),
+			 bfd_get_filename (exec_bfd));
+    }
+
   *displacementp = displacement;
   return 1;
 }
@@ -1875,8 +1913,10 @@ svr4_relocate_main_executable (void)
 static void
 svr4_solib_create_inferior_hook (int from_tty)
 {
+#if defined(_SCO_DS)
   struct inferior *inf;
   struct thread_info *tp;
+#endif /* defined(_SCO_DS) */
   struct svr4_info *info;
 
   info = get_svr4_info ();
@@ -2029,6 +2069,7 @@ static int
 svr4_have_link_map_offsets (void)
 {
   struct solib_svr4_ops *ops = gdbarch_data (target_gdbarch, solib_svr4_data);
+
   return (ops->fetch_link_map_offsets != NULL);
 }
 
@@ -2109,7 +2150,6 @@ struct target_so_ops svr4_so_ops;
 static struct symbol *
 elf_lookup_lib_symbol (const struct objfile *objfile,
 		       const char *name,
-		       const char *linkage_name,
 		       const domain_enum domain)
 {
   bfd *abfd;
@@ -2127,9 +2167,16 @@ elf_lookup_lib_symbol (const struct objfile *objfile,
   if (abfd == NULL || scan_dyntag (DT_SYMBOLIC, abfd, NULL) != 1)
     return NULL;
 
-  return lookup_global_symbol_from_objfile
-		(objfile, name, linkage_name, domain);
+  return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
+
+#ifdef __QNXTARGET__
+CORE_ADDR
+svr4_fetch_r_debug (void)
+{
+  return elf_locate_base ();
+}
+#endif /* __QNXTARGET__ */
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 

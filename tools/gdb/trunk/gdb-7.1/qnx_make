@@ -1,0 +1,2 @@
+#!/bin/sh
+make -j4 OSLIST=win32 & make -j4 OSLIST=linux & make -j4 OSLIST=nto

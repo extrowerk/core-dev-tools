@@ -1,3 +1,121 @@
+2010-05-27  Jason Duerstock  <jason.duerstock+binutils@gmail.com>
+
+	* m68k-dis.c (print_insn_m68k): Emit undefined instructions as
+	.short directives so that they can be reassembled.
+
+2010-05-26  Catherine Moore <clm@codesourcery.com>
+	    David Ung  <davidu@mips.com>
+
+	* mips-opc.c: Change membership to I1 for instructions ssnop and
+	ehb.
+
+2010-05-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (sib): New.
+	(get_sib): Likewise.
+	(print_insn): Call get_sib.
+	OP_E_memory): Use sib.
+
+2010-05-26  Catherine Moore  <clm@codesoourcery.com>
+
+	* mips-dis.c (mips_arch): Remove INSN_MIPS16.
+	* mips-opc.c (I16): Remove.
+	(mips_builtin_op): Reclassify jalx.
+
+2010-05-19  Alan Modra  <amodra@gmail.com>
+
+	* ppc-opc.c (powerpc_opcodes): Enable divdeu, devweu, divde,
+	divwe, divdeuo, divweuo, divdeo, divweo for A2.  Add icswepx.
+
+2010-05-13  Alan Modra  <amodra@gmail.com>
+
+	* ppc-opc.c (powerpc_opcodes): Correct wclr encoding.
+
+2010-05-11  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm-dis.c (thumb_opcodes): Update ldmia entry to use new %W
+	format.
+	(print_insn_thumb16): Add support for new %W format.
+
+2010-05-07  Tristan Gingold  <gingold@adacore.com>
+
+	* Makefile.in: Regenerate with automake 1.11.1.
+	* aclocal.m4: Ditto.
+
+2010-05-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+
+2010-04-22  Nick Clifton  <nickc@redhat.com>
+
+	* po/opcodes.pot: Updated by the Translation project.
+	* po/vi.po: Updated Vietnamese translation.
+
+2010-04-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (get_valid_dis386): Return bad_opcode on unknown
+	bits in opcode.
+
+2010-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* i386-dis.c (print_insn): Remove unused variable op.
+	(OP_sI): Remove unused variable mask.
+
+2010-04-07  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2010-04-06  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* ppc-opc.c (RBOPT): New define.
+	("dccci"): Enable for PPCA2.  Make operands optional.
+	("iccci"): Likewise.  Do not deprecate for PPC476.
+
+2010-04-02  Masaki Muranaka  <monaka@monami-software.com>
+
+	* cr16-opc.c (cr16_instruction): Fix typo in comment.
+
+2010-03-25  Joseph Myers  <joseph@codesourcery.com>
+
+	* Makefile.am (TARGET_LIBOPCODES_CFILES): Add tic6x-dis.c.
+	* Makefile.in: Regenerate.
+	* configure.in (bfd_tic6x_arch): New.
+	* configure: Regenerate.
+	* disassemble.c (ARCH_tic6x): Define if ARCH_all.
+	(disassembler): Handle TI C6X.
+	* tic6x-dis.c: New.
+
+2010-03-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* bfin-dis.c (decode_regs_hi): Change REG_LH2 typo to REG_MH2.
+
+2010-03-23  Joseph Myers  <joseph@codesourcery.com>
+
+	* dis-buf.c (buffer_read_memory): Give error for reading just
+	before the start of memory.
+
+2010-03-22  Sebastian Pop  <sebastian.pop@amd.com>
+	    Quentin Neill <quentin.neill@amd.com>
+
+	* i386-dis.c (OP_LWP_I): Removed.
+	(reg_table): Do not use OP_LWP_I, use Iq.
+	(OP_LWPCB_E): Remove use of names16.
+	(OP_LWP_E): Same.
+	* i386-opc.tbl: Removed 16bit LWP insns.  32bit LWP insns
+	should not set the Vex.length bit.
+	* i386-tbl.h: Regenerated.
+
+2010-02-25  Edmar Wienskoski  <edmar@freescale.com>
+
+	* ppc-dis.c (ppc_opts): Add PPC_OPCODE_E500MC for "e500mc64".
+
+2010-02-24  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/6773
+	* arm-dis.c (arm_opcodes): Replace <prefix>addsubx with
+	<prefix>asx.  Replace <prefix>subaddx with <prefix>sax.
+	(thumb32_opcodes): Likewise.
+
 2010-02-15  Nick Clifton  <nickc@redhat.com>
 
 	* po/vi.po: Updated Vietnamese translation.
