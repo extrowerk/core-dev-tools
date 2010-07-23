@@ -21,7 +21,6 @@
 #if !defined (ADA_LANG_H)
 #define ADA_LANG_H 1
 
-struct partial_symbol;
 struct frame_info;
 
 #include "value.h"
@@ -160,6 +159,9 @@ extern void ada_error (char *); /* Defined in ada-exp.y */
 extern void ada_print_type (struct type *, char *, struct ui_file *, int,
                             int);
 
+extern void ada_print_typedef (struct type *type, struct symbol *new_symbol,
+			       struct ui_file *stream);
+
 extern int ada_val_print (struct type *, const gdb_byte *, int, CORE_ADDR,
                           struct ui_file *, int,
 			  const struct value_print_options *);
@@ -185,6 +187,8 @@ struct value *ada_convert_actual (struct value *actual,
 extern struct value *ada_value_subscript (struct value *, int,
                                           struct value **);
 
+extern void ada_fixup_array_indexes_type (struct type *index_desc_type);
+
 extern struct type *ada_array_element_type (struct type *, int);
 
 extern int ada_array_arity (struct type *);
@@ -207,8 +211,7 @@ extern char *ada_decode_symbol (const struct general_symbol_info*);
 
 extern const char *ada_decode (const char*);
 
-extern enum language ada_update_initial_language (enum language, 
-						  struct partial_symtab*);
+extern enum language ada_update_initial_language (enum language);
 
 extern void clear_ada_sym_cache (void);
 
@@ -313,6 +316,8 @@ extern int ada_which_variant_applies (struct type *, struct type *,
 extern struct type *ada_to_fixed_type (struct type *, const gdb_byte *,
 				       CORE_ADDR, struct value *,
                                        int check_tag);
+
+extern struct value *ada_to_fixed_value (struct value *val);
 
 extern struct type *ada_template_to_fixed_record_type_1 (struct type *type,
 							 const gdb_byte *valaddr,

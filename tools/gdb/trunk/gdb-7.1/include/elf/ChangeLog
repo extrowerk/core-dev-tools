@@ -1,3 +1,122 @@
+2010-05-25  Daniel Jacobowitz  <dan@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+	    Andrew Stubbs  <ams@codesourcery.com>
+
+	* sh.h (EF_SH_PIC, EF_SH_FDPIC): Define.
+	(R_SH_FIRST_INVALID_RELOC_6, R_SH_LAST_INVALID_RELOC_6): New.  Adjust
+	other invalid ranges.
+	(R_SH_GOT20, R_SH_GOTOFF20, R_SH_GOTFUNCDESC, R_SH_GOTFUNCDESC20)
+	(R_SH_GOTOFFFUNCDESC, R_SH_GOTOFFFUNCDESC20, R_SH_FUNCDESC)
+	(R_SH_FUNCDESC_VALUE): New.
+
+2010-05-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/11600
+	* common.h (SHF_EXCLUDE): New.
+
+	* i370.h (SHF_EXCLUDE): Removed.
+	* or32.h (SHF_EXCLUDE): Likewise.
+	* ppc.h (SHF_EXCLUDE): Likewise.
+	* sparc.h (SHF_EXCLUDE): Likewise.
+
+2010-04-23  Alan Modra  <amodra@gmail.com>
+
+	* internal.h (ELF_SECTION_SIZE): Protect macro args with parentheses.
+	Invert logic to clarify test for .tbss.
+	(ELF_IS_SECTION_IN_SEGMENT): Rename to..
+	(ELF_SECTION_IN_SEGMENT_1): ..this.  Add check_vma param.  Protect
+	macro args with parentheses.
+	(ELF_SECTION_IN_SEGMENT): Define.
+	(ELF_IS_SECTION_IN_SEGMENT_FILE): Delete.
+	(ELF_IS_SECTION_IN_SEGMENT_MEMORY): Delete.
+
+2010-04-15  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (Tag_FP_arch, Tag_ABI_align_needed, Tag_ABI_align_preserved,
+	Tag_FP_HP_extension): Add new ABI attribute tags.
+
+2010-04-15  Nick Clifton  <nickc@redhat.com>
+
+	* alpha.h: Update copyright notice to use GPLv3.
+	* arc.h: Likewise.
+	* arm.h: Likewise.
+	* avr.h: Likewise.
+	* bfin.h: Likewise.
+	* common.h: Likewise.
+	* cr16.h: Likewise.
+	* cr16c.h: Likewise.
+	* cris.h: Likewise.
+	* crx.h: Likewise.
+	* d10v.h: Likewise.
+	* d30v.h: Likewise.
+	* dlx.h: Likewise.
+	* dwarf.h: Likewise.
+	* external.h: Likewise.
+	* fr30.h: Likewise.
+	* frv.h: Likewise.
+	* h8.h: Likewise.
+	* hppa.h: Likewise.
+	* i370.h: Likewise.
+	* i386.h: Likewise.
+	* i860.h: Likewise.
+	* i960.h: Likewise.
+	* ia64.h: Likewise.
+	* internal.h: Likewise.
+	* ip2k.h: Likewise.
+	* iq2000.h: Likewise.
+	* lm32.h: Likewise.
+	* m32c.h: Likewise.
+	* m32r.h: Likewise.
+	* m68hc11.h: Likewise.
+	* m68k.h: Likewise.
+	* mcore.h: Likewise.
+	* mep.h: Likewise.
+	* microblaze.h: Likewise.
+	* mips.h: Likewise.
+	* mmix.h: Likewise.
+	* mn10200.h: Likewise.
+	* moxie.h: Likewise.
+	* msp430.h: Likewise.
+	* mt.h: Likewise.
+	* openrisc.h: Likewise.
+	* or32.h: Likewise.
+	* pj.h: Likewise.
+	* ppc.h: Likewise.
+	* ppc64.h: Likewise.
+	* reloc-macros.h: Likewise.
+	* rx.h: Likewise.
+	* s390.h: Likewise.
+	* sh.h: Likewise.
+	* sparc.h: Likewise.
+	* spu.h: Likewise.
+	* v850.h: Likewise.
+	* vax.h: Likewise.
+	* vxworks.h: Likewise.
+	* x86-64.h: Likewise.
+	* xc16x.h: Likewise.
+	* xstormy16.h: Likewise.
+	* xtensa.h: Likewise.
+
+2010-04-08  David Stubbs  <stubbs@icerasemi.com>
+
+	* internal.h (ELF_IS_SECTION_IN_SEGMENT): PT_PHDR program headers
+	cannot contain any sections.
+
+2010-03-25  Joseph Myers  <joseph@codesourcery.com>
+
+	* common.h (ELFOSABI_C6000_ELFABI, ELFOSABI_C6000_LINUX): Define.
+	* tic6x.h: New.
+
+2010-03-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* common.h (VER_FLG_*): Document.
+	(VER_FLG_INFO): Define.
+
+2010-02-23  Andrew Zabolotny  <anpaza@mail.ru>
+
+	PR binutils/11297
+	* avr.h: (R_AVR_8): New relocation number.
+
 2010-02-18  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
 
 	* arm.h (Tag_MPextension_use): Renumber.
@@ -9,12 +128,16 @@
 	* common.h (NT_S390_TIMER, NT_S390_TODCMP, NT_S390_TODPREG,
 	NT_S390_CTRS and NT_S390_PREFIX): Define.
 
+2010-02-08  David S. Miller  <davem@davemloft.net>
+
+	* sparc.h (R_SPARC_JMP_IREL, R_SPARC_IRELATIVE): Define.
+
 2010-02-02  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* common.h (NT_386_XSTATE): New.
 
 2010-01-21  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
-	
+
 	* s390.h (EF_S390_HIGH_GPRS): Added macro definition.
 
 2010-01-19  Daisuke Hatayama  <d.hatayama@jp.fujitsu.com>
@@ -78,11 +201,11 @@
 	R_push, R_const, R_add, R_sub, R_mult, R_div, R_mod, R_lshift,
 	R_rshift, R_and, R_or, R_xor, R_land, R_lor, R_len, R_neg, R_comp,
 	R_page, R_hwpage, R_addr, R_pltpc, R_got.
-	
+
 2009-08-09  Michael Eager <eager@eagercon.com>
 
 	* elf/common.h: Define EM_resnnn reserved values. Add EM_AVR32,
-	EM_STM8, EM_TILE64, EM_TILEPRO.  Change EM_MICROBLAZE. 
+	EM_STM8, EM_TILE64, EM_TILEPRO.  Change EM_MICROBLAZE.
 
 2009-08-06  Michael Eager <eager@eagercon.com>
 
@@ -188,8 +311,8 @@
 
 2009-03-14  Mark Kettenis  <kettenis@gnu.org>
 
-	* common.h (NT_OPENBSD_PROCINFO, NT_OPENBSD_AUXV) 
-	(NT_OPENBSD_REGS, NT_OPENBSD_FPREGS, NT_OPENBSD_XFPREGS) 
+	* common.h (NT_OPENBSD_PROCINFO, NT_OPENBSD_AUXV)
+	(NT_OPENBSD_REGS, NT_OPENBSD_FPREGS, NT_OPENBSD_XFPREGS)
 	(NT_OPENBSD_WCOOKIE): New defines.
 
 2009-03-16  Jan Kratochvil  <jan.kratochvil@redhat.com>
@@ -272,7 +395,7 @@
 2008-11-14  Nathan Sidwell  <nathan@codesourcery.com>
 
 	* internal.h (struct elf_segment_map): Add header_size field.
- 
+
 2008-10-13  Ulrich Weigand  <uweigand@de.ibm.com>
 
 	* common.h (AT_BASE_PLATFORM, AT_EXECFN): Define.
@@ -346,7 +469,7 @@
 	END_RELOC_NUMBERS symbol as a sentinel value.
 
 2008-05-15  Christophe Lyon  <christophe.lyon@st.com>
-	
+
 	* arm.h (END_RELOC_NUMBERS): Provide a maximum value.
 
 2008-04-16  David S. Miller  <davem@davemloft.net>

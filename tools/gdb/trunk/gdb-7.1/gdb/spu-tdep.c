@@ -633,6 +633,7 @@ spu_analyze_prologue (struct gdbarch *gdbarch,
   int found_sp = 0;
   int found_fp = 0;
   int found_lr = 0;
+  int found_bc = 0;
   int reg_immed[SPU_NUM_GPRS];
   gdb_byte buf[16];
   CORE_ADDR prolog_pc = start_pc;
@@ -661,8 +662,9 @@ spu_analyze_prologue (struct gdbarch *gdbarch,
 	- The first instruction to set up the stack pointer.
 	- The first instruction to set up the frame pointer.
 	- The first instruction to save the link register.
+	- The first instruction to save the backchain.
 
-     We return the instruction after the latest of these three,
+     We return the instruction after the latest of these four,
      or the incoming PC if none is found.  The first instruction
      to set up the stack pointer also defines the frame size.
 
@@ -769,6 +771,14 @@ spu_analyze_prologue (struct gdbarch *gdbarch,
               && !found_lr)
 	    {
 	      found_lr = 1;
+	      prolog_pc = pc + 4;
+	    }
+
+	  if (ra == SPU_RAW_SP_REGNUM
+	      && (found_sp? immed == 0 : rt == SPU_RAW_SP_REGNUM)
+	      && !found_bc)
+	    {
+	      found_bc = 1;
 	      prolog_pc = pc + 4;
 	    }
 	}
@@ -1841,7 +1851,7 @@ spu_catch_start (struct objfile *objfile)
       struct symbol *sym;
       struct symtab_and_line sal;
 
-      sym = lookup_block_symbol (block, "main", NULL, VAR_DOMAIN);
+      sym = lookup_block_symbol (block, "main", VAR_DOMAIN);
       if (sym)
 	{
 	  fixup_symbol_section (sym, objfile);
@@ -1853,11 +1863,13 @@ spu_catch_start (struct objfile *objfile)
   /* Use a numerical address for the set_breakpoint command to avoid having
      the breakpoint re-set incorrectly.  */
   xsnprintf (buf, sizeof buf, "*%s", core_addr_to_string (pc));
-  set_breakpoint (get_objfile_arch (objfile),
-		  buf, NULL /* condition */,
-		  0 /* hardwareflag */, 1 /* tempflag */,
-		  -1 /* thread */, 0 /* ignore_count */,
-		  0 /* pending */, 1 /* enabled */);
+  create_breakpoint (get_objfile_arch (objfile), buf /* arg */,
+		     NULL /* cond_string */, -1 /* thread */,
+		     0 /* parse_condition_and_thread */, 1 /* tempflag */,
+		     0 /* hardwareflag */, 0 /* traceflag */,
+		     0 /* ignore_count */,
+		     AUTO_BOOLEAN_FALSE /* pending_break_support */,
+		     NULL /* ops */, 0 /* from_tty */, 1 /* enabled */);
 }
 
 

@@ -2648,7 +2648,7 @@ coff_write_relocs (bfd * abfd, int first_undef)
 	     entries know which symbol index they point to.  So we
 	     have to look up the output symbol here.  */
 
-	  if (q->sym_ptr_ptr[0]->the_bfd != abfd)
+	  if (q->sym_ptr_ptr[0] != NULL && q->sym_ptr_ptr[0]->the_bfd != abfd)
 	    {
 	      int j;
 	      const char *sname = q->sym_ptr_ptr[0]->name;
@@ -2677,7 +2677,7 @@ coff_write_relocs (bfd * abfd, int first_undef)
 	    n.r_symndx = q->addend;
 	  else
 #endif
-	    if (q->sym_ptr_ptr)
+	    if (q->sym_ptr_ptr && q->sym_ptr_ptr[0] != NULL)
 	      {
 #ifdef SECTION_RELATIVE_ABSOLUTE_SYMBOL_P
 		if (SECTION_RELATIVE_ABSOLUTE_SYMBOL_P (q, s))
@@ -3533,7 +3533,9 @@ coff_write_object_contents (bfd * abfd)
   asection *current;
   bfd_boolean hasrelocs = FALSE;
   bfd_boolean haslinno = FALSE;
+#ifdef COFF_IMAGE_WITH_PE
   bfd_boolean hasdebug = FALSE;
+#endif
   file_ptr scn_base;
   file_ptr reloc_base;
   file_ptr lineno_base;
@@ -3636,9 +3638,9 @@ coff_write_object_contents (bfd * abfd)
        current = current->next)
     {
       struct internal_scnhdr section;
+#ifdef COFF_IMAGE_WITH_PE
       bfd_boolean is_reloc_section = FALSE;
 
-#ifdef COFF_IMAGE_WITH_PE
       if (strcmp (current->name, DOT_RELOC) == 0)
 	{
 	  is_reloc_section = TRUE;
@@ -3737,9 +3739,11 @@ coff_write_object_contents (bfd * abfd)
 #endif
       if (current->lineno_count != 0)
 	haslinno = TRUE;
+#ifdef COFF_IMAGE_WITH_PE
       if ((current->flags & SEC_DEBUGGING) != 0
 	  && ! is_reloc_section)
 	hasdebug = TRUE;
+#endif
 
 #ifdef RS6000COFF_C
 #ifndef XCOFF64

@@ -35,6 +35,7 @@
 #include "exceptions.h"
 #include "dfp.h"
 #include "python/python.h"
+#include "ada-lang.h"
 
 #include <errno.h>
 
@@ -361,6 +362,13 @@ common_val_print (struct value *val, struct ui_file *stream, int recurse,
   if (!value_check_printable (val, stream))
     return 0;
 
+  if (language->la_language == language_ada)
+    /* The value might have a dynamic type, which would cause trouble
+       below when trying to extract the value contents (since the value
+       size is determined from the type size which is unknown).  So
+       get a fixed representation of our value.  */
+    val = ada_to_fixed_value (val);
+
   return val_print (value_type (val), value_contents_all (val),
 		    value_embedded_offset (val), value_address (val),
 		    stream, recurse, options, language);
@@ -387,6 +395,7 @@ value_print (struct value *val, struct ui_file *stream,
 					value_address (val),
 					stream, 0, options,
 					current_language);
+
       if (r)
 	return r;
     }
@@ -1133,6 +1142,7 @@ val_print_array_elements (struct type *type, const gdb_byte *valaddr,
   else
     {
       long low, hi;
+
       if (get_array_bounds (type, &low, &hi))
         len = hi - low + 1;
       else
@@ -1623,8 +1633,6 @@ show_print (char *args, int from_tty)
 void
 _initialize_valprint (void)
 {
-  struct cmd_list_element *c;
-
   add_prefix_cmd ("print", no_class, set_print,
 		  _("Generic command for setting how things print."),
 		  &setprintlist, "set print ", 0, &setlist);

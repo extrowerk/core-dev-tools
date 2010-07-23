@@ -426,6 +426,7 @@ enum elf_target_id
   SH_ELF_DATA,
   SPARC_ELF_DATA,
   SPU_ELF_DATA,
+  TIC6X_ELF_DATA,
   X86_64_ELF_DATA,
   XTENSA_ELF_DATA,
   GENERIC_ELF_DATA
@@ -1773,6 +1774,10 @@ extern void _bfd_elf_link_just_syms
   (asection *, struct bfd_link_info *);
 extern void _bfd_elf_copy_link_hash_symbol_type
   (bfd *, struct bfd_link_hash_entry *, struct bfd_link_hash_entry *);
+extern bfd_boolean _bfd_elf_size_group_sections
+  (struct bfd_link_info *);
+extern bfd_boolean _bfd_elf_fixup_group_sections
+(bfd *, asection *);
 extern bfd_boolean _bfd_elf_copy_private_header_data
   (bfd *, bfd *);
 extern bfd_boolean _bfd_elf_copy_private_symbol_data
@@ -2323,9 +2328,52 @@ extern asection _bfd_elf_large_com_section;
     }									\
   while (0)
 
+/* This macro is to avoid lots of duplicated code in the body of the
+   loop over relocations in xxx_relocate_section() in the various
+   elfxx-xxxx.c files.
+   
+   Handle relocations against symbols from removed linkonce sections,
+   or sections discarded by a linker script.  When doing a relocatable
+   link, we remove such relocations.  Otherwise, we just want the
+   section contents zeroed and avoid any special processing.  */
+#define RELOC_AGAINST_DISCARDED_SECTION(info, input_bfd, input_section,	\
+					rel, relend, howto, contents)	\
+  {									\
+    if (info->relocatable						\
+	&& (input_section->flags & SEC_DEBUGGING))			\
+      {									\
+	/* Only remove relocations in debug sections since other	\
+	   sections may require relocations.  */			\
+	Elf_Internal_Shdr *rel_hdr;					\
+									\
+	rel_hdr = &elf_section_data (input_section->output_section)->rel_hdr; \
+									\
+	/* Avoid empty output section.  */				\
+	if (rel_hdr->sh_size > rel_hdr->sh_entsize)			\
+	  {								\
+	    rel_hdr->sh_size -= rel_hdr->sh_entsize;			\
+	    rel_hdr = &elf_section_data (input_section)->rel_hdr;	\
+	    rel_hdr->sh_size -= rel_hdr->sh_entsize;			\
+									\
+	    memmove (rel, rel + 1, (relend - rel) * sizeof (*rel));	\
+									\
+	    input_section->reloc_count--;				\
+	    relend--;							\
+	    rel--;							\
+	    continue;							\
+	  }								\
+      }									\
+									\
+    _bfd_clear_contents (howto, input_bfd, contents + rel->r_offset);	\
+    rel->r_info = 0;							\
+    rel->r_addend = 0;							\
+    continue;								\
+  }
+
 /* Will a symbol be bound to the the definition within the shared
-   library, if any.  */
+   library, if any.  A unique symbol can never be bound locally.  */
 #define SYMBOLIC_BIND(INFO, H) \
-    ((INFO)->symbolic || ((INFO)->dynamic && !(H)->dynamic))
+    (!(H)->unique_global \
+     && ((INFO)->symbolic || ((INFO)->dynamic && !(H)->dynamic)))
 
 #endif /* _LIBELF_H_ */

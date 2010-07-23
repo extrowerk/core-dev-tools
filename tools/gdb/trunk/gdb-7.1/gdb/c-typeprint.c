@@ -32,6 +32,7 @@
 #include "c-lang.h"
 #include "typeprint.h"
 #include "cp-abi.h"
+#include "jv-lang.h"
 
 #include "gdb_string.h"
 #include <errno.h>
@@ -39,8 +40,6 @@
 static void cp_type_print_method_args (struct type *mtype, char *prefix,
 				       char *varstring, int staticp,
 				       struct ui_file *stream);
-
-static void c_type_print_args (struct type *, struct ui_file *);
 
 static void cp_type_print_derivation_info (struct ui_file *, struct type *);
 
@@ -197,6 +196,23 @@ cp_type_print_method_args (struct type *mtype, char *prefix, char *varstring,
     fprintf_filtered (stream, "void");
 
   fprintf_filtered (stream, ")");
+
+  /* For non-static methods, read qualifiers from the type of
+     THIS.  */
+  if (!staticp)
+    {
+      struct type *domain;
+
+      gdb_assert (nargs > 0);
+      gdb_assert (TYPE_CODE (args[0].type) == TYPE_CODE_PTR);
+      domain = TYPE_TARGET_TYPE (args[0].type);
+
+      if (TYPE_CONST (domain))
+	fprintf_filtered (stream, " const");
+
+      if (TYPE_VOLATILE (domain))
+	fprintf_filtered (stream, " volatile");
+    }
 }
 
 
@@ -217,6 +233,7 @@ c_type_print_varspec_prefix (struct type *type, struct ui_file *stream,
 			     int show, int passed_a_ptr, int need_post_space)
 {
   char *name;
+
   if (type == 0)
     return;
 
@@ -292,7 +309,6 @@ c_type_print_varspec_prefix (struct type *type, struct ui_file *stream,
     case TYPE_CODE_STRING:
     case TYPE_CODE_BITSTRING:
     case TYPE_CODE_COMPLEX:
-    case TYPE_CODE_TEMPLATE:
     case TYPE_CODE_NAMESPACE:
     case TYPE_CODE_DECFLOAT:
       /* These types need no prefix.  They are listed here so that
@@ -353,10 +369,14 @@ c_type_print_modifier (struct type *type, struct ui_file *stream,
 
 /* Print out the arguments of TYPE, which should have TYPE_CODE_METHOD
    or TYPE_CODE_FUNC, to STREAM.  Artificial arguments, such as "this"
-   in non-static methods, are displayed.  */
+   in non-static methods, are displayed if SHOW_ARTIFICIAL is
+   non-zero. LANGUAGE is the language in which TYPE was defined.  This is
+   a necessary evil since this code is used by the C, C++, and Java
+   backends. */
 
-static void
-c_type_print_args (struct type *type, struct ui_file *stream)
+void
+c_type_print_args (struct type *type, struct ui_file *stream,
+		   int show_artificial, enum language language)
 {
   int i, len;
   struct field *args;
@@ -368,13 +388,19 @@ c_type_print_args (struct type *type, struct ui_file *stream)
 
   for (i = 0; i < TYPE_NFIELDS (type); i++)
     {
+      if (TYPE_FIELD_ARTIFICIAL (type, i) && !show_artificial)
+	continue;
+
       if (printed_any)
 	{
 	  fprintf_filtered (stream, ", ");
 	  wrap_here ("    ");
 	}
 
-      c_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0);
+      if (language == language_java)
+	java_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0);
+      else
+	c_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0);
       printed_any = 1;
     }
 
@@ -391,8 +417,8 @@ c_type_print_args (struct type *type, struct ui_file *stream)
 	}
     }
   else if (!printed_any
-      && (TYPE_PROTOTYPED (type)
-	  || current_language->la_language == language_cplus))
+	   && ((TYPE_PROTOTYPED (type) && language != language_java)
+	       || language == language_cplus))
     fprintf_filtered (stream, "void");
 
   fprintf_filtered (stream, ")");
@@ -591,7 +617,7 @@ c_type_print_varspec_suffix (struct type *type, struct ui_file *stream,
       if (passed_a_ptr)
 	fprintf_filtered (stream, ")");
       if (!demangled_args)
-	c_type_print_args (type, stream);
+	c_type_print_args (type, stream, 1, current_language->la_language);
       c_type_print_varspec_suffix (TYPE_TARGET_TYPE (type), stream, show,
 				   passed_a_ptr, 0);
       break;
@@ -616,7 +642,6 @@ c_type_print_varspec_suffix (struct type *type, struct ui_file *stream,
     case TYPE_CODE_STRING:
     case TYPE_CODE_BITSTRING:
     case TYPE_CODE_COMPLEX:
-    case TYPE_CODE_TEMPLATE:
     case TYPE_CODE_NAMESPACE:
     case TYPE_CODE_DECFLOAT:
       /* These types do not need a suffix.  They are listed so that
@@ -895,6 +920,7 @@ c_type_print_base (struct type *type, struct ui_file *stream, int show,
 	      struct fn_field *f = TYPE_FN_FIELDLIST1 (type, i);
 	      int len2 = TYPE_FN_FIELDLIST_LENGTH (type, i);
 	      int j;
+
 	      for (j = 0; j < len2; j++)
 		if (!TYPE_FN_FIELD_ARTIFICIAL (f, j))
 		  real_len++;
@@ -910,13 +936,14 @@ c_type_print_base (struct type *type, struct ui_file *stream, int show,
 	      char *method_name = TYPE_FN_FIELDLIST_NAME (type, i);
 	      char *name = type_name_no_tag (type);
 	      int is_constructor = name && strcmp (method_name, name) == 0;
+
 	      for (j = 0; j < len2; j++)
 		{
 		  char *physname = TYPE_FN_FIELD_PHYSNAME (f, j);
 		  int is_full_physname_constructor =
-		   is_constructor_name (physname) 
-		   || is_destructor_name (physname)
-		   || method_name[0] == '~';
+		    is_constructor_name (physname) 
+		    || is_destructor_name (physname)
+		    || method_name[0] == '~';
 
 		  /* Do not print out artificial methods.  */
 		  if (TYPE_FN_FIELD_ARTIFICIAL (f, j))
@@ -989,6 +1016,7 @@ c_type_print_base (struct type *type, struct ui_file *stream, int show,
 			{
 			  int staticp = TYPE_FN_FIELD_STATIC_P (f, j);
 			  struct type *mtype = TYPE_FN_FIELD_TYPE (f, j);
+
 			  cp_type_print_method_args (mtype,
 						     "",
 						     method_name,
@@ -1010,6 +1038,7 @@ c_type_print_base (struct type *type, struct ui_file *stream, int show,
 		      if (p != NULL)
 			{
 			  int length = p - demangled_no_class;
+
 			  demangled_no_static = (char *) xmalloc (length + 1);
 			  strncpy (demangled_no_static, demangled_no_class, length);
 			  *(demangled_no_static + length) = '\0';
@@ -1099,25 +1128,6 @@ c_type_print_base (struct type *type, struct ui_file *stream, int show,
       /* This should not occur */
       fprintf_filtered (stream, _("<range type>"));
       break;
-
-    case TYPE_CODE_TEMPLATE:
-      /* Called on "ptype t" where "t" is a template.
-         Prints the template header (with args), e.g.:
-         template <class T1, class T2> class "
-         and then merges with the struct/union/class code to
-         print the rest of the definition. */
-      c_type_print_modifier (type, stream, 0, 1);
-      fprintf_filtered (stream, "template <");
-      for (i = 0; i < TYPE_NTEMPLATE_ARGS (type); i++)
-	{
-	  struct template_arg templ_arg;
-	  templ_arg = TYPE_TEMPLATE_ARG (type, i);
-	  fprintf_filtered (stream, "class %s", templ_arg.name);
-	  if (i < TYPE_NTEMPLATE_ARGS (type) - 1)
-	    fprintf_filtered (stream, ", ");
-	}
-      fprintf_filtered (stream, "> class ");
-      goto struct_union;
 
     case TYPE_CODE_NAMESPACE:
       fputs_filtered ("namespace ", stream);

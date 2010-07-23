@@ -60,10 +60,6 @@ static void procfs_open (char *, int);
 
 static int procfs_can_run (void);
 
-static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
-			       struct mem_attrib *attrib,
-			       struct target_ops *);
-
 static void notice_signals (void);
 
 static void init_procfs_ops (void);
@@ -249,7 +245,6 @@ update_thread_private_data_name (struct thread_info *new_thread,
 				 const char *newname)
 {
   int newnamelen;
-  struct private_thread_info *pti;
 
   gdb_assert (newname != NULL);
   gdb_assert (new_thread != NULL);
@@ -577,14 +572,14 @@ procfs_meminfo (char *args, int from_tty)
 		       printme.text.addr);
       printf_filtered ("\t\tflags=%08x\n", printme.text.flags);
       printf_filtered ("\t\tdebug=%08x\n", printme.text.debug_vaddr);
-      printf_filtered ("\t\toffset=%016llx\n", printme.text.offset);
+      printf_filtered ("\t\toffset=%s\n", phex (printme.text.offset, 8));
       if (printme.data.size)
 	{
 	  printf_filtered ("\tdata=%08x bytes @ 0x%08x\n", printme.data.size,
 			   printme.data.addr);
 	  printf_filtered ("\t\tflags=%08x\n", printme.data.flags);
 	  printf_filtered ("\t\tdebug=%08x\n", printme.data.debug_vaddr);
-	  printf_filtered ("\t\toffset=%016llx\n", printme.data.offset);
+	  printf_filtered ("\t\toffset=%s\n", phex (printme.data.offset, 8));
 	}
       printf_filtered ("\tdev=0x%x\n", printme.dev);
       printf_filtered ("\tino=0x%x\n", (unsigned int) printme.ino);
@@ -836,39 +831,78 @@ procfs_fetch_registers (struct target_ops *ops,
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset (regcache, (char *) &reg.greg);
+    nto_supply_gregset (regcache, (const gdb_byte *)&reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset (regcache, (char *) &reg.fpreg);
+    nto_supply_fpregset (regcache, (const gdb_byte *)&reg.fpreg);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset (regcache, (char *) &reg.altreg);
+    nto_supply_altregset (regcache, (const gdb_byte *)&reg.altreg);
 }
 
-/* Copy LEN bytes to/from inferior's memory starting at MEMADDR
-   from/to debugger memory starting at MYADDR.  Copy from inferior
-   if DOWRITE is zero or to inferior if DOWRITE is nonzero.
-
-   Returns the length copied, which is either the LEN argument or
-   zero.  This xfer function does not do partial moves, since procfs_ops
-   doesn't allow memory operations to cross below us in the target stack
-   anyway.  */
-static int
-procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
-		    struct mem_attrib *attrib, struct target_ops *target)
+static LONGEST
+procfs_xfer_partial (struct target_ops *ops, enum target_object object,
+		     const char *annex, gdb_byte *readbuf,
+		     const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
 {
-  int nbytes = 0;
-
-  if (lseek (ctl_fd, (off_t) memaddr, SEEK_SET) == (off_t) memaddr)
+  if (object == TARGET_OBJECT_MEMORY)
     {
-      if (dowrite)
-	nbytes = write (ctl_fd, myaddr, len);
+      if (lseek (ctl_fd, (off_t) offset, SEEK_SET) == (off_t) offset)
+	{
+	  int nbytes = 0;
+
+	  if (readbuf != NULL)
+	    nbytes = read (ctl_fd, readbuf, len);
+	  else if (writebuf != NULL)
+	    nbytes = write (ctl_fd, writebuf, len);
+	  if (nbytes < 0)
+	    {
+	      nbytes = 0;
+
+	      nto_trace (0) ("read or write operation failed: addr=0x%s\n",
+			     paddress (target_gdbarch, offset));
+	    }
+	  return nbytes;
+	}
+      if (readbuf)
+	return (*ops->deprecated_xfer_memory) (offset, readbuf,
+					       len, 0, NULL, ops);
+      else if (writebuf)
+	return (*ops->deprecated_xfer_memory) (offset, (gdb_byte*) writebuf,
+					       len, 1, NULL, ops);
       else
-	nbytes = read (ctl_fd, myaddr, len);
-      if (nbytes < 0)
-	nbytes = 0;
+	return 0;
     }
-  return (nbytes);
+  else if (object == TARGET_OBJECT_AUXV && readbuf)
+    {
+      int err;
+      CORE_ADDR initial_stack;
+      debug_process_t procinfo;
+      /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+      const unsigned int sizeof_auxv_t = 8;
+      const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
+      int tempread;
+      gdb_byte *tempbuf = alloca (sizeof_tempbuf);
+
+      if (!tempbuf)
+	return -1;
+
+      err = devctl (ctl_fd, DCMD_PROC_INFO, &procinfo, sizeof procinfo, 0);
+      if (err != EOK)
+	return 0;
+
+      /* Similar as in the case of a core file, we read auxv from
+         initial_stack.  */
+      initial_stack = procinfo.initial_stack;
+
+      /* procfs is always 'self-hosted', no byte-order manipulation. */
+      tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
+						   sizeof_tempbuf);
+      tempread = min (tempread, len) - offset;
+      memcpy (readbuf, tempbuf + offset, tempread);
+      return tempread;
+    }
+  return -1;
 }
 
 /* Take a program previously attached to and detaches it.
@@ -942,14 +976,6 @@ procfs_insert_hw_breakpoint (struct gdbarch *gdbarch,
 			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, 0);
 }
 
-static int
-procfs_remove_hw_breakpoint (struct gdbarch *gdbarch,
-			     struct bp_target_info *bp_tgt)
-{
-  return procfs_breakpoint (bp_tgt->placed_address,
-			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, -1);
-}
-
 static void
 procfs_resume (struct target_ops *ops,
 	       ptid_t ptid, int step, enum target_signal signo)
@@ -1020,6 +1046,7 @@ procfs_mourn_inferior (struct target_ops *ops)
     {
       SignalKill (nto_node (), PIDGET (inferior_ptid), 0, SIGKILL, 0, 0);
       close (ctl_fd);
+      delete_inferior (ptid_get_pid (inferior_ptid));
     }
   inferior_ptid = null_ptid;
   init_thread_list ();
@@ -1280,7 +1307,6 @@ procfs_store_registers (struct target_ops *ops,
   reg;
   unsigned off;
   int len, regset, regsize, dev_set, err;
-  char *data;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -1295,7 +1321,7 @@ procfs_store_registers (struct target_ops *ops,
 	  if (dev_set == -1)
 	    continue;
 
-	  if (nto_regset_fill (regcache, regset, (char *) &reg) == -1)
+	  if (nto_regset_fill (regcache, regset, (gdb_byte *)&reg) == -1)
 	    continue;
 
 	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
@@ -1359,19 +1385,11 @@ procfs_notice_signals (ptid_t ptid)
   notice_signals ();
 }
 
-static struct tidinfo *
-procfs_thread_info (pid_t pid, short tid)
-{
-/* NYI */
-  return NULL;
-}
-
 char *
 procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
 {
   static char buf[1024];
   int pid, tid, n;
-  struct tidinfo *tip;
 
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
@@ -1404,7 +1422,7 @@ init_procfs_ops (void)
   procfs_ops.to_fetch_registers = procfs_fetch_registers;
   procfs_ops.to_store_registers = procfs_store_registers;
   procfs_ops.to_prepare_to_store = procfs_prepare_to_store;
-  procfs_ops.deprecated_xfer_memory = procfs_xfer_memory;
+  procfs_ops.to_xfer_partial = procfs_xfer_partial;
   procfs_ops.to_files_info = procfs_files_info;
   procfs_ops.to_insert_breakpoint = procfs_insert_breakpoint;
   procfs_ops.to_remove_breakpoint = procfs_remove_breakpoint;

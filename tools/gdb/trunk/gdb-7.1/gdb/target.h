@@ -643,7 +643,8 @@ struct target_ops
    /* Ask the target to find a trace frame of the given type TYPE,
       using NUM, ADDR1, and ADDR2 as search parameters.  Returns the
       number of the trace frame, and also the tracepoint number at
-      TPP.  */
+      TPP.  If no trace frame matches, return -1. May throw if the
+      operation fails.  */
     int (*to_trace_find) (enum trace_find_type type, int num,
 			  ULONGEST addr1, ULONGEST addr2, int *tpp);
 
@@ -652,7 +653,7 @@ struct target_ops
        location pointed to by VAL, else returning 0.  */
     int (*to_get_trace_state_variable_value) (int tsv, LONGEST *val);
 
-    int (*to_save_trace_data) (char *filename);
+    int (*to_save_trace_data) (const char *filename);
 
     int (*to_upload_tracepoints) (struct uploaded_tp **utpp);
 
@@ -664,6 +665,7 @@ struct target_ops
     /* Set the target's tracing behavior in response to unexpected
        disconnection - set VAL to 1 to keep tracing, 0 to stop.  */
     void (*to_set_disconnected_tracing) (int val);
+    void (*to_set_circular_trace_buffer) (int val);
 
     /* Return the processor core that thread PTID was last seen on.
        This information is updated only when:
@@ -672,6 +674,17 @@ struct target_ops
        If the core cannot be determined -- either for the specified thread, or
        right now, or in this debug session, or for this target -- return -1.  */
     int (*to_core_of_thread) (struct target_ops *, ptid_t ptid);
+
+    /* Verify that the memory in the [MEMADDR, MEMADDR+SIZE) range
+       matches the contents of [DATA,DATA+SIZE).  Returns 1 if there's
+       a match, 0 if there's a mismatch, and -1 if an error is
+       encountered while reading memory.  */
+    int (*to_verify_memory) (struct target_ops *, const gdb_byte *data,
+			     CORE_ADDR memaddr, ULONGEST size);
+
+    /* Return the address of the start of the Thread Information Block
+       a Windows OS specific feature.  */
+    int (*to_get_tib_address) (ptid_t ptid, CORE_ADDR *addr);
 
     int to_magic;
     /* Need sub-structure for target machine related rather than comm related?
@@ -1264,9 +1277,10 @@ extern char *normal_pid_to_str (ptid_t ptid);
     (*current_target.to_region_ok_for_hw_watchpoint) (addr, len)
 
 
-/* Set/clear a hardware watchpoint starting at ADDR, for LEN bytes.  TYPE is 0
-   for write, 1 for read, and 2 for read/write accesses.  Returns 0 for
-   success, non-zero for failure.  */
+/* Set/clear a hardware watchpoint starting at ADDR, for LEN bytes.
+   TYPE is 0 for write, 1 for read, and 2 for read/write accesses.
+   Returns 0 for success, 1 if the watchpoint type is not supported,
+   -1 for failure.  */
 
 #define	target_insert_watchpoint(addr, len, type)	\
      (*current_target.to_insert_watchpoint) (addr, len, type)
@@ -1358,6 +1372,12 @@ extern int target_search_memory (CORE_ADDR start_addr,
 #define target_set_disconnected_tracing(val) \
   (*current_target.to_set_disconnected_tracing) (val)
 
+#define	target_set_circular_trace_buffer(val)	\
+  (*current_target.to_set_circular_trace_buffer) (val)
+
+#define target_get_tib_address(ptid, addr) \
+  (*current_target.to_get_tib_address) ((ptid), (addr))
+
 /* Command logging facility.  */
 
 #define target_log_command(p)						\
@@ -1368,6 +1388,14 @@ extern int target_search_memory (CORE_ADDR start_addr,
 
 
 extern int target_core_of_thread (ptid_t ptid);
+
+/* Verify that the memory in the [MEMADDR, MEMADDR+SIZE) range matches
+   the contents of [DATA,DATA+SIZE).  Returns 1 if there's a match, 0
+   if there's a mismatch, and -1 if an error is encountered while
+   reading memory.  Throws an error if the functionality is found not
+   to be supported by the current target.  */
+int target_verify_memory (const gdb_byte *data,
+			  CORE_ADDR memaddr, ULONGEST size);
 
 /* Routines for maintenance of the target structures...
 
@@ -1386,7 +1414,7 @@ extern int target_core_of_thread (ptid_t ptid);
 
 extern void add_target (struct target_ops *);
 
-extern int push_target (struct target_ops *);
+extern void push_target (struct target_ops *);
 
 extern int unpush_target (struct target_ops *);
 
@@ -1457,7 +1485,7 @@ extern int default_memory_insert_breakpoint (struct gdbarch *, struct bp_target_
 
 extern void initialize_targets (void);
 
-extern NORETURN void noprocess (void) ATTR_NORETURN;
+extern void noprocess (void) ATTRIBUTE_NORETURN;
 
 extern void target_require_runnable (void);
 

@@ -63,7 +63,7 @@
 #endif
 
 #if USE_WIN32API
-#include <winsock.h>
+#include <winsock2.h>
 #endif
 
 #if __QNX__
@@ -80,6 +80,20 @@ typedef int socklen_t;
 # define INVALID_DESCRIPTOR -1
 #endif
 
+/* Extra value for readchar_callback.  */
+enum {
+  /* The callback is currently not scheduled.  */
+  NOT_SCHEDULED = -1
+};
+
+/* Status of the readchar callback.
+   Either NOT_SCHEDULED or the callback id.  */
+static int readchar_callback = NOT_SCHEDULED;
+
+static int readchar (void);
+static void reset_readchar (void);
+static void reschedule (void);
+
 /* A cache entry for a successfully looked-up symbol.  */
 struct sym_cache
 {
@@ -92,6 +106,7 @@ int remote_debug = 0;
 struct ui_file *gdb_stdlog;
 
 static int remote_desc = INVALID_DESCRIPTOR;
+static int listen_desc = INVALID_DESCRIPTOR;
 
 /* FIXME headerize? */
 extern int using_threads;
@@ -107,15 +122,88 @@ int transport_is_reliable = 0;
 # define write(fd, buf, len) send (fd, (char *) buf, len, 0)
 #endif
 
+int
+gdb_connected (void)
+{
+  return remote_desc != INVALID_DESCRIPTOR;
+}
+
+static void
+enable_async_notification (int fd)
+{
+#if defined(F_SETFL) && defined (FASYNC)
+  int save_fcntl_flags;
+
+  save_fcntl_flags = fcntl (fd, F_GETFL, 0);
+  fcntl (fd, F_SETFL, save_fcntl_flags | FASYNC);
+#if defined (F_SETOWN)
+  fcntl (fd, F_SETOWN, getpid ());
+#endif
+#endif
+}
+
+static int
+handle_accept_event (int err, gdb_client_data client_data)
+{
+  struct sockaddr_in sockaddr;
+  socklen_t tmp;
+
+  if (debug_threads)
+    fprintf (stderr, "handling possible accept event\n");
+
+  tmp = sizeof (sockaddr);
+  remote_desc = accept (listen_desc, (struct sockaddr *) &sockaddr, &tmp);
+  if (remote_desc == -1)
+    perror_with_name ("Accept failed");
+
+  /* Enable TCP keep alive process. */
+  tmp = 1;
+  setsockopt (remote_desc, SOL_SOCKET, SO_KEEPALIVE,
+	      (char *) &tmp, sizeof (tmp));
+
+  /* Tell TCP not to delay small packets.  This greatly speeds up
+     interactive response. */
+  tmp = 1;
+  setsockopt (remote_desc, IPPROTO_TCP, TCP_NODELAY,
+	      (char *) &tmp, sizeof (tmp));
+
+#ifndef USE_WIN32API
+  close (listen_desc);		/* No longer need this */
+
+  signal (SIGPIPE, SIG_IGN);	/* If we don't do this, then gdbserver simply
+				   exits when the remote side dies.  */
+#else
+  closesocket (listen_desc);	/* No longer need this */
+#endif
+
+  delete_file_handler (listen_desc);
+
+  /* Convert IP address to string.  */
+  fprintf (stderr, "Remote debugging from host %s\n",
+	   inet_ntoa (sockaddr.sin_addr));
+
+  enable_async_notification (remote_desc);
+
+  /* Register the event loop handler.  */
+  add_file_handler (remote_desc, handle_serial_event, NULL);
+
+  /* We have a new GDB connection now.  If we were disconnected
+     tracing, there's a window where the target could report a stop
+     event to the event loop, and since we have a connection now, we'd
+     try to send vStopped notifications to GDB.  But, don't do that
+     until GDB as selected all-stop/non-stop, and has queried the
+     threads' status ('?').  */
+  target_async (0);
+
+  return 0;
+}
+
 /* Open a connection to a remote debugger.
    NAME is the filename used for communication.  */
 
 void
 remote_open (char *name)
 {
-#if defined(F_SETFL) && defined (FASYNC)
-  int save_fcntl_flags;
-#endif
   char *port_str;
 
   port_str = strchr (name, ':');
@@ -183,9 +271,14 @@ remote_open (char *name)
 #endif
 
       fprintf (stderr, "Remote debugging using %s\n", name);
-#endif /* USE_WIN32API */
 
       transport_is_reliable = 0;
+
+      enable_async_notification (remote_desc);
+
+      /* Register the event loop handler.  */
+      add_file_handler (remote_desc, handle_serial_event, NULL);
+#endif /* USE_WIN32API */
     }
   else
     {
@@ -195,7 +288,6 @@ remote_open (char *name)
       int port;
       struct sockaddr_in sockaddr;
       socklen_t tmp;
-      int tmp_desc;
       char *port_end;
 
       port = strtoul (port_str + 1, &port_end, 10);
@@ -212,21 +304,21 @@ remote_open (char *name)
 	}
 #endif
 
-      tmp_desc = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
-      if (tmp_desc < 0)
+      listen_desc = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
+      if (listen_desc == -1)
 	perror_with_name ("Can't open socket");
 
       /* Allow rapid reuse of this port. */
       tmp = 1;
-      setsockopt (tmp_desc, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp,
+      setsockopt (listen_desc, SOL_SOCKET, SO_REUSEADDR, (char *) &tmp,
 		  sizeof (tmp));
 
       sockaddr.sin_family = PF_INET;
       sockaddr.sin_port = htons (port);
       sockaddr.sin_addr.s_addr = INADDR_ANY;
 
-      if (bind (tmp_desc, (struct sockaddr *) &sockaddr, sizeof (sockaddr))
-	  || listen (tmp_desc, 1))
+      if (bind (listen_desc, (struct sockaddr *) &sockaddr, sizeof (sockaddr))
+	  || listen (listen_desc, 1))
 	perror_with_name ("Can't bind address");
 
       /* If port is zero, a random port will be selected, and the
@@ -234,7 +326,7 @@ remote_open (char *name)
       if (port == 0)
 	{
 	  socklen_t len = sizeof (sockaddr);
-	  if (getsockname (tmp_desc, (struct sockaddr *) &sockaddr, &len) < 0
+	  if (getsockname (listen_desc, (struct sockaddr *) &sockaddr, &len) < 0
 	      || len < sizeof (sockaddr))
 	    perror_with_name ("Can't determine port");
 	  port = ntohs (sockaddr.sin_port);
@@ -243,49 +335,11 @@ remote_open (char *name)
       fprintf (stderr, "Listening on port %d\n", port);
       fflush (stderr);
 
-      tmp = sizeof (sockaddr);
-      remote_desc = accept (tmp_desc, (struct sockaddr *) &sockaddr, &tmp);
-      if (remote_desc == -1)
-	perror_with_name ("Accept failed");
-
-      /* Enable TCP keep alive process. */
-      tmp = 1;
-      setsockopt (remote_desc, SOL_SOCKET, SO_KEEPALIVE,
-		  (char *) &tmp, sizeof (tmp));
-
-      /* Tell TCP not to delay small packets.  This greatly speeds up
-	 interactive response. */
-      tmp = 1;
-      setsockopt (remote_desc, IPPROTO_TCP, TCP_NODELAY,
-		  (char *) &tmp, sizeof (tmp));
-
-
-#ifndef USE_WIN32API
-      close (tmp_desc);		/* No longer need this */
-
-      signal (SIGPIPE, SIG_IGN);	/* If we don't do this, then gdbserver simply
-					   exits when the remote side dies.  */
-#else
-      closesocket (tmp_desc);	/* No longer need this */
-#endif
-
-      /* Convert IP address to string.  */
-      fprintf (stderr, "Remote debugging from host %s\n",
-	       inet_ntoa (sockaddr.sin_addr));
+      /* Register the event loop handler.  */
+      add_file_handler (listen_desc, handle_accept_event, NULL);
 
       transport_is_reliable = 1;
     }
-
-#if defined(F_SETFL) && defined (FASYNC)
-  save_fcntl_flags = fcntl (remote_desc, F_GETFL, 0);
-  fcntl (remote_desc, F_SETFL, save_fcntl_flags | FASYNC);
-#if defined (F_SETOWN)
-  fcntl (remote_desc, F_SETOWN, getpid ());
-#endif
-#endif
-
-  /* Register the event loop handler.  */
-  add_file_handler (remote_desc, handle_serial_event, NULL);
 }
 
 void
@@ -298,6 +352,9 @@ remote_close (void)
 #else
   close (remote_desc);
 #endif
+  remote_desc = INVALID_DESCRIPTOR;
+
+  reset_readchar ();
 }
 
 /* Convert hex digit A to a number.  */
@@ -650,8 +707,8 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
   int i;
   unsigned char csum = 0;
   char *buf2;
-  char buf3[1];
   char *p;
+  int cc;
 
   buf2 = xmalloc (PBUFSIZ);
 
@@ -677,8 +734,6 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 
   do
     {
-      int cc;
-
       if (write (remote_desc, buf2, p - buf2) != p - buf2)
 	{
 	  perror ("putpkt(write)");
@@ -705,29 +760,26 @@ putpkt_binary_1 (char *buf, int cnt, int is_notif)
 	  fprintf (stderr, "putpkt (\"%s\"); [looking for ack]\n", buf2);
 	  fflush (stderr);
 	}
-      cc = read (remote_desc, buf3, 1);
-      if (remote_debug)
-	{
-	  fprintf (stderr, "[received '%c' (0x%x)]\n", buf3[0], buf3[0]);
-	  fflush (stderr);
-	}
 
-      if (cc <= 0)
-	{
-	  if (cc == 0)
-	    fprintf (stderr, "putpkt(read): Got EOF\n");
-	  else
-	    perror ("putpkt(read)");
+      cc = readchar ();
 
+      if (cc < 0)
+	{
 	  free (buf2);
 	  return -1;
 	}
 
+      if (remote_debug)
+	{
+	  fprintf (stderr, "[received '%c' (0x%x)]\n", cc, cc);
+	  fflush (stderr);
+	}
+
       /* Check for an input interrupt while we're here.  */
-      if (buf3[0] == '\003' && current_inferior != NULL)
+      if (cc == '\003' && current_inferior != NULL)
 	(*the_target->request_interrupt) ();
     }
-  while (buf3[0] != '+');
+  while (cc != '+');
 
   free (buf2);
   return 1;			/* Success! */
@@ -757,7 +809,8 @@ putpkt_notif (char *buf)
 
 /* Come here when we get an input interrupt from the remote side.  This
    interrupt should only be active while we are waiting for the child to do
-   something.  About the only thing that should come through is a ^C, which
+   something.  Thus this assumes readchar:bufcnt is 0.
+   About the only thing that should come through is a ^C, which
    will cause us to request child interruption.  */
 
 static void
@@ -887,33 +940,83 @@ initialize_async_io (void)
   unblock_async_io ();
 }
 
+/* Internal buffer used by readchar.
+   These are global to readchar because reschedule_remote needs to be
+   able to tell whether the buffer is empty.  */
+
+static unsigned char readchar_buf[BUFSIZ];
+static int readchar_bufcnt = 0;
+static unsigned char *readchar_bufp;
+
 /* Returns next char from remote GDB.  -1 if error.  */
 
 static int
 readchar (void)
 {
-  static unsigned char buf[BUFSIZ];
-  static int bufcnt = 0;
-  static unsigned char *bufp;
+  int ch;
 
-  if (bufcnt-- > 0)
-    return *bufp++;
-
-  bufcnt = read (remote_desc, buf, sizeof (buf));
-
-  if (bufcnt <= 0)
+  if (readchar_bufcnt == 0)
     {
-      if (bufcnt == 0)
-	fprintf (stderr, "readchar: Got EOF\n");
-      else
-	perror ("readchar");
+      readchar_bufcnt = read (remote_desc, readchar_buf, sizeof (readchar_buf));
 
-      return -1;
+      if (readchar_bufcnt <= 0)
+	{
+	  if (readchar_bufcnt == 0)
+	    fprintf (stderr, "readchar: Got EOF\n");
+	  else
+	    perror ("readchar");
+
+	  return -1;
+	}
+
+      readchar_bufp = readchar_buf;
     }
 
-  bufp = buf;
-  bufcnt--;
-  return *bufp++;
+  readchar_bufcnt--;
+  ch = *readchar_bufp++;
+  reschedule ();
+  return ch;
+}
+
+/* Reset the readchar state machine.  */
+
+static void
+reset_readchar (void)
+{
+  readchar_bufcnt = 0;
+  if (readchar_callback != NOT_SCHEDULED)
+    {
+      delete_callback_event (readchar_callback);
+      readchar_callback = NOT_SCHEDULED;
+    }
+}
+
+/* Process remaining data in readchar_buf.  */
+
+static int
+process_remaining (void *context)
+{
+  int res;
+
+  /* This is a one-shot event.  */
+  readchar_callback = NOT_SCHEDULED;
+
+  if (readchar_bufcnt > 0)
+    res = handle_serial_event (0, NULL);
+  else
+    res = 0;
+
+  return res;
+}
+
+/* If there is still data in the buffer, queue another event to process it,
+   we can't sleep in select yet.  */
+
+static void
+reschedule (void)
+{
+  if (readchar_bufcnt > 0 && readchar_callback == NOT_SCHEDULED)
+    readchar_callback = append_callback_event (process_remaining, NULL);
 }
 
 /* Read a packet from the remote machine, with error checking,
@@ -1372,11 +1475,12 @@ clear_symbol_cache (struct sym_cache **symcache_p)
   *symcache_p = NULL;
 }
 
-/* Ask GDB for the address of NAME, and return it in ADDRP if found.
+/* Get the address of NAME, and return it in ADDRP if found.  if
+   MAY_ASK_GDB is false, assume symbol cache misses are failures.
    Returns 1 if the symbol is found, 0 if it is not, -1 on error.  */
 
 int
-look_up_one_symbol (const char *name, CORE_ADDR *addrp)
+look_up_one_symbol (const char *name, CORE_ADDR *addrp, int may_ask_gdb)
 {
   char own_buf[266], *p, *q;
   int len;
@@ -1393,12 +1497,9 @@ look_up_one_symbol (const char *name, CORE_ADDR *addrp)
 	return 1;
       }
 
-  /* If we've passed the call to thread_db_look_up_symbols, then
-     anything not in the cache must not exist; we're not interested
-     in any libraries loaded after that point, only in symbols in
-     libpthread.so.  It might not be an appropriate time to look
-     up a symbol, e.g. while we're trying to fetch registers.  */
-  if (proc->all_symbols_looked_up)
+  /* It might not be an appropriate time to look up a symbol,
+     e.g. while we're trying to fetch registers.  */
+  if (!may_ask_gdb)
     return 0;
 
   /* Send the request.  */

@@ -1,7 +1,859 @@
+2010-05-26  Ozkan Sezer  <sezeroz@gmail.com>
+
+	* gdbreplay.c (remote_open): Check error return from socket() call by
+	its equality to -1 not by it being negative.
+	* remote-utils.c (remote_open): Likewise.
+
+2010-05-23  Pedro Alves  <pedro@codesourcery.com>
+
+	* config.h: Regenerate.
+
+2010-05-19  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	* linux-m68k-low.c (ps_get_thread_area): Don't define if kernel
+	doesn't provide PTRACE_GET_THREAD_AREA.
+
+2010-05-19  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	* linux-m68k-low.c: Include <asm/ptrace.h>
+	(ps_get_thread_area): Implement.
+
+2010-05-03  Doug Evans  <dje@google.com>
+
+	* event-loop.c (struct callback_event): New struct.
+	(callback_list): New global.
+	(append_callback_event, delete_callback_event): New functions.
+	(process_callback): New function.
+	(start_event_loop): Call it.
+	* remote-utils.c (NOT_SCHEDULED): Define.
+	(readchar_buf, readchar_bufcnt, readchar_bufp): New static globals,
+	moved out of readchar.
+	(readchar): Rewrite.  Call reschedule before returning.
+	(reset_readchar): New function.
+	(remote_close): Call it.
+	(process_remaining, reschedule): New functions.
+	* server.h (callback_handler_func): New typedef.
+	(append_callback_event, delete_callback_event): Declare.
+
+2010-05-03  Pedro Alves  <pedro@codesourcery.com>
+
+	* proc-service.c (ps_pglobal_lookup): Use
+	thread_db_look_up_one_symbol.
+	* remote-utils.c (look_up_one_symbol): Add new `may_ask_gdb'
+	parameter.  Use it instead of all_symbols_looked_up.
+	* server.h (struct process_info) <all_symbols_looked_up>: Delete
+	field.
+	(all_symbols_looked_up): Don't declare.
+	(look_up_one_symbol): Add new `may_ask_gdb' parameter.
+	* thread-db.c (struct thread_db) <all_symbols_looked_up>: New
+	field.
+	(thread_db_look_up_symbols): Adjust call to look_up_one_symbol.
+	Set all_symbols_looked_up here.
+	(thread_db_look_up_one_symbol): New.
+	(thread_db_get_tls_address): Adjust.
+	(thread_db_load_search, try_thread_db_load_1): Always allocate the
+	thread_db object on the heap, and tentatively set it in the
+	process structure.
+	(thread_db_init): Don't set all_symbols_looked_up here.
+	* linux-low.h (thread_db_look_up_one_symbol): Declare.
+
+2010-05-03  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_kill, linux_detach): Adjust.
+	(status_pending_p_callback): Remove redundant statement.  Check
+	for !TARGET_WAITIKIND_IGNORE, instead of
+	TARGET_WAITKIND_STOPPED.
+	(handle_tracepoints): Make sure LWP is locked.  Adjust.
+	(linux_wait_for_event_1): Adjust.
+	(linux_cancel_breakpoints): New.
+	(unsuspend_one_lwp): New.
+	(unsuspend_all_lwps): New.
+	(linux_wait_1): If finishing a step-over, unsuspend all lwps.
+	(send_sigstop_callback): Change return type to int, add new
+	`except' parameter and handle it.
+	(suspend_and_send_sigstop_callback): New.
+	(stop_all_lwps): Add new `suspend' and `expect' parameters, and
+	pass them down.  If SUSPEND, also increment the lwp's suspend
+	count.
+	(linux_resume_one_lwp): Add notice about resuming a suspended LWP.
+	(need_step_over_p): Don't consider suspended LWPs.
+	(start_step_over): Adjust.
+	(proceed_one_lwp): Change return type to int, add new `except'
+	parameter and handle it.
+	(unsuspend_and_proceed_one_lwp): New.
+	(proceed_all_lwps): Use find_inferior instead of
+	for_each_inferior.
+	(unstop_all_lwps): Add `unsuspend' parameter.  If UNSUSPEND, them
+	also decrement the suspend count of LWPs.  Pass `except' down,
+	instead of hacking its suspend count.
+	(linux_pause_all): Add `freeze' parameter.  Adjust.
+	(linux_unpause_all): New.
+	(linux_target_ops): Install linux_unpause_all.
+	* server.c (handle_status): Adjust.
+	* target.h (struct target_ops): New fields `unpause_all' and
+	`cancel_breakpoints'.  Add new parameter to `pause_all'.
+	(pause_all): Add new `freeze' parameter.
+	(unpause_all): New.
+	(cancel_breakpoints): New.
+	* tracepoint.c (clear_installed_tracepoints): Pause threads, and
+	cancel breakpoints.
+	(cmd_qtstart): Pause threads.
+	(stop_tracing): Pause threads, and cancel breakpoints.
+	* win32-low.c (win32_target_ops): Adjust.
+
+2010-05-03  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_wait_for_event_1): Move passing the signal to
+	the inferior right away from here...
+	(linux_wait_1): ... to here, and adjust to check the thread's
+	last_resume_kind instead of the lwp's step or stop_expected flags.
+
+2010-05-02  Pedro Alves  <pedro@codesourcery.com>
+
+	* README: Use consistent `GDB' and `GDBserver' spellings.
+
+2010-05-02  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_kill_one_lwp): Assume the lwp is stopped.
+	(linux_kill): Stop all lwps here.  Don't delete the main lwp here.
+	(linux_detach_one_lwp): Assume the lwp is stopped.
+	(any_thread_of): Delete.
+	(linux_detach): Stop all lwps here.  Don't blindly delete all
+	breakpoints.
+	(delete_lwp_callback): New.
+	(linux_mourn): Delete all lwps of the process that is gone.
+	(linux_wait_1): Don't delete the last lwp of the process here.
+	* mem-break.h (mark_breakpoints_out): Declare.
+	* mem-break.c (mark_breakpoints_out): New.
+	(free_all_breakpoints): Use it.
+	* server.c (handle_target_event): If the process is gone, mark
+	breakpoints out.
+	* thread-db.c (struct thread_db) <create_bp>: New field.
+	(thread_db_enable_reporting): Fix prototype.  Store a thread event
+	breakpoint reference in the thread_db struct.
+	(thread_db_load_search): Clear the thread_db object.
+	(try_thread_db_load_1): Ditto.
+	(switch_to_process): New.
+	(disable_thread_event_reporting): Use it.
+	(remove_thread_event_breakpoints): New.
+	(thread_db_detach, thread_db_mourn): Use it.
+
+2010-05-01  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_enable_event_reporting): New.
+	(linux_wait_for_event_1, handle_extended_wait): Use it.
+
+2010-04-30  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_kill_one_lwp, linux_kill)
+	(linux_detach_one_lwp): Adjust to send_sigstop interface change.
+	(send_sigstop): Take an lwp_info as parameter instead.  Queue a
+	SIGSTOP even if the LWP is stopped.
+	(send_sigstop_callback): New.
+	(stop_all_lwps): Use send_sigstop_callback instead.
+	(linux_resume_one_thread): Adjust.
+	(proceed_one_lwp): Still proceed an LWP that the client has
+	requested to stop, if we haven't reported it as stopped yet.  Make
+	sure that LWPs the client want stopped, have a pending SIGSTOP.
+
+2010-04-26  Doug Evans  <dje@google.com>
+
+	* server.c (handle_general_set): Make static.
+
+	* remote-utils.c (putpkt_binary_1): Call readchar instead of read.
+	Print received char after testing for error/eof instead of before.
+	(input_interrupt): Tweak comment.
+
+2010-04-23  Doug Evans  <dje@google.com>
+
+	* server.c (start_inferior): Print inferior argv if --debug.
+
+2010-04-21  Aleksandar Ristovski  <aristovski@qnx.com>
+
+	* Makefile.in (nto_low_h nto-low.o nto-x86-low.o): New dependency lists.
+	* nto-x86-low.c: Include server.h
+
+2010-04-20  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* win32-i386-low.c: Use __x86_64__ macro instead of __x86_64 to
+	be consistent with other sources of this directory.
+	(init_registers_amd64): Correct name of source file of this function
+	in the comment.
+
+2010-04-19  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* configure.srv (x86_64-*-mingw*): New configuration for Windows
+	64-bit executables.
+
+2010-04-19  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* win32-i386-low.c: Add 64-bit support.
+	(CONTEXT_EXTENDED_REGISTERS): Set macro to zero if not exisiting.
+	(init_registers_amd64): Declare.
+	(mappings): Add 64-bit version of array.
+	(init_windows_x86): New function.
+	(the_low_target): Change init_arch field to init_windows_x86.
+
+2010-04-19  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* win32-low.c: Adapt to support also 64-bit architecture.
+	(child_xfer_memory): Use uintptr_t type for local variable `addr'.
+	(get_image_name): Use SIZE_T type for local variable `done'.
+	(psapi_get_dll_name): Use LPVOID type for parameter `BaseAddress'.
+	(toolhelp_get_dll_name): Idem.
+	(handle_load_dll): Use CORE_ADDR type for local variable `load_addr'.
+	Use uintptr_t typecast to avoid warning.
+	(handle_unload_dll): Use uintptr_t typecast to avoid warning.
+	(handle_exception): Use phex_nz to avoid warning.
+	(win32_wait): Remove unused local variable `process'.
+
+2010-04-19  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* configure.srv (srv_amd64_regobj): Replace `x86-64-avx.o' by
+	`amd64-avx.o'.
+
+2010-04-17  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* configure.ac: Use `ws2_32' library for srv_mingw.
+	* configure: Regenerate.
+	* gdbreplay.c: Include winsock2.h instead of winsock.h.
+	* remote-utils.c: Likewise.
+
+2010-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* linux-x86-low.c (xmltarget_amd64_linux_no_xml): Define only
+	if __x86_64__ is defined.
+
+2010-04-16  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* configure: Regenerate.
+
+2010-04-16  Pierre Muller  <muller@ics.u-strasbg.fr>
+
+	* server.c (handle_query): Handle 'qGetTIBAddr' query.
+	* target.h (target_ops): New get_tib_address field.
+	* win32-low.h (win32_thread_info): Add thread_local_base field.
+	* win32-low.c (child_add_thread): Add tlb argument.
+	Set thread_local_base field to TLB.
+	(get_child_debug_event): Adapt to child_add_thread change.
+	(win32_get_tib_address): New function.
+	(win32_target_ops): Set get_tib_address field to
+	win32_get_tib_address.
+	* linux-low.c (linux_target_ops): Set get_tib_address field to NULL.
+
+2010-04-12  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_mourn): Also remove the process.
+	* server.c (handle_target_event): Don't remove the process here.
+	* nto-low.c (nto_mourn): New.
+	(nto_target_ops): Install it.
+	* spu-low.c (spu_mourn): New.
+	(spu_target_ops): Install it.
+	* win32-low.c (win32_mourn): New.
+	(win32_target_ops): Install it.
+
+2010-04-12  Pedro Alves  <pedro@codesourcery.com>
+
+	* server.h (buffer_xml_printf): Remove redundant `;'.
+
+2010-04-12  Pedro Alves  <pedro@codesourcery.com>
+
+	* regcache.c (set_register_cache): Invalidate regcaches before
+	changing the register cache layout.
+	(regcache_invalidate_one): Allow a NULL regcache.
+	* linux-x86-low.c (x86_linux_update_xmltarget): Invalidate
+	regcaches before changing the register cache layout or the target
+	regsets.
+
+2010-04-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* linux-x86-low.c (x86_linux_update_xmltarget): Avoid unused
+	variable warning on Linux/x86-64.
+
+2010-04-11  Pedro Alves  <pedro@codesourcery.com>
+
+	GDBserver disconnected tracing support.
+
+	* linux-low.c (linux_remove_process): Delete.
+	(add_lwp): Don't set last_resume_kind here.
+	(linux_kill): Use `mourn'.
+	(linux_detach): Use `thread_db_detach', and `mourn'.
+	(linux_mourn): New.
+	(linux_attach_lwp_1): Adjust comment.
+	(linux_attach): last_resume_kind moved the thread_info; adjust.
+	(status_pending_p_callback): Adjust.
+	(linux_wait_for_event_1): Adjust.
+	(count_events_callback, select_singlestep_lwp_callback)
+	(select_event_lwp_callback, cancel_breakpoints_callback)
+	(db_wants_lwp_stopped, linux_wait_1, need_step_over_p)
+	(proceed_one_lwp): Adjust.
+	(linux_async): Add debug output.
+	(linux_thread_stopped): New.
+	(linux_pause_all): New.
+	(linux_target_ops): Install linux_mourn, linux_thread_stopped and
+	linux_pause_all.
+	* linux-low.h (struct lwp_info): Delete last_resume_kind field.
+	(thread_db_free): Delete declaration.
+	(thread_db_detach, thread_db_mourn): Declare.
+	* thread-db.c (thread_db_init): Use thread_db_mourn.
+	(thread_db_free): Delete, split in two.
+	(disable_thread_event_reporting): New.
+	(thread_db_detach): New.
+	(thread_db_mourn): New.
+
+	* server.h (struct thread_info) <last_resume_kind>: New field.
+	<attached>: Add comment.
+	<gdb_detached>: New field.
+	(handler_func): Change return type to int.
+	(handle_serial_event, handle_target_event): Ditto.
+	(gdb_connected): Declare.
+	(tracing): Delete.
+	(disconnected_tracing): Declare.
+	(stop_tracing): Declare.
+
+	* server.c (handle_query) <qSupported>: Report support for
+	disconnected tracing.
+	(queue_stop_reply_callback): Account for running threads.
+	(gdb_wants_thread_stopped): New.
+	(gdb_wants_all_threads_stopped): New.
+	(gdb_reattached_process): New.
+	(handle_status): Clear the `gdb_detached' flag of all processes.
+	In all-stop, stop all threads.
+	(main): Be sure to leave tfind mode.  Handle disconnected tracing.
+	(process_serial_event): If the remote connection breaks, or if an
+	exit was forced with "monitor exit", force an event loop exit.
+	Handle disconnected tracing on detach.
+	(handle_serial_event): Adjust.
+	(handle_target_event): If GDB isn't connected, forward events back
+	to the inferior, unless the last process exited, in which case,
+	exit gdbserver.  Adjust interface.
+
+	* remote-utils.c (remote_open): Don't block in accept.  Instead
+	register an event loop source on the listen socket file
+	descriptor.  Refactor bits into ...
+	(listen_desc): ... this new global.
+	(gdb_connected): ... this new function.
+	(enable_async_notification): ... this new function.
+	(handle_accept_event): ... this new function.
+	(remote_close): Clear remote_desc.
+
+	* inferiors.c (add_thread): Set the new thread's last_resume_kind.
+
+	* target.h (struct target_ops) <mourn, thread_stopped, pause_all>:
+	New fields.
+	(mourn_inferior): Define.
+	(target_process_qsupported): Avoid the dangling else problem.
+	(thread_stopped): Define.
+	(pause_all): Define.
+	(target_waitstatus_to_string): Declare.
+	* target.c (target_waitstatus_to_string): New.
+
+	* tracepoint.c (tracing): Make extern.
+	(disconnected_tracing): New.
+	(stop_tracing): Make extern.  Handle tracing stops due to GDB
+	disconnecting.
+	(cmd_qtdisconnected): New.
+	(cmd_qtstatus): Report disconnected tracing status in trace reply.
+	(handle_tracepoint_general_set): Handle QTDisconnected.
+
+	* event-loop.c (event_handler_func): Change return type to int.
+	(process_event): Bail out if the event handler wants the event
+	loop to stop.
+	(handle_file_event): Ditto.
+	(start_event_loop): Bail out if the event handler wants the event
+	loop to stop.
+
+	* nto-low.c (nto_target_ops): Adjust.
+	* spu-low.c (spu_wait): Don't remove the process here.
+	(spu_target_ops): Adjust.
+	* win32-low.c (win32_wait): Don't remove the process here.
+	(win32_target_ops): Adjust.
+
+2010-04-11  Pedro Alves  <pedro@codesourcery.com>
+
+	* regcache.c (realloc_register_cache): Invalidate inferior's
+	regcache before recreating it.
+
+2010-04-09  Pedro Alves  <pedro@codesourcery.com>
+
+	* tracepoint.c (cmd_qtstatus): Report trace buffer circularity.
+
+2010-04-09  Stan Shebs  <stan@codesourcery.com>
+	    Pedro Alves  <pedro@codesourcery.com>
+
+	* server.h (LONGEST): New.
+	(struct thread_info) <while_stepping>: New field.
+	(unpack_varlen_hex, xrealloc, pulongest, plongest, phex_nz):
+	Declare.
+	(initialize_tracepoint, handle_tracepoint_general_set)
+	(handle_tracepoint_query, tracepoint_finished_step)
+	(tracepoint_was_hit, release_while_stepping_state_list):
+	(current_traceframe): Declare.
+	* server.c (handle_general_set): Handle tracepoint packets.
+	(read_memory): New.
+	(write_memory): New.
+	(handle_search_memory_1): Use read_memory.
+	(handle_query): Report support for conditional tracepoints, trace
+	state variables, and tracepoint sources.  Handle tracepoint
+	queries.
+	(main): Initialize the tracepoints module.
+	(process_serial_event): Handle traceframe reads/writes.
+
+	* linux-low.c (handle_tracepoints): New.
+	(linux_wait_1): Call it.
+	(linux_resume_one_lwp): Handle while-stepping.
+	(linux_supports_tracepoints, linux_read_pc, linux_write_pc): New.
+	(linux_target_ops): Install them.
+	* linux-low.h (struct linux_target_ops) <supports_tracepoints>:
+	New field.
+	* linux-x86-low.c (x86_supports_tracepoints): New.
+	(the_low_target). Install it.
+
+	* mem-break.h (delete_breakpoint): Declare.
+	* mem-break.c (delete_breakpoint): Make external.
+
+	* target.h (struct target_ops): Add `supports_tracepoints',
+	`read_pc', and `write_pc' fields.
+	(target_supports_tracepoints): Define.
+	* utils.c (xrealloc, decimal2str, pulongest, plongest, thirty_two)
+	(phex_nz): New.
+
+	* regcache.h (struct regcache) <registers_owned>: New field.
+	(init_register_cache, regcache_cpy): Declare.
+	(regcache_read_pc, regcache_write_pc): Declare.
+	(register_cache_size): Declare.
+	(supply_regblock): Declare.
+	* regcache.c (init_register_cache): New.
+	(new_register_cache): Use it.
+	(regcache_cpy): New.
+	(register_cache_size): New.
+	(supply_regblock): New.
+	(regcache_read_pc, regcache_write_pc): New.
+	
+	* tracepoint.c: New.
+
+	* Makefile.in (OBS): Add tracepoint.o.
+	(tracepoint.o): New rule.
+
+2010-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (clean): Also remove i386-mmx.c i386-mmx-linux.c.
+	(i386-mmx.o): New.
+	(i386-mmx.c): Likewise.
+	(i386-mmx-linux.o): Likewise.
+	(i386-mmx-linux.c): Likewise.
+
+	* configure.srv (srv_i386_regobj): Add i386-mmx.o.
+	(srv_i386_linux_regobj): Add i386-mmx-linux.o.
+	(srv_i386_xmlfiles): Add i386/i386-mmx.xml.
+	(srv_i386_linux_xmlfiles): Add i386/i386-mmx-linux.xml.
+
+	* linux-x86-low.c (init_registers_i386_mmx_linux): New.
+	(x86_linux_update_xmltarget): Call init_registers_i386_mmx_linux
+	and return if ptrace PTRACE_GETFPXREGS failed in 32bit.
+
+2010-04-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (clean): Updated.
+	(i386-avx.o): New.
+	(i386-avx.c): Likewise.
+	(i386-avx-linux.o): Likewise.
+	(i386-avx-linux.c): Likewise.
+	(amd64-avx.o): Likewise.
+	(amd64-avx.c): Likewise.
+	(amd64-avx-linux.o): Likewise.
+	(amd64-avx-linux.c): Likewise.
+
+	* configure.srv (srv_i386_regobj): Add i386-avx.o.
+	(srv_i386_linux_regobj): Add i386-avx-linux.o.
+	(srv_amd64_regobj): Add amd64-avx.o.
+	(srv_amd64_linux_regobj): Add amd64-avx-linux.o.
+	(srv_i386_32bit_xmlfiles): Add i386/32bit-avx.xml.
+	(srv_i386_64bit_xmlfiles): Add i386/64bit-avx.xml.
+	(srv_i386_xmlfiles): Add i386/i386-avx.xml.
+	(srv_amd64_xmlfiles): Add i386/amd64-avx.xml.
+	(srv_i386_linux_xmlfiles): Add i386/i386-avx-linux.xml.
+	(srv_amd64_linux_xmlfiles): Add i386/amd64-avx-linux.xml.
+
+	* i387-fp.c: Include "i386-xstate.h".
+	(i387_xsave): New.
+	(i387_cache_to_xsave): Likewise.
+	(i387_xsave_to_cache): Likewise.
+	(x86_xcr0): Likewise.
+
+	* i387-fp.h (i387_cache_to_xsave): Likewise.
+	(i387_xsave_to_cache): Likewise.
+	(x86_xcr0): Likewise.
+
+	* linux-arm-low.c (target_regsets): Initialize nt_type to 0.
+	* linux-crisv32-low.c (target_regsets): Likewise.
+	* linux-m68k-low.c (target_regsets): Likewise.
+	* linux-mips-low.c (target_regsets): Likewise.
+	* linux-ppc-low.c (target_regsets): Likewise.
+	* linux-s390-low.c (target_regsets): Likewise.
+	* linux-sh-low.c (target_regsets): Likewise.
+	* linux-sparc-low.c (target_regsets): Likewise.
+	* linux-xtensa-low.c (target_regsets): Likewise.
+
+	* linux-low.c: Include <sys/uio.h>.
+	(regsets_fetch_inferior_registers): Support nt_type.
+	(regsets_store_inferior_registers): Likewise.
+	(linux_process_qsupported): New.
+	(linux_target_ops): Add linux_process_qsupported.
+
+	* linux-low.h (regset_info): Add nt_type.
+	(linux_target_ops): Add process_qsupported.
+
+	* linux-x86-low.c: Include "i386-xstate.h", "elf/common.h"
+	and <sys/uio.h>.
+	(init_registers_i386_avx_linux): New.
+	(init_registers_amd64_avx_linux): Likewise.
+	(xmltarget_i386_linux_no_xml): Likewise.
+	(xmltarget_amd64_linux_no_xml): Likewise.
+	(PTRACE_GETREGSET): Likewise.
+	(PTRACE_SETREGSET): Likewise.
+	(x86_fill_xstateregset): Likewise.
+	(x86_store_xstateregset): Likewise.
+	(use_xml): Likewise.
+	(x86_linux_update_xmltarget): Likewise.
+	(x86_linux_process_qsupported): Likewise.
+	(target_regsets): Add NT_X86_XSTATE entry and Initialize nt_type.
+	(x86_arch_setup): Don't call init_registers_amd64_linux nor
+	init_registers_i386_linux here.  Call
+	x86_linux_update_xmltarget.
+	(the_low_target): Add x86_linux_process_qsupported.
+
+	* server.c (handle_query): Call target_process_qsupported.
+
+	* target.h (target_ops): Add process_qsupported.
+	(target_process_qsupported): New.
+
+2010-04-03  Pedro Alves  <pedro@codesourcery.com>
+
+	* inferiors.c (add_thread): Set last_status kind to
+	TARGET_WAITKIND_IGNORE.
+	* linux-low.c (cancel_breakpoint): Remove unnecessary regcache
+	fetch.  Use ptid_of.  Avoid unnecessary get_lwp_thread calls.
+	(linux_wait_1): Move `thread' local definition to block that uses
+	it.  Don't NULL initialize `event_child'.
+	(linux_resume_one_thread): Avoid unnecessary get_lwp_thread calls.
+	Alway set the thread's last_status to TARGET_WAITKIND_IGNORE.
+	* linux-x86-low.c (x86_breakpoint_at): Read raw memory.
+
+2010-04-01  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (get_stop_pc): Don't adjust the PC if stopped with
+	an extended waitstatus, or by a watchpoint.
+	(cancel_breakpoints_callback): Don't cancel a breakpoint if the
+	thread was stepping or has been stopped by a watchpoint.
+
+2010-04-01  Pedro Alves  <pedro@codesourcery.com>
+
+	* mem-break.c (struct raw_breakpoint): New field shlib_disabled.
+	(set_gdb_breakpoint_at): If GDB is inserting a breakpoint on top
+	of another, then delete the previous, and validate all
+	breakpoints.
+	(validate_inserted_breakpoint): New.
+	(delete_disabled_breakpoints): New.
+	(validate_breakpoints): New.
+	(check_mem_read): Validate breakpoints before trusting their
+	shadow.  Delete disabled breakpoints.
+	(check_mem_write): Validate breakpoints before trusting they
+	should be inserted.  Delete disabled breakpoints.
+	* mem-break.h (validate_breakpoints):
+	* server.c (handle_query): Validate breakpoints when we see a
+	qSymbol query.
+
+2010-04-01  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_wait_1): Avoid setting need_step_over is
+	there's a GDB breakpoint at stop_pc.  Always report a trap to GDB
+	if we could tell there's a GDB breakpoint at stop_pc.
+	(need_step_over_p): Don't do a step over if we find a GDB
+	breakpoint at the resume PC.
+
+	* mem-break.c (struct raw_breakpoint): New.
+	(enum bkpt_type): New type `gdb_breakpoint'.
+	(struct breakpoint): Delete the `PC', `old_data' and `inserted'
+	fields.  New field `raw'.
+	(find_raw_breakpoint_at): New.
+	(set_raw_breakpoint_at): Handle refcounting.  Create a raw
+	breakpoint instead.
+	(set_breakpoint_at): Adjust.
+	(delete_raw_breakpoint): New.
+	(release_breakpoint): New.
+	(delete_breakpoint): Rename to...
+	(delete_breakpoint_1): ... this.  Add proc parameter.  Use
+	release_breakpoint.  Return ENOENT.
+	(delete_breakpoint): Reimplement.
+	(find_breakpoint_at): Delete.
+	(find_gdb_breakpoint_at): New.
+	(delete_breakpoint_at): Delete.
+	(set_gdb_breakpoint_at): New.
+	(delete_gdb_breakpoint_at): New.
+	(gdb_breakpoint_here): New.
+	(set_reinsert_breakpoint): Use release_breakpoint.
+	(uninsert_breakpoint): Rename to ...
+	(uninsert_raw_breakpoint): ... this.
+	(uninsert_breakpoints_at): Adjust to handle raw breakpoints.
+	(reinsert_raw_breakpoint): Change parameter type to
+	raw_breakpoint.
+	(reinsert_breakpoints_at): Adjust to handle raw breakpoints
+	instead.
+	(check_breakpoints): Adjust.  Use release_breakpoint.
+	(breakpoint_here): Rewrite using find_raw_breakpoint_at.
+	(breakpoint_inserted_here): Ditto.
+	(check_mem_read): Adjust to iterate over raw breakpoints instead.
+	Don't trust the breakpoint's shadow if it is not inserted.
+	(check_mem_write): Adjust to iterate over raw breakpoints instead.
+	(delete_all_breakpoints): Adjust.
+	(free_all_breakpoints): Mark all breakpoints as uninserted, and
+	use delete_breakpoint_1.
+
+	* mem-break.h (breakpoints_supported): Delete declaration.
+	(set_gdb_breakpoint_at): Declare.
+	(gdb_breakpoint_here): Declare.
+	(delete_breakpoint_at): Delete.
+	(delete_gdb_breakpoint_at): Declare.
+
+	* server.h (struct raw_breakpoint): Forward declare.
+	(struct process_info): New field `raw_breakpoints'.
+
+	* linux-x86-low.c (x86_insert_point, x86_remote_point): Handle Z0
+	breakpoints.
+
+2010-03-24  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (status_pending_p_callback): Fix comment.
+	(linux_wait_for_event_1): Move most of the internal breakpoint
+	handling from here...
+	(linux_wait_1): ... to here.
+	(count_events_callback): New.
+	(select_singlestep_lwp_callback): New.
+	(select_event_lwp_callback): New.
+	(cancel_breakpoints_callback): New.
+	(select_event_lwp): New.
+	(linux_wait_1): Simplify internal breakpoint handling.  Give equal
+	priority to all LWPs that have had events that should be reported
+	to the client.  Cancel breakpoints when about to reporting the
+	event to the client, not while stopping lwps.  No longer cancel
+	finished single-steps here.
+	(cancel_finished_single_step): Delete.
+	(cancel_finished_single_steps): Delete.
+
+2010-03-24  Pedro Alves  <pedro@codesourcery.com>
+
+	* mem-break.c (enum bkpt_type): New.
+	(struct breakpoint): New field `type'.
+	(set_breakpoint_at): Change return type to struct breakpoint
+	pointer.  Set type to `other_breakpoint' by default.
+	(delete_breakpoint): Rewrite, supporting more than one breakpoint
+	in the breakpoint list.
+	(delete_reinsert_breakpoints): Only delete reinsert breakpoints.
+	(reinsert_breakpoint): Rename to ...
+	(reinsert_raw_breakpoint): ... this.
+	(reinsert_breakpoints_at): Adjust.
+	* mem-break.h (struct breakpoint): Declare.
+	(set_breakpoint_at): Change return type to struct breakpoint
+	pointer.
+
+2010-03-24  Pedro Alves  <pedro@codesourcery.com>
+
+	* server.c (handle_query): Assign, not compare.
+
+2010-03-24  Pedro Alves  <pedro@codesourcery.com>
+
+	Teach linux gdbserver to step-over-breakpoints.
+
+	* linux-low.c (can_hardware_single_step): New.
+	(supports_breakpoints): New.
+	(handle_extended_wait): If stopping threads, read the stop pc of
+	the new cloned LWP.
+	(get_pc): New.
+	(get_stop_pc): Add `lwp' parameter.  Handle it.  Bail out if the
+	low target doesn't support retrieving the PC.
+	(add_lwp): Set last_resume_kind to resume_continue.
+	(linux_attach_lwp_1): Adjust comments.  Always set stop_expected.
+	(linux_attach): Don't clear stop_expected.  Set the lwp's
+	last_resume_kind to resume_stop.
+	(linux_detach_one_lwp): Don't check for removed breakpoints.
+	(check_removed_breakpoint): Delete.
+	(status_pending_p): Rename to ...
+	(status_pending_p_callback): ... this.  Don't check for removed
+	breakpoints.  Don't consider threads that are stopped from GDB's
+	perspective.
+	(linux_wait_for_lwp): Always read the stop_pc here.
+	(cancel_breakpoint): New.
+	(step_over_bkpt): New global.
+	(linux_wait_for_event_1): Implement stepping over breakpoints.
+	(gdb_wants_lwp_stopped): New.
+	(gdb_wants_all_stopped): New.
+	(linux_wait_1): Tag threads as gdb-wants-stopped.  Cancel finished
+	single-step traps here.  Store the thread's last reported target
+	wait status.
+	(send_sigstop): Don't clear stop_expected.  Always set it,
+	instead.
+	(mark_lwp_dead): Remove reference to pending_is_breakpoint.
+	(cancel_finished_single_step): New.
+	(cancel_finished_single_steps): New.
+	(wait_for_sigstop): Don't cancel finished single-step traps here.
+	(linux_resume_one_lwp): Don't check for removed breakpoints.
+	Don't set `step' on non-hardware step archs.
+	(linux_set_resume_request): Ignore resume_stop requests if already
+	stopping or stopped.  Set the lwp's last_resume_kind.
+	(resume_status_pending_p): Don't check for removed breakpoints.
+	(need_step_over_p): New.
+	(start_step_over): New.
+	(finish_step_over): New.
+	(linux_resume_one_thread): Always queue a sigstop for resume_stop
+	requests.  Clear the thread's last reported target waitstatus.
+	Don't use the `suspended' flag.  Don't consider pending breakpoints.
+	(linux_resume): Start a step-over if necessary.
+	(proceed_one_lwp): New.
+	(proceed_all_lwps): New.
+	(unstop_all_lwps): New.
+	* linux-low.h (struct lwp_info): Rewrite comment for the
+	`suspended' flag.  Add the `stop_pc' field.  Delete the
+	`pending_stop_pc' field.  Tweak the `stepping' flag's comment.
+	Add `'last_resume_kind' and `need_step_over' fields.
+	* inferiors.c (struct thread_info): Delete, moved elsewhere.
+	* mem-break.c (struct breakpoint): Delete `reinserting' flag.
+	Delete `breakpoint_to_reinsert' field.  New flag `inserted'.
+	(set_raw_breakpoint_at): New.
+	(set_breakpoint_at): Rewrite to use it.
+	(reinsert_breakpoint_handler): Delete.
+	(set_reinsert_breakpoint): New.
+	(reinsert_breakpoint_by_bp): Delete.
+	(delete_reinsert_breakpoints): New.
+	(uninsert_breakpoint): Rewrite.
+	(uninsert_breakpoints_at): New.
+	(reinsert_breakpoint): Rewrite.
+	(reinsert_breakpoints_at): New.
+	(check_breakpoints): Rewrite.
+	(breakpoint_here): New.
+	(breakpoint_inserted_here): New.
+	(check_mem_read): Adjust.
+	* mem-break.h (breakpoints_supported, breakpoint_here)
+	(breakpoint_inserted_here, set_reinsert_breakpoint): Declare.
+	(reinsert_breakpoint_by_bp): Delete declaration.
+	(delete_reinsert_breakpoints): Declare.
+	(reinsert_breakpoint): Delete declaration.
+	(reinsert_breakpoints_at): Declare.
+	(uninsert_breakpoint): Delete declaration.
+	(uninsert_breakpoints_at): Declare.
+	(check_breakpoints): Adjust prototype.
+	* server.h: Adjust include order.
+	(struct thread_info): Declare here.  Add a `last_status' field.
+
+2010-03-23  Michael Snyder  <msnyder@vmware.com>
+
+	* server.c (crc32): New function.
+	(handle_query): Add handling for 'qCRC:' request.
+
+2010-03-23  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-x86-low.c (x86_linux_prepare_to_resume): Clear DR6 if the
+	lwp had been stopped by a watchpoint.
+
+2010-03-16  Pedro Alves  <pedro@codesourcery.com>
+
+	* server.h (internal_error): Declare.
+	(gdb_assert, ASSERT_FUNCTION, gdb_assert_fail): Define.
+	* utils.c (internal_error): New function.
+
+2010-03-15  Andreas Schwab  <schwab@redhat.com>
+
+	* configure.srv: Fix typo setting srv_regobj.
+
+2010-03-15  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (fetch_register): Avoid passing a non string literal
+	format to `error'.
+	(usr_store_inferior_registers): Ditto.
+
+2010-03-14  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.c (linux_write_memory): Bail out early if peeking
+	memory failed.
+
+2010-03-14  Pedro Alves  <pedro@codesourcery.com>
+
+	* linux-low.h (struct lwp_info): New fields
+	`stopped_by_watchpoint' and `stopped_data_address'.
+	* linux-low.c (linux_wait_for_lwp): Check for watchpoint triggers
+	here, and cache them in the lwp object.
+	(wait_for_sigstop): Check stopped_by_watchpoint lwp field
+	directly.
+	(linux_resume_one_lwp): Clear the lwp's stopped_by_watchpoint
+	field.
+	(linux_stopped_by_watchpoint): Rewrite.
+	(linux_stopped_data_address): Rewrite.
+
 2010-03-06  Simo Melenius  <simo.melenius@iki.fi>
 
 	* linux-low.c (linux_wait_for_lwp): Fetch the regcache after
 	switching the current inferior, not before.
+
+2010-03-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (clean): Replace reg-i386.c, reg-x86-64.c,
+	reg-i386-linux.c and reg-x86-64-linux.c with i386.c, amd64.c,
+	i386-linux.c and amd64-linux.c.
+	(reg-i386.o): Removed.
+	(reg-i386.c): Likewise.
+	(reg-i386-linux.o): Likewise.
+	(reg-i386-linux.c): Likewise.
+	(reg-x86-64.o): Likewise.
+	(reg-x86-64.c): Likewise.
+	(reg-x86-64-linux.o): Likewise.
+	(reg-x86-64-linux.c): Likewise.
+	(i386.o): New.
+	(i386.c): Likewise.
+	(i386-linux.o): Likewise.
+	(i386-linux.c): Likewise.
+	(amd64.o): Likewise.
+	(amd64.c): Likewise.
+	(amd64-linux.o): Likewise.
+	(amd64-linux.c): Likewise.
+
+	* configure.srv (srv_i386_regobj): New.
+	(srv_i386_linux_regobj): Likewise.
+	(srv_amd64_regobj): Likewise.
+	(srv_amd64_linux_regobj): Likewise.
+	(srv_i386_32bit_xmlfiles): Likewise.
+	(srv_i386_64bit_xmlfiles): Likewise.
+	(srv_i386_xmlfiles): Likewise.
+	(srv_amd64_xmlfiles): Likewise.
+	(srv_i386_linux_xmlfiles): Likewise.
+	(srv_amd64_linux_xmlfiles): Likewise.
+	(i[34567]86-*-cygwin*): Set srv_regobj to $srv_i386_regobj.  Set
+	srv_xmlfiles to $srv_i386_xmlfiles.
+	(i[34567]86-*-mingw32ce*): Likewise.
+	(i[34567]86-*-mingw*): Likewise.
+	(i[34567]86-*-nto*): Likewise.
+	(i[34567]86-*-linux*): Set srv_regobj to $srv_i386_linux_regobj
+	and $srv_amd64_linux_regobj.  Set srv_xmlfiles to
+	$srv_i386_linux_xmlfiles and $srv_amd64_linux_xmlfiles.
+	(x86_64-*-linux*): Likewise.
+
+	* linux-x86-low.c (init_registers_x86_64_linux): Removed.
+	(init_registers_amd64_linux): New.
+	(x86_arch_setup): Replace init_registers_x86_64_linux with
+	init_registers_amd64_linux.
+
+2010-02-23  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	* configure.ac: Check for libdl.  If it is not available link against
+	static libthread_db.
+	* configure: Regenerate.
+
+2010-02-22  Pedro Alves  <pedro@codesourcery.com>
+
+	PR9605
+
+	* i386-low.c (i386_length_and_rw_bits): Throw a fatal error if
+	handing a read watchpoint.
+	(i386_low_insert_watchpoint): Read watchpoints aren't supported.
 
 2010-02-12  Doug Evans  <dje@google.com>
 
