@@ -1,6 +1,6 @@
 # Process this file with automake to generate Makefile.in
 
-AUTOMAKE_OPTIONS =
+AUTOMAKE_OPTIONS = foreign
 
 SUBDIRS = po testsuite
 
@@ -11,7 +11,7 @@ ACLOCAL_AMFLAGS = -I ../bfd -I ../config
 AM_CFLAGS = $(WARN_CFLAGS) $(LFS_CFLAGS) $(RANDOM_SEED_CFLAGS)
 AM_CXXFLAGS = $(WARN_CXXFLAGS) $(LFS_CFLAGS) $(RANDOM_SEED_CFLAGS)
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(srcdir) -I$(srcdir)/../include -I$(srcdir)/../elfcpp \
 	-DLOCALEDIR="\"$(datadir)/locale\"" \
 	-DBINDIR="\"$(bindir)\"" -DTOOLBINDIR="\"$(tooldir)/bin\"" \
@@ -19,11 +19,20 @@ INCLUDES = \
 
 LIBIBERTY = ../libiberty/libiberty.a
 
+if PLUGINS
+LIBDL = -ldl
+endif
+
 if THREADS
 THREADSLIB = -lpthread
 endif
 
 AM_YFLAGS = -d
+
+# Automake 1.10+ disables lex and yacc output file regeneration if
+# maintainer mode is disabled.  Avoid this.
+am__skiplex =
+am__skipyacc =
 
 noinst_PROGRAMS = ld-new
 noinst_LIBRARIES = libgold.a
@@ -44,8 +53,11 @@ CCFILES = \
 	errors.cc \
 	expression.cc \
 	fileread.cc \
+        gc.cc \
 	gold.cc \
 	gold-threads.cc \
+	icf.cc \
+	incremental.cc \
 	layout.cc \
 	mapfile.cc \
 	merge.cc \
@@ -53,6 +65,7 @@ CCFILES = \
 	options.cc \
 	output.cc \
 	parameters.cc \
+	plugin.cc \
 	readsyms.cc \
 	reduced_debug_output.cc \
 	reloc.cc \
@@ -61,6 +74,7 @@ CCFILES = \
 	script.cc \
 	stringpool.cc \
 	symtab.cc \
+	target.cc \
 	target-select.cc \
 	version.cc \
 	workqueue.cc \
@@ -81,8 +95,11 @@ HFILES = \
 	ehframe.h \
 	errors.h \
 	fileread.h \
+	freebsd.h \
+        gc.h \
 	gold.h \
 	gold-threads.h \
+	icf.h \
 	layout.h \
 	mapfile.h \
 	merge.h \
@@ -90,6 +107,7 @@ HFILES = \
 	options.h \
 	output.h \
 	parameters.h \
+	plugin.h \
 	readsyms.h \
 	reduced_debug_output.h \
 	reloc.h \
@@ -113,20 +131,23 @@ YFILES = \
 EXTRA_DIST = yyscript.c yyscript.h
 
 TARGETSOURCES = \
-	i386.cc x86_64.cc sparc.cc powerpc.cc
+	i386.cc x86_64.cc sparc.cc powerpc.cc arm.cc
 
 ALL_TARGETOBJS = \
-	i386.$(OBJEXT) x86_64.$(OBJEXT) sparc.$(OBJEXT) powerpc.$(OBJEXT)
+	i386.$(OBJEXT) x86_64.$(OBJEXT) sparc.$(OBJEXT) powerpc.$(OBJEXT) \
+	arm.$(OBJEXT)
 
 libgold_a_SOURCES = $(CCFILES) $(HFILES) $(YFILES)
+libgold_a_LIBADD = $(LIBOBJS)
 
 sources_var = main.cc
 deps_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL_DEP)
-ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL) $(THREADSLIB)
+ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL) \
+	 $(THREADSLIB) $(LIBDL)
 
 ld_new_SOURCES = $(sources_var)
-ld_new_DEPENDENCIES = $(deps_var) $(LIBOBJS)
-ld_new_LDADD = $(ldadd_var) $(LIBOBJS)
+ld_new_DEPENDENCIES = $(deps_var)
+ld_new_LDADD = $(ldadd_var)
 
 EXTRA_ld_new_SOURCES = $(TARGETSOURCES)
 

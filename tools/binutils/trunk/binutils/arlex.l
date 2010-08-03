@@ -1,7 +1,7 @@
 %{
 /* arlex.l - Strange script language lexer */
 
-/* Copyright 1992, 1997, 2000, 2001, 2002, 2003, 2004, 2007
+/* Copyright 1992, 1997, 2000, 2001, 2002, 2003, 2004, 2005, 2007
    Free Software Foundation, Inc.
 
    This file is part of GNU Binutils.
@@ -79,12 +79,12 @@ int linenumber;
 		yylval.name =  xstrdup (yytext);
 		return FILENAME;
 		}
-\"[^"\n]*\"   {
-              /* quoted file name with whitespaces */
-              yylval.name = xstrdup(yytext+1); /* skip first quote */
-              yylval.name[yyleng-2] = 0; /* smash last quote */
-              return FILENAME;
-              }
+\"[^"\n]*\"     {
+                /* quoted file name with whitespaces */
+                yylval.name = xstrdup(yytext+1); /* skip first quote */
+                yylval.name[yyleng-2] = 0; /* smash last quote */
+                return FILENAME;
+                }
 "*".* 		{ }
 ";".* 		{ }
 " "		{ }

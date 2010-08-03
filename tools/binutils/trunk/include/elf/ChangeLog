@@ -1,3 +1,251 @@
+2009-12-17  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc.h (R_PPC_RELAX32, R_PPC_RELAX32PC, R_PPC_RELAX32_PLT,
+	R_PPC_RELAX32PC_PLT): Delete.
+	(R_PPC_RELAX, R_PPC_RELAX_PLT, R_PPC_RELAX_PLTREL24): Define.
+
+2009-09-21  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc.h (DT_PPC_TLSOPT): Define.
+	* ppc64.h (DT_PPC64_TLSOPT): Define.
+
+2009-08-10  Daniel Gutson  <dgutson@codesourcery.com>
+
+	* arm.h: (SHT_ARM_DEBUGOVERLAY): New define.
+	(SHT_ARM_OVERLAYSECTION): New define.
+
+2006-08-09  Bernd Schmidt  <bernd.schmidt@analog.com>
+
+	From Mike Frysinger <michael.frysinger@analog.com>
+	* bfin.h (R_BFIN_UNUSED, R_BFIN_PCREL5M2, R_BFIN_UNUSED1,
+	R_BFIN_PCREL10, R_BFIN_PCREL12_JUMP, R_BFIN_RIMM16,
+	R_BFIN_LUIMM16, R_BFIN_HUIMM16, R_BFIN_PCREL12_JUMP_S,
+	R_BFIN_PCREL24_JUMP_X, R_BFIN_PCREL24, R_BFIN_UNUSEDB,
+	R_BFIN_UNUSEDC, R_BFIN_PCREL24_JUMP_L, R_BFIN_PCREL24_CALL_X,
+	R_BFIN_VAR_EQ_SYMB, R_BFIN_BYTE_DATA, R_BFIN_BYTE2_DATA,
+	R_BFIN_BYTE4_DATA, R_BFIN_PCREL11, R_BFIN_PUSH, R_BFIN_CONST,
+	R_BFIN_ADD, R_BFIN_SUB, R_BFIN_MULT, R_BFIN_DIV, R_BFIN_MOD,
+	R_BFIN_LSHIFT, R_BFIN_RSHIFT, R_BFIN_AND, R_BFIN_OR, R_BFIN_XOR,
+	R_BFIN_LAND, R_BFIN_LOR, R_BFIN_LEN, R_BFIN_NEG, R_BFIN_COMP,
+	R_BFIN_PAGE, R_BFIN_HWPAGE, R_BFIN_ADDR, R_BFIN_PLTPLC,
+	R_BFIN_GOT, R_BFIN_MAX): Renamed from R_unused0, R_pcrel5ms,
+	R_unused1, R_pcrel10, R_pcrel12_jump, R_rimm16, R_luimm16,
+	R_huimm16, R_pcrel12_jump_s, R_pcrel24_jump_x, R_pcrel24,
+	R_unusedb, R_unusedc, R_pcrel24_jump_l, R_pcrel24_call_x,
+	R_var_eq_symb, R_byte_data, R_byte2_data, R_byte4_data, R_pcrel11,
+	R_push, R_const, R_add, R_sub, R_mult, R_div, R_mod, R_lshift,
+	R_rshift, R_and, R_or, R_xor, R_land, R_lor, R_len, R_neg, R_comp,
+	R_page, R_hwpage, R_addr, R_pltpc, R_got.
+	
+2009-08-09  Michael Eager <eager@eagercon.com>
+
+	* elf/common.h: Define EM_resnnn reserved values. Add EM_AVR32,
+	EM_STM8, EM_TILE64, EM_TILEPRO.  Change EM_MICROBLAZE. 
+
+2009-08-06  Michael Eager <eager@eagercon.com>
+
+	* elf/common.h: Define EM_MICROBLAZE & EM_MICROBLAZE_OLD.
+	* elf/microblaze.h: New reloc definitions.
+
+2009-07-30  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc64.h: Add R_PPC64_JMP_IREL, R_PPC64_REL16, R_PPC64_REL16_LO,
+	R_PPC64_REL16_HI, R_PPC64_REL16_HA.
+
+2009-07-25  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* common.h (EM_L1OM): New.
+
+2009-07-24  Trevor Smigiel  <Trevor_Smigiel@playstation.sony.com>
+	    Alan Modra  <amodra@bigpond.net.au>
+
+	* spu.h (R_SPU_ADD_PIC): New.
+
+2009-07-23  Ulrich Drepper  <drepper@redhat.com>
+
+	* common.h (STB_GNU_UNIQUE): Define.
+
+2009-07-10  Tom Tromey  <tromey@redhat.com>
+
+	* dwarf2.h: Move to `..'.
+
+2009-07-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* dwarf2.h: Just include ../dwarf2.h.
+
+2009-07-10  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc.h (R_PPC_IRELATIVE): Add.
+	(R_PPC_RELAX32, R_PPC_RELAX32PC,
+	R_PPC_RELAX32_PLT, R_PPC_RELAX32PC_PLT): Renumber.
+	* ppc64.h (R_PPC64_IRELATIVE): Add.
+
+2009-07-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* dwarf2.h (enum dwarf_location_atom): Add DW_OP_implicit_value
+	and DW_OP_stack_value.
+
+2009-06-22  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc.h (R_PPC_RELAX*): Define as enum.
+
+2009-06-11  Anthony Green  <green@moxielogic.org>
+
+	* moxie.h (R_MOXIE_PCREL10): New.
+
+2009-06-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/10205
+	* i386.h (R_386_IRELATIVE): New.
+	* x86-64.h (R_X86_64_IRELATIVE): Likewise.
+
+2009-05-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* common.h: Update comments for dynamic tag ranges.
+
+2009-04-30  DJ Delorie  <dj@redhat.com>
+
+	* mep.h (EF_MEP_COP_*): New.
+	(EF_MEP_ALL_FLAGS): Add them.
+
+2009-04-30  Nick Clifton  <nickc@redhat.com>
+
+	* common.h (STT_GNU_IFUNC): Define.
+
+2009-04-24  Cary Coutant  <ccoutant@google.com>
+
+	 * dwarf2.h (DW_LNE_set_discriminator): New enum value.
+
+2009-04-15  Anthony Green  <green@moxielogic.com>
+
+	* common.h (EM_MOXIE): Define.
+	* moxie.h: New file.
+
+2009-04-07  DJ Delorie  <dj@redhat.com>
+
+	* mep.h (EF_MEP_CPU_C5): New.
+
+2009-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* common.h (EM_INTEL178): Removed.
+	(EM_INTEL179): Likewise.
+	(EM_ETPU): New.
+	(EM_SLE9X): Likewise.
+	(EM_INTEL181): Likewise.
+	(EM_INTEL182): Likewise.
+
+2009-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* common.h (EM_INTEL178): New.
+	(EM_INTEL179): Likewise.
+	(EM_INTEL180): Likewise.
+
+2009-03-20  Mikolaj Zalewski  <mikolajz@google.com>
+
+	* common.h (SHT_GNU_INCREMENTAL_INPUTS): Define.
+
+2009-03-14  Mark Kettenis  <kettenis@gnu.org>
+
+	* common.h (NT_OPENBSD_PROCINFO, NT_OPENBSD_AUXV) 
+	(NT_OPENBSD_REGS, NT_OPENBSD_FPREGS, NT_OPENBSD_XFPREGS) 
+	(NT_OPENBSD_WCOOKIE): New defines.
+
+2009-03-16  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* common.h (AT_RANDOM): Define.
+
+2009-03-04  Alan Modra  <amodra@bigpond.net.au>
+
+	* ppc.h (R_PPC_TLSGD, R_PPC_TLSLD): Add new relocs.
+	* ppc64.h (R_PPC64_TLSGD, R_PPC64_TLSLD): Add new relocs.
+
+2009-03-02  Qinwei  <qinwei@sunnorth.com.cn>
+
+	* score.h (RELOC_NUMBER): Add R_SCORE_IMM32.
+	* common.h (EM_SCORE_OLD): Define.
+
+2009-02-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* common.h (STB_LOPROC): Replace Application-specific with
+	Processor-specific in comments.
+	(STB_HIPROC): Likewise.
+	(STT_LOPROC): Likewise.
+	(STT_HIPROC): Likewise.
+
+2009-02-03  Sandip Matte  <sandip@rmicorp.com>
+
+	* mips.h (E_MIPS_MACH_XLR): Define.
+
+2009-02-03  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	* m68k.h: Map TLS relocations to numbers.
+
+2009-01-15  Andrew Stubbs  <ams@codesourcery.com>
+	    Julian Brown   <julian@codesourcery.com>
+
+	* arm.h (TAG_CPU_ARCH_V6_M, TAG_CPU_ARCH_V6S_M): New defines.
+	(MAX_TAG_CPU_ARCH, TAG_CPU_ARCH_V4T_PLUS_V6_M): New defines.
+	(Tag_NEON_arch): Rename to Tag_Advanced_SIMD_arch to match ARM ABI
+	version 2.07.
+	(Tag_undefined39, Tag_nodefaults): New enum values.
+	(Tag_also_compatible_with, Tag_T2EE_use): Likewise.
+	(Tag_conformance, Tag_Virtualization_use): Likewise.
+	(Tag_undefined69, Tag_MPextension_use): Likewise.
+
+2009-01-15  Douglas B Rupp  <rupp@gnat.com>
+
+	* ia64.h (SHT_IA_64_VMS_DISPLAY_NAME_INFO, EF_IA_64_ARCHVER_1):
+	New macros. Minor reformatting.
+
+2008-12-23  Jon Beniston <jon@beniston.com>
+
+	* lm32.h: New file.
+
+2008-12-23  Nick Clifton  <nickc@redhat.com>
+
+	* commmon.h (STT_IFUNC): Delete.
+
+2008-12-20  Hans-Peter Nilsson  <hp@axis.com>
+
+	* cris.h (R_CRIS_32_IE): New relocation.
+
+2008-12-03  Nick Clifton  <nickc@redhat.com>
+
+	* common.h (STT_IFUNC): Define.
+
+2008-11-27  M R Swami Reddy <MR.Swami.Reddy@nsc.com>
+
+	* cr16.h (R_CR16_GOT_REGREL20, R_CR16_GOTC_REGREL20 and
+	R_CR16_GLOB_DAT): New relocations.
+
+2008-11-25  Hans-Peter Nilsson  <hp@axis.com>
+
+	* cris.h (R_CRIS_32_TPREL): Correct comment.
+	(R_CRIS_DTPMOD): Open up for use elsewhere than the fourth GOT entry.
+
+2008-11-18  Catherine Moore  <clm@codesourcery.com>
+
+	* arm.h (Tag_ABI_FP_16bit_format): Define.
+
+2008-11-14  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* internal.h (struct elf_segment_map): Add header_size field.
+ 
+2008-10-13  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* common.h (AT_BASE_PLATFORM, AT_EXECFN): Define.
+
+2008-10-10  Nathan Froyd  <froydnj@codesourcery.com>
+
+	* ppc.h: Add Tag_GNU_Power_ABI_Struct_Return.
+
+2008-10-04  Hans-Peter Nilsson  <hp@axis.com>
+
+	* cris.h (R_CRIS_32_GOT_GD, R_CRIS_16_GOT_GD, R_CRIS_32_GD)
+	(R_CRIS_DTP, R_CRIS_32_DTPREL, R_CRIS_16_DTPREL, R_CRIS_DTPMOD)
+	(R_CRIS_32_GOT_TPREL, R_CRIS_16_GOT_TPREL, R_CRIS_32_TPREL)
+	(R_CRIS_16_TPREL): New relocations.
+
 2008-08-20  Bob Wilson  <bob.wilson@acm.org>
 
 	* xtensa.h (R_XTENSA_TLSDESC_FN, R_XTENSA_TLSDESC_ARG)

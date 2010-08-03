@@ -1,6 +1,6 @@
 // testfile.cc -- Dummy ELF objects for testing purposes.
 
-// Copyright 2006, 2007, 2008 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -44,6 +44,13 @@ class Target_test : public Sized_target<size, big_endian>
   { }
 
   void
+  gc_process_relocs(const General_options&, Symbol_table*, Layout*,
+                    Sized_relobj<size, big_endian>*, unsigned int,
+                    unsigned int, const unsigned char*, size_t, Output_section*,
+                    bool, size_t, const unsigned char*)
+  { ERROR("call to Target_test::gc_process_relocs"); }
+
+  void
   scan_relocs(const General_options&, Symbol_table*, Layout*,
 	      Sized_relobj<size, big_endian>*, unsigned int,
 	      unsigned int, const unsigned char*, size_t, Output_section*,
@@ -54,7 +61,7 @@ class Target_test : public Sized_target<size, big_endian>
   relocate_section(const Relocate_info<size, big_endian>*, unsigned int,
 		   const unsigned char*, size_t, Output_section*, bool,
 		   unsigned char*, typename elfcpp::Elf_types<size>::Elf_Addr,
-		   section_size_type)
+		   section_size_type, const Reloc_symbol_changes*)
   { ERROR("call to Target_test::relocate_section"); }
 
   void
@@ -92,7 +99,11 @@ const Target::Target_info Target_test<size, big_endian>::test_target_info =
   "/dummy",				// dynamic_linker
   0x08000000,				// default_text_segment_address
   0x1000,				// abi_pagesize
-  0x1000				// common_pagesize
+  0x1000,				// common_pagesize
+  elfcpp::SHN_UNDEF,			// small_common_shndx
+  elfcpp::SHN_UNDEF,			// large_common_shndx
+  0,					// small_common_section_flags
+  0					// large_common_section_flags
 };
 
 // The test targets.

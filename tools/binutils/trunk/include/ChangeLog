@@ -1,6 +1,210 @@
-2008-08-25  Richard Henderson  <rth@redhat.com>
+2009-10-09  Rafael Espindola  <espindola@google.com>
+
+	* plugin-api.h (ld_plugin_add_input_library): Change argument name to
+	libname.
+
+2008-10-03  Rafael Espindola  <espindola@google.com>
+
+	* plugin-api.h: New.
+	* lto-symtab.h: New.
+
+2009-09-09  Martin Thuresson  <martin@mtme.org>
+
+	* bfdlink.h (struct bfd_link_hash_common_entry): Move to top
+	level.
+
+2009-09-04  Jie Zhang  <jie.zhang@analog.com>
+
+	* opcode/bfin.h (PseudoDbg_Assert): Add bits_grp and mask_grp.
+	(PseudoDbg_Assert_grp_bits, PseudoDbg_Assert_grp_mask): Define.
+	(PseudoDbg_Assert_dbgop_bits, PseudoDbg_Assert_dbgop_mask,
+	PseudoDbg_Assert_dontcare_bits, PseudoDbg_Assert_dontcare_mask):
+	Adjust accordingly.
+	(init_PseudoDbg_Assert): Add PseudoDbg_Assert_grp_bits and
+	PseudoDbg_Assert_grp_mask.
+
+2009-08-06  Michael Eager <eager@eagercon.com>
+
+	* dis-asm.h: Decl print_insn_microblaze().
+
+2009-07-24  Ian Lance Taylor  <iant@google.com>
+
+	* libiberty.h (crc32): Declare.
+
+2009-07-20  Cary Coutant  <ccoutant@google.com>
+	    Doug Evans  <dje@google.com>
+
+	Add some dwarf4 values.
+	* dwarf2.h (enum dwarf_tag): Add DW_TAG_type_unit.
+	(enum dwarf_form): Add DW_FORM_sec_offset, DW_FORM_exprloc,
+	DW_FORM_flag_present, DW_FORM_sig8.
+	(enum dwarf_attribute): Add DW_AT_signature.
+
+2009-07-17  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* demangle.h
+	(enum demangle_component_type <DEMANGLE_COMPONENT_GLOBAL_CONSTRUCTORS>)
+	(enum demangle_component_type <DEMANGLE_COMPONENT_GLOBAL_DESTRUCTORS>):
+	New.
+
+2009-07-10  Tom Tromey  <tromey@redhat.com>
+
+	* dwarf2.h: New file, moved from elf/.
+
+2009-07-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* dwarf2.h (enum dwarf_location_atom): Add DW_OP_implicit_value
+	and DW_OP_stack_value.
+
+2009-07-09  Tom Tromey  <tromey@redhat.com>
+
+	* elf/dwarf2.h: Remove, renaming to...
+	* dwarf2.h: ... this.
+
+2009-06-29  Tom Tromey  <tromey@redhat.com>
+
+	* elf/dwarf2.h: New file.  Merged with gdb.
+
+2009-06-18  Nick Clifton  <nickc@redhat.com>
+
+	* dis-asm.h (USER_SPECIFIED_MACHINE_TYPE): New value for the flags
+	field of struct disassemble_info.
+
+2009-06-09  Ian Lance Taylor  <ian@airs.com>
+
+	* ansidecl.h (ATTRIBUTE_UNUSED_LABEL): Define for C++.
+
+2009-06-15  Nick Clifton  <nickc@redhat.com>
+
+	* dis-asm.h (DISASSEMBLE_DATA): New value for the flags field of
+	struct disassemble_info.
+
+2009-06-02  Ian Lance Taylor  <iant@google.com>
+
+	* ansidecl.h (EXPORTED_CONST): Define.
+
+2009-05-31  Ian Lance Taylor  <iant@google.com>
+
+	* ansidecl.h: Add extern "C" when compiling with C++.  Treat C++
+	the way we treat an ISO C compiler.  Don't define inline as a
+	macdro when compiling with C++.
+	* dyn-string.h: Add header guard DYN_STRING_H.  Add extern "C"
+	when compiling with C++.
+	* fibheap.h: Add extern "C" when compiling with C++.
+
+2009-05-25  Tristan Gingold  <gingold@adacore.com>
+
+	* fopen-vms.h (FOPEN_RB, FOPEN_WB, FOPEN_AB, FOPEN_RUB, FOPEN_WUB,
+	FOPEN_AUB): Use "rfm=udf,rat=none" attribute.
+
+2009-04-22  Taras Glek <tglek@mozilla.com>
+
+	* hashtab.h: Update GTY annotations to new syntax.
+	* splay-tree.h: Likewise.
+
+2009-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* bfdlink.h (bfd_link_info): Add warn_alternate_em.
+
+2009-03-18  Alan Modra  <amodra@bigpond.net.au>
+
+	* alloca-conf.h: Revise based on autoconf-2.61, autoconf-2.13
+	documentation.
+
+2009-03-17  Jason Merrill  <jason@redhat.com>
+
+	* demangle.h (enum demangle_component_type): Add
+	DEMANGLE_COMPONENT_FUNCTION_PARAM.
+
+2008-12-01  Cary Coutant  <ccoutant@google.com>
+
+	* plugin-api.h (LDPS_BAD_HANDLE): New constant.
+	(ld_plugin_get_input_file): New typedef.
+	(ld_plugin_release_input_file): New typedef.
+	(LDPT_GET_INPUT_FILE, LDPT_RELEASE_INPUT_FILE): New constants.
+	(struct ld_plugin_tv): Add two new fields.
+
+2008-12-23  Jon Beniston <jon@beniston.com>
+
+	* dis-asm.h: Add LM32 disassembler function prototype.
+
+2008-12-10  Jason Merrill  <jason@redhat.com>
+
+	* demangle.h (enum demangle_component_type): Add
+	DEMANGLE_COMPONENT_FIXED_TYPE.
+
+2008-12-01  Cary Coutant  <ccoutant@google.com>
+
+	* plugin-api.h (ld_plugin_message): Change format parameter to const.
+
+2008-12-01  Cary Coutant  <ccoutant@google.com>
+
+	* plugin-api.h: Fix syntax error when compiling with C++.
+
+2008-11-26  Alan Modra  <amodra@bigpond.net.au>
+
+	PR 7047
+	* bfdlink.h (struct bfd_elf_version_expr): Delete "symbol".
+	Add "literal".
+
+2008-11-21  Sterling Augustine  <sterling@tensilica.com>
+
+	* xtensa-isa-internal.h (XTENSA_STATE_IS_SHARED_OR): New flag.
+	* xtensa-isa.h (xtensa_state_is_shared_or): New prototype.
+
+2008-11-19  Bob Wilson  <bob.wilson@acm.org>
+	
+	* xtensa-config.h (XCHAL_HAVE_MUL16, XCHAL_HAVE_MUL32, XCHAL_HAVE_DIV32)
+	(XCHAL_HAVE_MINMAX, XCHAL_HAVE_SEXT, XCHAL_HAVE_THREADPTR)
+	(XCHAL_HAVE_RELEASE_SYNC, XCHAL_HAVE_S32C1I): Change to 1.
+	(XCHAL_NUM_AREGS): Change to 32.
+	(XCHAL_ICACHE_SIZE, XCHAL_DCACHE_SIZE): Change to 16K.
+	(XCHAL_ICACHE_LINESIZE, XCHAL_DCACHE_LINESIZE): Change to 32.
+	(XCHAL_ICACHE_LINEWIDTH, XCHAL_DCACHE_LINEWIDTH): Change to 5.
+	(XCHAL_DCACHE_IS_WRITEBACK): Change to 1.
+	(XCHAL_DEBUGLEVEL): Change to 6.
+	
+2008-11-14  Tristan Gingold  <gingold@adacore.com>
+
+	* fopen-vms.h (FOPEN_RB): Use a single string to match the
+	standard prototype.
+	(FOPEN_WB): Ditto.
+	(FOPEN_AB): Ditto.
+	(FOPEN_RUB): Ditto.
+	(FOPEN_WUB): Ditto.
+	(FOPEN_AUB): Ditto.
+
+2008-10-21  Alan Modra  <amodra@bigpond.net.au>
+
+	* obstack.h (obstack_finish <!__GNUC__>): Cast result to void *.
+
+2008-10-06  Jason Merrill  <jason@redhat.com>
+
+	* demangle.h (enum demangle_component_type): Add
+	DEMANGLE_COMPONENT_PACK_EXPANSION.
+
+2008-09-24  Richard Henderson  <rth@redhat.com>
 
 	* elf/dwarf2.h (DW_OP_GNU_encoded_addr): New.
+
+2008-09-22 Rafael Espindola  <espindola@google.com>
+
+	* plugin-api.h (ld_plugin_status): Remove comma from the last item.
+	Use C style comment.
+	(ld_plugin_api_version, ld_plugin_output_file_type,
+	ld_plugin_symbol_kind, ld_plugin_symbol_visibility,
+	ld_plugin_symbol_resolution, ld_plugin_level, ld_plugin_tag): Remove
+	comma from the last item.
+
+2008-09-18  Cary Coutant  <ccoutant@google.com>
+
+	Add plugin functionality for link-time optimization (LTO).
+	* plugin-api.h: New file.
+
+2008-09-09  Jason Merrill  <jason@redhat.com>
+
+	* demangle.h (enum demangle_component_type): Add
+	DEMANGLE_COMPONENT_DECLTYPE.
 
 2008-08-25  Alan Modra  <amodra@bigpond.net.au>
 
@@ -185,9 +389,9 @@
 	override_segment_assignment field.
 
 2007-02-17  Mark Mitchell  <mark@codesourcery.com>
-	    Nathan Sidwell  <nathan@codesourcery.com>
-	    Vladimir Prus  <vladimir@codesourcery.com
-	    Joseph Myers  <joseph@codesourcery.com>
+            Nathan Sidwell  <nathan@codesourcery.com>
+            Vladimir Prus  <vladimir@codesourcery.com
+            Joseph Myers  <joseph@codesourcery.com>
 
 	* bin-bugs.h: Remove.
 
@@ -290,8 +494,8 @@
 	relax_pass.
 
 2006-02-17  Shrirang Khisti  <shrirangk@kpitcummins.com>
-	    Anil Paranjape   <anilp1@kpitcummins.com>
-	    Shilin Shakti    <shilins@kpitcummins.com>
+            Anil Paranjape   <anilp1@kpitcummins.com>
+            Shilin Shakti    <shilins@kpitcummins.com>
 
 	* dis-asm.h (print_insn_xc16c): New prototype.
 

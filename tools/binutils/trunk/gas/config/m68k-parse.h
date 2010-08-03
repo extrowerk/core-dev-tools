@@ -1,6 +1,6 @@
 /* m68k-parse.h -- header file for m68k assembler
    Copyright 1987, 1991, 1992, 1993, 1994, 1995, 1996, 1999, 2000,
-   2003, 2004, 2005, 2007 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -101,6 +101,7 @@ enum m68k_register
   CACR,
   VBR,
   CAAR,
+  CPUCR,
   MSP,
   ITT0,
   ITT1,
@@ -270,7 +271,12 @@ enum pic_relocation
   pic_plt_pcrel,		/* @PLTPC */
   pic_got_pcrel,		/* @GOTPC */
   pic_plt_off,			/* @PLT */
-  pic_got_off			/* @GOT */
+  pic_got_off,			/* @GOT */
+  pic_tls_gd,			/* @TLSGD */
+  pic_tls_ldm,			/* @TLSLDM */
+  pic_tls_ldo,			/* @TLSLDO */
+  pic_tls_ie,			/* @TLSIE */
+  pic_tls_le			/* @TLSLE */
 };
 #endif
 

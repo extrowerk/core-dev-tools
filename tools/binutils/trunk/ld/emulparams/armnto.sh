@@ -10,7 +10,6 @@ OTHER_TEXT_SECTIONS='*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)'
 OTHER_BSS_SYMBOLS='__bss_start__ = .;'
 OTHER_BSS_END_SYMBOLS='_bss_end__ = . ; __bss_end__ = . ;'
 OTHER_END_SYMBOLS='__end__ = . ;'
-
 TEXT_START_SYMBOLS='_btext = . ;'
 DATA_START_SYMBOLS='__data_start = . ;';
 
@@ -26,12 +25,14 @@ ENTRY=_start
 STACK_ADDR=0x80000
 TARGET2_TYPE=got-rel
 
+# ARM does not support .s* sections.
+NO_SMALL_DATA=yes
+
 OTHER_READONLY_SECTIONS="
   .ARM.extab ${RELOCATING-0} : { *(.ARM.extab${RELOCATING+* .gnu.linkonce.armextab.*}) }
   ${RELOCATING+ __exidx_start = .; }
   .ARM.exidx ${RELOCATING-0} : { *(.ARM.exidx${RELOCATING+* .gnu.linkonce.armexidx.*}) }
   ${RELOCATING+ __exidx_end = .; }"
 
-# ARM does not support .s* sections.
-NO_SMALL_DATA=yes
+
 EXTRA_EM_FILE=nto

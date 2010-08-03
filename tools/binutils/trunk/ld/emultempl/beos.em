@@ -8,7 +8,7 @@ fi
 fragment <<EOF
 /* This file is part of GLD, the Gnu Linker.
    Copyright 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
 
@@ -330,7 +330,6 @@ gld_${EMULATION_NAME}_set_symbols (void)
   /* Run through and invent symbols for all the
      names and insert the defaults. */
   int j;
-  lang_statement_list_type *save;
 
   if (!init[IMAGEBASEOFF].inited)
     {
@@ -347,9 +346,7 @@ gld_${EMULATION_NAME}_set_symbols (void)
     return;
 
   /* Glue the assignments into the abs section */
-  save = stat_ptr;
-
-  stat_ptr = &(abs_output_section->children);
+  push_stat_ptr (&abs_output_section->children);
 
   for (j = 0; init[j].ptr; j++)
     {
@@ -367,7 +364,7 @@ gld_${EMULATION_NAME}_set_symbols (void)
       else	abort();
     }
   /* Restore the pointer. */
-  stat_ptr = save;
+  pop_stat_ptr ();
 
   if (pe.FileAlignment >
       pe.SectionAlignment)
@@ -609,8 +606,6 @@ sort_sections (lang_statement_union_type *s)
 static void
 gld_${EMULATION_NAME}_before_allocation (void)
 {
-  extern lang_statement_list_type *stat_ptr;
-
 #ifdef TARGET_IS_ppcpe
   /* Here we rummage through the found bfds to collect toc information */
   {
@@ -664,32 +659,31 @@ gld_${EMULATION_NAME}_before_allocation (void)
    but I'm leaving this here in case we want to enable it for sections
    which are not mentioned in the linker script.  */
 
-static bfd_boolean
-gld${EMULATION_NAME}_place_orphan (asection *s)
+static lang_output_section_statement_type *
+gld${EMULATION_NAME}_place_orphan (asection *s,
+				   const char *secname,
+				   int constraint)
 {
-  const char *secname;
   char *output_secname, *ps;
   lang_output_section_statement_type *os;
   lang_statement_union_type *l;
 
   if ((s->flags & SEC_ALLOC) == 0)
-    return FALSE;
+    return NULL;
 
   /* Don't process grouped sections unless doing a final link.
      If they're marked as COMDAT sections, we don't want .text\$foo to
      end up in .text and then have .text disappear because it's marked
      link-once-discard.  */
   if (link_info.relocatable)
-    return FALSE;
-
-  secname = bfd_get_section_name (s->owner, s);
+    return NULL;
 
   /* Everything from the '\$' on gets deleted so don't allow '\$' as the
      first character.  */
   if (*secname == '\$')
     einfo ("%P%F: section %s has '\$' as first character\n", secname);
   if (strchr (secname + 1, '\$') == NULL)
-    return FALSE;
+    return NULL;
 
   /* Look up the output section.  The Microsoft specs say sections names in
      image files never contain a '\$'.  Fortunately, lang_..._lookup creates
@@ -697,7 +691,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s)
   output_secname = xstrdup (secname);
   ps = strchr (output_secname + 1, '\$');
   *ps = 0;
-  os = lang_output_section_statement_lookup (output_secname, 0, TRUE);
+  os = lang_output_section_statement_lookup (output_secname, constraint, TRUE);
 
   /* Find the '\$' wild statement for this section.  We currently require the
      linker script to explicitly mention "*(.foo\$)".
@@ -727,7 +721,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s)
      sort_sections.  */
   lang_add_section (&l->wild_statement.children, s, os);
 
-  return TRUE;
+  return os;
 }
 
 static char *

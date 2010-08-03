@@ -113,10 +113,10 @@ hash_new (void)
 
   size = get_gas_hash_table_size ();
 
-  ret = xmalloc (sizeof *ret);
+  ret = (struct hash_control *) xmalloc (sizeof *ret);
   obstack_begin (&ret->memory, chunksize);
   alloc = size * sizeof (struct hash_entry *);
-  ret->table = obstack_alloc (&ret->memory, alloc);
+  ret->table = (struct hash_entry **) obstack_alloc (&ret->memory, alloc);
   memset (ret->table, 0, alloc);
   ret->size = size;
 

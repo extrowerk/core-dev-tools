@@ -1,5 +1,5 @@
 # Copyright (C) 1993, 1994, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2005, 2007 Free Software Foundation, Inc.
+# 2004, 2005, 2007, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -222,14 +222,14 @@ proc gas_test_error { file as_opts testname } {
     global comp_output
 
     gas_run $file $as_opts ">/dev/null"
-    if ![string match "" $comp_output] then {
-	send_log "$comp_output\n"
-	verbose "$comp_output" 3
-    }
-    if [string match "" $comp_output] then {
-	fail "$testname"
-    } else {
+    send_log "$comp_output\n"
+    verbose "$comp_output" 3
+    if { ![string match "" $comp_output]
+	 && ![string match "*Assertion failure*" $comp_output]
+	 && ![string match "*Internal error*" $comp_output] } then {
 	pass "$testname"
+    } else {
+	fail "$testname"
     }
 }
 
@@ -310,6 +310,18 @@ proc is_elf_format {} {
     return 1
 }
 
+# True if the object format is known to be PE COFF.
+#
+proc is_pecoff_format {} {
+    if { ![istarget *-*-mingw*] \
+	 && ![istarget *-*-cygwin*] \
+	 && ![istarget *-*-pe*] } {
+	return 0
+    }
+
+    return 1
+}
+
 # run_dump_tests TESTCASES EXTRA_OPTIONS
 # Wrapper for run_dump_test, which is suitable for invoking as
 #   run_dump_tests [lsort [glob -nocomplain $srcdir/$subdir/*.d]]
@@ -371,19 +383,16 @@ proc run_dump_tests { testcases {extra_options {}} } {
 #   as: FLAGS
 #	When assembling FILE.s, pass FLAGS to the assembler.
 #
-#   PROG: PROGRAM-NAME
-#       The name of the program to run to analyze the .o file produced
-#       by the assembler.  This can be omitted; run_dump_test will guess
-#       which program to run by seeing which of the flags options below
-#	is present.
-#
-#   objdump: FLAGS
 #   nm: FLAGS
 #   objcopy: FLAGS
+#   objdump: FLAGS
+#   readelf: FLAGS
 #	Use the specified program to analyze the .o file, and pass it
 #	FLAGS, in addition to the .o file name.  Note that they are run
 #	with LC_ALL=C in the environment to give consistent sorting
-#	of symbols.
+#	of symbols.  If no FLAGS are needed then use:
+#        PROG: [nm objcopy objdump readelf]
+#       instead.
 #
 #   source: SOURCE
 #	Assemble the file SOURCE.s.  If omitted, this defaults to FILE.s.
@@ -962,8 +971,8 @@ if ![string length [info proc prune_warnings]] {
 
 # run_list_test NAME (optional): OPTS TESTNAME
 #
-# Assemble the file "NAME.d" with command line options OPTS and
-# compare the assembler standard error output against thee regular
+# Assemble the file "NAME.s" with command line options OPTS and
+# compare the assembler standard error output against the regular
 # expressions given in the file "NAME.l".  If TESTNAME is provided,
 # it will be used as the name of the test.
 

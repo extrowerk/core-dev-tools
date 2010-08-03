@@ -2,6 +2,10 @@
 	.text
 # cmov feature 
 cmove	%eax,%ebx
+# clflush
+clflush (%rax)
+# SYSCALL
+syscall
 # MMX
 paddb %mm4,%mm3
 # SSE
@@ -30,12 +34,16 @@ aesenc  (%rcx),%xmm0
 pclmulqdq $8,%xmm1,%xmm0
 # AES + AVX
 vaesenc  (%rcx),%xmm0,%xmm2
+# PCLMUL + AVX
+vpclmulqdq $8,%xmm4,%xmm6,%xmm2
 # FMA
-vfmaddpd %ymm4,%ymm6,%ymm2,%ymm7
+vfmadd132pd %xmm4,%xmm6,%xmm2
 # MOVBE
 movbe   (%rcx),%ebx
 # EPT
 invept  (%rcx),%rbx
+# RDTSCP
+rdtscp
 # 3DNow
 pmulhrw %mm4,%mm3
 # 3DNow Extensions
@@ -46,7 +54,5 @@ insertq %xmm2,%xmm1
 vmload
 # ABM
 lzcnt %ecx,%ebx
-# SSE5
-frczss          %xmm2, %xmm1
 # PadLock
 xstorerng

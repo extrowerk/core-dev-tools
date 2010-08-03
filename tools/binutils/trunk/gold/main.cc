@@ -1,6 +1,6 @@
 // main.cc -- gold main function.
 
-// Copyright 2006, 2007, 2008 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -42,6 +42,10 @@
 #include "archive.h"
 #include "symtab.h"
 #include "layout.h"
+#include "plugin.h"
+#include "gc.h"
+#include "icf.h"
+#include "incremental.h"
 
 using namespace gold;
 
@@ -190,11 +194,21 @@ main(int argc, char** argv)
   if (parameters->options().relocatable())
     command_line.script_options().version_script_info()->clear();
 
+  // Load plugin libraries.
+  if (command_line.options().has_plugins())
+    command_line.options().plugins()->load_plugins();
+
   // The work queue.
   Workqueue workqueue(command_line.options());
 
   // The list of input objects.
   Input_objects input_objects;
+
+  // The Garbage Collection (GC, --gc-sections) Object.
+  Garbage_collection gc;
+
+  // The Identical Code Folding (ICF, --icf) Object.
+  Icf icf;
 
   // The symbol table.  We're going to guess here how many symbols
   // we're going to see based on the number of input files.  Even when
@@ -203,8 +217,21 @@ main(int argc, char** argv)
   Symbol_table symtab(command_line.number_of_input_files() * 1024,
                       command_line.version_script());
 
+  if (parameters->options().gc_sections())
+    symtab.set_gc(&gc);
+
+  if (parameters->options().icf_enabled())
+    symtab.set_icf(&icf);
+
   // The layout object.
-  Layout layout(command_line.options(), &command_line.script_options());
+  Layout layout(command_line.number_of_input_files(),
+		&command_line.script_options());
+
+  if (layout.incremental_inputs() != NULL)
+    {
+      layout.incremental_inputs()->report_command_line(argc, argv);
+      layout.incremental_inputs()->report_inputs(command_line.inputs());
+    }
 
   // Get the search path from the -L options.
   Dirsearch search_path;

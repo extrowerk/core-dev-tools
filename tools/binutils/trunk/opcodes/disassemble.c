@@ -1,6 +1,6 @@
 /* Select disassembly routine for specified architecture.
    Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
 
@@ -46,6 +46,7 @@
 #define ARCH_ia64
 #define ARCH_ip2k
 #define ARCH_iq2000
+#define ARCH_lm32
 #define ARCH_m32c
 #define ARCH_m32r
 #define ARCH_m68hc11
@@ -55,10 +56,12 @@
 #define ARCH_maxq
 #define ARCH_mcore
 #define ARCH_mep
+#define ARCH_microblaze
 #define ARCH_mips
 #define ARCH_mmix
 #define ARCH_mn10200
 #define ARCH_mn10300
+#define ARCH_moxie
 #define ARCH_mt
 #define ARCH_msp430
 #define ARCH_ns32k
@@ -195,6 +198,7 @@ disassembler (abfd)
 #endif
 #ifdef ARCH_i386
     case bfd_arch_i386:
+    case bfd_arch_l1om:
       disassemble = print_insn_i386;
       break;
 #endif
@@ -221,6 +225,11 @@ disassembler (abfd)
 #ifdef ARCH_fr30
     case bfd_arch_fr30:
       disassemble = print_insn_fr30;
+      break;
+#endif
+#ifdef ARCH_lm32
+    case bfd_arch_lm32:
+      disassemble = print_insn_lm32;
       break;
 #endif
 #ifdef ARCH_m32r
@@ -254,6 +263,11 @@ disassembler (abfd)
 #ifdef ARCH_mt
     case bfd_arch_mt:
       disassemble = print_insn_mt;
+      break;
+#endif
+#ifdef ARCH_microblaze
+    case bfd_arch_microblaze:
+      disassemble = print_insn_microblaze;
       break;
 #endif
 #ifdef ARCH_msp430
@@ -432,6 +446,11 @@ disassembler (abfd)
 #ifdef ARCH_frv
     case bfd_arch_frv:
       disassemble = print_insn_frv;
+      break;
+#endif
+#ifdef ARCH_moxie
+    case bfd_arch_moxie:
+      disassemble = print_insn_moxie;
       break;
 #endif
 #ifdef ARCH_iq2000

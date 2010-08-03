@@ -23,6 +23,9 @@
 .*:48: Error: .*
 .*:50: Error: .*
 .*:52: Error: .*
+.*:54: Error: .*
+.*:56: Error: .*
+.*:58: Error: .*
 GAS LISTING .*
 
 
@@ -31,51 +34,60 @@ GAS LISTING .*
 [ 	]*2[ 	]+\.text
 [ 	]*3[ 	]+\# cmov feature 
 [ 	]*4[ 	]+\?\?\?\? 0F44D8   	cmove	%eax,%ebx
-[ 	]*5[ 	]+\# MMX
-[ 	]*6[ 	]+paddb %mm4,%mm3
-[ 	]*7[ 	]+\# SSE
-[ 	]*8[ 	]+addss %xmm4,%xmm3
-[ 	]*9[ 	]+\# SSE2
-[ 	]*10[ 	]+addsd %xmm4,%xmm3
-[ 	]*11[ 	]+\# SSE3
-[ 	]*12[ 	]+addsubpd %xmm4,%xmm3
-[ 	]*13[ 	]+\# SSSE3
-[ 	]*14[ 	]+phaddw %xmm4,%xmm3
-[ 	]*15[ 	]+\# SSE4\.1
-[ 	]*16[ 	]+phminposuw  %xmm1,%xmm3
-[ 	]*17[ 	]+\# SSE4\.2
-[ 	]*18[ 	]+crc32   %ecx,%ebx
-[ 	]*19[ 	]+\# AVX
-[ 	]*20[ 	]+vzeroall
-[ 	]*21[ 	]+\# VMX
-[ 	]*22[ 	]+vmxoff
-[ 	]*23[ 	]+\# SMX
-[ 	]*24[ 	]+getsec
-[ 	]*25[ 	]+\# Xsave
-[ 	]*26[ 	]+xgetbv
-[ 	]*27[ 	]+\# AES
-[ 	]*28[ 	]+aesenc  \(%ecx\),%xmm0
-[ 	]*29[ 	]+\# PCLMUL
-[ 	]*30[ 	]+pclmulqdq \$8,%xmm1,%xmm0
-[ 	]*31[ 	]+\# AES \+ AVX
-[ 	]*32[ 	]+vaesenc  \(%ecx\),%xmm0,%xmm2
-[ 	]*33[ 	]+\# FMA
-[ 	]*34[ 	]+vfmaddpd %ymm4,%ymm6,%ymm2,%ymm7
-[ 	]*35[ 	]+\# MOVBE
-[ 	]*36[ 	]+movbe   \(%ecx\),%ebx
-[ 	]*37[ 	]+\# EPT
-[ 	]*38[ 	]+invept  \(%ecx\),%ebx
-[ 	]*39[ 	]+\# 3DNow
-[ 	]*40[ 	]+pmulhrw %mm4,%mm3
-[ 	]*41[ 	]+\# 3DNow Extensions
-[ 	]*42[ 	]+pswapd %mm4,%mm3
-[ 	]*43[ 	]+\# SSE4a
-[ 	]*44[ 	]+insertq %xmm2,%xmm1
-[ 	]*45[ 	]+\# SVME
-[ 	]*46[ 	]+vmload
-[ 	]*47[ 	]+\# ABM
-[ 	]*48[ 	]+lzcnt %ecx,%ebx
-[ 	]*49[ 	]+\# SSE5
-[ 	]*50[ 	]+frczss          %xmm2, %xmm1
-[ 	]*51[ 	]+\# PadLock
-[ 	]*52[ 	]+xstorerng
+[ 	]*5[ 	]+\# clflush
+[ 	]*6[ 	]+clflush \(%eax\)
+[ 	]*7[ 	]+\# SYSCALL
+[ 	]*8[ 	]+syscall
+[ 	]*9[ 	]+\# MMX
+[ 	]*10[ 	]+paddb %mm4,%mm3
+[ 	]*11[ 	]+\# SSE
+[ 	]*12[ 	]+addss %xmm4,%xmm3
+[ 	]*13[ 	]+\# SSE2
+[ 	]*14[ 	]+addsd %xmm4,%xmm3
+[ 	]*15[ 	]+\# SSE3
+[ 	]*16[ 	]+addsubpd %xmm4,%xmm3
+[ 	]*17[ 	]+\# SSSE3
+[ 	]*18[ 	]+phaddw %xmm4,%xmm3
+[ 	]*19[ 	]+\# SSE4\.1
+[ 	]*20[ 	]+phminposuw  %xmm1,%xmm3
+[ 	]*21[ 	]+\# SSE4\.2
+[ 	]*22[ 	]+crc32   %ecx,%ebx
+[ 	]*23[ 	]+\# AVX
+[ 	]*24[ 	]+vzeroall
+[ 	]*25[ 	]+\# VMX
+[ 	]*26[ 	]+vmxoff
+[ 	]*27[ 	]+\# SMX
+[ 	]*28[ 	]+getsec
+[ 	]*29[ 	]+\# Xsave
+[ 	]*30[ 	]+xgetbv
+[ 	]*31[ 	]+\# AES
+[ 	]*32[ 	]+aesenc  \(%ecx\),%xmm0
+[ 	]*33[ 	]+\# PCLMUL
+[ 	]*34[ 	]+pclmulqdq \$8,%xmm1,%xmm0
+[ 	]*35[ 	]+\# AES \+ AVX
+[ 	]*36[ 	]+vaesenc  \(%ecx\),%xmm0,%xmm2
+[ 	]*37[ 	]+\# PCLMUL \+ AVX
+[ 	]*38[ 	]+vpclmulqdq \$8,%xmm4,%xmm6,%xmm2
+[ 	]*39[ 	]+\# FMA
+[ 	]*40[ 	]+vfmadd132pd %xmm4,%xmm6,%xmm2
+[ 	]*41[ 	]+\# MOVBE
+[ 	]*42[ 	]+movbe   \(%ecx\),%ebx
+[ 	]*43[ 	]+\# EPT
+[ 	]*44[ 	]+invept  \(%ecx\),%ebx
+[ 	]*45[ 	]+\# RDTSCP
+[ 	]*46[ 	]+rdtscp
+[ 	]*47[ 	]+\# 3DNow
+[ 	]*48[ 	]+pmulhrw %mm4,%mm3
+[ 	]*49[ 	]+\# 3DNow Extensions
+[ 	]*50[ 	]+pswapd %mm4,%mm3
+[ 	]*51[ 	]+\# SSE4a
+[ 	]*52[ 	]+insertq %xmm2,%xmm1
+[ 	]*53[ 	]+\# SVME
+[ 	]*54[ 	]+vmload
+[ 	]*55[ 	]+\# ABM
+[ 	]*56[ 	]+lzcnt %ecx,%ebx
+GAS LISTING .*
+
+
+[ 	]*57[ 	]+\# PadLock
+[ 	]*58[ 	]+xstorerng

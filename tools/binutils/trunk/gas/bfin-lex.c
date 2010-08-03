@@ -8,7 +8,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 31
+#define YY_FLEX_SUBMINOR_VERSION 35
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -30,7 +30,15 @@
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+
+/* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
+ * if you want the limit (max/min) macros for int types. 
+ */
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS 1
+#endif
+
 #include <inttypes.h>
 typedef int8_t flex_int8_t;
 typedef uint8_t flex_uint8_t;
@@ -85,11 +93,12 @@ typedef unsigned int flex_uint32_t;
 
 #else	/* ! __cplusplus */
 
-#if __STDC__
+/* C99 requires __STDC__ to be defined as 1. */
+#if defined (__STDC__)
 
 #define YY_USE_CONST
 
-#endif	/* __STDC__ */
+#endif	/* defined (__STDC__) */
 #endif	/* ! __cplusplus */
 
 #ifdef YY_USE_CONST
@@ -143,7 +152,12 @@ typedef unsigned int flex_uint32_t;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 #endif
 
-extern int yyleng;
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
+extern yy_size_t yyleng;
 
 extern FILE *yyin, *yyout;
 
@@ -169,16 +183,6 @@ extern FILE *yyin, *yyout;
 
 #define unput(c) yyunput( c, (yytext_ptr)  )
 
-/* The following is because we cannot portably get our hands on size_t
- * (without autoconf's help, which isn't available because we want
- * flex-generated scanners to compile on their own).
- */
-
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef unsigned int yy_size_t;
-#endif
-
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
@@ -196,7 +200,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -266,12 +270,12 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when yytext is formed. */
 static char yy_hold_char;
-static int yy_n_chars;		/* number of characters read into yy_ch_buf */
-int yyleng;
+static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
+yy_size_t yyleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = (char *) 0;
-static int yy_init = 1;		/* whether we need to initialize */
+static int yy_init = 0;		/* whether we need to initialize */
 static int yy_start = 0;	/* start state number */
 
 /* Flag which is used to allow yywrap()'s to do buffer switches
@@ -295,7 +299,7 @@ static void yy_init_buffer (YY_BUFFER_STATE b,FILE *file  );
 
 YY_BUFFER_STATE yy_scan_buffer (char *base,yy_size_t size  );
 YY_BUFFER_STATE yy_scan_string (yyconst char *yy_str  );
-YY_BUFFER_STATE yy_scan_bytes (yyconst char *bytes,int len  );
+YY_BUFFER_STATE yy_scan_bytes (yyconst char *bytes,yy_size_t len  );
 
 void *yyalloc (yy_size_t  );
 void *yyrealloc (void *,yy_size_t  );
@@ -334,6 +338,9 @@ FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;
 typedef int yy_state_type;
 
 extern int yylineno;
+
+int yylineno = 1;
+
 extern char *yytext;
 #define yytext_ptr yytext
 
@@ -352,8 +359,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 238
-#define YY_END_OF_BUFFER 239
+#define YY_NUM_RULES 237
+#define YY_END_OF_BUFFER 238
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -363,67 +370,67 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[555] =
     {   0,
-        0,    0,    0,    0,  239,  237,  235,  235,  220,  233,
-      219,  218,  200,  201,  216,  214,  211,  210,  203,  232,
-      232,  202,  221,  199,  195,  237,  224,  233,  148,  233,
-      233,  233,  233,  233,  233,  233,  233,  233,   70,  233,
-      233,  233,   54,   19,   18,  233,   12,   10,    8,    7,
-      189,  188,  187,  233,  185,  183,  233,  233,  233,  233,
-      233,  233,  217,  215,  213,  212,    0,  209,  204,    0,
-        0,    0,  232,  234,    0,  198,  196,  222,  194,  193,
-      178,  175,  233,  233,  233,  150,  151,  233,  233,  149,
-        0,  147,  233,  140,  233,  233,  136,  233,  125,  233,
+        0,    0,    0,    0,  238,  236,  234,  234,  219,  232,
+      218,  217,  199,  200,  215,  213,  210,  209,  202,  231,
+      231,  201,  220,  198,  194,  236,  223,  232,  148,  232,
+      232,  232,  232,  232,  232,  232,  232,  232,   70,  232,
+      232,  232,   54,   19,   18,  232,   12,   10,    8,    7,
+      188,  187,  186,  232,  184,  182,  232,  232,  232,  232,
+      232,  232,  216,  214,  212,  211,    0,  208,  203,    0,
+        0,    0,  231,  233,    0,  197,  195,  221,  193,  192,
+      177,  174,  232,  232,  232,  150,  151,  232,  232,  149,
+        0,  147,  232,  140,  232,  232,  136,  232,  125,  232,
 
-      123,  233,  233,  233,  233,  233,  233,  233,  103,  102,
-      101,  233,  100,   99,  233,  233,   97,  233,   95,   94,
-       93,   91,  233,   85,  233,  233,   77,   86,  233,   71,
-       69,  233,  233,  233,  233,   65,  233,  233,  233,   59,
-      233,   56,  233,  233,   53,  233,  233,  233,  233,  233,
-      233,  233,  233,  233,  233,  233,  233,   25,  233,  233,
-      233,  233,  233,   15,   14,  233,  233,  159,  233,  186,
-      233,  184,  223,  233,  233,   95,  233,  233,  233,  205,
-      207,  206,  208,    0,    0,  232,  232,  197,  191,  192,
-      233,  233,  171,  152,  153,  233,  233,  162,  163,  233,
+      123,  232,  232,  232,  232,  232,  232,  232,  103,  102,
+      101,  232,  100,   99,  232,  232,   97,  232,   95,   94,
+       93,   91,  232,   85,  232,  232,   77,   86,  232,   71,
+       69,  232,  232,  232,  232,   65,  232,  232,  232,   59,
+      232,   56,  232,  232,   53,  232,  232,  232,  232,  232,
+      232,  232,  232,  232,  232,  232,  232,   25,  232,  232,
+      232,  232,  232,   15,   14,  232,  232,  158,  232,  185,
+      232,  183,  222,  232,  232,   95,  232,  232,  232,  204,
+      206,  205,  207,    0,    0,  231,  231,  196,  190,  191,
+      232,  232,  170,  152,  153,  232,  232,  161,  162,  232,
 
-      154,  156,  232,  233,  233,  233,  233,  233,  233,  124,
-      233,  233,  119,  233,  233,  233,  233,  233,  233,  233,
-      233,  233,  179,   98,  233,  233,  233,  233,  233,  233,
-       80,   83,   78,   81,  233,  233,  233,   79,   82,  233,
-       67,   66,  233,   63,   62,  233,  233,  233,  233,  233,
-      233,  233,  233,  233,  233,   44,   39,   38,   37,   36,
-       35,   34,  233,   32,   31,  233,  233,  233,  233,  233,
-      233,  233,   21,  233,  233,   16,   13,  233,    9,  233,
-      233,  233,  233,  233,  233,  233,  236,  190,  170,  168,
-      177,  176,  169,  167,  174,  173,  233,  233,  233,  155,
+      154,  156,  231,  232,  232,  232,  232,  232,  232,  124,
+      232,  232,  119,  232,  232,  232,  232,  232,  232,  232,
+      232,  232,  178,   98,  232,  232,  232,  232,  232,  232,
+       80,   83,   78,   81,  232,  232,  232,   79,   82,  232,
+       67,   66,  232,   63,   62,  232,  232,  232,  232,  232,
+      232,  232,  232,  232,  232,   44,   39,   38,   37,   36,
+       35,   34,  232,   32,   31,  232,  232,  232,  232,  232,
+      232,  232,   21,  232,  232,   16,   13,  232,    9,  232,
+      232,  232,  232,  232,  232,  232,  235,  189,  169,  167,
+      176,  175,  168,  166,  173,  172,  232,  232,  232,  155,
 
-      157,  146,  233,  233,  233,  233,  139,  138,  233,  127,
-      233,  233,  118,  233,  233,  233,  233,  111,  110,  233,
-      233,  233,  233,  233,  233,  233,  105,  104,  233,  233,
-      233,   96,  233,   92,   89,   84,   74,  233,  233,   68,
-       64,  233,   61,   60,   58,   57,  233,   55,   45,  233,
-       50,   47,   49,   46,   48,  233,  233,   43,   42,  233,
-      233,  233,  233,  233,   27,   24,   23,  233,  233,  233,
-      233,  233,  233,  228,  233,  227,  233,  233,  233,  233,
-      160,  233,  233,  233,  233,  233,  233,  233,  233,  233,
-      233,  122,  233,  117,  116,  233,  233,  233,  233,  233,
+      157,  146,  232,  232,  232,  232,  139,  138,  232,  127,
+      232,  232,  118,  232,  232,  232,  232,  111,  110,  232,
+      232,  232,  232,  232,  232,  232,  105,  104,  232,  232,
+      232,   96,  232,   92,   89,   84,   74,  232,  232,   68,
+       64,  232,   61,   60,   58,   57,  232,   55,   45,  232,
+       50,   47,   49,   46,   48,  232,  232,   43,   42,  232,
+      232,  232,  232,  232,   27,   24,   23,  232,  232,  232,
+      232,  232,  232,  227,  232,  226,  232,  232,  232,  232,
+      159,  232,  232,  232,  232,  232,  232,  232,  232,  232,
+      232,  122,  232,  117,  116,  232,  232,  232,  232,  232,
 
-      233,  233,  233,  108,  233,  233,  233,  233,  233,  233,
-      233,  233,  233,  233,    2,  182,   52,   41,   40,   33,
-      233,  233,  233,   30,  233,   22,  233,  233,  233,  172,
-      231,  233,  233,  233,  233,  233,  164,  161,  145,  144,
-      143,  142,  141,  233,  233,  233,  233,  126,  121,  233,
-      233,  233,  233,  233,   51,  233,  233,  107,  233,  233,
-      233,  233,  233,   88,   87,   90,  233,  233,   73,   72,
-       29,  233,  233,  233,   20,  233,  233,  233,  229,  233,
-      226,  165,  166,  233,  233,  233,  233,  233,  233,  120,
-      233,  114,  113,  233,  233,  233,    5,  106,  233,  180,
+      232,  232,  232,  108,  232,  232,  232,  232,  232,  232,
+      232,  232,  232,  232,    2,  181,   52,   41,   40,   33,
+      232,  232,  232,   30,  232,   22,  232,  232,  232,  171,
+      230,  232,  232,  232,  232,  232,  163,  160,  145,  144,
+      143,  142,  141,  232,  232,  232,  232,  126,  121,  232,
+      232,  232,  232,  232,   51,  232,  232,  107,  232,  232,
+      232,  232,  232,   88,   87,   90,  232,  232,   73,   72,
+       29,  232,  232,  232,   20,  232,  232,  232,  228,  232,
+      225,  164,  165,  232,  232,  232,  232,  232,  232,  120,
+      232,  114,  113,  232,  232,  232,    5,  106,  232,  179,
 
-      233,  233,  233,  233,   28,  233,  233,   17,   11,  233,
-      233,  233,  233,  135,  133,  134,  132,  129,  233,  115,
-      233,    6,  109,  233,  233,    3,  233,   76,    1,   26,
-      230,  225,  137,  130,  131,  233,  233,  233,  233,  233,
-      128,  233,  233,    4,   75,  233,  233,  112,  233,  233,
-      233,  233,  181,    0
+      232,  232,  232,  232,   28,  232,  232,   17,   11,  232,
+      232,  232,  232,  135,  133,  134,  132,  129,  232,  115,
+      232,    6,  109,  232,  232,    3,  232,   76,    1,   26,
+      229,  224,  137,  130,  131,  232,  232,  232,  232,  232,
+      128,  232,  232,    4,   75,  232,  232,  112,  232,  232,
+      232,  232,  180,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -805,7 +812,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "bfin-lex.l"
 /* bfin-lex.l  ADI Blackfin lexer
-   Copyright 2005, 2006, 2007
+   Copyright 2005, 2006, 2007, 2008
    Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
@@ -843,20 +850,53 @@ int yylex (void);
    and <INITIAL> would match some keyword rules only with
    initial.  */
 
-#line 847 "bfin-lex.c"
+#line 854 "bfin-lex.c"
 
 #define INITIAL 0
 #define KEYWORD 1
 
+#ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
  * down here because we want the user's section 1 to have been scanned first.
  * The user has a chance to override it with an option.
  */
 #include <unistd.h>
+#endif
 
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
+
+static int yy_init_globals (void );
+
+/* Accessor methods to globals.
+   These are made visible to non-reentrant scanners for convenience. */
+
+int yylex_destroy (void );
+
+int yyget_debug (void );
+
+void yyset_debug (int debug_flag  );
+
+YY_EXTRA_TYPE yyget_extra (void );
+
+void yyset_extra (YY_EXTRA_TYPE user_defined  );
+
+FILE *yyget_in (void );
+
+void yyset_in  (FILE * in_str  );
+
+FILE *yyget_out (void );
+
+void yyset_out  (FILE * out_str  );
+
+yy_size_t yyget_leng (void );
+
+char *yyget_text (void );
+
+int yyget_lineno (void );
+
+void yyset_lineno (int line_number  );
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -900,7 +940,7 @@ static int input (void );
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
-#define ECHO (void) fwrite( yytext, yyleng, 1, yyout )
+#define ECHO fwrite( yytext, yyleng, 1, yyout )
 #endif
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
@@ -911,7 +951,7 @@ static int input (void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		size_t n; \
+		yy_size_t n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -995,11 +1035,11 @@ YY_DECL
     
 #line 43 "bfin-lex.l"
 
-#line 999 "bfin-lex.c"
+#line 1039 "bfin-lex.c"
 
-	if ( (yy_init) )
+	if ( !(yy_init) )
 		{
-		(yy_init) = 0;
+		(yy_init) = 1;
 
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
@@ -1191,12 +1231,12 @@ return SSYNC;
 case 23:
 YY_RULE_SETUP
 #line 66 "bfin-lex.l"
-_REG.regno = REG_SP; return HALF_REG;
+_REG.regno = REG_SP; _REG.flags = F_REG_LOW; return HALF_REG;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 67 "bfin-lex.l"
-_REG.regno = REG_SP | F_REG_HIGH; return HALF_REG;
+_REG.regno = REG_SP; _REG.flags = F_REG_HIGH; return HALF_REG;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
@@ -1596,12 +1636,12 @@ _REG.regno = REG_FP; return REG;
 case 104:
 YY_RULE_SETUP
 #line 161 "bfin-lex.l"
-_REG.regno = REG_FP; return HALF_REG;
+_REG.regno = REG_FP; _REG.flags = F_REG_LOW; return HALF_REG;
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
 #line 162 "bfin-lex.l"
-_REG.regno = REG_FP | F_REG_HIGH; return HALF_REG;
+_REG.regno = REG_FP; _REG.flags = F_REG_HIGH; return HALF_REG;
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
@@ -1866,393 +1906,388 @@ _REG.regno = S_AV1S; return STATUS_REG;
 case 158:
 YY_RULE_SETUP
 #line 218 "bfin-lex.l"
-_REG.regno = S_V; return STATUS_REG;
+_REG.regno = S_VS;   return STATUS_REG;
 	YY_BREAK
 case 159:
 YY_RULE_SETUP
-#line 219 "bfin-lex.l"
-_REG.regno = S_VS;   return STATUS_REG;
+#line 221 "bfin-lex.l"
+_REG.regno = REG_ASTAT; return REG;
 	YY_BREAK
 case 160:
 YY_RULE_SETUP
 #line 222 "bfin-lex.l"
-_REG.regno = REG_ASTAT; return REG;
+return ASHIFT;
 	YY_BREAK
 case 161:
 YY_RULE_SETUP
 #line 223 "bfin-lex.l"
-return ASHIFT;
+return ASL;
 	YY_BREAK
 case 162:
 YY_RULE_SETUP
 #line 224 "bfin-lex.l"
-return ASL;
+return ASR;
 	YY_BREAK
 case 163:
 YY_RULE_SETUP
 #line 225 "bfin-lex.l"
-return ASR;
+return ALIGN8;
 	YY_BREAK
 case 164:
 YY_RULE_SETUP
 #line 226 "bfin-lex.l"
-return ALIGN8;
+return ALIGN16;
 	YY_BREAK
 case 165:
 YY_RULE_SETUP
 #line 227 "bfin-lex.l"
-return ALIGN16;
+return ALIGN24;
 	YY_BREAK
 case 166:
 YY_RULE_SETUP
 #line 228 "bfin-lex.l"
-return ALIGN24;
+return A_ONE_DOT_L;
 	YY_BREAK
 case 167:
 YY_RULE_SETUP
 #line 229 "bfin-lex.l"
-return A_ONE_DOT_L;
+return A_ZERO_DOT_L;
 	YY_BREAK
 case 168:
 YY_RULE_SETUP
 #line 230 "bfin-lex.l"
-return A_ZERO_DOT_L;
+return A_ONE_DOT_H;
 	YY_BREAK
 case 169:
 YY_RULE_SETUP
 #line 231 "bfin-lex.l"
-return A_ONE_DOT_H;
+return A_ZERO_DOT_H;
 	YY_BREAK
 case 170:
 YY_RULE_SETUP
 #line 232 "bfin-lex.l"
-return A_ZERO_DOT_H;
+return ABS;
 	YY_BREAK
 case 171:
 YY_RULE_SETUP
 #line 233 "bfin-lex.l"
-return ABS;
+return ABORT;
 	YY_BREAK
 case 172:
 YY_RULE_SETUP
 #line 234 "bfin-lex.l"
-return ABORT;
+_REG.regno = REG_A1x; return REG;
 	YY_BREAK
 case 173:
 YY_RULE_SETUP
 #line 235 "bfin-lex.l"
-_REG.regno = REG_A1x; return REG;
+_REG.regno = REG_A1w; return REG;
 	YY_BREAK
 case 174:
 YY_RULE_SETUP
 #line 236 "bfin-lex.l"
-_REG.regno = REG_A1w; return REG;
+_REG.regno = REG_A1;  return REG_A_DOUBLE_ONE;
 	YY_BREAK
 case 175:
 YY_RULE_SETUP
 #line 237 "bfin-lex.l"
-_REG.regno = REG_A1;  return REG_A_DOUBLE_ONE;
+_REG.regno = REG_A0x; return REG;
 	YY_BREAK
 case 176:
 YY_RULE_SETUP
 #line 238 "bfin-lex.l"
-_REG.regno = REG_A0x; return REG;
+_REG.regno = REG_A0w; return REG;
 	YY_BREAK
 case 177:
 YY_RULE_SETUP
 #line 239 "bfin-lex.l"
-_REG.regno = REG_A0w; return REG;
+_REG.regno = REG_A0;  return REG_A_DOUBLE_ZERO;
 	YY_BREAK
 case 178:
 YY_RULE_SETUP
 #line 240 "bfin-lex.l"
-_REG.regno = REG_A0;  return REG_A_DOUBLE_ZERO;
+return GOT;
 	YY_BREAK
 case 179:
 YY_RULE_SETUP
 #line 241 "bfin-lex.l"
-return GOT;
+return GOT17M4;
 	YY_BREAK
 case 180:
 YY_RULE_SETUP
 #line 242 "bfin-lex.l"
-return GOT17M4;
+return FUNCDESC_GOT17M4;
 	YY_BREAK
 case 181:
 YY_RULE_SETUP
 #line 243 "bfin-lex.l"
-return FUNCDESC_GOT17M4;
+return PLTPC;
 	YY_BREAK
 case 182:
 YY_RULE_SETUP
-#line 244 "bfin-lex.l"
-return PLTPC;
+#line 246 "bfin-lex.l"
+return TILDA;
 	YY_BREAK
 case 183:
 YY_RULE_SETUP
 #line 247 "bfin-lex.l"
-return TILDA;
+return _BAR_ASSIGN;
 	YY_BREAK
 case 184:
 YY_RULE_SETUP
 #line 248 "bfin-lex.l"
-return _BAR_ASSIGN;
+return BAR;
 	YY_BREAK
 case 185:
 YY_RULE_SETUP
 #line 249 "bfin-lex.l"
-return BAR;
+return _CARET_ASSIGN;
 	YY_BREAK
 case 186:
 YY_RULE_SETUP
 #line 250 "bfin-lex.l"
-return _CARET_ASSIGN;
+return CARET;
 	YY_BREAK
 case 187:
 YY_RULE_SETUP
 #line 251 "bfin-lex.l"
-return CARET;
+return RBRACK;
 	YY_BREAK
 case 188:
 YY_RULE_SETUP
 #line 252 "bfin-lex.l"
-return RBRACK;
+return LBRACK;
 	YY_BREAK
 case 189:
 YY_RULE_SETUP
 #line 253 "bfin-lex.l"
-return LBRACK;
+return _GREATER_GREATER_GREATER_THAN_ASSIGN;
 	YY_BREAK
 case 190:
 YY_RULE_SETUP
 #line 254 "bfin-lex.l"
-return _GREATER_GREATER_GREATER_THAN_ASSIGN;
+return _GREATER_GREATER_ASSIGN;
 	YY_BREAK
 case 191:
 YY_RULE_SETUP
 #line 255 "bfin-lex.l"
-return _GREATER_GREATER_ASSIGN;
+return _GREATER_GREATER_GREATER;
 	YY_BREAK
 case 192:
 YY_RULE_SETUP
 #line 256 "bfin-lex.l"
-return _GREATER_GREATER_GREATER;
+return GREATER_GREATER;
 	YY_BREAK
 case 193:
 YY_RULE_SETUP
 #line 257 "bfin-lex.l"
-return GREATER_GREATER;
+return _ASSIGN_ASSIGN;
 	YY_BREAK
 case 194:
 YY_RULE_SETUP
 #line 258 "bfin-lex.l"
-return _ASSIGN_ASSIGN;
+return ASSIGN;
 	YY_BREAK
 case 195:
 YY_RULE_SETUP
 #line 259 "bfin-lex.l"
-return ASSIGN;
+return _LESS_THAN_ASSIGN;
 	YY_BREAK
 case 196:
 YY_RULE_SETUP
 #line 260 "bfin-lex.l"
-return _LESS_THAN_ASSIGN;
+return _LESS_LESS_ASSIGN;
 	YY_BREAK
 case 197:
 YY_RULE_SETUP
 #line 261 "bfin-lex.l"
-return _LESS_LESS_ASSIGN;
+return LESS_LESS;
 	YY_BREAK
 case 198:
 YY_RULE_SETUP
 #line 262 "bfin-lex.l"
-return LESS_LESS;
+return LESS_THAN;
 	YY_BREAK
 case 199:
 YY_RULE_SETUP
 #line 263 "bfin-lex.l"
-return LESS_THAN;
+return LPAREN;
 	YY_BREAK
 case 200:
 YY_RULE_SETUP
 #line 264 "bfin-lex.l"
-return LPAREN;
+return RPAREN;
 	YY_BREAK
 case 201:
 YY_RULE_SETUP
 #line 265 "bfin-lex.l"
-return RPAREN;
+return COLON;
 	YY_BREAK
 case 202:
 YY_RULE_SETUP
 #line 266 "bfin-lex.l"
-return COLON;
+return SLASH;
 	YY_BREAK
 case 203:
 YY_RULE_SETUP
 #line 267 "bfin-lex.l"
-return SLASH;
+return _MINUS_ASSIGN;
 	YY_BREAK
 case 204:
 YY_RULE_SETUP
 #line 268 "bfin-lex.l"
-return _MINUS_ASSIGN;
+return _PLUS_BAR_PLUS;
 	YY_BREAK
 case 205:
 YY_RULE_SETUP
 #line 269 "bfin-lex.l"
-return _PLUS_BAR_PLUS;
+return _MINUS_BAR_PLUS;
 	YY_BREAK
 case 206:
 YY_RULE_SETUP
 #line 270 "bfin-lex.l"
-return _MINUS_BAR_PLUS;
+return _PLUS_BAR_MINUS;
 	YY_BREAK
 case 207:
 YY_RULE_SETUP
 #line 271 "bfin-lex.l"
-return _PLUS_BAR_MINUS;
+return _MINUS_BAR_MINUS;
 	YY_BREAK
 case 208:
 YY_RULE_SETUP
 #line 272 "bfin-lex.l"
-return _MINUS_BAR_MINUS;
+return _MINUS_MINUS;
 	YY_BREAK
 case 209:
 YY_RULE_SETUP
 #line 273 "bfin-lex.l"
-return _MINUS_MINUS;
+return MINUS;
 	YY_BREAK
 case 210:
 YY_RULE_SETUP
 #line 274 "bfin-lex.l"
-return MINUS;
+return COMMA;
 	YY_BREAK
 case 211:
 YY_RULE_SETUP
 #line 275 "bfin-lex.l"
-return COMMA;
+return _PLUS_ASSIGN;
 	YY_BREAK
 case 212:
 YY_RULE_SETUP
 #line 276 "bfin-lex.l"
-return _PLUS_ASSIGN;
+return _PLUS_PLUS;
 	YY_BREAK
 case 213:
 YY_RULE_SETUP
 #line 277 "bfin-lex.l"
-return _PLUS_PLUS;
+return PLUS;
 	YY_BREAK
 case 214:
 YY_RULE_SETUP
 #line 278 "bfin-lex.l"
-return PLUS;
+return _STAR_ASSIGN;
 	YY_BREAK
 case 215:
 YY_RULE_SETUP
 #line 279 "bfin-lex.l"
-return _STAR_ASSIGN;
+return STAR;
 	YY_BREAK
 case 216:
 YY_RULE_SETUP
 #line 280 "bfin-lex.l"
-return STAR;
+return _AMPERSAND_ASSIGN;
 	YY_BREAK
 case 217:
 YY_RULE_SETUP
 #line 281 "bfin-lex.l"
-return _AMPERSAND_ASSIGN;
+return AMPERSAND;
 	YY_BREAK
 case 218:
 YY_RULE_SETUP
 #line 282 "bfin-lex.l"
-return AMPERSAND;
+return PERCENT;
 	YY_BREAK
 case 219:
 YY_RULE_SETUP
 #line 283 "bfin-lex.l"
-return PERCENT;
+return BANG;
 	YY_BREAK
 case 220:
 YY_RULE_SETUP
 #line 284 "bfin-lex.l"
-return BANG;
+return SEMICOLON;
 	YY_BREAK
 case 221:
 YY_RULE_SETUP
 #line 285 "bfin-lex.l"
-return SEMICOLON;
+return _ASSIGN_BANG;
 	YY_BREAK
 case 222:
 YY_RULE_SETUP
 #line 286 "bfin-lex.l"
-return _ASSIGN_BANG;
+return DOUBLE_BAR;
 	YY_BREAK
 case 223:
 YY_RULE_SETUP
 #line 287 "bfin-lex.l"
-return DOUBLE_BAR;
+return AT;
 	YY_BREAK
 case 224:
 YY_RULE_SETUP
 #line 288 "bfin-lex.l"
-return AT;
+return PREFETCH;
 	YY_BREAK
 case 225:
 YY_RULE_SETUP
 #line 289 "bfin-lex.l"
-return PREFETCH;
+return UNLINK;
 	YY_BREAK
 case 226:
 YY_RULE_SETUP
 #line 290 "bfin-lex.l"
-return UNLINK;
+return LINK;
 	YY_BREAK
 case 227:
 YY_RULE_SETUP
 #line 291 "bfin-lex.l"
-return LINK;
+return IDLE;
 	YY_BREAK
 case 228:
 YY_RULE_SETUP
 #line 292 "bfin-lex.l"
-return IDLE;
+return IFLUSH;
 	YY_BREAK
 case 229:
 YY_RULE_SETUP
 #line 293 "bfin-lex.l"
-return IFLUSH;
+return FLUSHINV;
 	YY_BREAK
 case 230:
 YY_RULE_SETUP
 #line 294 "bfin-lex.l"
-return FLUSHINV;
+return FLUSH;
 	YY_BREAK
 case 231:
 YY_RULE_SETUP
 #line 295 "bfin-lex.l"
-return FLUSH;
-	YY_BREAK
-case 232:
-YY_RULE_SETUP
-#line 296 "bfin-lex.l"
 {
     yylval.value = parse_int (&yytext);
     return NUMBER;
   }
 	YY_BREAK
-case 233:
+case 232:
 YY_RULE_SETUP
-#line 300 "bfin-lex.l"
+#line 299 "bfin-lex.l"
 { 
     yylval.symbol = symbol_find_or_make (yytext);
     symbol_mark_used (yylval.symbol);
     return SYMBOL; 
   }
 	YY_BREAK
-case 234:
+case 233:
 YY_RULE_SETUP
-#line 305 "bfin-lex.l"
+#line 304 "bfin-lex.l"
 {
     char *name;
     char *ref = strdup (yytext);
@@ -2283,8 +2318,13 @@ YY_RULE_SETUP
       }                                  
   }                                  
 	YY_BREAK
+case 234:
+/* rule 234 can match eol */
+YY_RULE_SETUP
+#line 333 "bfin-lex.l"
+;
+	YY_BREAK
 case 235:
-/* rule 235 can match eol */
 YY_RULE_SETUP
 #line 334 "bfin-lex.l"
 ;
@@ -2292,19 +2332,14 @@ YY_RULE_SETUP
 case 236:
 YY_RULE_SETUP
 #line 335 "bfin-lex.l"
-;
+return yytext[0];
 	YY_BREAK
 case 237:
 YY_RULE_SETUP
 #line 336 "bfin-lex.l"
-return yytext[0];
-	YY_BREAK
-case 238:
-YY_RULE_SETUP
-#line 337 "bfin-lex.l"
 ECHO;
 	YY_BREAK
-#line 2308 "bfin-lex.c"
+#line 2343 "bfin-lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(KEYWORD):
 	yyterminate();
@@ -2491,7 +2526,7 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			size_t num_to_read =
+			yy_size_t num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
@@ -2505,7 +2540,7 @@ static int yy_get_next_buffer (void)
 
 			if ( b->yy_is_our_buffer )
 				{
-				int new_size = b->yy_buf_size * 2;
+				yy_size_t new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -2559,6 +2594,14 @@ static int yy_get_next_buffer (void)
 
 	else
 		ret_val = EOB_ACT_CONTINUE_SCAN;
+
+	if ((yy_size_t) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+		/* Extend the array by 50%, plus the number we really need. */
+		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
+		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
+			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
+	}
 
 	(yy_n_chars) += number_to_move;
 	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
@@ -2638,7 +2681,7 @@ static int yy_get_next_buffer (void)
 	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 		{ /* need to shift things up to make room */
 		/* +2 for EOB chars. */
-		register int number_to_move = (yy_n_chars) + 2;
+		register yy_size_t number_to_move = (yy_n_chars) + 2;
 		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
 					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
 		register char *source =
@@ -2687,7 +2730,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			int offset = (yy_c_buf_p) - (yytext_ptr);
+			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -2711,7 +2754,7 @@ static int yy_get_next_buffer (void)
 				case EOB_ACT_END_OF_FILE:
 					{
 					if ( yywrap( ) )
-						return EOF;
+						return 0;
 
 					if ( ! (yy_did_buffer_switch_on_eof) )
 						YY_NEW_FILE;
@@ -2963,7 +3006,7 @@ void yypop_buffer_state (void)
  */
 static void yyensure_buffer_stack (void)
 {
-	int num_to_alloc;
+	yy_size_t num_to_alloc;
     
 	if (!(yy_buffer_stack)) {
 
@@ -2975,7 +3018,9 @@ static void yyensure_buffer_stack (void)
 		(yy_buffer_stack) = (struct yy_buffer_state**)yyalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
-		
+		if ( ! (yy_buffer_stack) )
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
+								  
 		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 				
 		(yy_buffer_stack_max) = num_to_alloc;
@@ -2993,6 +3038,8 @@ static void yyensure_buffer_stack (void)
 								((yy_buffer_stack),
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
+		if ( ! (yy_buffer_stack) )
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
 		memset((yy_buffer_stack) + (yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
@@ -3037,16 +3084,16 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
 
 /** Setup the input buffer state to scan a string. The next call to yylex() will
  * scan from a @e copy of @a str.
- * @param str a NUL-terminated string to scan
+ * @param yystr a NUL-terminated string to scan
  * 
  * @return the newly allocated buffer state object.
  * @note If you want to scan bytes that may contain NUL values, then use
  *       yy_scan_bytes() instead.
  */
-YY_BUFFER_STATE yy_scan_string (yyconst char * str )
+YY_BUFFER_STATE yy_scan_string (yyconst char * yystr )
 {
     
-	return yy_scan_bytes(str,strlen(str) );
+	return yy_scan_bytes(yystr,strlen(yystr) );
 }
 
 /** Setup the input buffer state to scan the given bytes. The next call to yylex() will
@@ -3056,23 +3103,22 @@ YY_BUFFER_STATE yy_scan_string (yyconst char * str )
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE yy_scan_bytes  (yyconst char * bytes, int  len )
+YY_BUFFER_STATE yy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
-	yy_size_t n;
-	int i;
+	yy_size_t n, i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
-	n = len + 2;
+	n = _yybytes_len + 2;
 	buf = (char *) yyalloc(n  );
 	if ( ! buf )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
 
-	for ( i = 0; i < len; ++i )
-		buf[i] = bytes[i];
+	for ( i = 0; i < _yybytes_len; ++i )
+		buf[i] = yybytes[i];
 
-	buf[len] = buf[len+1] = YY_END_OF_BUFFER_CHAR;
+	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
 	b = yy_scan_buffer(buf,n );
 	if ( ! b )
@@ -3115,6 +3161,15 @@ static void yy_fatal_error (yyconst char* msg )
 
 /* Accessor  methods (get/set functions) to struct members. */
 
+/** Get the current line number.
+ * 
+ */
+int yyget_lineno  (void)
+{
+        
+    return yylineno;
+}
+
 /** Get the input stream.
  * 
  */
@@ -3134,7 +3189,7 @@ FILE *yyget_out  (void)
 /** Get the length of the current token.
  * 
  */
-int yyget_leng  (void)
+yy_size_t yyget_leng  (void)
 {
         return yyleng;
 }
@@ -3146,6 +3201,16 @@ int yyget_leng  (void)
 char *yyget_text  (void)
 {
         return yytext;
+}
+
+/** Set the current line number.
+ * @param line_number
+ * 
+ */
+void yyset_lineno (int  line_number )
+{
+    
+    yylineno = line_number;
 }
 
 /** Set the input stream. This does not discard the current
@@ -3174,6 +3239,34 @@ void yyset_debug (int  bdebug )
         yy_flex_debug = bdebug ;
 }
 
+static int yy_init_globals (void)
+{
+        /* Initialization is the same as for the non-reentrant scanner.
+     * This function is called from yylex_destroy(), so don't allocate here.
+     */
+
+    (yy_buffer_stack) = 0;
+    (yy_buffer_stack_top) = 0;
+    (yy_buffer_stack_max) = 0;
+    (yy_c_buf_p) = (char *) 0;
+    (yy_init) = 0;
+    (yy_start) = 0;
+
+/* Defined in main.c */
+#ifdef YY_STDINIT
+    yyin = stdin;
+    yyout = stdout;
+#else
+    yyin = (FILE *) 0;
+    yyout = (FILE *) 0;
+#endif
+
+    /* For future reference: Set errno on error, since we are called by
+     * yylex_init()
+     */
+    return 0;
+}
+
 /* yylex_destroy is for both reentrant and non-reentrant scanners. */
 int yylex_destroy  (void)
 {
@@ -3189,6 +3282,10 @@ int yylex_destroy  (void)
 	yyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
 
+    /* Reset the globals. This is important in a non-reentrant scanner so the next time
+     * yylex() is called, initialization will occur. */
+    yy_init_globals( );
+
     return 0;
 }
 
@@ -3200,7 +3297,7 @@ int yylex_destroy  (void)
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
 	register int i;
-    	for ( i = 0; i < n; ++i )
+	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
 #endif
@@ -3209,7 +3306,7 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 static int yy_flex_strlen (yyconst char * s )
 {
 	register int n;
-    	for ( n = 0; s[n]; ++n )
+	for ( n = 0; s[n]; ++n )
 		;
 
 	return n;
@@ -3240,7 +3337,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 337 "bfin-lex.l"
+#line 336 "bfin-lex.l"
 
 
 static long parse_int (char **end)
@@ -3417,6 +3514,7 @@ static long parse_int (char **end)
 static int parse_reg (Register *r, int cl, char *rt)
 {
   r->regno = cl | (rt[1] - '0');
+  r->flags = F_REG_NONE;
   return REG;
 }
 
@@ -3432,11 +3530,12 @@ static int parse_halfreg (Register *r, int cl, char *rt)
 
       case 'l':
       case 'L':
+	r->flags = F_REG_LOW;
 	break;
 
       case 'h':
       case 'H':
-	r->regno |= F_REG_HIGH;
+	r->flags = F_REG_HIGH;
 	break;
     }
 

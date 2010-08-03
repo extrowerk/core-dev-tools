@@ -1,6 +1,6 @@
 /* Print i386 instructions for GDB, the GNU debugger.
    Copyright 1988, 1989, 1991, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
    Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
@@ -55,8 +55,8 @@ static void append_seg (void);
 static void OP_indirE (int, int);
 static void print_operand_value (char *, int, bfd_vma);
 static void OP_E_register (int, int);
-static void OP_E_memory (int, int, int);
-static void OP_E_extended (int, int, int);
+static void OP_E_memory (int, int);
+static void OP_E_extended (int, int);
 static void print_displacement (char *, bfd_vma);
 static void OP_E (int, int);
 static void OP_G (int, int);
@@ -96,7 +96,6 @@ static void OP_VEX (int, int);
 static void OP_VEX_FMA (int, int);
 static void OP_EX_Vex (int, int);
 static void OP_EX_VexW (int, int);
-static void OP_EX_VexImmW (int, int);
 static void OP_XMM_Vex (int, int);
 static void OP_XMM_VexW (int, int);
 static void OP_REG_VexI4 (int, int);
@@ -104,7 +103,6 @@ static void PCLMUL_Fixup (int, int);
 static void VEXI4_Fixup (int, int);
 static void VZERO_Fixup (int, int);
 static void VCMP_Fixup (int, int);
-static void VPERMIL2_Fixup (int, int);
 static void OP_0f07 (int, int);
 static void OP_Monitor (int, int);
 static void OP_Mwait (int, int);
@@ -117,11 +115,7 @@ static void REP_Fixup (int, int);
 static void CMPXCHG8B_Fixup (int, int);
 static void XMM_Fixup (int, int);
 static void CRC32_Fixup (int, int);
-static void print_drex_arg (unsigned int, int, int);
-static void OP_DREX4 (int, int);
-static void OP_DREX3 (int, int);
-static void OP_DREX_ICMP (int, int);
-static void OP_DREX_FCMP (int, int);
+
 static void MOVBE_Fixup (int, int);
 
 struct dis_private {
@@ -168,20 +162,6 @@ static int rex_ignored;
     else						\
       rex_used |= REX_OPCODE;				\
   }
-
-/* Special 'registers' for DREX handling */
-#define DREX_REG_UNKNOWN	1000	/* not initialized */
-#define DREX_REG_MEMORY         1001	/* use MODRM/SIB/OFFSET memory */
-
-/* The DREX byte has the following fields:
-   Bits 7-4 -- DREX.Dest, xmm destination register
-   Bit 3    -- DREX.OC0, operand config bit defines operand order
-   Bit 2    -- DREX.R, equivalent to REX_R bit, to extend ModRM register
-   Bit 1    -- DREX.X, equivalent to REX_X bit, to extend SIB index field
-   Bit 0    -- DREX.W, equivalent to REX_B bit, to extend ModRM r/m field,
-	       SIB base field, or opcode reg field.  */
-#define DREX_XMM(drex) ((drex >> 4) & 0xf)
-#define DREX_OC0(drex) ((drex >> 3) & 0x1)
 
 /* Flags for prefixes which we somehow handled when printing the
    current instruction.  */
@@ -240,7 +220,9 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define XX { NULL, 0 }
 
 #define Eb { OP_E, b_mode }
+#define EbS { OP_E, b_swap_mode }
 #define Ev { OP_E, v_mode }
+#define EvS { OP_E, v_swap_mode }
 #define Ed { OP_E, d_mode }
 #define Edq { OP_E, dq_mode }
 #define Edqw { OP_E, dqw_mode }
@@ -355,15 +337,20 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define XM { OP_XMM, 0 }
 #define XMM { OP_XMM, xmm_mode }
 #define EM { OP_EM, v_mode }
+#define EMS { OP_EM, v_swap_mode }
 #define EMd { OP_EM, d_mode }
 #define EMx { OP_EM, x_mode }
 #define EXw { OP_EX, w_mode }
 #define EXd { OP_EX, d_mode }
+#define EXdS { OP_EX, d_swap_mode }
 #define EXq { OP_EX, q_mode }
+#define EXqS { OP_EX, q_swap_mode }
 #define EXx { OP_EX, x_mode }
+#define EXxS { OP_EX, x_swap_mode }
 #define EXxmm { OP_EX, xmm_mode }
 #define EXxmmq { OP_EX, xmmq_mode }
 #define EXymmq { OP_EX, ymmq_mode }
+#define EXVexWdq { OP_EX, vex_w_dq_mode }
 #define MS { OP_MS, v_mode }
 #define XS { OP_XS, v_mode }
 #define EMCq { OP_EMC, q_mode }
@@ -379,18 +366,18 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define VexFMA { OP_VEX_FMA, vex_mode }
 #define Vex128FMA { OP_VEX_FMA, vex128_mode }
 #define EXdVex { OP_EX_Vex, d_mode }
+#define EXdVexS { OP_EX_Vex, d_swap_mode }
 #define EXqVex { OP_EX_Vex, q_mode }
+#define EXqVexS { OP_EX_Vex, q_swap_mode }
 #define EXVexW { OP_EX_VexW, x_mode }
 #define EXdVexW { OP_EX_VexW, d_mode }
 #define EXqVexW { OP_EX_VexW, q_mode }
-#define EXVexImmW { OP_EX_VexImmW, x_mode }
 #define XMVex { OP_XMM_Vex, 0 }
 #define XMVexW { OP_XMM_VexW, 0 }
 #define XMVexI4 { OP_REG_VexI4, x_mode }
 #define PCLMUL { PCLMUL_Fixup, 0 }
 #define VZERO { VZERO_Fixup, 0 }
 #define VCMP { VCMP_Fixup, 0 }
-#define VPERMIL2 { VPERMIL2_Fixup, 0 }
 
 /* Used handle "rep" prefix for string instructions.  */
 #define Xbr { REP_Fixup, eSI_reg }
@@ -412,20 +399,30 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 
 /* byte operand */
 #define b_mode			1
+/* byte operand with operand swapped */
+#define b_swap_mode		(b_mode + 1)
 /* operand size depends on prefixes */
-#define v_mode			(b_mode + 1)
+#define v_mode			(b_swap_mode + 1)
+/* operand size depends on prefixes with operand swapped */
+#define v_swap_mode		(v_mode + 1)
 /* word operand */
-#define w_mode			(v_mode + 1)
+#define w_mode			(v_swap_mode + 1)
 /* double word operand  */
 #define d_mode			(w_mode + 1)
+/* double word operand with operand swapped */
+#define d_swap_mode		(d_mode + 1)
 /* quad word operand */
-#define q_mode			(d_mode + 1)
+#define q_mode			(d_swap_mode + 1)
+/* quad word operand with operand swapped */
+#define q_swap_mode		(q_mode + 1)
 /* ten-byte operand */
-#define t_mode			(q_mode + 1)
+#define t_mode			(q_swap_mode + 1)
 /* 16-byte XMM or 32-byte YMM operand */
 #define x_mode			(t_mode + 1)
+/* 16-byte XMM or 32-byte YMM operand with operand swapped */
+#define x_swap_mode		(x_mode + 1)
 /* 16-byte XMM operand */
-#define xmm_mode		(x_mode + 1)
+#define xmm_mode		(x_swap_mode + 1)
 /* 16-byte XMM or quad word operand */
 #define xmmq_mode		(xmm_mode + 1)
 /* 32-byte YMM or quad word operand */
@@ -459,8 +456,10 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define vex128_mode		(vex_mode + 1)
 /* 256bit vex mode */
 #define vex256_mode		(vex128_mode + 1)
+/* operand size depends on the VEX.W bit.  */
+#define vex_w_dq_mode		(vex256_mode + 1)
 
-#define es_reg			(vex256_mode + 1)
+#define es_reg			(vex_w_dq_mode + 1)
 #define cs_reg			(es_reg + 1)
 #define ss_reg			(cs_reg + 1)
 #define ds_reg			(ss_reg + 1)
@@ -508,15 +507,6 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 
 #define MAX_BYTEMODE	indir_dx_reg
 
-/* Flags that are OR'ed into the bytemode field to pass extra
-   information.  */
-#define DREX_OC1		0x10000	/* OC1 bit set */
-#define DREX_NO_OC0		0x20000	/* OC0 bit not used */
-#define DREX_MASK		0x40000	/* mask to delete */
-
-#if MAX_BYTEMODE >= DREX_OC1
-#error MAX_BYTEMODE must be less than DREX_OC1
-#endif
 
 #define FLOATCODE		1
 #define USE_REG_TABLE		(FLOATCODE + 1)
@@ -939,7 +929,37 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define PREFIX_VEX_383F		(PREFIX_VEX_383E + 1)
 #define PREFIX_VEX_3840		(PREFIX_VEX_383F + 1)
 #define PREFIX_VEX_3841		(PREFIX_VEX_3840 + 1)
-#define PREFIX_VEX_38DB		(PREFIX_VEX_3841 + 1)
+#define PREFIX_VEX_3896		(PREFIX_VEX_3841 + 1)
+#define PREFIX_VEX_3897		(PREFIX_VEX_3896 + 1)
+#define PREFIX_VEX_3898		(PREFIX_VEX_3897 + 1)
+#define PREFIX_VEX_3899		(PREFIX_VEX_3898 + 1)
+#define PREFIX_VEX_389A		(PREFIX_VEX_3899 + 1)
+#define PREFIX_VEX_389B		(PREFIX_VEX_389A + 1)
+#define PREFIX_VEX_389C		(PREFIX_VEX_389B + 1)
+#define PREFIX_VEX_389D		(PREFIX_VEX_389C + 1)
+#define PREFIX_VEX_389E		(PREFIX_VEX_389D + 1)
+#define PREFIX_VEX_389F		(PREFIX_VEX_389E + 1)
+#define PREFIX_VEX_38A6		(PREFIX_VEX_389F + 1)
+#define PREFIX_VEX_38A7		(PREFIX_VEX_38A6 + 1)
+#define PREFIX_VEX_38A8		(PREFIX_VEX_38A7 + 1)
+#define PREFIX_VEX_38A9		(PREFIX_VEX_38A8 + 1)
+#define PREFIX_VEX_38AA		(PREFIX_VEX_38A9 + 1)
+#define PREFIX_VEX_38AB		(PREFIX_VEX_38AA + 1)
+#define PREFIX_VEX_38AC		(PREFIX_VEX_38AB + 1)
+#define PREFIX_VEX_38AD		(PREFIX_VEX_38AC + 1)
+#define PREFIX_VEX_38AE		(PREFIX_VEX_38AD + 1)
+#define PREFIX_VEX_38AF		(PREFIX_VEX_38AE + 1)
+#define PREFIX_VEX_38B6		(PREFIX_VEX_38AF + 1)
+#define PREFIX_VEX_38B7		(PREFIX_VEX_38B6 + 1)
+#define PREFIX_VEX_38B8		(PREFIX_VEX_38B7 + 1)
+#define PREFIX_VEX_38B9		(PREFIX_VEX_38B8 + 1)
+#define PREFIX_VEX_38BA		(PREFIX_VEX_38B9 + 1)
+#define PREFIX_VEX_38BB		(PREFIX_VEX_38BA + 1)
+#define PREFIX_VEX_38BC		(PREFIX_VEX_38BB + 1)
+#define PREFIX_VEX_38BD		(PREFIX_VEX_38BC + 1)
+#define PREFIX_VEX_38BE		(PREFIX_VEX_38BD + 1)
+#define PREFIX_VEX_38BF		(PREFIX_VEX_38BE + 1)
+#define PREFIX_VEX_38DB		(PREFIX_VEX_38BF + 1)
 #define PREFIX_VEX_38DC		(PREFIX_VEX_38DB + 1)
 #define PREFIX_VEX_38DD		(PREFIX_VEX_38DC + 1)
 #define PREFIX_VEX_38DE		(PREFIX_VEX_38DD + 1)
@@ -967,9 +987,8 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define PREFIX_VEX_3A40		(PREFIX_VEX_3A22 + 1)
 #define PREFIX_VEX_3A41		(PREFIX_VEX_3A40 + 1)
 #define PREFIX_VEX_3A42		(PREFIX_VEX_3A41 + 1)
-#define PREFIX_VEX_3A48		(PREFIX_VEX_3A42 + 1)
-#define PREFIX_VEX_3A49		(PREFIX_VEX_3A48 + 1)
-#define PREFIX_VEX_3A4A		(PREFIX_VEX_3A49 + 1)
+#define PREFIX_VEX_3A44		(PREFIX_VEX_3A42 + 1)
+#define PREFIX_VEX_3A4A		(PREFIX_VEX_3A44 + 1)
 #define PREFIX_VEX_3A4B		(PREFIX_VEX_3A4A + 1)
 #define PREFIX_VEX_3A4C		(PREFIX_VEX_3A4B + 1)
 #define PREFIX_VEX_3A5C		(PREFIX_VEX_3A4C + 1)
@@ -1027,12 +1046,9 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define X86_64_0F01_REG_2	(X86_64_0F01_REG_1 + 1)
 #define X86_64_0F01_REG_3	(X86_64_0F01_REG_2 + 1)
 
-#define THREE_BYTE_0F24		0
-#define THREE_BYTE_0F25		(THREE_BYTE_0F24 + 1)
-#define THREE_BYTE_0F38		(THREE_BYTE_0F25 + 1)
+#define THREE_BYTE_0F38		0
 #define THREE_BYTE_0F3A		(THREE_BYTE_0F38 + 1)
 #define THREE_BYTE_0F7A		(THREE_BYTE_0F3A + 1)
-#define THREE_BYTE_0F7B		(THREE_BYTE_0F7A + 1)
 
 #define VEX_0F			0
 #define VEX_0F38		(VEX_0F + 1)
@@ -1052,8 +1068,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define VEX_LEN_17_M_0	(VEX_LEN_16_P_2 + 1)
 #define VEX_LEN_2A_P_1	(VEX_LEN_17_M_0 + 1)
 #define VEX_LEN_2A_P_3	(VEX_LEN_2A_P_1 + 1)
-#define VEX_LEN_2B_M_0	(VEX_LEN_2A_P_3 + 1)
-#define VEX_LEN_2C_P_1	(VEX_LEN_2B_M_0 + 1)
+#define VEX_LEN_2C_P_1	(VEX_LEN_2A_P_3 + 1)
 #define VEX_LEN_2C_P_3	(VEX_LEN_2C_P_1 + 1)
 #define VEX_LEN_2D_P_1	(VEX_LEN_2C_P_3 + 1)
 #define VEX_LEN_2D_P_3	(VEX_LEN_2D_P_1 + 1)
@@ -1139,8 +1154,7 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define VEX_LEN_E3_P_2	(VEX_LEN_E2_P_2 + 1)
 #define VEX_LEN_E4_P_2	(VEX_LEN_E3_P_2 + 1)
 #define VEX_LEN_E5_P_2	(VEX_LEN_E4_P_2 + 1)
-#define VEX_LEN_E7_P_2_M_0	(VEX_LEN_E5_P_2 + 1)
-#define VEX_LEN_E8_P_2	(VEX_LEN_E7_P_2_M_0 + 1)
+#define VEX_LEN_E8_P_2	(VEX_LEN_E5_P_2 + 1)
 #define VEX_LEN_E9_P_2	(VEX_LEN_E8_P_2 + 1)
 #define VEX_LEN_EA_P_2	(VEX_LEN_E9_P_2 + 1)
 #define VEX_LEN_EB_P_2	(VEX_LEN_EA_P_2 + 1)
@@ -1227,7 +1241,8 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
 #define VEX_LEN_3A22_P_2	(VEX_LEN_3A21_P_2 + 1)
 #define VEX_LEN_3A41_P_2	(VEX_LEN_3A22_P_2 + 1)
 #define VEX_LEN_3A42_P_2	(VEX_LEN_3A41_P_2 + 1)
-#define VEX_LEN_3A4C_P_2	(VEX_LEN_3A42_P_2 + 1)
+#define VEX_LEN_3A44_P_2	(VEX_LEN_3A42_P_2 + 1)
+#define VEX_LEN_3A4C_P_2	(VEX_LEN_3A44_P_2 + 1)
 #define VEX_LEN_3A60_P_2	(VEX_LEN_3A4C_P_2 + 1)
 #define VEX_LEN_3A61_P_2	(VEX_LEN_3A60_P_2 + 1)
 #define VEX_LEN_3A62_P_2	(VEX_LEN_3A61_P_2 + 1)
@@ -1292,6 +1307,7 @@ struct dis386 {
    2 upper case letter macros:
    "XY" => print 'x' or 'y' if no register operands or suffix_always
 	   is true.
+   'XW' => print 's', 'd' depending on the VEX.W bit (for FMA)
    'LQ' => print 'l' ('d' in Intel mode) or 'q' for memory operand
 	   or suffix_always is true
 
@@ -1305,8 +1321,8 @@ static const struct dis386 dis386[] = {
   /* 00 */
   { "addB",		{ Eb, Gb } },
   { "addS",		{ Ev, Gv } },
-  { "addB",		{ Gb, Eb } },
-  { "addS",		{ Gv, Ev } },
+  { "addB",		{ Gb, EbS } },
+  { "addS",		{ Gv, EvS } },
   { "addB",		{ AL, Ib } },
   { "addS",		{ eAX, Iv } },
   { X86_64_TABLE (X86_64_06) },
@@ -1314,8 +1330,8 @@ static const struct dis386 dis386[] = {
   /* 08 */
   { "orB",		{ Eb, Gb } },
   { "orS",		{ Ev, Gv } },
-  { "orB",		{ Gb, Eb } },
-  { "orS",		{ Gv, Ev } },
+  { "orB",		{ Gb, EbS } },
+  { "orS",		{ Gv, EvS } },
   { "orB",		{ AL, Ib } },
   { "orS",		{ eAX, Iv } },
   { X86_64_TABLE (X86_64_0D) },
@@ -1323,8 +1339,8 @@ static const struct dis386 dis386[] = {
   /* 10 */
   { "adcB",		{ Eb, Gb } },
   { "adcS",		{ Ev, Gv } },
-  { "adcB",		{ Gb, Eb } },
-  { "adcS",		{ Gv, Ev } },
+  { "adcB",		{ Gb, EbS } },
+  { "adcS",		{ Gv, EvS } },
   { "adcB",		{ AL, Ib } },
   { "adcS",		{ eAX, Iv } },
   { X86_64_TABLE (X86_64_16) },
@@ -1332,8 +1348,8 @@ static const struct dis386 dis386[] = {
   /* 18 */
   { "sbbB",		{ Eb, Gb } },
   { "sbbS",		{ Ev, Gv } },
-  { "sbbB",		{ Gb, Eb } },
-  { "sbbS",		{ Gv, Ev } },
+  { "sbbB",		{ Gb, EbS } },
+  { "sbbS",		{ Gv, EvS } },
   { "sbbB",		{ AL, Ib } },
   { "sbbS",		{ eAX, Iv } },
   { X86_64_TABLE (X86_64_1E) },
@@ -1341,8 +1357,8 @@ static const struct dis386 dis386[] = {
   /* 20 */
   { "andB",		{ Eb, Gb } },
   { "andS",		{ Ev, Gv } },
-  { "andB",		{ Gb, Eb } },
-  { "andS",		{ Gv, Ev } },
+  { "andB",		{ Gb, EbS } },
+  { "andS",		{ Gv, EvS } },
   { "andB",		{ AL, Ib } },
   { "andS",		{ eAX, Iv } },
   { "(bad)",		{ XX } },	/* SEG ES prefix */
@@ -1350,8 +1366,8 @@ static const struct dis386 dis386[] = {
   /* 28 */
   { "subB",		{ Eb, Gb } },
   { "subS",		{ Ev, Gv } },
-  { "subB",		{ Gb, Eb } },
-  { "subS",		{ Gv, Ev } },
+  { "subB",		{ Gb, EbS } },
+  { "subS",		{ Gv, EvS } },
   { "subB",		{ AL, Ib } },
   { "subS",		{ eAX, Iv } },
   { "(bad)",		{ XX } },	/* SEG CS prefix */
@@ -1359,8 +1375,8 @@ static const struct dis386 dis386[] = {
   /* 30 */
   { "xorB",		{ Eb, Gb } },
   { "xorS",		{ Ev, Gv } },
-  { "xorB",		{ Gb, Eb } },
-  { "xorS",		{ Gv, Ev } },
+  { "xorB",		{ Gb, EbS } },
+  { "xorS",		{ Gv, EvS } },
   { "xorB",		{ AL, Ib } },
   { "xorS",		{ eAX, Iv } },
   { "(bad)",		{ XX } },	/* SEG SS prefix */
@@ -1368,8 +1384,8 @@ static const struct dis386 dis386[] = {
   /* 38 */
   { "cmpB",		{ Eb, Gb } },
   { "cmpS",		{ Ev, Gv } },
-  { "cmpB",		{ Gb, Eb } },
-  { "cmpS",		{ Gv, Ev } },
+  { "cmpB",		{ Gb, EbS } },
+  { "cmpS",		{ Gv, EvS } },
   { "cmpB",		{ AL, Ib } },
   { "cmpS",		{ eAX, Iv } },
   { "(bad)",		{ XX } },	/* SEG DS prefix */
@@ -1458,8 +1474,8 @@ static const struct dis386 dis386[] = {
   /* 88 */
   { "movB",		{ Eb, Gb } },
   { "movS",		{ Ev, Gv } },
-  { "movB",		{ Gb, Eb } },
-  { "movS",		{ Gv, Ev } },
+  { "movB",		{ Gb, EbS } },
+  { "movS",		{ Gv, EvS } },
   { "movD",		{ Sv, Sw } },
   { MOD_TABLE (MOD_8D) },
   { "movD",		{ Sw, Sv } },
@@ -1635,12 +1651,12 @@ static const struct dis386 dis386_twobyte[] = {
   { MOD_TABLE (MOD_0F22) },
   { MOD_TABLE (MOD_0F23) },
   { MOD_TABLE (MOD_0F24) },
-  { THREE_BYTE_TABLE (THREE_BYTE_0F25) },
+  { "(bad)",		{ XX } },
   { MOD_TABLE (MOD_0F26) },
   { "(bad)",		{ XX } },
   /* 28 */
   { "movapX",		{ XM, EXx } },
-  { "movapX",		{ EXx, XM } },
+  { "movapX",		{ EXxS, XM } },
   { PREFIX_TABLE (PREFIX_0F2A) },
   { PREFIX_TABLE (PREFIX_0F2B) },
   { PREFIX_TABLE (PREFIX_0F2C) },
@@ -1732,7 +1748,7 @@ static const struct dis386 dis386_twobyte[] = {
   { PREFIX_TABLE (PREFIX_0F78) },
   { PREFIX_TABLE (PREFIX_0F79) },
   { THREE_BYTE_TABLE (THREE_BYTE_0F7A) },
-  { THREE_BYTE_TABLE (THREE_BYTE_0F7B) },
+  { "(bad)",		{ XX } },
   { PREFIX_TABLE (PREFIX_0F7C) },
   { PREFIX_TABLE (PREFIX_0F7D) },
   { PREFIX_TABLE (PREFIX_0F7E) },
@@ -1931,6 +1947,7 @@ static const unsigned char twobyte_has_modrm[256] = {
 
 static char obuf[100];
 static char *obufp;
+static char *mnemonicendp;
 static char scratchbuf[100];
 static unsigned char *start_codep;
 static unsigned char *insn_codep;
@@ -1960,6 +1977,12 @@ vex;
 static unsigned char need_vex;
 static unsigned char need_vex_reg;
 static unsigned char vex_w_done;
+
+struct op
+  {
+    const char *name;
+    unsigned int len;
+  };
 
 /* If we are accessing mod/rm/reg without need_modrm set, then the
    values are stale.  Hitting this abort likely indicates that you
@@ -2406,10 +2429,10 @@ static const struct dis386 prefix_table[][4] = {
 
   /* PREFIX_0F11 */
   {
-    { "movups",	{ EXx, XM } },
-    { "movss",	{ EXd, XM } },
-    { "movupd",	{ EXx, XM } },
-    { "movsd",	{ EXq, XM } },
+    { "movups",	{ EXxS, XM } },
+    { "movss",	{ EXdS, XM } },
+    { "movupd",	{ EXxS, XM } },
+    { "movsd",	{ EXqS, XM } },
   },
 
   /* PREFIX_0F12 */
@@ -2678,9 +2701,9 @@ static const struct dis386 prefix_table[][4] = {
 
   /* PREFIX_0F7F */
   {
-    { "movq",	{ EM, MX } },
-    { "movdqu",	{ EXx, XM } },
-    { "movdqa",	{ EXx, XM } },
+    { "movq",	{ EMS, MX } },
+    { "movdqu",	{ EXxS, XM } },
+    { "movdqa",	{ EXxS, XM } },
     { "(bad)",	{ XX } },
   },
 
@@ -2736,7 +2759,7 @@ static const struct dis386 prefix_table[][4] = {
   {
     { "(bad)",	{ XX } },
     { "movq2dq",{ XM, MS } },
-    { "movq",	{ EXq, XM } },
+    { "movq",	{ EXqS, XM } },
     { "movdq2q",{ MX, XS } },
   },
 
@@ -3286,9 +3309,9 @@ static const struct dis386 prefix_table[][4] = {
 
   /* PREFIX_VEX_11 */
   {
-    { "vmovups", { EXx, XM } },
+    { "vmovups", { EXxS, XM } },
     { VEX_LEN_TABLE (VEX_LEN_11_P_1) },
-    { "vmovupd", { EXx, XM } },
+    { "vmovupd", { EXxS, XM } },
     { VEX_LEN_TABLE (VEX_LEN_11_P_3) },
   },
 
@@ -3711,8 +3734,8 @@ static const struct dis386 prefix_table[][4] = {
   /* PREFIX_VEX_7F */
   {
     { "(bad)",	{ XX } },
-    { "vmovdqu", { EXx, XM } },
-    { "vmovdqa", { EXx, XM } },
+    { "vmovdqu", { EXxS, XM } },
+    { "vmovdqa", { EXxS, XM } },
     { "(bad)",	{ XX } },
   },
 
@@ -4548,6 +4571,246 @@ static const struct dis386 prefix_table[][4] = {
     { "(bad)",	{ XX } },
   },
 
+  /* PREFIX_VEX_3896 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmaddsub132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_3897 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsubadd132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_3898 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_3899 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd132s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389A */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389B */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub132s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389C */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389D */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd132s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389E */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub132p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_389F */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub132s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38A6 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmaddsub213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38A7 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsubadd213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38A8 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38A9 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd213s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AA */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AB */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub213s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AC */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AD */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd213s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AE */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub213p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38AF */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub213s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38B6 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmaddsub231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38B7 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsubadd231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38B8 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38B9 */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmadd231s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BA */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BB */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfmsub231s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BC */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BD */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmadd231s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BE */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub231p%XW", { XM, Vex, EXx } },
+    { "(bad)",	{ XX } },
+  },
+
+  /* PREFIX_VEX_38BF */
+  {
+    { "(bad)",	{ XX } },
+    { "(bad)",	{ XX } },
+    { "vfnmsub231s%XW", { XM, Vex, EXVexWdq } },
+    { "(bad)",	{ XX } },
+  },
+
   /* PREFIX_VEX_38DB */
   {
     { "(bad)",	{ XX } },
@@ -4772,19 +5035,11 @@ static const struct dis386 prefix_table[][4] = {
     { "(bad)",	{ XX } },
   },
 
-  /* PREFIX_VEX_3A48 */
+  /* PREFIX_VEX_3A44 */
   {
     { "(bad)",	{ XX } },
     { "(bad)",	{ XX } },
-    { "vpermil2ps", { XMVexW, Vex, EXVexImmW, EXVexImmW, VPERMIL2 } },
-    { "(bad)",	{ XX } },
-  },
-
-  /* PREFIX_VEX_3A49 */
-  {
-    { "(bad)",	{ XX } },
-    { "(bad)",	{ XX } },
-    { "vpermil2pd", { XMVexW, Vex, EXVexImmW, EXVexImmW, VPERMIL2 } },
+    { VEX_LEN_TABLE (VEX_LEN_3A44_P_2) },
     { "(bad)",	{ XX } },
   },
 
@@ -5184,588 +5439,7 @@ static const struct dis386 x86_64_table[][2] = {
 };
 
 static const struct dis386 three_byte_table[][256] = {
-  /* THREE_BYTE_0F24 */
-  {
-    /* 00 */
-    { "fmaddps",	{ { OP_DREX4, q_mode } } },
-    { "fmaddpd",	{ { OP_DREX4, q_mode } } },
-    { "fmaddss",	{ { OP_DREX4, w_mode } } },
-    { "fmaddsd",	{ { OP_DREX4, d_mode } } },
-    { "fmaddps",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fmaddpd",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fmaddss",	{ { OP_DREX4, DREX_OC1 + w_mode } } },
-    { "fmaddsd",	{ { OP_DREX4, DREX_OC1 + d_mode } } },
-    /* 08 */
-    { "fmsubps",	{ { OP_DREX4, q_mode } } },
-    { "fmsubpd",	{ { OP_DREX4, q_mode } } },
-    { "fmsubss",	{ { OP_DREX4, w_mode } } },
-    { "fmsubsd",	{ { OP_DREX4, d_mode } } },
-    { "fmsubps",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fmsubpd",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fmsubss",	{ { OP_DREX4, DREX_OC1 + w_mode } } },
-    { "fmsubsd",	{ { OP_DREX4, DREX_OC1 + d_mode } } },
-    /* 10 */
-    { "fnmaddps",	{ { OP_DREX4, q_mode } } },
-    { "fnmaddpd",	{ { OP_DREX4, q_mode } } },
-    { "fnmaddss",	{ { OP_DREX4, w_mode } } },
-    { "fnmaddsd",	{ { OP_DREX4, d_mode } } },
-    { "fnmaddps",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fnmaddpd",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fnmaddss",	{ { OP_DREX4, DREX_OC1 + w_mode } } },
-    { "fnmaddsd",	{ { OP_DREX4, DREX_OC1 + d_mode } } },
-    /* 18 */
-    { "fnmsubps",	{ { OP_DREX4, q_mode } } },
-    { "fnmsubpd",	{ { OP_DREX4, q_mode } } },
-    { "fnmsubss",	{ { OP_DREX4, w_mode } } },
-    { "fnmsubsd",	{ { OP_DREX4, d_mode } } },
-    { "fnmsubps",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fnmsubpd",	{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "fnmsubss",	{ { OP_DREX4, DREX_OC1 + w_mode } } },
-    { "fnmsubsd",	{ { OP_DREX4, DREX_OC1 + d_mode } } },
-    /* 20 */
-    { "permps",		{ { OP_DREX4, q_mode } } },
-    { "permpd",		{ { OP_DREX4, q_mode } } },
-    { "pcmov",		{ { OP_DREX4, q_mode } } },
-    { "pperm",		{ { OP_DREX4, q_mode } } },
-    { "permps",		{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "permpd",		{ { OP_DREX4, DREX_OC1 + q_mode } } },
-    { "pcmov",		{ { OP_DREX4, DREX_OC1 + w_mode } } },
-    { "pperm",		{ { OP_DREX4, DREX_OC1 + d_mode } } },
-    /* 28 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 30 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 38 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 40 */
-    { "protb",		{ { OP_DREX3, q_mode } } },
-    { "protw",		{ { OP_DREX3, q_mode } } },
-    { "protd",		{ { OP_DREX3, q_mode } } },
-    { "protq",		{ { OP_DREX3, q_mode } } },
-    { "pshlb",		{ { OP_DREX3, q_mode } } },
-    { "pshlw",		{ { OP_DREX3, q_mode } } },
-    { "pshld",		{ { OP_DREX3, q_mode } } },
-    { "pshlq",		{ { OP_DREX3, q_mode } } },
-    /* 48 */
-    { "pshab",		{ { OP_DREX3, q_mode } } },
-    { "pshaw",		{ { OP_DREX3, q_mode } } },
-    { "pshad",		{ { OP_DREX3, q_mode } } },
-    { "pshaq",		{ { OP_DREX3, q_mode } } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 50 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 58 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 60 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 68 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 70 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 78 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 80 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmacssww",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacsswd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacssdql",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    /* 88 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmacssdd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacssdqh",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    /* 90 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmacsww",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacswd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacsdql",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    /* 98 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmacsdd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "pmacsdqh",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    /* a0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmadcsswd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "(bad)",		{ XX } },
-    /* a8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* b0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pmadcswd",	{ { OP_DREX4, DREX_OC1 + DREX_NO_OC0 + q_mode } } },
-    { "(bad)",		{ XX } },
-    /* b8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-  },
-  /* THREE_BYTE_0F25 */
-  {
-    /* 00 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 08 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 10 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 18 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 20 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 28 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "comps",		{ { OP_DREX3, q_mode }, { OP_DREX_FCMP, b_mode } } },
-    { "compd",		{ { OP_DREX3, q_mode }, { OP_DREX_FCMP, b_mode } } },
-    { "comss",		{ { OP_DREX3, w_mode }, { OP_DREX_FCMP, b_mode } } },
-    { "comsd",		{ { OP_DREX3, d_mode }, { OP_DREX_FCMP, b_mode } } },
-    /* 30 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 38 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 40 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 48 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pcomb",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomw",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomd",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomq",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    /* 50 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 58 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 60 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 68 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "pcomub",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomuw",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomud",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    { "pcomuq",		{ { OP_DREX3, q_mode }, { OP_DREX_ICMP, b_mode } } },
-    /* 70 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 78 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 80 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 88 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 90 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 98 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* a0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* a8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* b0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* b8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-  },
+
   /* THREE_BYTE_0F38 */
   {
     /* 00 */
@@ -6348,6 +6022,7 @@ static const struct dis386 three_byte_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
   },
+
   /* THREE_BYTE_0F7A */
   {
     /* 00 */
@@ -6369,10 +6044,10 @@ static const struct dis386 three_byte_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     /* 10 */
-    { "frczps",		{ XM, EXq } },
-    { "frczpd",		{ XM, EXq } },
-    { "frczss",		{ XM, EXq } },
-    { "frczsd",		{ XM, EXq } },
+    { "(bad)",		{ XX } },
+    { "(bad)",		{ XX } },
+    { "(bad)",		{ XX } },
+    { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
@@ -6405,8 +6080,8 @@ static const struct dis386 three_byte_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     /* 30 */
-    { "cvtph2ps",	{ XM, EXd } },
-    { "cvtps2ph",	{ EXd, XM } },
+    { "(bad)",		{ XX } },
+    { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
@@ -6639,298 +6314,8 @@ static const struct dis386 three_byte_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
   },
-  /* THREE_BYTE_0F7B */
-  {
-    /* 00 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 08 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 10 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 18 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 20 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 28 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 30 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 38 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 40 */
-    { "protb",		{ XM, EXq, Ib } },
-    { "protw",		{ XM, EXq, Ib } },
-    { "protd",		{ XM, EXq, Ib } },
-    { "protq",		{ XM, EXq, Ib } },
-    { "pshlb",		{ XM, EXq, Ib } },
-    { "pshlw",		{ XM, EXq, Ib } },
-    { "pshld",		{ XM, EXq, Ib } },
-    { "pshlq",		{ XM, EXq, Ib } },
-    /* 48 */
-    { "pshab",		{ XM, EXq, Ib } },
-    { "pshaw",		{ XM, EXq, Ib } },
-    { "pshad",		{ XM, EXq, Ib } },
-    { "pshaq",		{ XM, EXq, Ib } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 50 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 58 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 60 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 68 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 70 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 78 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 80 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 88 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 90 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* 98 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* a0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* a8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* b0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* b8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* c8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* d8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* e8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f0 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    /* f8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-  },
 };
+
 
 static const struct dis386 vex_table[][256] = {
   /* VEX_0F */
@@ -6982,7 +6367,7 @@ static const struct dis386 vex_table[][256] = {
     { "(bad)",		{ XX } },
     /* 28 */
     { "vmovapX",	{ XM, EXx } },
-    { "vmovapX",	{ EXx, XM } },
+    { "vmovapX",	{ EXxS, XM } },
     { PREFIX_TABLE (PREFIX_VEX_2A) },
     { MOD_TABLE (MOD_VEX_2B) },
     { PREFIX_TABLE (PREFIX_VEX_2C) },
@@ -7395,17 +6780,17 @@ static const struct dis386 vex_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_3896) },
+    { PREFIX_TABLE (PREFIX_VEX_3897) },
     /* 98 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_3898) },
+    { PREFIX_TABLE (PREFIX_VEX_3899) },
+    { PREFIX_TABLE (PREFIX_VEX_389A) },
+    { PREFIX_TABLE (PREFIX_VEX_389B) },
+    { PREFIX_TABLE (PREFIX_VEX_389C) },
+    { PREFIX_TABLE (PREFIX_VEX_389D) },
+    { PREFIX_TABLE (PREFIX_VEX_389E) },
+    { PREFIX_TABLE (PREFIX_VEX_389F) },
     /* a0 */
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
@@ -7413,17 +6798,17 @@ static const struct dis386 vex_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_38A6) },
+    { PREFIX_TABLE (PREFIX_VEX_38A7) },
     /* a8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_38A8) },
+    { PREFIX_TABLE (PREFIX_VEX_38A9) },
+    { PREFIX_TABLE (PREFIX_VEX_38AA) },
+    { PREFIX_TABLE (PREFIX_VEX_38AB) },
+    { PREFIX_TABLE (PREFIX_VEX_38AC) },
+    { PREFIX_TABLE (PREFIX_VEX_38AD) },
+    { PREFIX_TABLE (PREFIX_VEX_38AE) },
+    { PREFIX_TABLE (PREFIX_VEX_38AF) },
     /* b0 */
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
@@ -7431,17 +6816,17 @@ static const struct dis386 vex_table[][256] = {
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_38B6) },
+    { PREFIX_TABLE (PREFIX_VEX_38B7) },
     /* b8 */
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_38B8) },
+    { PREFIX_TABLE (PREFIX_VEX_38B9) },
+    { PREFIX_TABLE (PREFIX_VEX_38BA) },
+    { PREFIX_TABLE (PREFIX_VEX_38BB) },
+    { PREFIX_TABLE (PREFIX_VEX_38BC) },
+    { PREFIX_TABLE (PREFIX_VEX_38BD) },
+    { PREFIX_TABLE (PREFIX_VEX_38BE) },
+    { PREFIX_TABLE (PREFIX_VEX_38BF) },
     /* c0 */
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
@@ -7594,13 +6979,13 @@ static const struct dis386 vex_table[][256] = {
     { PREFIX_TABLE (PREFIX_VEX_3A41) },
     { PREFIX_TABLE (PREFIX_VEX_3A42) },
     { "(bad)",		{ XX } },
-    { "(bad)",		{ XX } },
+    { PREFIX_TABLE (PREFIX_VEX_3A44) },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     { "(bad)",		{ XX } },
     /* 48 */
-    { PREFIX_TABLE (PREFIX_VEX_3A48) },
-    { PREFIX_TABLE (PREFIX_VEX_3A49) },
+    { "(bad)",		{ XX } },
+    { "(bad)",		{ XX } },
     { PREFIX_TABLE (PREFIX_VEX_3A4A) },
     { PREFIX_TABLE (PREFIX_VEX_3A4B) },
     { PREFIX_TABLE (PREFIX_VEX_3A4C) },
@@ -7823,13 +7208,13 @@ static const struct dis386 vex_len_table[][2] = {
 
   /* VEX_LEN_11_P_1 */
   {
-    { "vmovss",		{ EXdVex, Vex128, XM } },
+    { "vmovss",		{ EXdVexS, Vex128, XM } },
     { "(bad)",		{ XX } },
   },
 
   /* VEX_LEN_11_P_3 */
   {
-    { "vmovsd",		{ EXqVex, Vex128, XM } },
+    { "vmovsd",		{ EXqVexS, Vex128, XM } },
     { "(bad)",		{ XX } },
   },
 
@@ -7890,12 +7275,6 @@ static const struct dis386 vex_len_table[][2] = {
   /* VEX_LEN_2A_P_3 */
   {
     { "vcvtsi2sd%LQ",	{ XM, Vex128, Ev } },
-    { "(bad)",		{ XX } },
-  },
-
-  /* VEX_LEN_2B_M_0 */
-  {
-    { "vmovntpX",	{ Mx, XM } },
     { "(bad)",		{ XX } },
   },
 
@@ -8321,7 +7700,7 @@ static const struct dis386 vex_len_table[][2] = {
 
   /* VEX_LEN_D6_P_2 */
   {
-    { "vmovq",		{ EXq, XM } },
+    { "vmovq",		{ EXqS, XM } },
     { "(bad)",		{ XX } },
   },
 
@@ -8412,12 +7791,6 @@ static const struct dis386 vex_len_table[][2] = {
   /* VEX_LEN_E5_P_2 */
   {
     { "vpmulhw",	{ XM, Vex128, EXx } },
-    { "(bad)",		{ XX } },
-  },
-
-  /* VEX_LEN_E7_P_2_M_0 */
-  {
-    { "vmovntdq",	{ Mx, XM } },
     { "(bad)",		{ XX } },
   },
 
@@ -8943,6 +8316,12 @@ static const struct dis386 vex_len_table[][2] = {
     { "(bad)",		{ XX } },
   },
 
+  /* VEX_LEN_3A44_P_2 */
+  {
+    { "vpclmulqdq",	{ XM, Vex128, EXx, PCLMUL } },
+    { "(bad)",		{ XX } },
+  },
+
   /* VEX_LEN_3A4C_P_2 */
   {
     { "vpblendvb",	{ XM, Vex128, EXx, XMVexI4 } },
@@ -9121,7 +8500,7 @@ static const struct dis386 mod_table[][2] = {
   },
   {
     /* MOD_0F24 */
-    { THREE_BYTE_TABLE (THREE_BYTE_0F24) },
+    { "(bad)",		{ XX } },    
     { "movL",		{ Rd, Td } },
   },
   {
@@ -9326,7 +8705,7 @@ static const struct dis386 mod_table[][2] = {
   },
   {
     /* MOD_VEX_2B */
-    { VEX_LEN_TABLE (VEX_LEN_2B_M_0) },
+    { "vmovntpX",	{ Mx, XM } },
     { "(bad)",		{ XX } },
   },
   {
@@ -9401,7 +8780,7 @@ static const struct dis386 mod_table[][2] = {
   },
   {
     /* MOD_VEX_E7_PREFIX_2 */
-    { VEX_LEN_TABLE (VEX_LEN_E7_P_2_M_0) },
+    { "vmovntdq",	{ Mx, XM } },
     { "(bad)",		{ XX } },
   },
   {
@@ -10012,8 +9391,7 @@ get_valid_dis386 (const struct dis386 *dp, disassemble_info *info)
       break;
 
     default:
-      oappend (INTERNAL_DISASSEMBLER_ERROR);
-      return NULL;
+      abort ();
     }
 
   if (dp->name != NULL)
@@ -10037,19 +9415,24 @@ print_insn (bfd_vma pc, disassemble_info *info)
   char *prefix_obufp;
 
   if (info->mach == bfd_mach_x86_64_intel_syntax
-      || info->mach == bfd_mach_x86_64)
+      || info->mach == bfd_mach_x86_64
+      || info->mach == bfd_mach_l1om
+      || info->mach == bfd_mach_l1om_intel_syntax)
     address_mode = mode_64bit;
   else
     address_mode = mode_32bit;
 
   if (intel_syntax == (char) -1)
     intel_syntax = (info->mach == bfd_mach_i386_i386_intel_syntax
-		    || info->mach == bfd_mach_x86_64_intel_syntax);
+		    || info->mach == bfd_mach_x86_64_intel_syntax
+		    || info->mach == bfd_mach_l1om_intel_syntax);
 
   if (info->mach == bfd_mach_i386_i386
       || info->mach == bfd_mach_x86_64
+      || info->mach == bfd_mach_l1om
       || info->mach == bfd_mach_i386_i386_intel_syntax
-      || info->mach == bfd_mach_x86_64_intel_syntax)
+      || info->mach == bfd_mach_x86_64_intel_syntax
+      || info->mach == bfd_mach_l1om_intel_syntax)
     priv.orig_sizeflag = AFLAG | DFLAG;
   else if (info->mach == bfd_mach_i386_i8086)
     priv.orig_sizeflag = 0;
@@ -10151,8 +9534,13 @@ print_insn (bfd_vma pc, disassemble_info *info)
     }
 
   /* The output looks better if we put 7 bytes on a line, since that
-     puts most long word instructions on a single line.  */
-  info->bytes_per_line = 7;
+     puts most long word instructions on a single line.  Use 8 bytes
+     for Intel L1OM.  */
+  if (info->mach == bfd_mach_l1om
+      || info->mach == bfd_mach_l1om_intel_syntax)
+    info->bytes_per_line = 8;
+  else
+    info->bytes_per_line = 7;
 
   info->private_data = &priv;
   priv.max_fetched = priv.the_buffer;
@@ -10220,6 +9608,7 @@ print_insn (bfd_vma pc, disassemble_info *info)
     }
 
   op = 0;
+
   if (*codep == 0x0f)
     {
       unsigned char threebyte;
@@ -10359,7 +9748,7 @@ print_insn (bfd_vma pc, disassemble_info *info)
   if (prefix_obuf[0] != 0)
     (*info->fprintf_func) (info->stream, "%s", prefix_obuf);
 
-  obufp = obuf + strlen (obuf);
+  obufp = mnemonicendp;
   for (i = strlen (obuf) + strlen (prefix_obuf); i < 6; i++)
     oappend (" ");
   oappend (" ");
@@ -10701,8 +10090,8 @@ static char *fgrps[][8] = {
 
   /* db_4  6 */
   {
-    "feni(287 only)","fdisi(287 only)","fNclex","fNinit",
-    "fNsetpm(287 only)","(bad)","(bad)","(bad)",
+    "fNeni(8087 only)","fNdisi(8087 only)","fNclex","fNinit",
+    "fNsetpm(287 only)","frstpm(287 only)","(bad)","(bad)",
   },
 
   /* de_3  7 */
@@ -10715,6 +10104,14 @@ static char *fgrps[][8] = {
     "fNstsw","(bad)","(bad)","(bad)","(bad)","(bad)","(bad)","(bad)",
   },
 };
+
+static void
+swap_operand (void)
+{
+  mnemonicendp[0] = '.';
+  mnemonicendp[1] = 's';
+  mnemonicendp += 2;
+}
 
 static void
 OP_Skip_MODRM (int bytemode ATTRIBUTE_UNUSED,
@@ -10787,7 +10184,7 @@ OP_STi (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
 
 /* Capital letters in template are macros.  */
 static int
-putop (const char *template, int sizeflag)
+putop (const char *in_template, int sizeflag)
 {
   const char *p;
   int alt = 0;
@@ -10801,7 +10198,7 @@ putop (const char *template, int sizeflag)
   else					\
     abort ();
 
-  for (p = template; *p; p++)
+  for (p = in_template; *p; p++)
     {
       switch (*p)
 	{
@@ -11163,36 +10560,49 @@ case_Q:
 		}
 	    }
 	  break;
-	  /* implicit operand size 'l' for i386 or 'q' for x86-64 */
 	case 'W':
-	  /* operand size flag for cwtl, cbtw */
-	  USED_REX (REX_W);
-	  if (rex & REX_W)
+	  if (l == 0 && len == 1)
 	    {
-	      if (intel_syntax)
-		*obufp++ = 'd';
+	      /* operand size flag for cwtl, cbtw */
+	      USED_REX (REX_W);
+	      if (rex & REX_W)
+		{
+		  if (intel_syntax)
+		    *obufp++ = 'd';
+		  else
+		    *obufp++ = 'l';
+		}
+	      else if (sizeflag & DFLAG)
+		*obufp++ = 'w';
 	      else
-		*obufp++ = 'l';
+		*obufp++ = 'b';
+	      if (!(rex & REX_W))
+		used_prefixes |= (prefixes & PREFIX_DATA);
 	    }
-	  else if (sizeflag & DFLAG)
-	    *obufp++ = 'w';
 	  else
-	    *obufp++ = 'b';
-	  if (!(rex & REX_W))
-	    used_prefixes |= (prefixes & PREFIX_DATA);
+	    {
+	      if (l != 1 || len != 2 || last[0] != 'X')
+		{
+		  SAVE_LAST (*p);
+		  break;
+		}
+	      if (!need_vex)
+		abort ();
+	      *obufp++ = vex.w ? 'd': 's';
+	    }
 	  break;
 	}
       alt = 0;
     }
   *obufp = 0;
+  mnemonicendp = obufp;
   return 0;
 }
 
 static void
 oappend (const char *s)
 {
-  strcpy (obufp, s);
-  obufp += strlen (s);
+  obufp = stpcpy (obufp, s);
 }
 
 static void
@@ -11345,6 +10755,7 @@ intel_operand_size (int bytemode, int sizeflag)
   switch (bytemode)
     {
     case b_mode:
+    case b_swap_mode:
     case dqb_mode:
       oappend ("BYTE PTR ");
       break;
@@ -11361,6 +10772,7 @@ intel_operand_size (int bytemode, int sizeflag)
 	}
       /* FALLTHRU */
     case v_mode:
+    case v_swap_mode:
     case dq_mode:
       USED_REX (REX_W);
       if (rex & REX_W)
@@ -11386,10 +10798,12 @@ intel_operand_size (int bytemode, int sizeflag)
       used_prefixes |= (prefixes & PREFIX_DATA);
       break;
     case d_mode:
+    case d_swap_mode:
     case dqd_mode:
       oappend ("DWORD PTR ");
       break;
     case q_mode:
+    case q_swap_mode:
       oappend ("QWORD PTR ");
       break;
     case m_mode:
@@ -11409,6 +10823,7 @@ intel_operand_size (int bytemode, int sizeflag)
       oappend ("TBYTE PTR ");
       break;
     case x_mode:
+    case x_swap_mode:
       if (need_vex)
 	{
 	  switch (vex.length)
@@ -11464,6 +10879,15 @@ intel_operand_size (int bytemode, int sizeflag)
     case o_mode:
       oappend ("OWORD PTR ");
       break;
+    case vex_w_dq_mode:
+      if (!need_vex)
+	abort ();
+
+      if (vex.w)
+	oappend ("QWORD PTR ");
+      else
+	oappend ("DWORD PTR ");
+      break;
     default:
       break;
     }
@@ -11479,9 +10903,14 @@ OP_E_register (int bytemode, int sizeflag)
   if ((rex & REX_B))
     reg += 8;
 
+  if ((sizeflag & SUFFIX_ALWAYS)
+      && (bytemode == b_swap_mode || bytemode == v_swap_mode))
+    swap_operand ();
+
   switch (bytemode)
     {
     case b_mode:
+    case b_swap_mode:
       USED_REX (0);
       if (rex)
 	names = names8rex;
@@ -11510,6 +10939,7 @@ OP_E_register (int bytemode, int sizeflag)
       bytemode = v_mode;
       /* FALLTHRU */
     case v_mode:
+    case v_swap_mode:
     case dq_mode:
     case dqb_mode:
     case dqd_mode:
@@ -11517,7 +10947,9 @@ OP_E_register (int bytemode, int sizeflag)
       USED_REX (REX_W);
       if (rex & REX_W)
 	names = names64;
-      else if ((sizeflag & DFLAG) || bytemode != v_mode)
+      else if ((sizeflag & DFLAG) 
+	       || (bytemode != v_mode
+		   && bytemode != v_swap_mode))
 	names = names32;
       else
 	names = names16;
@@ -11533,7 +10965,7 @@ OP_E_register (int bytemode, int sizeflag)
 }
 
 static void
-OP_E_memory (int bytemode, int sizeflag, int has_drex)
+OP_E_memory (int bytemode, int sizeflag)
 {
   bfd_vma disp = 0;
   int add = (rex & REX_B) ? 8 : 0;
@@ -11575,14 +11007,6 @@ OP_E_memory (int bytemode, int sizeflag, int has_drex)
 	  codep++;
 	}
       rbase = base + add;
-
-      /* If we have a DREX byte, skip it now 
-	 (it has already been handled) */
-      if (has_drex)
-	{
-	  FETCH_DATA (the_info, codep + 1);
-	  codep++;
-	}
 
       switch (modrm.mod)
 	{
@@ -11793,7 +11217,7 @@ OP_E_memory (int bytemode, int sizeflag, int has_drex)
 }
 
 static void
-OP_E_extended (int bytemode, int sizeflag, int has_drex)
+OP_E_extended (int bytemode, int sizeflag)
 {
   /* Skip mod/rm byte.  */
   MODRM_CHECK;
@@ -11802,13 +11226,13 @@ OP_E_extended (int bytemode, int sizeflag, int has_drex)
   if (modrm.mod == 3)
     OP_E_register (bytemode, sizeflag);
   else
-    OP_E_memory (bytemode, sizeflag, has_drex);
+    OP_E_memory (bytemode, sizeflag);
 }
 
 static void
 OP_E (int bytemode, int sizeflag)
 {
-  OP_E_extended (bytemode, sizeflag, 0);
+  OP_E_extended (bytemode, sizeflag);
 }
 
 
@@ -12529,7 +11953,8 @@ OP_EM (int bytemode, int sizeflag)
 {
   if (modrm.mod != 3)
     {
-      if (intel_syntax && bytemode == v_mode)
+      if (intel_syntax
+	  && (bytemode == v_mode || bytemode == v_swap_mode))
 	{
 	  bytemode = (prefixes & PREFIX_DATA) ? x_mode : q_mode;
 	  used_prefixes |= (prefixes & PREFIX_DATA);
@@ -12537,6 +11962,9 @@ OP_EM (int bytemode, int sizeflag)
       OP_E (bytemode, sizeflag);
       return;
     }
+
+  if ((sizeflag & SUFFIX_ALWAYS) && bytemode == v_swap_mode)
+    swap_operand ();
 
   /* Skip mod/rm byte.  */
   MODRM_CHECK;
@@ -12597,20 +12025,29 @@ static void
 OP_EX (int bytemode, int sizeflag)
 {
   int add;
+
+  /* Skip mod/rm byte.  */
+  MODRM_CHECK;
+  codep++;
+
   if (modrm.mod != 3)
     {
-      OP_E (bytemode, sizeflag);
+      OP_E_memory (bytemode, sizeflag);
       return;
     }
+
   USED_REX (REX_B);
   if (rex & REX_B)
     add = 8;
   else
     add = 0;
 
-  /* Skip mod/rm byte.  */
-  MODRM_CHECK;
-  codep++;
+  if ((sizeflag & SUFFIX_ALWAYS)
+      && (bytemode == x_swap_mode
+	  || bytemode == d_swap_mode
+	  || bytemode == q_swap_mode))
+    swap_operand ();
+
   if (need_vex
       && bytemode != xmm_mode
       && bytemode != xmmq_mode)
@@ -12770,7 +12207,7 @@ OP_3DNowSuffix (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
   /* AMD 3DNow! instructions are specified by an opcode suffix in the
      place where an 8-bit immediate would normally go.  ie. the last
      byte of the instruction.  */
-  obufp = obuf + strlen (obuf);
+  obufp = mnemonicendp;
   mnemonic = Suffix3DNow[*codep++ & 0xff];
   if (mnemonic)
     oappend (mnemonic);
@@ -12784,17 +12221,19 @@ OP_3DNowSuffix (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
       op_out[1][0] = '\0';
       BadOp ();
     }
+  mnemonicendp = obufp;
 }
 
-static const char *simd_cmp_op[] = {
-  "eq",
-  "lt",
-  "le",
-  "unord",
-  "neq",
-  "nlt",
-  "nle",
-  "ord"
+static struct op simd_cmp_op[] =
+{
+  { STRING_COMMA_LEN ("eq") },
+  { STRING_COMMA_LEN ("lt") },
+  { STRING_COMMA_LEN ("le") },
+  { STRING_COMMA_LEN ("unord") },
+  { STRING_COMMA_LEN ("neq") },
+  { STRING_COMMA_LEN ("nlt") },
+  { STRING_COMMA_LEN ("nle") },
+  { STRING_COMMA_LEN ("ord") }
 };
 
 static void
@@ -12807,11 +12246,12 @@ CMP_Fixup (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
   if (cmp_type < ARRAY_SIZE (simd_cmp_op))
     {
       char suffix [3];
-      char *p = obuf + strlen (obuf) - 2;
+      char *p = mnemonicendp - 2;
       suffix[0] = p[0];
       suffix[1] = p[1];
       suffix[2] = '\0';
-      sprintf (p, "%s%s", simd_cmp_op[cmp_type], suffix);
+      sprintf (p, "%s%s", simd_cmp_op[cmp_type].name, suffix);
+      mnemonicendp += simd_cmp_op[cmp_type].len;
     }
   else
     {
@@ -12915,8 +12355,8 @@ CMPXCHG8B_Fixup (int bytemode, int sizeflag)
   if (rex & REX_W)
     {
       /* Change cmpxchg8b to cmpxchg16b.  */
-      char *p = obuf + strlen (obuf) - 2;
-      strcpy (p, "16b");
+      char *p = mnemonicendp - 2;
+      mnemonicendp = stpcpy (p, "16b");
       bytemode = o_mode;
     }
   OP_M (bytemode, sizeflag);
@@ -12948,19 +12388,19 @@ static void
 CRC32_Fixup (int bytemode, int sizeflag)
 {
   /* Add proper suffix to "crc32".  */
-  char *p = obuf + strlen (obuf);
+  char *p = mnemonicendp;
 
   switch (bytemode)
     {
     case b_mode:
       if (intel_syntax)
-	break;
+	goto skip;
 
       *p++ = 'b';
       break;
     case v_mode:
       if (intel_syntax)
-	break;
+	goto skip;
 
       USED_REX (REX_W);
       if (rex & REX_W)
@@ -12975,8 +12415,10 @@ CRC32_Fixup (int bytemode, int sizeflag)
       oappend (INTERNAL_DISASSEMBLER_ERROR);
       break;
     }
+  mnemonicendp = p;
   *p = '\0';
 
+skip:
   if (modrm.mod == 3)
     {
       int add;
@@ -13008,347 +12450,6 @@ CRC32_Fixup (int bytemode, int sizeflag)
     }
   else
     OP_E (bytemode, sizeflag);
-}
-
-/* Print a DREX argument as either a register or memory operation.  */
-static void
-print_drex_arg (unsigned int reg, int bytemode, int sizeflag)
-{
-  if (reg == DREX_REG_UNKNOWN)
-    BadOp ();
-
-  else if (reg != DREX_REG_MEMORY)
-    {
-      sprintf (scratchbuf, "%%xmm%d", reg);
-      oappend (scratchbuf + intel_syntax);
-    }
-
-  else
-    OP_E_extended (bytemode, sizeflag, 1);
-}
-
-/* SSE5 instructions that have 4 arguments are encoded as:
-   0f 24 <sub-opcode> <modrm> <optional-sib> <drex> <offset>.
-
-   The <sub-opcode> byte has 1 bit (0x4) that is combined with 1 bit in
-   the DREX field (0x8) to determine how the arguments are laid out.  
-   The destination register must be the same register as one of the 
-   inputs, and it is encoded in the DREX byte.  No REX prefix is used 
-   for these instructions, since the DREX field contains the 3 extension
-   bits provided by the REX prefix.
-
-   The bytemode argument adds 2 extra bits for passing extra information:
-	DREX_OC1	-- Set the OC1 bit to indicate dest == 1st arg
-	DREX_NO_OC0	-- OC0 in DREX is invalid 
-	(but pretend it is set).  */
-
-static void
-OP_DREX4 (int flag_bytemode, int sizeflag)
-{
-  unsigned int drex_byte;
-  unsigned int regs[4];
-  unsigned int modrm_regmem;
-  unsigned int modrm_reg;
-  unsigned int drex_reg;
-  int bytemode;
-  int rex_save = rex;
-  int rex_used_save = rex_used;
-  int has_sib = 0;
-  int oc1 = (flag_bytemode & DREX_OC1) ? 2 : 0;
-  int oc0;
-  int i;
-
-  bytemode = flag_bytemode & ~ DREX_MASK;
-
-  for (i = 0; i < 4; i++)
-    regs[i] = DREX_REG_UNKNOWN;
-
-  /* Determine if we have a SIB byte in addition to MODRM before the 
-     DREX byte.  */
-  if (((sizeflag & AFLAG) || address_mode == mode_64bit)
-      && (modrm.mod != 3)
-      && (modrm.rm == 4))
-    has_sib = 1;
-
-  /* Get the DREX byte.  */
-  FETCH_DATA (the_info, codep + 2 + has_sib);
-  drex_byte = codep[has_sib+1];
-  drex_reg = DREX_XMM (drex_byte);
-  modrm_reg = modrm.reg + ((drex_byte & REX_R) ? 8 : 0);
-
-  /* Is OC0 legal?  If not, hardwire oc0 == 1.  */
-  if (flag_bytemode & DREX_NO_OC0)
-    {
-      oc0 = 1;
-      if (DREX_OC0 (drex_byte))
-	BadOp ();
-    }
-  else
-    oc0 = DREX_OC0 (drex_byte);
-
-  if (modrm.mod == 3)
-    {			
-      /* regmem == register  */
-      modrm_regmem = modrm.rm + ((drex_byte & REX_B) ? 8 : 0);
-      rex = rex_used = 0;
-      /* skip modrm/drex since we don't call OP_E_extended  */
-      codep += 2;
-    }
-  else
-    {			
-      /* regmem == memory, fill in appropriate REX bits  */
-      modrm_regmem = DREX_REG_MEMORY;
-      rex = drex_byte & (REX_B | REX_X | REX_R);
-      if (rex)
-	rex |= REX_OPCODE;
-      rex_used = rex;
-    }
-  
-  /* Based on the OC1/OC0 bits, lay out the arguments in the correct 
-     order.  */
-  switch (oc0 + oc1)
-    {
-    default:
-      BadOp ();
-      return;
-
-    case 0:
-      regs[0] = modrm_regmem;
-      regs[1] = modrm_reg;
-      regs[2] = drex_reg;
-      regs[3] = drex_reg;
-      break;
-
-    case 1:
-      regs[0] = modrm_reg;
-      regs[1] = modrm_regmem;
-      regs[2] = drex_reg;
-      regs[3] = drex_reg;
-      break;
-
-    case 2:
-      regs[0] = drex_reg;
-      regs[1] = modrm_regmem;
-      regs[2] = modrm_reg;
-      regs[3] = drex_reg;
-      break;
-
-    case 3:
-      regs[0] = drex_reg;
-      regs[1] = modrm_reg;
-      regs[2] = modrm_regmem;
-      regs[3] = drex_reg;
-      break;
-    }
-
-  /* Print out the arguments.  */
-  for (i = 0; i < 4; i++)
-    {
-      int j = (intel_syntax) ? 3 - i : i;
-      if (i > 0)
-	{
-	  *obufp++ = ',';
-	  *obufp = '\0';
-	}
-
-      print_drex_arg (regs[j], bytemode, sizeflag);
-    }
-
-  rex = rex_save;
-  rex_used = rex_used_save;
-}
-
-/* SSE5 instructions that have 3 arguments, and are encoded as:
-   0f 24 <sub-opcode> <modrm> <optional-sib> <drex> <offset>	(or)
-   0f 25 <sub-opcode> <modrm> <optional-sib> <drex> <offset> <cmp-byte>
-
-   The DREX field has 1 bit (0x8) to determine how the arguments are 
-   laid out. The destination register is encoded in the DREX byte.  
-   No REX prefix is used for these instructions, since the DREX field 
-   contains the 3 extension bits provided by the REX prefix.  */
-
-static void
-OP_DREX3 (int flag_bytemode, int sizeflag)
-{
-  unsigned int drex_byte;
-  unsigned int regs[3];
-  unsigned int modrm_regmem;
-  unsigned int modrm_reg;
-  unsigned int drex_reg;
-  int bytemode;
-  int rex_save = rex;
-  int rex_used_save = rex_used;
-  int has_sib = 0;
-  int oc0;
-  int i;
-
-  bytemode = flag_bytemode & ~ DREX_MASK;
-
-  for (i = 0; i < 3; i++)
-    regs[i] = DREX_REG_UNKNOWN;
-
-  /* Determine if we have a SIB byte in addition to MODRM before the 
-     DREX byte.  */
-  if (((sizeflag & AFLAG) || address_mode == mode_64bit)
-      && (modrm.mod != 3)
-      && (modrm.rm == 4))
-    has_sib = 1;
-
-  /* Get the DREX byte.  */
-  FETCH_DATA (the_info, codep + 2 + has_sib);
-  drex_byte = codep[has_sib+1];
-  drex_reg = DREX_XMM (drex_byte);
-  modrm_reg = modrm.reg + ((drex_byte & REX_R) ? 8 : 0);
-
-  /* Is OC0 legal?  If not, hardwire oc0 == 0 */
-  oc0 = DREX_OC0 (drex_byte);
-  if ((flag_bytemode & DREX_NO_OC0) && oc0)
-    BadOp ();
-
-  if (modrm.mod == 3)
-    {			
-      /* regmem == register */
-      modrm_regmem = modrm.rm + ((drex_byte & REX_B) ? 8 : 0);
-      rex = rex_used = 0;
-      /* skip modrm/drex since we don't call OP_E_extended.  */
-      codep += 2;
-    }
-  else
-    {			
-      /* regmem == memory, fill in appropriate REX bits.  */
-      modrm_regmem = DREX_REG_MEMORY;
-      rex = drex_byte & (REX_B | REX_X | REX_R);
-      if (rex)
-	rex |= REX_OPCODE;
-      rex_used = rex;
-    }
-
-  /* Based on the OC1/OC0 bits, lay out the arguments in the correct 
-     order.  */
-  switch (oc0)
-    {
-    default:
-      BadOp ();
-      return;
-
-    case 0:
-      regs[0] = modrm_regmem;
-      regs[1] = modrm_reg;
-      regs[2] = drex_reg;
-      break;
-
-    case 1:
-      regs[0] = modrm_reg;
-      regs[1] = modrm_regmem;
-      regs[2] = drex_reg;
-      break;
-    }
-
-  /* Print out the arguments.  */
-  for (i = 0; i < 3; i++)
-    {
-      int j = (intel_syntax) ? 2 - i : i;
-      if (i > 0)
-	{
-	  *obufp++ = ',';
-	  *obufp = '\0';
-	}
-
-      print_drex_arg (regs[j], bytemode, sizeflag);
-    }
-
-  rex = rex_save;
-  rex_used = rex_used_save;
-}
-
-/* Emit a floating point comparison for comp<xx> instructions.  */
-
-static void
-OP_DREX_FCMP (int bytemode ATTRIBUTE_UNUSED, 
-	      int sizeflag ATTRIBUTE_UNUSED)
-{
-  unsigned char byte;
-
-  static const char *const cmp_test[] = {
-    "eq",
-    "lt",
-    "le",
-    "unord",
-    "ne",
-    "nlt",
-    "nle",
-    "ord",
-    "ueq",
-    "ult",
-    "ule",
-    "false",
-    "une",
-    "unlt",
-    "unle",
-    "true"
-  };
-
-  FETCH_DATA (the_info, codep + 1);
-  byte = *codep & 0xff;
-
-  if (byte >= ARRAY_SIZE (cmp_test)
-      || obuf[0] != 'c'
-      || obuf[1] != 'o'
-      || obuf[2] != 'm')
-    {
-      /* The instruction isn't one we know about, so just append the 
-	 extension byte as a numeric value.  */
-      OP_I (b_mode, 0);
-    }
-
-  else
-    {
-      sprintf (scratchbuf, "com%s%s", cmp_test[byte], obuf+3);
-      strcpy (obuf, scratchbuf);
-      codep++;
-    }
-}
-
-/* Emit an integer point comparison for pcom<xx> instructions, 
-   rewriting the instruction to have the test inside of it.  */
-
-static void
-OP_DREX_ICMP (int bytemode ATTRIBUTE_UNUSED, 
-	      int sizeflag ATTRIBUTE_UNUSED)
-{
-  unsigned char byte;
-
-  static const char *const cmp_test[] = {
-    "lt",
-    "le",
-    "gt",
-    "ge",
-    "eq",
-    "ne",
-    "false",
-    "true"
-  };
-
-  FETCH_DATA (the_info, codep + 1);
-  byte = *codep & 0xff;
-
-  if (byte >= ARRAY_SIZE (cmp_test)
-      || obuf[0] != 'p'
-      || obuf[1] != 'c'
-      || obuf[2] != 'o'
-      || obuf[3] != 'm')
-    {
-      /* The instruction isn't one we know about, so just print the 
-	 comparison test byte as a numeric value.  */
-      OP_I (b_mode, 0);
-    }
-
-  else
-    {
-      sprintf (scratchbuf, "pcom%s%s", cmp_test[byte], obuf+4);
-      strcpy (obuf, scratchbuf);
-      codep++;
-    }
 }
 
 /* Display the destination register operand for instructions with
@@ -13473,7 +12574,7 @@ OP_EX_VexReg (int bytemode, int sizeflag, int reg)
 {
   if (reg == -1 && modrm.mod != 3)
     {
-      OP_E_memory (bytemode, sizeflag, 0);
+      OP_E_memory (bytemode, sizeflag);
       return;
     }
   else
@@ -13501,28 +12602,6 @@ OP_EX_VexReg (int bytemode, int sizeflag, int reg)
       abort ();
     }
   oappend (scratchbuf + intel_syntax);
-}
-
-static void
-OP_EX_VexImmW (int bytemode, int sizeflag)
-{
-  int reg = -1;
-  static unsigned char vex_imm8;
-
-  if (!vex_w_done)
-    {
-      vex_imm8 = get_vex_imm8 (sizeflag);
-      if (vex.w)
-	reg = vex_imm8 >> 4;
-      vex_w_done = 1;
-    }
-  else
-    {
-      if (!vex.w)
-	reg = vex_imm8 >> 4;
-    }
-
-  OP_EX_VexReg (bytemode, sizeflag, reg);
 }
 
 static void
@@ -13666,49 +12745,50 @@ VZERO_Fixup (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
   switch (vex.length)
     {
     case 128:
-      strcpy (obuf, "vzeroupper");
+      mnemonicendp = stpcpy (obuf, "vzeroupper");
       break;
     case 256:
-      strcpy (obuf, "vzeroall");
+      mnemonicendp = stpcpy (obuf, "vzeroall");
       break;
     default:
       abort ();
     }
 }
 
-static const char *vex_cmp_op[] = {
-  "eq",
-  "lt",
-  "le",
-  "unord",
-  "neq",
-  "nlt",
-  "nle",
-  "ord",
-  "eq_uq",
-  "nge",
-  "ngt",
-  "false",
-  "neq_oq",
-  "ge",
-  "gt",
-  "true",
-  "eq_os",
-  "lt_oq",
-  "le_oq",
-  "unord_s",
-  "neq_us",
-  "nlt_uq",
-  "nle_uq",
-  "ord_s",
-  "eq_us",
-  "nge_uq",
-  "ngt_uq",
-  "false_os",
-  "neq_os",
-  "ge_oq",
-  "gt_oq",
-  "true_us"
+static struct op vex_cmp_op[] =
+{
+  { STRING_COMMA_LEN ("eq") },
+  { STRING_COMMA_LEN ("lt") },
+  { STRING_COMMA_LEN ("le") },
+  { STRING_COMMA_LEN ("unord") },
+  { STRING_COMMA_LEN ("neq") },
+  { STRING_COMMA_LEN ("nlt") },
+  { STRING_COMMA_LEN ("nle") },
+  { STRING_COMMA_LEN ("ord") },
+  { STRING_COMMA_LEN ("eq_uq") },
+  { STRING_COMMA_LEN ("nge") },
+  { STRING_COMMA_LEN ("ngt") },
+  { STRING_COMMA_LEN ("false") },
+  { STRING_COMMA_LEN ("neq_oq") },
+  { STRING_COMMA_LEN ("ge") },
+  { STRING_COMMA_LEN ("gt") },
+  { STRING_COMMA_LEN ("true") },
+  { STRING_COMMA_LEN ("eq_os") },
+  { STRING_COMMA_LEN ("lt_oq") },
+  { STRING_COMMA_LEN ("le_oq") },
+  { STRING_COMMA_LEN ("unord_s") },
+  { STRING_COMMA_LEN ("neq_us") },
+  { STRING_COMMA_LEN ("nlt_uq") },
+  { STRING_COMMA_LEN ("nle_uq") },
+  { STRING_COMMA_LEN ("ord_s") },
+  { STRING_COMMA_LEN ("eq_us") },
+  { STRING_COMMA_LEN ("nge_uq") },
+  { STRING_COMMA_LEN ("ngt_uq") },
+  { STRING_COMMA_LEN ("false_os") },
+  { STRING_COMMA_LEN ("neq_os") },
+  { STRING_COMMA_LEN ("ge_oq") },
+  { STRING_COMMA_LEN ("gt_oq") },
+  { STRING_COMMA_LEN ("true_us") },
 };
 
 static void
@@ -13721,11 +12801,12 @@ VCMP_Fixup (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
   if (cmp_type < ARRAY_SIZE (vex_cmp_op))
     {
       char suffix [3];
-      char *p = obuf + strlen (obuf) - 2;
+      char *p = mnemonicendp - 2;
       suffix[0] = p[0];
       suffix[1] = p[1];
       suffix[2] = '\0';
-      sprintf (p, "%s%s", vex_cmp_op[cmp_type], suffix);
+      sprintf (p, "%s%s", vex_cmp_op[cmp_type].name, suffix);
+      mnemonicendp += vex_cmp_op[cmp_type].len;
     }
   else
     {
@@ -13737,11 +12818,12 @@ VCMP_Fixup (int bytemode ATTRIBUTE_UNUSED, int sizeflag ATTRIBUTE_UNUSED)
     }
 }
 
-static const char *pclmul_op[] = {
-  "lql",
-  "hql",
-  "lqh",
-  "hqh"
+static const struct op pclmul_op[] =
+{
+  { STRING_COMMA_LEN ("lql") },
+  { STRING_COMMA_LEN ("hql") },
+  { STRING_COMMA_LEN ("lqh") },
+  { STRING_COMMA_LEN ("hqh") }
 };
 
 static void
@@ -13766,12 +12848,13 @@ PCLMUL_Fixup (int bytemode ATTRIBUTE_UNUSED,
   if (pclmul_type < ARRAY_SIZE (pclmul_op))
     {
       char suffix [4];
-      char *p = obuf + strlen (obuf) - 3;
+      char *p = mnemonicendp - 3;
       suffix[0] = p[0];
       suffix[1] = p[1];
       suffix[2] = p[2];
       suffix[3] = '\0';
-      sprintf (p, "%s%s", pclmul_op[pclmul_type], suffix);
+      sprintf (p, "%s%s", pclmul_op[pclmul_type].name, suffix);
+      mnemonicendp += pclmul_op[pclmul_type].len;
     }
   else
     {
@@ -13783,52 +12866,17 @@ PCLMUL_Fixup (int bytemode ATTRIBUTE_UNUSED,
     }
 }
 
-static const char *vpermil2_op[] = {
-  "td",
-  "td",
-  "mo",
-  "mz"
-};
-
-static void
-VPERMIL2_Fixup (int bytemode ATTRIBUTE_UNUSED,
-		int sizeflag ATTRIBUTE_UNUSED)
-{
-  unsigned int vpermil2_type;
-
-  FETCH_DATA (the_info, codep + 1);
-  vpermil2_type = *codep++ & 0xf;
-  if (vpermil2_type < ARRAY_SIZE (vpermil2_op))
-    {
-      char suffix [4];
-      char *p = obuf + strlen (obuf) - 3;
-      suffix[0] = p[0];
-      suffix[1] = p[1];
-      suffix[2] = p[2];
-      suffix[3] = '\0';
-      sprintf (p, "%s%s", vpermil2_op[vpermil2_type], suffix);
-    }
-  else
-    {
-      /* We have a reserved extension byte.  Output it directly.  */
-      scratchbuf[0] = '$';
-      print_operand_value (scratchbuf + 1, 1, vpermil2_type);
-      oappend (scratchbuf + intel_syntax);
-      scratchbuf[0] = '\0';
-    }
-}
-
 static void
 MOVBE_Fixup (int bytemode, int sizeflag)
 {
   /* Add proper suffix to "movbe".  */
-  char *p = obuf + strlen (obuf);
+  char *p = mnemonicendp;
 
   switch (bytemode)
     {
     case v_mode:
       if (intel_syntax)
-	break;
+	goto skip;
 
       USED_REX (REX_W);
       if (sizeflag & SUFFIX_ALWAYS)
@@ -13846,7 +12894,9 @@ MOVBE_Fixup (int bytemode, int sizeflag)
       oappend (INTERNAL_DISASSEMBLER_ERROR);
       break;
     }
+  mnemonicendp = p;
   *p = '\0';
 
+skip:
   OP_M (bytemode, sizeflag);
 }
