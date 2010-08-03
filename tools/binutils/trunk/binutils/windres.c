@@ -1,6 +1,6 @@
 /* windres.c -- a program to manipulate Windows resources
-   Copyright 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007
-   Free Software Foundation, Inc.
+   Copyright 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008,
+   2009 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Support.
    Rewritten by Kai Tietz, Onevision.
 
@@ -157,7 +157,7 @@ res_init (void)
 void *
 res_alloc (rc_uint_type bytes)
 {
-  return (void *) obstack_alloc (&res_obstack, (size_t) bytes);
+  return obstack_alloc (&res_obstack, (size_t) bytes);
 }
 
 /* We also use an obstack to save memory used while writing out a set
@@ -178,7 +178,7 @@ reswr_init (void)
 void *
 reswr_alloc (rc_uint_type bytes)
 {
-  return (void *) obstack_alloc (&reswr_obstack, (size_t) bytes);
+  return obstack_alloc (&reswr_obstack, (size_t) bytes);
 }
 
 /* Open a file using the include directory search list.  */
@@ -1062,6 +1062,25 @@ main (int argc, char **argv)
   return 0;
 }
 
+static int
+find_arch_match(const char *tname,const char **arch)
+{
+  while (*arch != NULL)
+    {
+      const char *in_a = strstr (*arch, tname);
+      char end_ch = (in_a ? in_a[strlen(tname)] : 0);
+
+      if (in_a && (in_a == *arch || in_a[-1] == ':')
+	  && end_ch == 0)
+        {
+	  def_target_arch = *arch;
+	  return 1;
+        }
+      arch++;
+    }
+  return 0;
+}
+
 static void
 set_endianess (bfd *abfd, const char *target)
 {
@@ -1079,23 +1098,28 @@ set_endianess (bfd *abfd, const char *target)
 
     if (arches && tname)
       {
-	const char ** arch = arches;
+	char *hyp = strchr (tname, '-');
 
-	if (strchr (tname, '-') != NULL)
-	  tname = strchr (tname, '-') + 1;
-	while (*arch != NULL)
+	if (hyp != NULL)
 	  {
-	    const char *in_a = strstr (*arch, tname);
-	    char end_ch = (in_a ? in_a[strlen(tname)] : 0);
+	    tname = ++hyp;
 
-	    if (in_a && (in_a == *arch || in_a[-1] == ':')
-	        && end_ch == 0)
+	    /* Make sure we dectect architecture names
+	       for triplets like "pe-arm-wince-little".  */
+	    if (!find_arch_match (tname, arches))
 	      {
-		def_target_arch = *arch;
-		break;
+		char *new_tname = (char *) alloca (strlen (hyp) + 1);
+		strcpy (new_tname, hyp);
+		while ((hyp = strrchr (new_tname, '-')) != NULL)
+		  {
+		    *hyp = 0;
+		    if (find_arch_match (new_tname, arches))
+		      break;
+		  }
 	      }
-	    arch++;
 	  }
+	else
+	  find_arch_match (tname, arches);
       }
 
     free (arches);

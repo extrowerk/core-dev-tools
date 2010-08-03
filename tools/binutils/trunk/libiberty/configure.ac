@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.64)
 AC_INIT
 AC_CONFIG_SRCDIR([xmalloc.c])
 
@@ -130,6 +130,7 @@ fi
 
 GCC_NO_EXECUTABLES
 AC_PROG_CC
+AC_SYS_LARGEFILE
 AC_PROG_CPP_WERROR
 
 ACX_PROG_CC_WARNING_OPTS([-W -Wall -Wwrite-strings -Wc++-compat \
@@ -208,7 +209,7 @@ if [[ "${shared}" = "yes" ]]; then
     i[[34567]]86-*-* | x86_64-*-*)
 			PICFLAG=-fpic ;;
     m68k-*-*)		PICFLAG=-fpic ;;
-    mips*-*-linux)	PICFLAG=-fPIC ;;
+    mips*-*-linux*)	PICFLAG=-fPIC ;;
     powerpc*-*-aix*)	;;
     powerpc*-*-*)	PICFLAG=-fPIC ;;
     sparc*-*-*)		case "${CFLAGS}" in
@@ -253,6 +254,7 @@ libiberty_AC_DECLARE_ERRNO
 # Determine the size of an int for struct fibnode.
 AC_CHECK_SIZEOF([int])
 
+AC_CHECK_TYPE(intptr_t, long)
 AC_CHECK_TYPE(uintptr_t, unsigned long)
 
 # Look for a 64-bit type.
@@ -316,6 +318,7 @@ funcs="$funcs insque"
 funcs="$funcs memchr"
 funcs="$funcs memcmp"
 funcs="$funcs memcpy"
+funcs="$funcs memmem"
 funcs="$funcs memmove"
 funcs="$funcs mempcpy"
 funcs="$funcs memset"
@@ -361,7 +364,7 @@ checkfuncs="$checkfuncs getsysinfo table sysctl wait3 wait4 __fsetlocking"
 if test "x" = "y"; then
   AC_CHECK_FUNCS(asprintf atexit basename bcmp bcopy bsearch bzero calloc clock \
   getcwd getpagesize gettimeofday index insque mkstemps memchr memcmp memcpy \
-  memmove mempcpy memset putenv random rename rindex sigsetmask \
+  memmem memmove mempcpy memset putenv random rename rindex sigsetmask \
   strcasecmp setenv stpcpy stpncpy strchr strdup strncasecmp strndup strrchr strstr \
   strtod strtol strtoul strverscmp tmpnam vasprintf vfprintf vprintf \
   vsprintf waitpid getrusage on_exit psignal strerror strsignal \
@@ -467,6 +470,28 @@ if test -n "${with_target_subdir}"; then
     setobjs=yes
     ;;
 
+  *-*-msdosdjgpp)
+    AC_LIBOBJ([vasprintf])
+    AC_LIBOBJ([vsnprintf])
+    AC_LIBOBJ([snprintf])
+    AC_LIBOBJ([asprintf])
+
+    for f in atexit basename bcmp bcopy bsearch bzero calloc clock ffs \
+             getcwd getpagesize getrusage gettimeofday \
+             index insque memchr memcmp memcpy memmove memset psignal \
+             putenv random rename rindex sbrk setenv stpcpy strcasecmp \
+             strchr strdup strerror strncasecmp strrchr strstr strtod \
+             strtol strtoul sysconf times tmpnam vfprintf vprintf \
+             vsprintf waitpid
+    do
+      n=HAVE_`echo $f | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+      AC_DEFINE_UNQUOTED($n)
+    done
+
+
+    setobjs=yes
+    ;;
+
   esac
 
   # We may wish to install the target headers somewhere.
@@ -546,52 +571,12 @@ if test -z "${setobjs}"; then
     setobjs=yes
     ;;
 
-  *-*-msdosdjgpp)
-    for f in atexit basename bcmp bcopy bsearch bzero calloc clock ffs \
-             getcwd getpagesize getrusage gettimeofday \
-             index insque memchr memcmp memcpy memmove memset psignal \
-             putenv random rename rindex sbrk setenv stpcpy strcasecmp \
-             strchr strdup strerror strncasecmp strrchr strstr strtod \
-             strtol strtoul sysconf times tmpnam vfprintf vprintf \
-             vsprintf waitpid
-    do
-      n=HAVE_`echo $f | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
-      AC_DEFINE_UNQUOTED($n)
-    done
-
-
-    setobjs=yes
-    ;;
-
   esac
 fi
 
 if test -z "${setobjs}"; then
 
   case "${host}" in
-
-  *-*-cygwin*)
-    # The Cygwin library actually uses a couple of files from
-    # libiberty when it is built.  If we are building a native
-    # Cygwin, and we run the tests, we will appear to have these
-    # files.  However, when we go on to build winsup, we will wind up
-    # with a library which does not have the files, since they should
-    # have come from libiberty.
-
-    # We handle this by removing the functions the winsup library
-    # provides from our shell variables, so that they appear to be
-    # missing.
-
-    # DJ - only if we're *building* cygwin, not just building *with* cygwin
-  
-    if test -n "${with_target_subdir}"
-    then
-      funcs="`echo $funcs | sed -e 's/random//'`"
-      AC_LIBOBJ([random])
-      vars="`echo $vars | sed -e 's/sys_siglist//'`"
-      checkfuncs="`echo $checkfuncs | sed -e 's/strsignal//' -e 's/psignal//'`"
-    fi
-    ;;
 
   *-*-mingw32*)
     # Under mingw32, sys_nerr and sys_errlist exist, but they are

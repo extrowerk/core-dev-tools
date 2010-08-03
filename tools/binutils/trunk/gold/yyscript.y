@@ -193,6 +193,7 @@
 %token PARSING_LINKER_SCRIPT
 %token PARSING_VERSION_SCRIPT
 %token PARSING_DEFSYM
+%token PARSING_DYNAMIC_LIST
 
 /* Non-terminal types, where needed.  */
 
@@ -222,6 +223,7 @@ top:
 	  PARSING_LINKER_SCRIPT linker_script
 	| PARSING_VERSION_SCRIPT version_script
 	| PARSING_DEFSYM defsym_expr
+        | PARSING_DYNAMIC_LIST dynamic_list_expr
 	;
 
 /* A file contains a list of commands.  */
@@ -232,7 +234,8 @@ linker_script:
 
 /* A command which may appear at top level of a linker script.  */
 file_cmd:
-	  FORCE_COMMON_ALLOCATION
+	  EXTERN '(' extern_name_list ')'
+	| FORCE_COMMON_ALLOCATION
 	    { script_set_common_allocation(closure, 1); }
 	| GROUP
 	    { script_start_group(closure); }
@@ -240,8 +243,22 @@ file_cmd:
 	    { script_end_group(closure); }
 	| INHIBIT_COMMON_ALLOCATION
 	    { script_set_common_allocation(closure, 0); }
+	| INPUT '(' input_list ')'
         | OPTION '(' string ')'
 	    { script_parse_option(closure, $3.value, $3.length); }
+	| OUTPUT_FORMAT '(' string ')'
+	    {
+	      if (!script_check_output_format(closure, $3.value, $3.length,
+					      NULL, 0, NULL, 0))
+		YYABORT;
+	    }
+	| OUTPUT_FORMAT '(' string ',' string ',' string ')'
+	    {
+	      if (!script_check_output_format(closure, $3.value, $3.length,
+					      $5.value, $5.length,
+					      $7.value, $7.length))
+		YYABORT;
+	    }
 	| PHDRS '{' phdrs_defs '}'
 	| SEARCH_DIR '(' string ')'
 	    { script_add_search_dir(closure, $3.value, $3.length); }
@@ -249,6 +266,8 @@ file_cmd:
 	    { script_start_sections(closure); }
 	  sections_block '}'
 	    { script_finish_sections(closure); }
+	| TARGET_K '(' string ')'
+	    { script_set_target(closure, $3.value, $3.length); }
         | VERSIONK '{'
             { script_push_lex_into_version_mode(closure); }
           version_script '}'
@@ -263,9 +282,26 @@ file_cmd:
    these is more-or-less OK since most scripts simply explicitly
    choose the default.  */
 ignore_cmd:
-	  OUTPUT_FORMAT '(' string ')'
-	| OUTPUT_FORMAT '(' string ',' string ',' string ')'
-	| OUTPUT_ARCH '(' string ')'
+	  OUTPUT_ARCH '(' string ')'
+	;
+
+/* A list of external undefined symbols.  We put the lexer into
+   expression mode so that commas separate names; this is what the GNU
+   linker does.  */
+
+extern_name_list:
+	    { script_push_lex_into_expression_mode(closure); }
+	  extern_name_list_body
+	    { script_pop_lex_mode(closure); }
+	;
+
+extern_name_list_body:
+	  string
+	    { script_add_extern(closure, $1.value, $1.length); }
+	| extern_name_list_body string
+	    { script_add_extern(closure, $2.value, $2.length); }
+	| extern_name_list_body ',' string
+	    { script_add_extern(closure, $3.value, $3.length); }
 	;
 
 /* A list of input file names.  */
@@ -835,6 +871,24 @@ defsym_expr:
 	  string '=' parse_exp
 	    { script_set_symbol(closure, $1.value, $1.length, $3, 0, 0); }
 	;
+
+/* Handle the --dynamic-list option.  A dynamic list has the format
+   { sym1; sym2; extern "C++" { namespace::sym3 }; };
+   We store the symbol we see in the "local" list; that is where
+   Command_line::in_dynamic_list() will look to do its check.
+   TODO(csilvers): More than one of these brace-lists can appear, and
+   should just be merged and treated as a single list.  */
+dynamic_list_expr: dynamic_list_nodes ;
+
+dynamic_list_nodes:
+	  dynamic_list_node
+	| dynamic_list_nodes dynamic_list_node
+        ;
+
+dynamic_list_node:
+          '{' vers_defns ';' '}' ';'
+            { script_new_vers_node (closure, NULL, $2); }
+        ;
 
 /* A version script.  */
 version_script:

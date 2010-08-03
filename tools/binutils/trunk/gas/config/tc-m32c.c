@@ -1,5 +1,5 @@
 /* tc-m32c.c -- Assembler for the Renesas M32C.
-   Copyright (C) 2005, 2006, 2007, 2008 Free Software Foundation.
+   Copyright (C) 2005, 2006, 2007, 2008, 2009 Free Software Foundation.
    Contributed by RedHat.
 
    This file is part of GAS, the GNU Assembler.
@@ -159,6 +159,9 @@ const pseudo_typeS md_pseudo_table[] =
   { "bss",	s_bss, 		0},
   { "3byte",	cons,		3 },
   { "word",	cons,		4 },
+  {"file",	(void (*) (int)) dwarf2_directive_file, 0},
+  {"loc",	dwarf2_directive_loc, 0},
+  {"loc_mark_labels", dwarf2_directive_loc_mark_labels, 0},
   { NULL, 	NULL, 		0 }
 };
 
@@ -866,22 +869,22 @@ md_convert_frag (bfd *   abfd ATTRIBUTE_UNUSED,
 
     case -M32C_MACRO_ADJNZ_2:
       rl_addend = 0x31;
-      op[2] = addend;
+      op[2] = addend - 2;
       operand = M32C_OPERAND_LAB_16_8;
       break;
     case -M32C_MACRO_ADJNZ_3:
       rl_addend = 0x41;
-      op[3] = addend;
+      op[3] = addend - 2;
       operand = M32C_OPERAND_LAB_24_8;
       break;
     case -M32C_MACRO_ADJNZ_4:
       rl_addend = 0x51;
-      op[4] = addend;
+      op[4] = addend - 2;
       operand = M32C_OPERAND_LAB_32_8;
       break;
     case -M32C_MACRO_ADJNZ_5:
       rl_addend = 0x61;
-      op[5] = addend;
+      op[5] = addend - 2;
       operand = M32C_OPERAND_LAB_40_8;
       break;
 
@@ -910,7 +913,7 @@ md_convert_frag (bfd *   abfd ATTRIBUTE_UNUSED,
 			 && operand != M32C_OPERAND_LAB32_JMP_S)))
     {
       fixS *fixP;
-      assert (fragP->fr_cgen.insn != 0);
+      gas_assert (fragP->fr_cgen.insn != 0);
       fixP = gas_cgen_record_fixup (fragP,
 				    where,
 				    fragP->fr_cgen.insn,

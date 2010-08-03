@@ -1,6 +1,6 @@
 // symtab.h -- the gold symbol table   -*- C++ -*-
 
-// Copyright 2006, 2007, 2008 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -23,6 +23,9 @@
 // Symbol_table
 //   The symbol table.
 
+#ifndef GOLD_SYMTAB_H
+#define GOLD_SYMTAB_H
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,9 +35,6 @@
 #include "stringpool.h"
 #include "object.h"
 
-#ifndef GOLD_SYMTAB_H
-#define GOLD_SYMTAB_H
-
 namespace gold
 {
 
@@ -43,6 +43,8 @@ class Object;
 class Relobj;
 template<int size, bool big_endian>
 class Sized_relobj;
+template<int size, bool big_endian>
+class Sized_pluginobj;
 class Dynobj;
 template<int size, bool big_endian>
 class Sized_dynobj;
@@ -54,6 +56,8 @@ class Output_section;
 class Output_segment;
 class Output_file;
 class Output_symtab_xindex;
+class Garbage_collection;
+class Icf;
 
 // The base class of an entry in the symbol table.  The symbol table
 // can have a lot of entries, so we don't want this class to big.
@@ -206,6 +210,15 @@ class Symbol
   visibility() const
   { return this->visibility_; }
 
+  // Set the visibility.
+  void
+  set_visibility(elfcpp::STV visibility)
+  { this->visibility_ = visibility; }
+
+  // Override symbol visibility.
+  void
+  override_visibility(elfcpp::STV);
+
   // Return the non-visibility part of the st_other field.
   unsigned char
   nonvis() const
@@ -272,6 +285,18 @@ class Symbol
   void
   set_in_dyn()
   { this->in_dyn_ = true; }
+
+  // Return whether this symbol has been seen in a real ELF object.
+  // (IN_REG will return TRUE if the symbol has been seen in either
+  // a real ELF object or an object claimed by a plugin.)
+  bool
+  in_real_elf() const
+  { return this->in_real_elf_; }
+
+  // Mark this symbol as having been seen in a real ELF object.
+  void
+  set_in_real_elf()
+  { this->in_real_elf_ = true; }
 
   // Return the index of this symbol in the output file symbol table.
   // A value of -1U means that this symbol is not going into the
@@ -386,6 +411,11 @@ class Symbol
   bool
   final_value_is_known() const;
 
+  // Return true if SHNDX represents a common symbol.  This depends on
+  // the target.
+  static bool
+  is_common_shndx(unsigned int shndx);
+
   // Return whether this is a defined symbol (not undefined or
   // common).
   bool
@@ -397,7 +427,7 @@ class Symbol
     unsigned int shndx = this->shndx(&is_ordinary);
     return (is_ordinary
 	    ? shndx != elfcpp::SHN_UNDEF
-	    : shndx != elfcpp::SHN_COMMON);
+	    : !Symbol::is_common_shndx(shndx));
   }
 
   // Return true if this symbol is from a dynamic object.
@@ -438,11 +468,13 @@ class Symbol
   bool
   is_common() const
   {
+    if (this->type_ == elfcpp::STT_COMMON)
+      return true;
+    if (this->source_ != FROM_OBJECT)
+      return false;
     bool is_ordinary;
-    return (this->source_ == FROM_OBJECT
-	    && ((this->shndx(&is_ordinary) == elfcpp::SHN_COMMON
-		 && !is_ordinary)
-		|| this->type_ == elfcpp::STT_COMMON));
+    unsigned int shndx = this->shndx(&is_ordinary);
+    return !is_ordinary && Symbol::is_common_shndx(shndx);
   }
 
   // Return whether this symbol can be seen outside this object.
@@ -501,11 +533,16 @@ class Symbol
   // Return true if this symbol is a function that needs a PLT entry.
   // If the symbol is defined in a dynamic object or if it is subject
   // to pre-emption, we need to make a PLT entry. If we're doing a
-  // static link, we don't create PLT entries.
+  // static link or a -pie link, we don't create PLT entries.
   bool
   needs_plt_entry() const
   {
+    // An undefined symbol from an executable does not need a PLT entry.
+    if (this->is_undefined() && !parameters->options().shared())
+      return false;
+
     return (!parameters->doing_static_link()
+	    && !parameters->options().pie()
             && this->type() == elfcpp::STT_FUNC
             && (this->is_from_dynobj()
                 || this->is_undefined()
@@ -536,10 +573,10 @@ class Symbol
     if (parameters->doing_static_link())
       return false;
 
-    // A reference to a weak undefined symbol from an executable should be
+    // A reference to an undefined symbol from an executable should be
     // statically resolved to 0, and does not need a dynamic relocation.
     // This matches gnu ld behavior.
-    if (this->is_weak_undefined() && !parameters->options().shared())
+    if (this->is_undefined() && !parameters->options().shared())
       return false;
 
     // A reference to an absolute symbol does not need a dynamic relocation.
@@ -687,6 +724,18 @@ class Symbol
   void
   set_is_forced_local()
   { this->is_forced_local_ = true; }
+
+  // Return true if this may need a COPY relocation.
+  // References from an executable object to non-function symbols
+  // defined in a dynamic object may need a COPY relocation.
+  bool
+  may_need_copy_reloc() const
+  {
+    return (!parameters->options().shared()
+	    && parameters->options().copyreloc()
+	    && this->is_from_dynobj()
+	    && this->type() != elfcpp::STT_FUNC);
+  }
 
  protected:
   // Instances of this class should always be created at a specific
@@ -871,8 +920,10 @@ class Symbol
   bool is_forced_local_ : 1;
   // True if the field u_.from_object.shndx is an ordinary section
   // index, not one of the special codes from SHN_LORESERVE to
-  // SHN_HIRESERVE.
+  // SHN_HIRESERVE (bit 31).
   bool is_ordinary_shndx_ : 1;
+  // True if we've seen this symbol in a real ELF object.
+  bool in_real_elf_ : 1;
 };
 
 // The parts of a symbol which are size specific.  Using a template
@@ -1124,6 +1175,40 @@ class Symbol_table
 
   ~Symbol_table();
 
+  void
+  set_icf(Icf* icf)
+  { this->icf_ = icf;}
+
+  Icf*
+  icf() const
+  { return this->icf_; }
+ 
+  // Returns true if ICF determined that this is a duplicate section. 
+  bool
+  is_section_folded(Object* obj, unsigned int shndx) const;
+
+  void
+  set_gc(Garbage_collection* gc)
+  { this->gc_ = gc; }
+
+  Garbage_collection*
+  gc() const
+  { return this->gc_; }
+
+  // During garbage collection, this keeps undefined symbols.
+  void
+  gc_mark_undef_symbols(); 
+
+  // During garbage collection, this ensures externally visible symbols
+  // are not treated as garbage while building shared objects.
+  void
+  gc_mark_symbol_for_shlib(Symbol* sym);
+
+  // During garbage collection, this keeps sections that correspond to 
+  // symbols seen in dynamic objects.
+  inline void
+  gc_mark_dyn_syms(Symbol* sym);
+
   // Add COUNT external symbols from the relocatable object RELOBJ to
   // the symbol table.  SYMS is the symbols, SYMNDX_OFFSET is the
   // offset in the symbol table of the first symbol, SYM_NAMES is
@@ -1138,6 +1223,14 @@ class Symbol_table
 		  size_t sym_name_size,
 		  typename Sized_relobj<size, big_endian>::Symbols*,
 		  size_t* defined);
+
+  // Add one external symbol from the plugin object OBJ to the symbol table.
+  // Returns a pointer to the resolved symbol in the symbol table.
+  template<int size, bool big_endian>
+  Symbol*
+  add_from_pluginobj(Sized_pluginobj<size, big_endian>* obj,
+                     const char* name, const char* ver,
+                     elfcpp::Sym<size, big_endian>* sym);
 
   // Add COUNT dynamic symbols from the dynamic object DYNOBJ to the
   // symbol table.  SYMS is the symbols.  SYM_NAMES is their names.
@@ -1283,9 +1376,29 @@ class Symbol_table
   finalize(off_t off, off_t dynoff, size_t dyn_global_index, size_t dyncount,
 	   Stringpool* pool, unsigned int *plocal_symcount);
 
+  // Status code of Symbol_table::compute_final_value.
+  enum Compute_final_value_status
+  {
+    // No error.
+    CFVS_OK,
+    // Unspported symbol section.
+    CFVS_UNSUPPORTED_SYMBOL_SECTION,
+    // No output section.
+    CFVS_NO_OUTPUT_SECTION
+  };
+
+  // Compute the final value of SYM and store status in location PSTATUS.
+  // During relaxation, this may be called multiple times for a symbol to 
+  // compute its would-be final value in each relaxation pass.
+
+  template<int size>
+  typename Sized_symbol<size>::Value_type
+  compute_final_value(const Sized_symbol<size>* sym,
+		      Compute_final_value_status* pstatus) const;
+
   // Write out the global symbols.
   void
-  write_globals(const Input_objects*, const Stringpool*, const Stringpool*,
+  write_globals(const Stringpool*, const Stringpool*,
 		Output_symtab_xindex*, Output_symtab_xindex*,
 		Output_file*) const;
 
@@ -1310,6 +1423,25 @@ class Symbol_table
   // The type of the list of common symbols.
   typedef std::vector<Symbol*> Commons_type;
 
+  // The type of the symbol hash table.
+
+  typedef std::pair<Stringpool::Key, Stringpool::Key> Symbol_table_key;
+
+  struct Symbol_table_hash
+  {
+    size_t
+    operator()(const Symbol_table_key&) const;
+  };
+
+  struct Symbol_table_eq
+  {
+    bool
+    operator()(const Symbol_table_key&, const Symbol_table_key&) const;
+  };
+
+  typedef Unordered_map<Symbol_table_key, Symbol*, Symbol_table_hash,
+			Symbol_table_eq> Symbol_table_type;
+
   // Make FROM a forwarder symbol to TO.
   void
   make_forwarder(Symbol* from, Symbol* to);
@@ -1322,6 +1454,12 @@ class Symbol_table
 		  bool def, const elfcpp::Sym<size, big_endian>& sym,
 		  unsigned int st_shndx, bool is_ordinary,
 		  unsigned int orig_st_shndx);
+
+  // Define a default symbol.
+  template<int size, bool big_endian>
+  void
+  define_default_version(Sized_symbol<size>*, bool,
+			 Symbol_table_type::iterator);
 
   // Resolve symbols.
   template<int size, bool big_endian>
@@ -1336,18 +1474,24 @@ class Symbol_table
   void
   resolve(Sized_symbol<size>* to, const Sized_symbol<size>* from);
 
-  // Record that a symbol is forced to be local by a version script.
+  // Record that a symbol is forced to be local by a version script or
+  // by visibility.
   void
   force_local(Symbol*);
 
   // Adjust NAME and *NAME_KEY for wrapping.
   const char*
-  wrap_symbol(Object* object, const char*, Stringpool::Key* name_key);
+  wrap_symbol(const char* name, Stringpool::Key* name_key);
 
   // Whether we should override a symbol, based on flags in
   // resolve.cc.
   static bool
   should_override(const Symbol*, unsigned int, Object*, bool*);
+
+  // Report a problem in symbol resolution.
+  static void
+  report_resolve_problem(bool is_error, const char* msg, const Symbol* to,
+			 Object* object);
 
   // Override a symbol.
   template<int size, bool big_endian>
@@ -1377,7 +1521,8 @@ class Symbol_table
   template<int size, bool big_endian>
   Sized_symbol<size>*
   define_special_symbol(const char** pname, const char** pversion,
-			bool only_if_ref, Sized_symbol<size>** poldsym);
+			bool only_if_ref, Sized_symbol<size>** poldsym,
+			bool* resolve_oldsym);
 
   // Define a symbol in an Output_data, sized version.
   template<int size>
@@ -1417,6 +1562,16 @@ class Symbol_table
   void
   do_add_undefined_symbols_from_command_line();
 
+  // Types of common symbols.
+
+  enum Commons_section_type
+  {
+    COMMONS_NORMAL,
+    COMMONS_TLS,
+    COMMONS_SMALL,
+    COMMONS_LARGE
+  };
+
   // Allocate the common symbols, sized version.
   template<int size>
   void
@@ -1425,7 +1580,8 @@ class Symbol_table
   // Allocate the common symbols from one list.
   template<int size>
   void
-  do_allocate_commons_list(Layout*, bool is_tls, Commons_type*, Mapfile*);
+  do_allocate_commons_list(Layout*, Commons_section_type, Commons_type*,
+			   Mapfile*);
 
   // Implement detect_odr_violations.
   template<int size, bool big_endian>
@@ -1451,9 +1607,9 @@ class Symbol_table
   // Write globals specialized for size and endianness.
   template<int size, bool big_endian>
   void
-  sized_write_globals(const Input_objects*, const Stringpool*,
-		      const Stringpool*, Output_symtab_xindex*,
-		      Output_symtab_xindex*, Output_file*) const;
+  sized_write_globals(const Stringpool*, const Stringpool*,
+		      Output_symtab_xindex*, Output_symtab_xindex*,
+		      Output_file*) const;
 
   // Write out a symbol to P.
   template<int size, bool big_endian>
@@ -1465,32 +1621,13 @@ class Symbol_table
 
   // Possibly warn about an undefined symbol from a dynamic object.
   void
-  warn_about_undefined_dynobj_symbol(const Input_objects*, Symbol*) const;
+  warn_about_undefined_dynobj_symbol(Symbol*) const;
 
   // Write out a section symbol, specialized for size and endianness.
   template<int size, bool big_endian>
   void
   sized_write_section_symbol(const Output_section*, Output_symtab_xindex*,
 			     Output_file*, off_t) const;
-
-  // The type of the symbol hash table.
-
-  typedef std::pair<Stringpool::Key, Stringpool::Key> Symbol_table_key;
-
-  struct Symbol_table_hash
-  {
-    size_t
-    operator()(const Symbol_table_key&) const;
-  };
-
-  struct Symbol_table_eq
-  {
-    bool
-    operator()(const Symbol_table_key&, const Symbol_table_key&) const;
-  };
-
-  typedef Unordered_map<Symbol_table_key, Symbol*, Symbol_table_hash,
-			Symbol_table_eq> Symbol_table_type;
 
   // The type of the list of symbols which have been forced local.
   typedef std::vector<Symbol*> Forced_locals;
@@ -1561,6 +1698,10 @@ class Symbol_table
   // This is like the commons_ field, except that it holds TLS common
   // symbols.
   Commons_type tls_commons_;
+  // This is for small common symbols.
+  Commons_type small_commons_;
+  // This is for large common symbols.
+  Commons_type large_commons_;
   // A list of symbols which have been forced to be local.  We don't
   // expect there to be very many of them, so we keep a list of them
   // rather than walking the whole table to find them.
@@ -1578,6 +1719,8 @@ class Symbol_table
   Copied_symbol_dynobjs copied_symbol_dynobjs_;
   // Information parsed from the version script, if any.
   const Version_script_info& version_script_;
+  Garbage_collection* gc_;
+  Icf* icf_;
 };
 
 // We inline get_sized_symbol for efficiency.

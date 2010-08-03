@@ -1,6 +1,6 @@
 /* read.h - of read.c
    Copyright 1986, 1990, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008
+   2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009
    Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
@@ -186,5 +186,5 @@ extern void stringer (int append_zero);
 extern void s_xstab (int what);
 extern void s_rva (int);
 extern void s_incbin (int);
-extern void s_vendor_attribute (int);
+extern int s_vendor_attribute (int);
 extern void s_weakref (int);

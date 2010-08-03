@@ -45,6 +45,7 @@ class Symbol_table;
 class Layout;
 class Mapfile;
 class Input_argument;
+class Input_arguments;
 class Input_objects;
 class Input_group;
 class Input_file;
@@ -382,6 +383,26 @@ class Script_options
   Script_sections script_sections_;
 };
 
+// Information about a script input that will persist during the whole linker
+// run. Needed only during an incremental build to retrieve the input files
+// added by this script.
+
+class Script_info
+{
+ public:
+  Script_info(Input_arguments* inputs)
+    : inputs_(inputs)
+  { }
+
+  // Returns the input files included because of this script.
+  Input_arguments*
+  inputs()
+  { return this->inputs_; }
+
+ private:
+  Input_arguments* inputs_;
+};
+
 // FILE was found as an argument on the command line, but was not
 // recognized as an ELF file.  Try to read it as a script.  Return
 // true if the file was handled.  This has to handle /usr/lib/libc.so
@@ -389,8 +410,8 @@ class Script_options
 // whether the function took over NEXT_BLOCKER.
 
 bool
-read_input_script(Workqueue*, const General_options&, Symbol_table*, Layout*,
-		  Dirsearch*, Input_objects*, Mapfile*, Input_group*,
+read_input_script(Workqueue*, Symbol_table*, Layout*, Dirsearch*, int,
+		  Input_objects*, Mapfile*, Input_group*,
 		  const Input_argument*, Input_file*,
 		  Task_token* next_blocker, bool* used_next_blocker);
 
@@ -398,7 +419,7 @@ read_input_script(Workqueue*, const General_options&, Symbol_table*, Layout*,
 // Read it as a script, and execute its contents immediately.
 
 bool
-read_commandline_script(const char* filename, Command_line*);
+read_commandline_script(const char* filename, Command_line* cmdline);
 
 // FILE was found as an argument to --version-script.  Read it as a
 // version script, and store its contents in
@@ -406,6 +427,14 @@ read_commandline_script(const char* filename, Command_line*);
 
 bool
 read_version_script(const char* filename, Command_line* cmdline);
+
+// FILENAME was found as an argument to --dynamic-list.  Read it as a
+// version script (actually, a versym_node from a version script), and
+// store its contents in DYNAMIC_LIST.
+
+bool
+read_dynamic_list(const char* filename, Command_line* cmdline,
+                  Script_options* dynamic_list);
 
 } // End namespace gold.
 

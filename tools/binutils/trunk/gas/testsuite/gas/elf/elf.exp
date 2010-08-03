@@ -82,6 +82,20 @@ if { ([istarget "*-*-*elf*"]
 	&& ![istarget "am3*-*-*"]} then {    
       run_dump_test "ehopt0"
     }
+    case $target_triplet in {
+	{ m68k-*-* m68[03]??-*-* } {
+	    run_dump_test "file" { { as "--defsym m68k=1" } }
+	}
+	{ mmix-*-* } {
+	    run_dump_test "file" { { as "--defsym mmix=1" } }
+	}
+	{ xtensa*-*-* } {
+	    run_dump_test "file" { { as "--rename-section file.s=file.c" } }
+	}
+	default {
+	    run_dump_test "file"
+	}
+    }
     run_dump_test "group0a" 
     run_dump_test "group0b" 
     run_dump_test "group1a" 
@@ -113,8 +127,22 @@ if { ([istarget "*-*-*elf*"]
     run_dump_test "section4"
     run_elf_list_test "section5" "" "-al" "-SW" "| grep \" \\\\.test\\\[0-9\\\]\""
     run_dump_test "struct" 
-    run_dump_test "symver" 
-    run_elf_list_test "type" "" "" "-s" "| grep \"1 \\\[FONTC\\\]\""
+    run_dump_test "symtab"
+    run_dump_test "symver"
+
+    # The MSP port sets the ELF header's OSABI field to ELFOSABI_STANDALONE.
+    # The non-eabi ARM ports sets it to ELFOSABI_ARM.
+    # So for these targets we cannot include an IFUNC symbol type
+    # in the symbol type test.
+    if {   [istarget "msp*-*-*"]
+	|| [istarget "arm*-*-*"]
+	|| [istarget "xscale*-*-*"]} then {
+	    run_elf_list_test "type-noifunc" "" "" "-s" "| grep \"1 \\\[FONTC\\\]\""
+    } else {
+    	    run_dump_test ifunc-1
+	    run_elf_list_test "type" "" "" "-s" "| grep \"1 \\\[FIONTCU\\\]\""
+    }
+
     run_dump_test "section6" 
     run_dump_test "section7" 
 }

@@ -23,6 +23,7 @@
 #include "gold.h"
 
 #include <string>
+#include <cstdio>
 
 #include "../bfd/bfdver.h"
 
@@ -35,7 +36,7 @@ namespace gold
 // version number from configure.ac.  But it's easier to just change
 // this file for now.
 
-static const char* version_string = "1.7";
+static const char* version_string = "1.9";
 
 // Report version information.
 

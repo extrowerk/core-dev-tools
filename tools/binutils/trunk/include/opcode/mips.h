@@ -1,6 +1,6 @@
 /* mips.h.  Mips opcode list for GDB, the GNU debugger.
    Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2008
+   2003, 2004, 2005, 2008, 2009
    Free Software Foundation, Inc.
    Contributed by Ralph Campbell and OSF
    Commented and modified by Ian Lance Taylor, Cygnus Support
@@ -262,6 +262,7 @@ struct mips_opcode
 
    Each of these characters corresponds to a mask field defined above.
 
+   "1" 5 bit sync type (OP_*_SHAMT)
    "<" 5 bit shift amount (OP_*_SHAMT)
    ">" shift amount between 32 and 63, stored after subtracting 32 (OP_*_SHAMT)
    "a" 26 bit target address (OP_*_TARGET)
@@ -401,7 +402,7 @@ struct mips_opcode
    "+"  Start of extension sequence.
 
    Characters used so far, for quick reference when adding more:
-   "234567890"
+   "1234567890"
    "%[]<>(),+:'@!$*&"
    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
    "abcdefghijklopqrstuvwxz"
@@ -542,7 +543,7 @@ static const unsigned int mips_isa_table[] =
   { 0x0001, 0x0003, 0x0607, 0x1e0f, 0x3e1f, 0x0a23, 0x3e63, 0x3ebf, 0x3fff };
 
 /* Masks used for Chip specific instructions.  */
-#define INSN_CHIP_MASK		  0xc3ff0800
+#define INSN_CHIP_MASK		  0xc3ff0820
 
 /* Cavium Networks Octeon instructions.  */
 #define INSN_OCTEON		  0x00000800
@@ -591,6 +592,8 @@ static const unsigned int mips_isa_table[] =
 #define INSN_LOONGSON_2E          0x40000000
 /* ST Microelectronics Loongson 2F.  */
 #define INSN_LOONGSON_2F          0x80000000
+/* RMI Xlr instruction */
+#define INSN_XLR              	  0x00000020
 
 /* MIPS ISA defines, use instead of hardcoding ISA level.  */
 
@@ -631,6 +634,8 @@ static const unsigned int mips_isa_table[] =
 #define CPU_RM9000	9000
 #define CPU_R10000	10000
 #define CPU_R12000	12000
+#define CPU_R14000	14000
+#define CPU_R16000	16000
 #define CPU_MIPS16	16
 #define CPU_MIPS32	32
 #define CPU_MIPS32R2	33
@@ -641,6 +646,7 @@ static const unsigned int mips_isa_table[] =
 #define CPU_LOONGSON_2E 3001
 #define CPU_LOONGSON_2F 3002
 #define CPU_OCTEON	6501
+#define CPU_XLR     	887682   	/* decimal 'XLR'   */
 
 /* Test for membership in an ISA including chip specific ISAs.  INSN
    is pointer to an element of the opcode table; ISA is the specified
@@ -660,7 +666,8 @@ static const unsigned int mips_isa_table[] =
      || (cpu == CPU_R4010 && ((insn)->membership & INSN_4010) != 0)	\
      || (cpu == CPU_VR4100 && ((insn)->membership & INSN_4100) != 0)	\
      || (cpu == CPU_R3900 && ((insn)->membership & INSN_3900) != 0)	\
-     || ((cpu == CPU_R10000 || cpu == CPU_R12000)			\
+     || ((cpu == CPU_R10000 || cpu == CPU_R12000 || cpu == CPU_R14000	\
+	  || cpu == CPU_R16000)						\
 	 && ((insn)->membership & INSN_10000) != 0)			\
      || (cpu == CPU_SB1 && ((insn)->membership & INSN_SB1) != 0)	\
      || (cpu == CPU_R4111 && ((insn)->membership & INSN_4111) != 0)	\
@@ -673,6 +680,7 @@ static const unsigned int mips_isa_table[] =
          && ((insn)->membership & INSN_LOONGSON_2F) != 0)               \
      || (cpu == CPU_OCTEON						\
 	 && ((insn)->membership & INSN_OCTEON) != 0)			\
+     || (cpu == CPU_XLR && ((insn)->membership & INSN_XLR) != 0)        \
      || 0)	/* Please keep this term for easier source merging.  */
 
 /* This is a list of macro expanded instructions.
@@ -805,6 +813,11 @@ enum
   M_LWR_A,
   M_LWR_AB,
   M_LWU_AB,
+  M_MSGSND,
+  M_MSGLD,
+  M_MSGLD_T,
+  M_MSGWAIT,
+  M_MSGWAIT_T,
   M_MOVE,
   M_MUL,
   M_MUL_I,

@@ -38,9 +38,10 @@ repository without obtaining approval first:
   Jeff Law <law@redhat.com>
   Jim Wilson <wilson@tuliptree.org>
   DJ Delorie <dj@redhat.com>
-  Alan Modra <amodra@bigpond.net.au>
+  Alan Modra <amodra@gmail.com>
   Michael Meissner <gnu@the-meissners.org>
   Daniel Jacobowitz <dan@debian.org>
+  Richard Sandiford <rdsandiford@googlemail.com>
 
       --------- Maintainers ---------
 
@@ -74,9 +75,9 @@ responsibility among the other maintainers.
   FR30		   Dave Brolley <brolley@redhat.com>
   FRV		   Dave Brolley <brolley@redhat.com>
   FRV		   Alexandre Oliva <aoliva@redhat.com>
-  H8300		   Anil Paranjpe <anilp1@kpitcummins.com>
+  H8300		   Prafulla Thakare <prafulla.thakare@kpitcummins.com>
   HPPA		   Dave Anglin <dave.anglin@nrc.ca>
-  HPPA elf32	   Alan Modra <amodra@bigpond.net.au>
+  HPPA elf32	   Alan Modra <amodra@gmail.com>
   HPPA elf64	   Jeff Law <law@redhat.com> [Basic maintainance only]
   IA-64		   Jim Wilson <wilson@tuliptree.org>
   IQ2000	   Stan Cox <scox@redhat.com>
@@ -84,36 +85,42 @@ responsibility among the other maintainers.
   ix86		   H.J. Lu <hjl.tools@gmail.com>
   ix86 PE	   Christopher Faylor <me+binutils@cgf.cx>
   ix86 COFF	   DJ Delorie <dj@redhat.com>
+  ix86 PE/COFF	   Dave Korn <dave.korn.cygwin@gmail.com>
   ix86 INTEL MODE  Jan Beulich <jbeulich@novell.com>
+  LM32             Jon Beniston <jon@beniston.com>
   M68HC11 M68HC12  Stephane Carrez <stcarrez@nerim.fr>
   M88k		   Mark Kettenis <kettenis@gnu.org>
+  MACH-O           Tristan Gingold <gingold@adacore.com>
   MAXQ		   Inderpreet Singh <inderpreetb@noida.hcltech.com>
   MEP		   Dave Brolley <brolley@redhat.com>
+  MICROBLAZE	   Michael Eager <eager@eagercon.com>
   MIPS		   Eric Christopher <echristo@apple.com>
-  MIPS		   Thiemo Seufer <ths@networkno.de>
   MMIX		   Hans-Peter Nilsson <hp@bitrange.com>
   MN10300	   Eric Christopher <echristo@apple.com>
   MN10300	   Alexandre Oliva <aoliva@redhat.com>
+  Moxie		   Anthony Green <green@moxielogic.com>
   MSP430	   Dmitry Diky <diwil@spec.ru>
   NetBSD support   Matt Thomas <matt@netbsd.org>
   PPC		   Geoff Keating <geoffk@geoffk.org>
-  PPC		   Alan Modra <amodra@bigpond.net.au>
+  PPC		   Alan Modra <amodra@gmail.com>
   PPC vector ext   Aldy Hernandez <aldyh@redhat.com>
   s390, s390x	   Martin Schwidefsky <schwidefsky@de.ibm.com>
   SCORE		   Mei Ligang <ligang@sunnorth.com.cn>
   SH		   Alexandre Oliva <aoliva@redhat.com>
   SH		   Kaz Kojima <kkojima@rr.iij4u.or.jp>
   SPARC		   Jakub Jelinek <jakub@redhat.com>
-  SPU		   Alan Modra <amodra@bigpond.net.au>
+  SPU		   Alan Modra <amodra@gmail.com>
   TESTSUITES	   Ben Elliston <bje@gnu.org>
   TIC4X            Svein Seldal <svein@dev.seldal.com>
   TIC54X           Timothy Wall <twall@alum.mit.edu>
   VAX		   Matt Thomas <matt@netbsd.org>
   VAX		   Jan-Benedict Glaw <jbglaw@lug-owl.de>
+  VMS		   Tristan Gingold <gingold@adacore.com>
   x86_64	   Jan Hubicka <jh@suse.cz>
   x86_64	   Andreas Jaeger <aj@suse.de>
   x86_64	   H.J. Lu <hjl.tools@gmail.com>
-  Xtensa	   Bob Wilson <bob.wilson@acm.org>
+  XCOFF 	   Richard Sandiford <r.sandiford@uk.ibm.com>
+  Xtensa	   Sterling Augustine <sterling@tensilica.com> 
   z80		   Arnold Metselaar <arnold.metselaar@planet.nl>
   z8k		   Christian Groessler <chris@groessler.org>
 

@@ -1,6 +1,7 @@
 /* strings -- print the strings of printable characters in files
    Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
-   2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,6 +54,7 @@
    -h		Print the usage message on the standard output.
 
    --version
+   -V
    -v		Print the program version number.
 
    Written by Richard Stallman <rms@gnu.ai.mit.edu>
@@ -155,6 +157,8 @@ main (int argc, char **argv)
   int optc;
   int exit_status = 0;
   bfd_boolean files_given = FALSE;
+  char *s;
+  int numeric_opt = 0;
 
 #if defined (HAVE_SETLOCALE)
   setlocale (LC_ALL, "");
@@ -192,7 +196,9 @@ main (int argc, char **argv)
 	  usage (stdout, 0);
 
 	case 'n':
-	  string_min = (int) strtoul (optarg, NULL, 0);
+	  string_min = (int) strtoul (optarg, &s, 0);
+	  if (s != NULL && *s != 0)
+	    fatal (_("invalid integer argument %s"), optarg);
 	  break;
 
 	case 'o':
@@ -242,11 +248,17 @@ main (int argc, char **argv)
 	  usage (stderr, 1);
 
 	default:
-	  string_min = (int) strtoul (argv[optind - 1] + 1, NULL, 0);
+	  numeric_opt = optind;
 	  break;
 	}
     }
 
+  if (numeric_opt != 0)
+    {
+      string_min = (int) strtoul (argv[numeric_opt - 1] + 1, &s, 0);
+      if (s != NULL && *s != 0)
+	fatal (_("invalid integer argument %s"), argv[numeric_opt - 1] + 1);
+    }
   if (string_min < 1)
     fatal (_("invalid minimum string length %d"), string_min);
 
@@ -350,7 +362,7 @@ strings_a_section (bfd *abfd, asection *sect, void *arg)
       got_a_section = TRUE;
 
       print_strings (filename_and_sizep->filename, NULL, sect->filepos,
-		     0, sectsize, mem);
+		     0, sectsize, (char *) mem);
     }
 
   free (mem);
@@ -658,7 +670,7 @@ usage (FILE *stream, int status)
                             s = 7-bit, S = 8-bit, {b,l} = 16-bit, {B,L} = 32-bit\n\
   @<file>                   Read options from <file>\n\
   -h --help                 Display this information\n\
-  -v --version              Print the program's version number\n"));
+  -v -V --version           Print the program's version number\n"));
   list_supported_targets (program_name, stream);
   if (REPORT_BUGS_TO[0] && status == 0)
     fprintf (stream, _("Report bugs to %s\n"), REPORT_BUGS_TO);

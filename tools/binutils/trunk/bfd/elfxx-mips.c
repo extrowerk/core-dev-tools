@@ -1,6 +1,6 @@
 /* MIPS-specific support for ELF
    Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
    Most of the information added by Ian Lance Taylor, Cygnus Support,
    <ian@cygnus.com>.
@@ -482,7 +482,6 @@ struct mips_elf_link_hash_table
      The function returns the new section on success, otherwise it
      returns null.  */
   asection *(*add_stub_section) (const char *, asection *, asection *);
-
 #ifdef __QNXTARGET__
   /* True if we're generating MIPS plts and we don't want any abicalls stubs */
   bfd_boolean no_fn_stubs;
@@ -666,6 +665,23 @@ static struct mips_got_info *mips_elf_got_for_ibfd
 
 /* This will be used when we sort the dynamic relocation records.  */
 static bfd *reldyn_sorting_bfd;
+
+/* True if ABFD is for CPUs with load interlocking that include
+   non-MIPS1 CPUs and R3900.  */
+#define LOAD_INTERLOCKS_P(abfd) \
+  (   ((elf_elfheader (abfd)->e_flags & EF_MIPS_ARCH) != E_MIPS_ARCH_1) \
+   || ((elf_elfheader (abfd)->e_flags & EF_MIPS_MACH) == E_MIPS_MACH_3900))
+
+/* True if ABFD is for CPUs that are faster if JAL is converted to BAL.
+   This should be safe for all architectures.  We enable this predicate
+   for RM9000 for now.  */
+#define JAL_TO_BAL_P(abfd) \
+  ((elf_elfheader (abfd)->e_flags & EF_MIPS_MACH) == E_MIPS_MACH_9000)
+
+/* True if ABFD is for CPUs that are faster if JALR is converted to BAL.
+   This should be safe for all architectures.  We enable this predicate for
+   all CPUs.  */
+#define JALR_TO_BAL_P(abfd) 1
 
 /* True if ABFD is a PIC object.  */
 #define PIC_OBJECT_P(abfd) \
@@ -883,7 +899,8 @@ static bfd *reldyn_sorting_bfd;
 #define CALL_FP_STUB_P(name) CONST_STRNEQ (name, CALL_FP_STUB)
 
 /* The format of the first PLT entry in an O32 executable.  */
-static const bfd_vma mips_o32_exec_plt0_entry[] = {
+static const bfd_vma mips_o32_exec_plt0_entry[] =
+{
   0x3c1c0000,	/* lui $28, %hi(&GOTPLT[0])				*/
   0x8f990000,	/* lw $25, %lo(&GOTPLT[0])($28)				*/
   0x279c0000,	/* addiu $28, $28, %lo(&GOTPLT[0])			*/
@@ -896,7 +913,8 @@ static const bfd_vma mips_o32_exec_plt0_entry[] = {
 
 /* The format of the first PLT entry in an N32 executable.  Different
    because gp ($28) is not available; we use t2 ($14) instead.  */
-static const bfd_vma mips_n32_exec_plt0_entry[] = {
+static const bfd_vma mips_n32_exec_plt0_entry[] =
+{
   0x3c0e0000,	/* lui $14, %hi(&GOTPLT[0])				*/
   0x8dd90000,	/* lw $25, %lo(&GOTPLT[0])($14)				*/
   0x25ce0000,	/* addiu $14, $14, %lo(&GOTPLT[0])			*/
@@ -909,7 +927,8 @@ static const bfd_vma mips_n32_exec_plt0_entry[] = {
 
 /* The format of the first PLT entry in an N64 executable.  Different
    from N32 because of the increased size of GOT entries.  */
-static const bfd_vma mips_n64_exec_plt0_entry[] = {
+static const bfd_vma mips_n64_exec_plt0_entry[] =
+{
   0x3c0e0000,	/* lui $14, %hi(&GOTPLT[0])				*/
   0xddd90000,	/* ld $25, %lo(&GOTPLT[0])($14)				*/
   0x25ce0000,	/* addiu $14, $14, %lo(&GOTPLT[0])			*/
@@ -921,7 +940,8 @@ static const bfd_vma mips_n64_exec_plt0_entry[] = {
 };
 
 /* The format of subsequent PLT entries.  */
-static const bfd_vma mips_exec_plt_entry[] = {
+static const bfd_vma mips_exec_plt_entry[] =
+{
   0x3c0f0000,	/* lui $15, %hi(.got.plt entry)			*/
   0x01f90000,	/* l[wd] $25, %lo(.got.plt entry)($15)		*/
   0x25f80000,	/* addiu $24, $15, %lo(.got.plt entry)		*/
@@ -929,7 +949,8 @@ static const bfd_vma mips_exec_plt_entry[] = {
 };
 
 /* The format of the first PLT entry in a VxWorks executable.  */
-static const bfd_vma mips_vxworks_exec_plt0_entry[] = {
+static const bfd_vma mips_vxworks_exec_plt0_entry[] =
+{
   0x3c190000,	/* lui t9, %hi(_GLOBAL_OFFSET_TABLE_)		*/
   0x27390000,	/* addiu t9, t9, %lo(_GLOBAL_OFFSET_TABLE_)	*/
   0x8f390008,	/* lw t9, 8(t9)					*/
@@ -939,7 +960,8 @@ static const bfd_vma mips_vxworks_exec_plt0_entry[] = {
 };
 
 /* The format of subsequent PLT entries.  */
-static const bfd_vma mips_vxworks_exec_plt_entry[] = {
+static const bfd_vma mips_vxworks_exec_plt_entry[] =
+{
   0x10000000,	/* b .PLT_resolver			*/
   0x24180000,	/* li t8, <pltindex>			*/
   0x3c190000,	/* lui t9, %hi(<.got.plt slot>)		*/
@@ -951,7 +973,8 @@ static const bfd_vma mips_vxworks_exec_plt_entry[] = {
 };
 
 /* The format of the first PLT entry in a VxWorks shared object.  */
-static const bfd_vma mips_vxworks_shared_plt0_entry[] = {
+static const bfd_vma mips_vxworks_shared_plt0_entry[] =
+{
   0x8f990008,	/* lw t9, 8(gp)		*/
   0x00000000,	/* nop			*/
   0x03200008,	/* jr t9		*/
@@ -961,7 +984,8 @@ static const bfd_vma mips_vxworks_shared_plt0_entry[] = {
 };
 
 /* The format of subsequent PLT entries.  */
-static const bfd_vma mips_vxworks_shared_plt_entry[] = {
+static const bfd_vma mips_vxworks_shared_plt_entry[] =
+{
   0x10000000,	/* b .PLT_resolver	*/
   0x24180000	/* li t8, <pltindex>	*/
 };
@@ -1414,7 +1438,8 @@ section_allows_mips16_refs_p (asection *section)
    function, or 0 if we can't decide which function that is.  */
 
 static unsigned long
-mips16_stub_symndx (asection *sec, const Elf_Internal_Rela *relocs,
+mips16_stub_symndx (asection *sec ATTRIBUTE_UNUSED,
+		    const Elf_Internal_Rela *relocs,
 		    const Elf_Internal_Rela *relend)
 {
   const Elf_Internal_Rela *rel;
@@ -5468,8 +5493,8 @@ mips_elf_calculate_relocation (bfd *abfd, bfd *input_bfd,
     case R_MIPS_JALR:
       /* This relocation is only a hint.  In some cases, we optimize
 	 it into a bal instruction.  But we don't try to optimize
-	 branches to the PLT; that will wind up wasting time.  */
-      if (h != NULL && h->root.plt.offset != (bfd_vma) -1)
+	 when the symbol does not resolve locally.  */
+      if (h != NULL && !SYMBOL_CALLS_LOCAL (info, &h->root))
 	return bfd_reloc_continue;
       value = symbol + addend;
       break;
@@ -5576,15 +5601,15 @@ mips_elf_perform_relocation (struct bfd_link_info *info,
       x = (x & ~(0x3f << 26)) | (jalx_opcode << 26);
     }
 
-  /* On the RM9000, bal is faster than jal, because bal uses branch
-     prediction hardware.  If we are linking for the RM9000, and we
-     see jal, and bal fits, use it instead.  Note that this
-     transformation should be safe for all architectures.  */
-  if (bfd_get_mach (input_bfd) == bfd_mach_mips9000
-      && !info->relocatable
+  /* Try converting JAL and JALR to BAL, if the target is in range.  */
+  if (!info->relocatable
       && !require_jalx
-      && ((r_type == R_MIPS_26 && (x >> 26) == 0x3)	    /* jal addr */
-	  || (r_type == R_MIPS_JALR && x == 0x0320f809)))   /* jalr t9 */
+      && ((JAL_TO_BAL_P (input_bfd)
+	   && r_type == R_MIPS_26
+	   && (x >> 26) == 0x3)		/* jal addr */
+	  || (JALR_TO_BAL_P (input_bfd)
+	      && r_type == R_MIPS_JALR
+	      && x == 0x0320f809)))	/* jalr t9 */
     {
       bfd_vma addr;
       bfd_vma dest;
@@ -5882,6 +5907,9 @@ _bfd_elf_mips_mach (flagword flags)
 
     case E_MIPS_MACH_OCTEON:
       return bfd_mach_mips_octeon;
+
+    case E_MIPS_MACH_XLR:
+      return bfd_mach_mips_xlr;
 
     default:
       switch (flags & EF_MIPS_ARCH)
@@ -6250,17 +6278,19 @@ _bfd_mips_elf_section_processing (bfd *abfd, Elf_Internal_Shdr *hdr)
     {
       const char *name = bfd_get_section_name (abfd, hdr->bfd_section);
 
+      /* .sbss is not handled specially here because the GNU/Linux
+	 prelinker can convert .sbss from NOBITS to PROGBITS and
+	 changing it back to NOBITS breaks the binary.  The entry in
+	 _bfd_mips_elf_special_sections will ensure the correct flags
+	 are set on .sbss if BFD creates it without reading it from an
+	 input file, and without special handling here the flags set
+	 on it in an input file will be followed.  */
       if (strcmp (name, ".sdata") == 0
 	  || strcmp (name, ".lit8") == 0
 	  || strcmp (name, ".lit4") == 0)
 	{
 	  hdr->sh_flags |= SHF_ALLOC | SHF_WRITE | SHF_MIPS_GPREL;
 	  hdr->sh_type = SHT_PROGBITS;
-	}
-      else if (strcmp (name, ".sbss") == 0)
-	{
-	  hdr->sh_flags |= SHF_ALLOC | SHF_WRITE | SHF_MIPS_GPREL;
-	  hdr->sh_type = SHT_NOBITS;
 	}
       else if (strcmp (name, ".srdata") == 0)
 	{
@@ -6784,7 +6814,7 @@ _bfd_mips_elf_add_symbol_hook (bfd *abfd, struct bfd_link_info *info,
    symbol.  We mark symbols as small common if appropriate.  This is
    also where we undo the increment of the value for a mips16 symbol.  */
 
-bfd_boolean
+int
 _bfd_mips_elf_link_output_symbol_hook
   (struct bfd_link_info *info ATTRIBUTE_UNUSED,
    const char *name ATTRIBUTE_UNUSED, Elf_Internal_Sym *sym,
@@ -6800,7 +6830,7 @@ _bfd_mips_elf_link_output_symbol_hook
   if (ELF_ST_IS_MIPS16 (sym->st_other))
     sym->st_value &= ~1;
 
-  return TRUE;
+  return 1;
 }
 
 /* Functions for the dynamic linker.  */
@@ -7477,6 +7507,11 @@ _bfd_mips_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	    }
 	  break;
 
+	  /* This is just a hint; it can safely be ignored.  Don't set
+	     has_static_relocs for the corresponding symbol.  */
+	case R_MIPS_JALR:
+	  break;
+
 	case R_MIPS_32:
 	case R_MIPS_REL32:
 	case R_MIPS_64:
@@ -7579,7 +7614,7 @@ _bfd_mips_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	case R_MIPS_CALL_LO16:
 	  if (h != NULL)
 	    {
-	      /* VxWorks call relocations point the function's .got.plt
+	      /* VxWorks call relocations point at the function's .got.plt
 		 entry, which will be allocated by adjust_dynamic_symbol.
 		 Otherwise, this symbol requires a global GOT entry.  */
 	      if ((!htab->is_vxworks || h->forced_local)
@@ -8112,7 +8147,7 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
   hmips = (struct mips_elf_link_hash_entry *) h;
 
 #ifdef __QNXTARGET__
-  /* 
+  /*
    * If using the new PLTs, and our binary calls a function but does not reference it's address,
    * then we would normally get a .MIPS.stubs style stub.
    *
@@ -8124,9 +8159,9 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
    * to assume the worst and force a PLT to be used.
    */
   if (htab->use_plts_and_copy_relocs
-	  && !info->shared 
-	  && h->type == STT_FUNC 
-	  && !hmips->has_static_relocs)
+         && !info->shared
+         && h->type == STT_FUNC
+         && !hmips->has_static_relocs)
    {
      hmips->has_static_relocs = TRUE;
      hmips->no_fn_stub = TRUE;
@@ -8653,8 +8688,10 @@ _bfd_mips_elf_size_dynamic_sections (bfd *output_bfd,
       else if (s == htab->splt)
 	{
 	  /* If the last PLT entry has a branch delay slot, allocate
-	     room for an extra nop to fill the delay slot.  */
-	  if (!htab->is_vxworks && s->size > 0)
+	     room for an extra nop to fill the delay slot.  This is
+	     for CPUs without load interlocking.  */
+	  if (! LOAD_INTERLOCKS_P (output_bfd)
+	      && ! htab->is_vxworks && s->size > 0)
 	    s->size += 4;
 	}
       else if (! CONST_STRNEQ (name, ".init")
@@ -9377,8 +9414,17 @@ _bfd_mips_elf_finish_dynamic_symbol (bfd *output_bfd,
       plt_entry = mips_exec_plt_entry;
       bfd_put_32 (output_bfd, plt_entry[0] | got_address_high, loc);
       bfd_put_32 (output_bfd, plt_entry[1] | got_address_low | load, loc + 4);
-      bfd_put_32 (output_bfd, plt_entry[2] | got_address_low, loc + 8);
-      bfd_put_32 (output_bfd, plt_entry[3], loc + 12);
+
+      if (! LOAD_INTERLOCKS_P (output_bfd))
+	{
+	  bfd_put_32 (output_bfd, plt_entry[2] | got_address_low, loc + 8);
+	  bfd_put_32 (output_bfd, plt_entry[3], loc + 12);
+	}
+      else
+	{
+	  bfd_put_32 (output_bfd, plt_entry[3], loc + 8);
+	  bfd_put_32 (output_bfd, plt_entry[2] | got_address_low, loc + 12);
+	}
 
       /* Emit an R_MIPS_JUMP_SLOT relocation against the .got.plt entry.  */
       mips_elf_output_dynamic_relocation (output_bfd, htab->srelplt,
@@ -10427,6 +10473,8 @@ mips_set_isa_flags (bfd *abfd)
     case bfd_mach_mips8000:
     case bfd_mach_mips10000:
     case bfd_mach_mips12000:
+    case bfd_mach_mips14000:
+    case bfd_mach_mips16000:
       val = E_MIPS_ARCH_4;
       break;
 
@@ -10448,6 +10496,10 @@ mips_set_isa_flags (bfd *abfd)
 
     case bfd_mach_mips_octeon:
       val = E_MIPS_ARCH_64R2 | E_MIPS_MACH_OCTEON;
+      break;
+
+    case bfd_mach_mips_xlr:
+      val = E_MIPS_ARCH_64 | E_MIPS_MACH_XLR;
       break;
 
     case bfd_mach_mipsisa32:
@@ -12156,12 +12208,15 @@ static const struct mips_mach_extension mips_mach_extensions[] = {
   /* MIPS64 extensions.  */
   { bfd_mach_mipsisa64r2, bfd_mach_mipsisa64 },
   { bfd_mach_mips_sb1, bfd_mach_mipsisa64 },
+  { bfd_mach_mips_xlr, bfd_mach_mipsisa64 },
 
   /* MIPS V extensions.  */
   { bfd_mach_mipsisa64, bfd_mach_mips5 },
 
   /* R10000 extensions.  */
   { bfd_mach_mips12000, bfd_mach_mips10000 },
+  { bfd_mach_mips14000, bfd_mach_mips10000 },
+  { bfd_mach_mips16000, bfd_mach_mips10000 },
 
   /* R5000 extensions.  Note: the vr5500 ISA is an extension of the core
      vr5400 ISA, but doesn't include the multimedia stuff.  It seems

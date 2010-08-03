@@ -1,5 +1,5 @@
 /* SPARC-specific support for ELF
-   Copyright 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   Copyright 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -899,13 +899,7 @@ create_got_section (bfd *dynobj, struct bfd_link_info *info)
   htab->sgot = bfd_get_section_by_name (dynobj, ".got");
   BFD_ASSERT (htab->sgot != NULL);
 
-  htab->srelgot = bfd_make_section_with_flags (dynobj, ".rela.got",
-					       SEC_ALLOC
-					       | SEC_LOAD
-					       | SEC_HAS_CONTENTS
-					       | SEC_IN_MEMORY
-					       | SEC_LINKER_CREATED
-					       | SEC_READONLY);
+  htab->srelgot = bfd_get_section_by_name (dynobj, ".rela.got");
   if (htab->srelgot == NULL
       || ! bfd_set_section_alignment (dynobj, htab->srelgot,
 				      htab->word_align_power))
@@ -1329,6 +1323,9 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		    goto r_sparc_plt32;
 		  break;
 		}
+	      /* PR 7027: We need similar behaviour for 64-bit binaries.  */
+	      else if (r_type == R_SPARC_WPLT30)
+		break;
 
 	      /* It does not make sense to have a procedure linkage
                  table entry for a local symbol.  */
@@ -1448,42 +1445,15 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		 section in dynobj and make room for the reloc.  */
 	      if (sreloc == NULL)
 		{
-		  const char *name;
-		  bfd *dynobj;
-
-		  name = (bfd_elf_string_from_elf_section
-			  (abfd,
-			   elf_elfheader (abfd)->e_shstrndx,
-			   elf_section_data (sec)->rel_hdr.sh_name));
-		  if (name == NULL)
-		    return FALSE;
-
-		  BFD_ASSERT (CONST_STRNEQ (name, ".rela")
-			      && strcmp (bfd_get_section_name (abfd, sec),
-					 name + 5) == 0);
-
 		  if (htab->elf.dynobj == NULL)
 		    htab->elf.dynobj = abfd;
-		  dynobj = htab->elf.dynobj;
 
-		  sreloc = bfd_get_section_by_name (dynobj, name);
+		  sreloc = _bfd_elf_make_dynamic_reloc_section
+		    (sec, htab->elf.dynobj, htab->word_align_power,
+		     abfd, /*rela?*/ TRUE);
+
 		  if (sreloc == NULL)
-		    {
-		      flagword flags;
-
-		      flags = (SEC_HAS_CONTENTS | SEC_READONLY
-			       | SEC_IN_MEMORY | SEC_LINKER_CREATED);
-		      if ((sec->flags & SEC_ALLOC) != 0)
-			flags |= SEC_ALLOC | SEC_LOAD;
-		      sreloc = bfd_make_section_with_flags (dynobj,
-							    name,
-							    flags);
-		      if (sreloc == NULL
-			  || ! bfd_set_section_alignment (dynobj, sreloc,
-							  htab->word_align_power))
-			return FALSE;
-		    }
-		  elf_section_data (sec)->sreloc = sreloc;
+		    return FALSE;
 		}
 
 	      /* If this is a global symbol, we count the number of
@@ -1495,14 +1465,18 @@ _bfd_sparc_elf_check_relocs (bfd *abfd, struct bfd_link_info *info,
 		  /* Track dynamic relocs needed for local syms too.
 		     We really need local syms available to do this
 		     easily.  Oh well.  */
-
 		  asection *s;
 		  void *vpp;
+		  Elf_Internal_Sym *isym;
 
-		  s = bfd_section_from_r_symndx (abfd, &htab->sym_sec,
-						 sec, r_symndx);
-		  if (s == NULL)
+		  isym = bfd_sym_from_r_symndx (&htab->sym_cache,
+						abfd, r_symndx);
+		  if (isym == NULL)
 		    return FALSE;
+
+		  s = bfd_section_from_elf_index (abfd, isym->st_shndx);
+		  if (s == NULL)
+		    s = sec;
 
 		  vpp = &elf_section_data (s)->local_dynrel;
 		  head = (struct _bfd_sparc_elf_dyn_relocs **) vpp;
@@ -2477,6 +2451,10 @@ _bfd_sparc_elf_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
 			      struct bfd_link_info *link_info ATTRIBUTE_UNUSED,
 			      bfd_boolean *again)
 {
+  if (link_info->relocatable)
+    (*link_info->callbacks->einfo)
+      (_("%P%F: --relax and -r may not be used together\n"));
+
   *again = FALSE;
   sec_do_relax (section) = 1;
   return TRUE;
@@ -2760,6 +2738,9 @@ _bfd_sparc_elf_relocate_section (bfd *output_bfd,
 	      if (h == NULL)
 		break;
 	    }
+	  /* PR 7027: We need similar behaviour for 64-bit binaries.  */ 
+	  else if (r_type == R_SPARC_WPLT30 && h == NULL)
+	    break;
 	  else
 	    {
 	      BFD_ASSERT (h != NULL);

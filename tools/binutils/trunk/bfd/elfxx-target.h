@@ -1,6 +1,6 @@
 /* Target definitions for NN-bit ELF
    Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -167,6 +167,10 @@
 #ifndef bfd_elfNN_section_already_linked
 #define bfd_elfNN_section_already_linked \
   _bfd_elf_section_already_linked
+#endif
+
+#ifndef bfd_elfNN_bfd_define_common_symbol
+#define bfd_elfNN_bfd_define_common_symbol bfd_generic_define_common_symbol
 #endif
 
 #ifndef bfd_elfNN_bfd_make_debug_symbol
@@ -446,6 +450,9 @@
 #ifndef elf_backend_got_header_size
 #define elf_backend_got_header_size	0
 #endif
+#ifndef elf_backend_got_elt_size
+#define elf_backend_got_elt_size _bfd_elf_default_got_elt_size
+#endif
 #ifndef elf_backend_obj_attrs_vendor
 #define elf_backend_obj_attrs_vendor		NULL
 #endif
@@ -457,6 +464,9 @@
 #endif
 #ifndef elf_backend_obj_attrs_section_type
 #define elf_backend_obj_attrs_section_type		SHT_GNU_ATTRIBUTES
+#endif
+#ifndef elf_backend_obj_attrs_order
+#define elf_backend_obj_attrs_order		NULL
 #endif
 #ifndef elf_backend_post_process_headers
 #define elf_backend_post_process_headers	NULL
@@ -712,10 +722,12 @@ static struct elf_backend_data elfNN_bed =
   &elf_backend_size_info,
   elf_backend_special_sections,
   elf_backend_got_header_size,
+  elf_backend_got_elt_size,
   elf_backend_obj_attrs_vendor,
   elf_backend_obj_attrs_section,
   elf_backend_obj_attrs_arg_type,
   elf_backend_obj_attrs_section_type,
+  elf_backend_obj_attrs_order,
   elf_backend_collect,
   elf_backend_type_change_ok,
   elf_backend_may_use_rel_p,
