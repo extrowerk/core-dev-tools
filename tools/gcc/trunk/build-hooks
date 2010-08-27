@@ -48,6 +48,14 @@ function hook_preconfigure {
 		esac
 		basedir=${QNX_HOST:-/usr/qnx650/host/solaris/${host_cpu}/usr}
 		;;
+	darwin)
+		host_cpu=x86
+		basedir=${QNX_HOST}/usr
+		#configure_opts="${configure_opts} -disable-shared --disable-multilib"
+		#configure_opts="${configure_opts} --disable-multilib --with-gmp=${QNX_HOST}/usr --with-mpfr=${QNX_HOST}/usr --program-suffix=${gcc_version}"
+		configure_opts="${configure_opts} --disable-multilib --with-gmp=${QNX_HOST}/usr --with-mpfr=${QNX_HOST}/usr"
+		#qnxtarget=${QNX_TARGET}
+		;;
 	linux)
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
 		case "${host_target}" in
