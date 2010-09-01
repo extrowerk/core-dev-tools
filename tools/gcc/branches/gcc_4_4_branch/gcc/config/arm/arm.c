@@ -420,9 +420,6 @@ rtx arm_compare_op0, arm_compare_op1;
 /* The processor for which instructions should be scheduled.  */
 enum processor_type arm_tune = arm_none;
 
-/* The default processor used if not overridden by commandline.  */
-static enum processor_type arm_default_cpu = arm_none;
-
 /* Which floating point model to use.  */
 enum arm_fp_model arm_fp_model;
 
@@ -475,6 +472,10 @@ static int thumb_call_reg_needed;
 #define FL_NEON       (1 << 20)       /* Neon instructions.  */
 
 #define FL_IWMMXT     (1 << 29)	      /* XScale v2 or "Intel Wireless MMX technology".  */
+
+/* Flags that only effect tuning, not available instructions.  */
+#define FL_TUNE		(FL_WBUF | FL_VFPV2 | FL_STRONG | FL_LDSCHED \
+			 | FL_CO_PROC)
 
 #define FL_FOR_ARCH2	FL_NOTM
 #define FL_FOR_ARCH3	(FL_FOR_ARCH2 | FL_MODE32)
@@ -638,7 +639,7 @@ static const struct processors all_cores[] =
 {
   /* ARM Cores */
 #define ARM_CORE(NAME, IDENT, ARCH, FLAGS, COSTS) \
-  {NAME, arm_none, #ARCH, FLAGS | FL_FOR_ARCH##ARCH, arm_##COSTS##_rtx_costs},
+ {NAME, IDENT, #ARCH, FLAGS | FL_FOR_ARCH##ARCH, &arm_##COSTS##_rtx_costs},
 #include "arm-cores.def"
 #undef ARM_CORE
   {NULL, arm_none, NULL, 0, NULL}
@@ -679,29 +680,12 @@ static const struct processors all_architectures[] =
   {NULL, arm_none, NULL, 0 , NULL}
 };
 
-struct arm_cpu_select
-{
-  const char *              string;
-  const char *              name;
-  const struct processors * processors;
-};
 
-/* This is a magic structure.  The 'string' field is magically filled in
-   with a pointer to the value specified by the user on the command line
-   assuming that the user has specified such a value.  */
-
-static struct arm_cpu_select arm_select[] =
-{
-  /* string	  name            processors  */
-  { NULL,	"-mcpu=",	all_cores  },
-  { NULL,	"-march=",	all_architectures },
-  { NULL,	"-mtune=",	all_cores }
-};
-
-/* Defines representing the indexes into the above table.  */
-#define ARM_OPT_SET_CPU 0
-#define ARM_OPT_SET_ARCH 1
-#define ARM_OPT_SET_TUNE 2
+/* These are populated as commandline arguments are processed, or NULL
+   if not specified.  */
+static const struct processors *arm_selected_arch;
+static const struct processors *arm_selected_cpu;
+static const struct processors *arm_selected_tune;
 
 /* The name of the preprocessor macro to define for this architecture.  */
 
@@ -1011,6 +995,24 @@ arm_gimplify_va_arg_expr (tree valist, tree type, gimple_seq *pre_p,
   return std_gimplify_va_arg_expr (valist, type, pre_p, post_p);
 }
 
+/* Lookup NAME in SEL.  */
+
+static const struct processors *
+arm_find_cpu (const char *name, const struct processors *sel, const char *desc)
+{
+  if (!(name && *name))
+    return NULL;
+
+  for (; sel->name != NULL; sel++)
+    {
+      if (streq (name, sel->name))
+	return sel;
+    }
+
+  error ("bad value (%s) for %s switch", name, desc);
+  return NULL;
+}
+
 /* Implement TARGET_HANDLE_OPTION.  */
 
 static bool
@@ -1019,11 +1021,11 @@ arm_handle_option (size_t code, const char *arg, int value ATTRIBUTE_UNUSED)
   switch (code)
     {
     case OPT_march_:
-      arm_select[1].string = arg;
+      arm_selected_arch = arm_find_cpu(arg, all_architectures, "-march");
       return true;
 
     case OPT_mcpu_:
-      arm_select[0].string = arg;
+      arm_selected_cpu = arm_find_cpu(arg, all_cores, "-mcpu");
       return true;
 
     case OPT_mhard_float:
@@ -1035,7 +1037,7 @@ arm_handle_option (size_t code, const char *arg, int value ATTRIBUTE_UNUSED)
       return true;
 
     case OPT_mtune_:
-      arm_select[2].string = arg;
+      arm_selected_tune = arm_find_cpu(arg, all_cores, "-mtune");
       return true;
 
     default:
@@ -1135,88 +1137,50 @@ void
 arm_override_options (void)
 {
   unsigned i;
-  enum processor_type target_arch_cpu = arm_none;
-  enum processor_type selected_cpu = arm_none;
-
-  /* Set up the flags based on the cpu/architecture selected by the user.  */
-  for (i = ARRAY_SIZE (arm_select); i--;)
+  if (arm_selected_arch)
     {
-      struct arm_cpu_select * ptr = arm_select + i;
-
-      if (ptr->string != NULL && ptr->string[0] != '\0')
+      if (arm_selected_cpu)
         {
-	  const struct processors * sel;
+          /* Check for conflict between mcpu and march.  */
+          if ((arm_selected_cpu->flags ^ arm_selected_arch->flags) & ~FL_TUNE)
+            {
+              warning (0, "switch -mcpu=%s conflicts with -march=%s switch",
+                       arm_selected_cpu->name, arm_selected_arch->name);
+              /* -march wins for code generation.
+                 -mcpu wins for default tuning.  */
+              if (!arm_selected_tune)
+                arm_selected_tune = arm_selected_cpu;
 
-          for (sel = ptr->processors; sel->name != NULL; sel++)
-            if (streq (ptr->string, sel->name))
-              {
-		/* Set the architecture define.  */
-		if (i != ARM_OPT_SET_TUNE)
-		  sprintf (arm_arch_name, "__ARM_ARCH_%s__", sel->arch);
-
-		/* Determine the processor core for which we should
-		   tune code-generation.  */
-		if (/* -mcpu= is a sensible default.  */
-		    i == ARM_OPT_SET_CPU
-		    /* -mtune= overrides -mcpu= and -march=.  */
-		    || i == ARM_OPT_SET_TUNE)
-		  arm_tune = (enum processor_type) (sel - ptr->processors);
-
-		/* Remember the CPU associated with this architecture.
-		   If no other option is used to set the CPU type,
-		   we'll use this to guess the most suitable tuning
-		   options.  */
-		if (i == ARM_OPT_SET_ARCH)
-		  target_arch_cpu = sel->core;
-
-		if (i == ARM_OPT_SET_CPU)
-		  selected_cpu = (enum processor_type) (sel - ptr->processors);
-		  
-		if (i != ARM_OPT_SET_TUNE)
-		  {
-		    /* If we have been given an architecture and a processor
-		       make sure that they are compatible.  We only generate
-		       a warning though, and we prefer the CPU over the
-		       architecture.  */
-		    if (insn_flags != 0 && (insn_flags ^ sel->flags))
-		      warning (0, "switch -mcpu=%s conflicts with -march= switch",
-			       ptr->string);
-
-		    insn_flags = sel->flags;
-		  }
-
-                break;
-              }
-
-          if (sel->name == NULL)
-            error ("bad value (%s) for %s switch", ptr->string, ptr->name);
+              arm_selected_cpu = arm_selected_arch;
+            }
+          else
+            /* -mcpu wins.  */
+            arm_selected_arch = NULL;
         }
+      else
+        /* Pick a CPU based on the architecture.  */
+        arm_selected_cpu = arm_selected_arch;
     }
 
-  /* Guess the tuning options from the architecture if necessary.  */
-  if (arm_tune == arm_none)
-    arm_tune = target_arch_cpu;
-
-  /* If the user did not specify a processor, choose one for them.  */
-  if (insn_flags == 0)
+  if (!arm_selected_cpu)
     {
       const struct processors * sel;
       unsigned int        sought;
 
-      selected_cpu = TARGET_CPU_DEFAULT;
-      if (selected_cpu == arm_none)
+      arm_selected_cpu = &all_cores[TARGET_CPU_DEFAULT];
+      if (!arm_selected_cpu->name)
 	{
 #ifdef SUBTARGET_CPU_DEFAULT
 	  /* Use the subtarget default CPU if none was specified by
 	     configure.  */
-	  selected_cpu = SUBTARGET_CPU_DEFAULT;
+	  arm_selected_cpu = SUBTARGET_CPU_DEFAULT;
 #endif
 	  /* Default to ARM6.  */
-	  if (selected_cpu == arm_none)
-	    selected_cpu = arm6;
+          if (arm_selected_cpu->name)
+            arm_selected_cpu = &all_cores[arm6];
 	}
-      sel = &all_cores[selected_cpu];
 
+      sel = arm_selected_cpu;
       insn_flags = sel->flags;
 
       /* Now check to see if the user has specified some command line
@@ -1276,20 +1240,22 @@ arm_override_options (void)
 	      gcc_assert (best_fit);
 	      sel = best_fit;
 	    }
-
-	  insn_flags = sel->flags;
+           arm_selected_cpu = sel;
 	}
-      sprintf (arm_arch_name, "__ARM_ARCH_%s__", sel->arch);
-      arm_default_cpu = (enum processor_type) (sel - all_cores);
-      if (arm_tune == arm_none)
-	arm_tune = arm_default_cpu;
     }
 
   /* The processor for which we should tune should now have been
      chosen.  */
-  gcc_assert (arm_tune != arm_none);
+  gcc_assert (arm_selected_cpu);
+  /* The selected cpu may be an architecture, so lookup tuning by core ID.  */
+  if (!arm_selected_tune)
+    arm_selected_tune = &all_cores[arm_selected_cpu->core];
 
-  tune_flags = all_cores[(int)arm_tune].flags;
+  sprintf (arm_arch_name, "__ARM_ARCH_%s__", arm_selected_cpu->arch);
+  insn_flags = arm_selected_cpu->flags;
+
+  arm_tune = arm_selected_tune->core;
+  tune_flags = arm_selected_tune->flags;
 
   if (target_abi_name)
     {
@@ -1610,7 +1576,7 @@ arm_override_options (void)
   /* Enable -mfix-cortex-m3-ldrd by default for Cortex-M3 cores.  */
   if (fix_cm3_ldrd == 2)
     {
-      if (selected_cpu == cortexm3)
+      if (arm_selected_cpu->core == cortexm3)
 	fix_cm3_ldrd = 1;
       else
 	fix_cm3_ldrd = 0;
@@ -18266,13 +18232,10 @@ arm_file_start (void)
   if (TARGET_BPABI)
     {
       const char *fpu_name;
-      if (arm_select[0].string)
-	asm_fprintf (asm_out_file, "\t.cpu %s\n", arm_select[0].string);
-      else if (arm_select[1].string)
-	asm_fprintf (asm_out_file, "\t.arch %s\n", arm_select[1].string);
+      if (arm_selected_arch)
+	asm_fprintf (asm_out_file, "\t.arch %s\n", arm_selected_arch->name);
       else
-	asm_fprintf (asm_out_file, "\t.cpu %s\n",
-		     all_cores[arm_default_cpu].name);
+	asm_fprintf (asm_out_file, "\t.cpu %s\n", arm_selected_cpu->name);
 
       if (TARGET_SOFT_FLOAT)
 	{
