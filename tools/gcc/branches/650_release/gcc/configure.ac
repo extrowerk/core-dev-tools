@@ -195,7 +195,11 @@ AC_ARG_WITH(ld,
 DEFAULT_LINKER="$with_ld")
 if test x"${DEFAULT_LINKER+set}" = x"set"; then
   if test ! -x "$DEFAULT_LINKER"; then
-    AC_MSG_ERROR([cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER])
+    if test ! -x "`which $DEFAULT_LINKER`"; then
+      AC_MSG_ERROR([cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER])
+    elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gnu_ld_flag=yes
+    fi
   elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gnu_ld_flag=yes
   fi
@@ -238,7 +242,11 @@ AC_ARG_WITH(as,
 DEFAULT_ASSEMBLER="$with_as")
 if test x"${DEFAULT_ASSEMBLER+set}" = x"set"; then
   if test ! -x "$DEFAULT_ASSEMBLER"; then
-    AC_MSG_ERROR([cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER])
+    if test ! -x "`which $DEFAULT_ASSEMBLER`"; then 
+      AC_MSG_ERROR([cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER])
+    elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gas_flag=yes
+    fi
   elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gas_flag=yes
   fi
@@ -3589,6 +3597,11 @@ AC_CACHE_CHECK(__stack_chk_fail in target C library,
        *-*-darwin*)
 	 AC_CHECK_FUNC(__stack_chk_fail,[gcc_cv_libc_provides_ssp=yes],
            [echo "no __stack_chk_fail on this target"])
+        ;;
+       *-*-nto*)
+	 #AC_CHECK_FUNC(__stack_chk_fail,[gcc_cv_libc_provides_ssp=yes],
+	 #  [echo "no __stack_chk_fail on this target"])
+	 gcc_cv_libc_provides_ssp=yes
         ;;
   *) gcc_cv_libc_provides_ssp=no ;;
     esac])
