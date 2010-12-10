@@ -287,11 +287,11 @@ extern_name_list:
 
 extern_name_list_body:
 	  NAME
-			{ ldlang_add_undef ($1); }
+			{ ldlang_add_undef ($1, FALSE); }
 	| extern_name_list_body NAME
-			{ ldlang_add_undef ($2); }
+			{ ldlang_add_undef ($2, FALSE); }
 	| extern_name_list_body ',' NAME
-			{ ldlang_add_undef ($3); }
+			{ ldlang_add_undef ($3, FALSE); }
 	;
 
 script_file:
@@ -378,17 +378,17 @@ input_list:
 		{ lang_add_input_file($2,lang_input_file_is_l_enum,
 				 (char *)NULL); }
 	|	AS_NEEDED '('
-		  { $<integer>$ = as_needed; as_needed = TRUE; }
+		  { $<integer>$ = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
 		     input_list ')'
-		  { as_needed = $<integer>3; }
+		  { add_DT_NEEDED_for_regular = $<integer>3; }
 	|	input_list ',' AS_NEEDED '('
-		  { $<integer>$ = as_needed; as_needed = TRUE; }
+		  { $<integer>$ = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
 		     input_list ')'
-		  { as_needed = $<integer>5; }
+		  { add_DT_NEEDED_for_regular = $<integer>5; }
 	|	input_list AS_NEEDED '('
-		  { $<integer>$ = as_needed; as_needed = TRUE; }
+		  { $<integer>$ = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
 		     input_list ')'
-		  { as_needed = $<integer>4; }
+		  { add_DT_NEEDED_for_regular = $<integer>4; }
 	;
 
 sections:

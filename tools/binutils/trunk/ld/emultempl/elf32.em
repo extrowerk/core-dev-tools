@@ -110,7 +110,7 @@ fi
 
 if test x"$LDEMUL_RECOGNIZED_FILE" != xgld"${EMULATION_NAME}"_load_symbols; then
 fragment <<EOF
-/* Handle as_needed DT_NEEDED.  */
+/* Handle the generation of DT_NEEDED tags.  */
 
 static bfd_boolean
 gld${EMULATION_NAME}_load_symbols (lang_input_statement_type *entry)
@@ -120,13 +120,13 @@ gld${EMULATION_NAME}_load_symbols (lang_input_statement_type *entry)
   /* Tell the ELF linker that we don't want the output file to have a
      DT_NEEDED entry for this file, unless it is used to resolve
      references in a regular object.  */
-  if (entry->as_needed)
+  if (entry->add_DT_NEEDED_for_regular)
     link_class = DYN_AS_NEEDED;
 
   /* Tell the ELF linker that we don't want the output file to have a
      DT_NEEDED entry for any dynamic library in DT_NEEDED tags from
      this file at all.  */
-  if (!entry->add_needed)
+  if (!entry->add_DT_NEEDED_for_dynamic)
     link_class |= DYN_NO_ADD_NEEDED;
 
   if (entry->just_syms_flag
@@ -134,7 +134,7 @@ gld${EMULATION_NAME}_load_symbols (lang_input_statement_type *entry)
     einfo (_("%P%F: --just-symbols may not be used on DSO: %B\n"),
 	   entry->the_bfd);
 
-  if (!link_class
+  if (link_class == 0
       || (bfd_get_file_flags (entry->the_bfd) & DYNAMIC) == 0)
     return FALSE;
 
@@ -158,6 +158,10 @@ static lang_input_statement_type *global_found;
 static struct bfd_link_needed_list *global_vercheck_needed;
 static bfd_boolean global_vercheck_failed;
 
+/* These variables are used to implement target options */
+
+static char *audit; /* colon (typically) separated list of libs */
+static char *depaudit; /* colon (typically) separated list of libs */
 
 /* On Linux, it's possible to have different versions of the same
    shared library linked against different versions of libc.  The
@@ -313,6 +317,10 @@ gld${EMULATION_NAME}_try_needed (struct dt_needed *needed,
   abfd = bfd_openr (name, bfd_get_target (link_info.output_bfd));
   if (abfd == NULL)
     return FALSE;
+
+  /* Linker needs to decompress sections.  */
+  abfd->flags |= BFD_DECOMPRESS;
+
   if (! bfd_check_format (abfd, bfd_object))
     {
       bfd_close (abfd);
@@ -338,14 +346,14 @@ gld${EMULATION_NAME}_try_needed (struct dt_needed *needed,
 
   if (! force)
     {
-      struct bfd_link_needed_list *needed;
+      struct bfd_link_needed_list *needs;
 
-      if (! bfd_elf_get_bfd_needed_list (abfd, &needed))
+      if (! bfd_elf_get_bfd_needed_list (abfd, &needs))
 	einfo ("%F%P:%B: bfd_elf_get_bfd_needed_list failed: %E\n", abfd);
 
-      if (needed != NULL)
+      if (needs != NULL)
 	{
-	  global_vercheck_needed = needed;
+	  global_vercheck_needed = needs;
 	  global_vercheck_failed = FALSE;
 	  lang_for_each_input_file (gld${EMULATION_NAME}_vercheck);
 	  if (global_vercheck_failed)
@@ -370,7 +378,7 @@ case ${target} in
 	  {
 	    struct bfd_link_needed_list *l;
 
-	    for (l = needed; l != NULL; l = l->next)
+	    for (l = needs; l != NULL; l = l->next)
 	      if (CONST_STRNEQ (l->name, "libc.so"))
 		break;
 	    if (l == NULL)
@@ -470,15 +478,16 @@ gld${EMULATION_NAME}_search_needed (const char *path,
 	s = path + strlen (path);
 
 #if HAVE_DOS_BASED_FILE_SYSTEM
-      /* Assume a match on the second char is part of drive specifier */
-      if (config.rpath_separator == ':' && s == path + 1 && ISALPHA (*path))
-       {
-         s = strchr (s + 1, config.rpath_separator);
-         if (s == NULL)
-           s = path + strlen (path);
-       }
+      /* Assume a match on the second char is part of drive specifier.  */
+      else if (config.rpath_separator == ':'
+	       && s == path + 1
+	       && ISALPHA (*path))
+	{
+	  s = strchr (s + 1, config.rpath_separator);
+	  if (s == NULL)
+	    s = path + strlen (path);
+	}
 #endif
-
       filename = (char *) xmalloc (s - path + len + 2);
       if (s == path)
 	sset = filename;
@@ -879,9 +888,9 @@ fragment <<EOF
 
 static bfd_size_type
 gld${EMULATION_NAME}_id_note_section_size (bfd *abfd,
-					   struct bfd_link_info *link_info)
+					   struct bfd_link_info *linfo)
 {
-  const char *style = link_info->emit_note_gnu_build_id;
+  const char *style = linfo->emit_note_gnu_build_id;
   bfd_size_type size;
 
   abfd = abfd;
@@ -1060,7 +1069,11 @@ gld${EMULATION_NAME}_after_open (void)
       asection *s;
       bfd_size_type size;
 
-      abfd = link_info.input_bfds;
+      /* Find an ELF input.  */
+      for (abfd = link_info.input_bfds;
+	   abfd != (bfd *) NULL; abfd = abfd->link_next)
+	if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
+	  break;
 
       if (abfd == NULL)
 	{
@@ -1115,30 +1128,43 @@ gld${EMULATION_NAME}_after_open (void)
   if (link_info.eh_frame_hdr
       && !link_info.traditional_format)
     {
-      bfd *abfd;
+      bfd *abfd, *elfbfd = NULL;
+      bfd_boolean warn_eh_frame = FALSE;
       asection *s;
 
       for (abfd = link_info.input_bfds; abfd; abfd = abfd->link_next)
 	{
-	  s = bfd_get_section_by_name (abfd, ".eh_frame");
-	  if (s && s->size > 8 && !bfd_is_abs_section (s->output_section))
+	  if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
+	    elfbfd = abfd;
+	  if (!warn_eh_frame)
+	    {
+	      s = bfd_get_section_by_name (abfd, ".eh_frame");
+	      warn_eh_frame
+		= (s
+		   && s->size > 8
+		   && !bfd_is_abs_section (s->output_section));
+	    }
+	  if (elfbfd && warn_eh_frame)
 	    break;
 	}
-      if (abfd)
+      if (elfbfd)
 	{
 	  const struct elf_backend_data *bed;
 
-	  bed = get_elf_backend_data (abfd);
-	  s = bfd_make_section_with_flags (abfd, ".eh_frame_hdr",
+	  bed = get_elf_backend_data (elfbfd);
+	  s = bfd_make_section_with_flags (elfbfd, ".eh_frame_hdr",
 					   bed->dynamic_sec_flags
 					   | SEC_READONLY);
 	  if (s != NULL
-	      && bfd_set_section_alignment (abfd, s, 2))
-	    htab->eh_info.hdr_sec = s;
-	  else
-	    einfo ("%P: warning: Cannot create .eh_frame_hdr section,"
-		   " --eh-frame-hdr ignored.\n");
+	      && bfd_set_section_alignment (elfbfd, s, 2))
+	    {
+	      htab->eh_info.hdr_sec = s;
+	      warn_eh_frame = FALSE;
+	    }
 	}
+      if (warn_eh_frame)
+	einfo ("%P: warning: Cannot create .eh_frame_hdr section,"
+	       " --eh-frame-hdr ignored.\n");
     }
 
   /* Get the list of files which appear in DT_NEEDED entries in
@@ -1335,6 +1361,7 @@ gld${EMULATION_NAME}_find_exp_assignment (etree_type *exp)
   switch (exp->type.node_class)
     {
     case etree_provide:
+    case etree_provided:
       provide = TRUE;
       /* Fall thru */
     case etree_assign:
@@ -1407,6 +1434,46 @@ if test x"$LDEMUL_BEFORE_ALLOCATION" != xgld"$EMULATION_NAME"_before_allocation;
   fi
 fragment <<EOF
 
+/* used by before_allocation and handle_option. */
+static void 
+gld${EMULATION_NAME}_append_to_separated_string (char **to, char *op_arg)
+{
+  if (*to == NULL)
+    *to = xstrdup (op_arg);
+  else
+    {
+      size_t to_len = strlen (*to);
+      size_t op_arg_len = strlen (op_arg);
+      char *buf;
+      char *cp = *to;
+
+      /* First see whether OPTARG is already in the path.  */
+      do
+	{
+	  if (strncmp (op_arg, cp, op_arg_len) == 0
+	      && (cp[op_arg_len] == 0
+		  || cp[op_arg_len] == config.rpath_separator))
+	    /* We found it.  */
+	    break;
+
+	  /* Not yet found.  */
+	  cp = strchr (cp, config.rpath_separator);
+	  if (cp != NULL)
+	    ++cp;
+	}
+      while (cp != NULL);
+
+      if (cp == NULL)
+	{
+	  buf = xmalloc (to_len + op_arg_len + 2);
+	  sprintf (buf, "%s%c%s", *to,
+		   config.rpath_separator, op_arg);
+	  free (*to);
+	  *to = buf;
+	}
+    }
+}
+
 /* This is called after the sections have been attached to output
    sections, but before any sizes or addresses have been set.  */
 
@@ -1415,6 +1482,7 @@ gld${EMULATION_NAME}_before_allocation (void)
 {
   const char *rpath;
   asection *sinterp;
+  bfd *abfd;
 
   if (link_info.hash->type == bfd_link_elf_hash_table)
     _bfd_elf_tls_setup (link_info.output_bfd, &link_info);
@@ -1429,9 +1497,40 @@ gld${EMULATION_NAME}_before_allocation (void)
   rpath = command_line.rpath;
   if (rpath == NULL)
     rpath = (const char *) getenv ("LD_RUN_PATH");
+
+  for (abfd = link_info.input_bfds; abfd; abfd = abfd->link_next)
+    if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
+      {
+	const char *audit_libs = elf_dt_audit (abfd);
+
+	/* If the input bfd contains an audit entry, we need to add it as 
+	   a dep audit entry.  */
+	if (audit_libs && *audit_libs != '\0')
+	  {
+	    char *cp = xstrdup (audit_libs);
+	    do
+	      {
+		int more = 0;
+		char *cp2 = strchr (cp, config.rpath_separator);
+
+		if (cp2)
+		  {
+		    *cp2 = '\0';
+		    more = 1;
+		  }
+
+		if (cp != NULL && *cp != '\0')
+		  gld${EMULATION_NAME}_append_to_separated_string (&depaudit, cp);
+
+		cp = more ? ++cp2 : NULL;
+	      }
+	    while (cp != NULL);
+	  }
+      }
+
   if (! (bfd_elf_size_dynamic_sections
 	 (link_info.output_bfd, command_line.soname, rpath,
-	  command_line.filter_shlib,
+	  command_line.filter_shlib, audit, depaudit,
 	  (const char * const *) command_line.auxiliary_filters,
 	  &link_info, &sinterp, lang_elf_version_info)))
     einfo ("%P%F: failed to set dynamic section sizes: %E\n");
@@ -1706,6 +1805,7 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
   struct orphan_save *place;
   lang_output_section_statement_type *after;
   lang_output_section_statement_type *os;
+  lang_output_section_statement_type *match_by_name = NULL;
   int isdyn = 0;
   int iself = s->owner->xvec->flavour == bfd_target_elf_flavour;
   unsigned int sh_type = iself ? elf_section_type (s) : SHT_NULL;
@@ -1761,7 +1861,20 @@ gld${EMULATION_NAME}_place_orphan (asection *s,
 	    lang_add_section (&os->children, s, os);
 	    return os;
 	  }
+
+	/* Save unused output sections in case we can match them
+	   against orphans later.  */
+	if (os->bfd_section == NULL)
+	  match_by_name = os;
       }
+
+  /* If we didn't match an active output section, see if we matched an
+     unused one and use that.  */
+  if (match_by_name)
+    {
+      lang_add_section (&match_by_name->children, s, match_by_name);
+      return match_by_name;
+    }
 
   if (!orphan_init_done)
     {
@@ -2018,15 +2131,18 @@ fragment <<EOF
 #define OPTION_EXCLUDE_LIBS		(OPTION_EH_FRAME_HDR + 1)
 #define OPTION_HASH_STYLE		(OPTION_EXCLUDE_LIBS + 1)
 #define OPTION_BUILD_ID			(OPTION_HASH_STYLE + 1)
+#define OPTION_AUDIT			(OPTION_BUILD_ID + 1)
 
 static void
 gld${EMULATION_NAME}_add_options
   (int ns, char **shortopts, int nl, struct option **longopts,
    int nrl ATTRIBUTE_UNUSED, struct option **really_longopts ATTRIBUTE_UNUSED)
 {
-  static const char xtra_short[] = "${PARSE_AND_LIST_SHORTOPTS}z:";
+  static const char xtra_short[] = "${PARSE_AND_LIST_SHORTOPTS}z:P:";
   static const struct option xtra_long[] = {
     {"build-id", optional_argument, NULL, OPTION_BUILD_ID},
+    {"audit", required_argument, NULL, OPTION_AUDIT},
+    {"depaudit", required_argument, NULL, 'P'},
 EOF
 
 if test x"$GENERATE_SHLIB_SCRIPT" = xyes; then
@@ -2078,6 +2194,12 @@ gld${EMULATION_NAME}_handle_option (int optc)
       if (strcmp (optarg, "none"))
 	link_info.emit_note_gnu_build_id = xstrdup (optarg);
       break;
+    case OPTION_AUDIT:
+  	gld${EMULATION_NAME}_append_to_separated_string (&audit, optarg); 
+	break;
+    case 'P':
+	gld${EMULATION_NAME}_append_to_separated_string (&depaudit, optarg);
+	break;
 
 EOF
 
@@ -2229,6 +2351,11 @@ gld${EMULATION_NAME}_list_options (FILE * file)
 {
   fprintf (file, _("\
   --build-id[=STYLE]          Generate build ID note\n"));
+  fprintf (file, _("\
+  --audit=AUDITLIB            Specify a library to use for auditing\n"));
+  fprintf (file, _("\
+  -P AUDITLIB, --depaudit=AUDITLIB\n" "\
+                              Specify a library to use for auditing dependencies\n"));
 EOF
 
 if test x"$GENERATE_SHLIB_SCRIPT" = xyes; then

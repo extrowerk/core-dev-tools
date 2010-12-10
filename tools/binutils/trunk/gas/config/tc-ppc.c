@@ -1,6 +1,6 @@
 /* tc-ppc.c -- Assemble for the PowerPC or POWER (RS/6000)
    Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Support.
 
    This file is part of GAS, the GNU Assembler.
@@ -180,9 +180,19 @@ const char ppc_symbol_chars[] = "%[";
 /* The dwarf2 data alignment, adjusted for 32 or 64 bit.  */
 int ppc_cie_data_alignment;
 
+/* More than this number of nops in an alignment op gets a branch
+   instead.  */
+unsigned long nop_limit = 4;
+
 /* The type of processor we are assembling for.  This is one or more
    of the PPC_OPCODE flags defined in opcode/ppc.h.  */
 ppc_cpu_t ppc_cpu = 0;
+
+/* Flags set on encountering toc relocs.  */
+enum {
+  has_large_toc_reloc = 1,
+  has_small_toc_reloc = 2
+} toc_reloc_types;
 
 /* The target specific pseudo-ops which we support.  */
 
@@ -879,7 +889,7 @@ static const struct pd_reg cr_names[] =
    expression.  */
 
 int
-ppc_parse_name (const char *name, expressionS *expr)
+ppc_parse_name (const char *name, expressionS *exp)
 {
   int val;
 
@@ -893,8 +903,8 @@ ppc_parse_name (const char *name, expressionS *expr)
   if (val < 0)
     return 0;
 
-  expr->X_op = O_constant;
-  expr->X_add_number = val;
+  exp->X_op = O_constant;
+  exp->X_add_number = val;
 
   return 1;
 }
@@ -1012,7 +1022,9 @@ const char *const md_shortopts = "b:l:usm:K:VQ:";
 #else
 const char *const md_shortopts = "um:";
 #endif
+#define OPTION_NOPS (OPTION_MD_BASE + 0)
 const struct option md_longopts[] = {
+  {"nops", required_argument, NULL, OPTION_NOPS},
   {NULL, no_argument, NULL, 0}
 };
 const size_t md_longopts_size = sizeof (md_longopts);
@@ -1166,6 +1178,15 @@ md_parse_option (int c, char *arg)
       break;
 #endif
 
+    case OPTION_NOPS:
+      {
+	char *end;
+	nop_limit = strtoul (optarg, &end, 0);
+	if (*end)
+	  as_bad (_("--nops needs a numeric argument"));
+      }
+      break;
+      
     default:
       return 0;
     }
@@ -1178,58 +1199,62 @@ md_show_usage (FILE *stream)
 {
   fprintf (stream, _("\
 PowerPC options:\n\
--a32			generate ELF32/XCOFF32\n\
--a64			generate ELF64/XCOFF64\n\
--u			ignored\n\
--mpwrx, -mpwr2		generate code for POWER/2 (RIOS2)\n\
--mpwr			generate code for POWER (RIOS1)\n\
--m601			generate code for PowerPC 601\n\
+-a32                    generate ELF32/XCOFF32\n\
+-a64                    generate ELF64/XCOFF64\n\
+-u                      ignored\n\
+-mpwrx, -mpwr2          generate code for POWER/2 (RIOS2)\n\
+-mpwr                   generate code for POWER (RIOS1)\n\
+-m601                   generate code for PowerPC 601\n\
 -mppc, -mppc32, -m603, -m604\n\
-			generate code for PowerPC 603/604\n\
--m403			generate code for PowerPC 403\n\
--m405			generate code for PowerPC 405\n\
--m440			generate code for PowerPC 440\n\
--m464			generate code for PowerPC 464\n\
--m476			generate code for PowerPC 476\n\
+                        generate code for PowerPC 603/604\n\
+-m403                   generate code for PowerPC 403\n\
+-m405                   generate code for PowerPC 405\n\
+-m440                   generate code for PowerPC 440\n\
+-m464                   generate code for PowerPC 464\n\
+-m476                   generate code for PowerPC 476\n\
 -m7400, -m7410, -m7450, -m7455\n\
-			generate code for PowerPC 7400/7410/7450/7455\n\
--m750cl			generate code for PowerPC 750cl\n"));
+                        generate code for PowerPC 7400/7410/7450/7455\n\
+-m750cl                 generate code for PowerPC 750cl\n"));
   fprintf (stream, _("\
--mppc64, -m620		generate code for PowerPC 620/625/630\n\
--mppc64bridge		generate code for PowerPC 64, including bridge insns\n\
--mbooke			generate code for 32-bit PowerPC BookE\n\
--ma2			generate code for A2 architecture\n\
--mpower4, -mpwr4	generate code for Power4 architecture\n\
+-mppc64, -m620          generate code for PowerPC 620/625/630\n\
+-mppc64bridge           generate code for PowerPC 64, including bridge insns\n\
+-mbooke                 generate code for 32-bit PowerPC BookE\n\
+-ma2                    generate code for A2 architecture\n\
+-mpower4, -mpwr4        generate code for Power4 architecture\n\
 -mpower5, -mpwr5, -mpwr5x\n\
-			generate code for Power5 architecture\n\
--mpower6, -mpwr6	generate code for Power6 architecture\n\
--mpower7, -mpwr7	generate code for Power7 architecture\n\
--mcell			generate code for Cell Broadband Engine architecture\n\
--mcom			generate code Power/PowerPC common instructions\n\
--many			generate code for any architecture (PWR/PWRX/PPC)\n"));
+                        generate code for Power5 architecture\n\
+-mpower6, -mpwr6        generate code for Power6 architecture\n\
+-mpower7, -mpwr7        generate code for Power7 architecture\n\
+-mcell                  generate code for Cell Broadband Engine architecture\n\
+-mcom                   generate code Power/PowerPC common instructions\n\
+-many                   generate code for any architecture (PWR/PWRX/PPC)\n"));
   fprintf (stream, _("\
--maltivec		generate code for AltiVec\n\
--mvsx			generate code for Vector-Scalar (VSX) instructions\n\
--me300			generate code for PowerPC e300 family\n\
--me500, -me500x2	generate code for Motorola e500 core complex\n\
+-maltivec               generate code for AltiVec\n\
+-mvsx                   generate code for Vector-Scalar (VSX) instructions\n\
+-me300                  generate code for PowerPC e300 family\n\
+-me500, -me500x2        generate code for Motorola e500 core complex\n\
 -me500mc,               generate code for Freescale e500mc core complex\n\
--mspe			generate code for Motorola SPE instructions\n\
--mregnames		Allow symbolic names for registers\n\
--mno-regnames		Do not allow symbolic names for registers\n"));
+-me500mc64,             generate code for Freescale e500mc64 core complex\n\
+-mspe                   generate code for Motorola SPE instructions\n\
+-mtitan                 generate code for AppliedMicro Titan core complex\n\
+-mregnames              Allow symbolic names for registers\n\
+-mno-regnames           Do not allow symbolic names for registers\n"));
 #ifdef OBJ_ELF
   fprintf (stream, _("\
--mrelocatable		support for GCC's -mrelocatble option\n\
--mrelocatable-lib	support for GCC's -mrelocatble-lib option\n\
--memb			set PPC_EMB bit in ELF flags\n\
+-mrelocatable           support for GCC's -mrelocatble option\n\
+-mrelocatable-lib       support for GCC's -mrelocatble-lib option\n\
+-memb                   set PPC_EMB bit in ELF flags\n\
 -mlittle, -mlittle-endian, -l, -le\n\
-			generate code for a little endian machine\n\
+                        generate code for a little endian machine\n\
 -mbig, -mbig-endian, -b, -be\n\
-			generate code for a big endian machine\n\
--msolaris		generate code for Solaris\n\
--mno-solaris		do not generate code for Solaris\n\
--V			print assembler version number\n\
--Qy, -Qn		ignored\n"));
+                        generate code for a big endian machine\n\
+-msolaris               generate code for Solaris\n\
+-mno-solaris            do not generate code for Solaris\n\
+-V                      print assembler version number\n\
+-Qy, -Qn                ignored\n"));
 #endif
+  fprintf (stream, _("\
+-nops=count             when aligning, more than COUNT nops uses a branch\n"));
 }
 
 /* Set ppc_cpu if it is not already set.  */
@@ -1240,19 +1265,19 @@ ppc_set_cpu (void)
   const char *default_os  = TARGET_OS;
   const char *default_cpu = TARGET_CPU;
 
-  if ((ppc_cpu & ~PPC_OPCODE_ANY) == 0)
+  if ((ppc_cpu & ~(ppc_cpu_t) PPC_OPCODE_ANY) == 0)
     {
       if (ppc_obj64)
-	ppc_cpu |= PPC_OPCODE_PPC | PPC_OPCODE_CLASSIC | PPC_OPCODE_64;
+	ppc_cpu |= PPC_OPCODE_PPC | PPC_OPCODE_64;
       else if (strncmp (default_os, "aix", 3) == 0
 	       && default_os[3] >= '4' && default_os[3] <= '9')
-	ppc_cpu |= PPC_OPCODE_COMMON | PPC_OPCODE_32;
+	ppc_cpu |= PPC_OPCODE_COMMON;
       else if (strncmp (default_os, "aix3", 4) == 0)
-	ppc_cpu |= PPC_OPCODE_POWER | PPC_OPCODE_32;
+	ppc_cpu |= PPC_OPCODE_POWER;
       else if (strcmp (default_cpu, "rs6000") == 0)
-	ppc_cpu |= PPC_OPCODE_POWER | PPC_OPCODE_32;
+	ppc_cpu |= PPC_OPCODE_POWER;
       else if (strncmp (default_cpu, "powerpc", 7) == 0)
-	ppc_cpu |= PPC_OPCODE_PPC | PPC_OPCODE_CLASSIC | PPC_OPCODE_32;
+	ppc_cpu |= PPC_OPCODE_PPC;
       else
 	as_fatal (_("Unknown default cpu = %s, os = %s"),
 		  default_cpu, default_os);
@@ -1291,6 +1316,8 @@ ppc_mach (void)
     return bfd_mach_ppc64;
   else if (ppc_arch () == bfd_arch_rs6000)
     return bfd_mach_rs6k;
+  else if (ppc_cpu & PPC_OPCODE_TITAN)
+    return bfd_mach_ppc_titan;
   else
     return bfd_mach_ppc;
 }
@@ -1463,11 +1490,7 @@ ppc_setup_opcodes (void)
 	      }
 	}
 
-      if ((op->flags & ppc_cpu & ~(PPC_OPCODE_32 | PPC_OPCODE_64)) != 0
-	  && ((op->flags & (PPC_OPCODE_32 | PPC_OPCODE_64)) == 0
-	      || ((op->flags & (PPC_OPCODE_32 | PPC_OPCODE_64))
-		  == (ppc_cpu & (PPC_OPCODE_32 | PPC_OPCODE_64)))
-	      || (ppc_cpu & PPC_OPCODE_64_BRIDGE) != 0)
+      if ((ppc_cpu & op->flags) != 0
 	  && !(ppc_cpu & op->deprecated))
 	{
 	  const char *retval;
@@ -1475,11 +1498,6 @@ ppc_setup_opcodes (void)
 	  retval = hash_insert (ppc_hash, op->name, (void *) op);
 	  if (retval != NULL)
 	    {
-	      /* Ignore Power duplicates for -m601.  */
-	      if ((ppc_cpu & PPC_OPCODE_601) != 0
-		  && (op->flags & PPC_OPCODE_POWER) != 0)
-		continue;
-
 	      as_bad (_("duplicate instruction %s"),
 		      op->name);
 	      bad_insn = TRUE;
@@ -1497,7 +1515,7 @@ ppc_setup_opcodes (void)
   macro_end = powerpc_macros + powerpc_num_macros;
   for (macro = powerpc_macros; macro < macro_end; macro++)
     {
-      if ((macro->flags & ppc_cpu) != 0)
+      if ((macro->flags & ppc_cpu) != 0 || (ppc_cpu & PPC_OPCODE_ANY) != 0)
 	{
 	  const char *retval;
 
@@ -1627,7 +1645,7 @@ static unsigned long
 ppc_insert_operand (unsigned long insn,
 		    const struct powerpc_operand *operand,
 		    offsetT val,
-		    ppc_cpu_t ppc_cpu,
+		    ppc_cpu_t cpu,
 		    char *file,
 		    unsigned int line)
 {
@@ -1686,7 +1704,7 @@ ppc_insert_operand (unsigned long insn,
       const char *errmsg;
 
       errmsg = NULL;
-      insn = (*operand->insert) (insn, (long) val, ppc_cpu, &errmsg);
+      insn = (*operand->insert) (insn, (long) val, cpu, &errmsg);
       if (errmsg != (const char *) NULL)
 	as_bad_where (file, line, "%s", errmsg);
     }
@@ -1939,6 +1957,7 @@ ppc_elf_cons (int nbytes /* 1=.byte, 2=.word, 4=.long, 8=.llong */)
 	      int offset;
 
 	      p = frag_more (nbytes);
+	      memset (p, 0, nbytes);
 	      offset = 0;
 	      if (target_big_endian)
 		offset = nbytes - size;
@@ -2163,6 +2182,7 @@ ppc_frob_file_before_adjust (void)
 
   toc = bfd_get_section_by_name (stdoutput, ".toc");
   if (toc != NULL
+      && toc_reloc_types != has_large_toc_reloc
       && bfd_section_size (stdoutput, toc) > 0x10000)
     as_warn (_("TOC section size exceeds 64k"));
 
@@ -2384,7 +2404,6 @@ md_assemble (char *str)
 	{
 	  unsigned int opcount;
 	  unsigned int num_operands_expected;
-	  unsigned int i;
 
 	  /* There is an optional operand.  Count the number of
 	     commas in the input line.  */
@@ -2735,8 +2754,15 @@ md_assemble (char *str)
 		  break;
 
 		case BFD_RELOC_PPC_TLS:
-		  insn = ppc_insert_operand (insn, operand, ppc_obj64 ? 13 : 2,
-					     ppc_cpu, (char *) NULL, 0);
+		  if (!_bfd_elf_ppc_at_tls_transform (opcode->opcode, 0))
+		    as_bad (_("@tls may not be used with \"%s\" operands"),
+			    opcode->name);
+		  else if (operand->shift != 11)
+		    as_bad (_("@tls may only be used in last operand"));
+		  else
+		    insn = ppc_insert_operand (insn, operand,
+					       ppc_obj64 ? 13 : 2,
+					       ppc_cpu, (char *) NULL, 0);
 		  break;
 
 		  /* We'll only use the 32 (or 64) bit form of these relocations
@@ -2770,6 +2796,20 @@ md_assemble (char *str)
 		    default:
 		      break;
 		    }
+		}
+
+	      switch (reloc)
+		{
+		case BFD_RELOC_PPC_TOC16:
+		  toc_reloc_types |= has_small_toc_reloc;
+		  break;
+		case BFD_RELOC_PPC64_TOC16_LO:
+		case BFD_RELOC_PPC64_TOC16_HI:
+		case BFD_RELOC_PPC64_TOC16_HA:
+		  toc_reloc_types |= has_large_toc_reloc;
+		  break;
+		default:
+		  break;
 		}
 
 	      if (ppc_obj64
@@ -2881,7 +2921,10 @@ md_assemble (char *str)
       if (*str != endc
 	  && (endc != ',' || *str != '\0'))
 	{
-	  as_bad (_("syntax error; found `%c' but expected `%c'"), *str, endc);
+	  if (*str == '\0')
+	    as_bad (_("syntax error; end of line, expected `%c'"), endc);
+	  else
+	    as_bad (_("syntax error; found `%c', expected `%c'"), *str, endc);
 	  break;
 	}
 
@@ -2897,7 +2940,7 @@ md_assemble (char *str)
 
 #ifdef OBJ_ELF
   /* Do we need/want a APUinfo section? */
-  if ((ppc_cpu & PPC_OPCODE_E500MC) != 0)
+  if ((ppc_cpu & (PPC_OPCODE_E500 | PPC_OPCODE_E500MC)) != 0)
     {
       /* These are all version "1".  */
       if (opcode->flags & PPC_OPCODE_SPE)
@@ -3078,26 +3121,7 @@ ppc_macro (char *str, const struct powerpc_macro *macro)
 }
 
 #ifdef OBJ_ELF
-/* For ELF, add support for SHF_EXCLUDE and SHT_ORDERED.  */
-
-bfd_vma
-ppc_section_letter (int letter, char **ptr_msg)
-{
-  if (letter == 'e')
-    return SHF_EXCLUDE;
-
-  *ptr_msg = _("Bad .section directive: want a,e,w,x,M,S,G,T in string");
-  return -1;
-}
-
-bfd_vma
-ppc_section_word (char *str, size_t len)
-{
-  if (len == 7 && strncmp (str, "exclude", 7) == 0)
-    return SHF_EXCLUDE;
-
-  return -1;
-}
+/* For ELF, add support for SHT_ORDERED.  */
 
 int
 ppc_section_type (char *str, size_t len)
@@ -3109,13 +3133,10 @@ ppc_section_type (char *str, size_t len)
 }
 
 int
-ppc_section_flags (flagword flags, bfd_vma attr, int type)
+ppc_section_flags (flagword flags, bfd_vma attr ATTRIBUTE_UNUSED, int type)
 {
   if (type == SHT_ORDERED)
     flags |= SEC_ALLOC | SEC_LOAD | SEC_SORT_ENTRIES;
-
-  if (attr & SHF_EXCLUDE)
-    flags |= SEC_EXCLUDE;
 
   return flags;
 }
@@ -3827,16 +3848,16 @@ ppc_function (int ignore ATTRIBUTE_UNUSED)
 
   if (*input_line_pointer == ',')
     {
-      expressionS ignore;
+      expressionS exp;
 
       /* Ignore the third argument.  */
       ++input_line_pointer;
-      expression (&ignore);
+      expression (& exp);
       if (*input_line_pointer == ',')
 	{
 	  /* Ignore the fourth argument.  */
 	  ++input_line_pointer;
-	  expression (&ignore);
+	  expression (& exp);
 	  if (*input_line_pointer == ',')
 	    {
 	      /* The fifth argument is the function size.  */
@@ -5720,6 +5741,8 @@ ppc_fix_adjustable (fixS *fix)
 	  && fix->fx_r_type != BFD_RELOC_LO16_GOTOFF
 	  && fix->fx_r_type != BFD_RELOC_HI16_GOTOFF
 	  && fix->fx_r_type != BFD_RELOC_HI16_S_GOTOFF
+	  && fix->fx_r_type != BFD_RELOC_PPC64_GOT16_DS
+	  && fix->fx_r_type != BFD_RELOC_PPC64_GOT16_LO_DS
 	  && fix->fx_r_type != BFD_RELOC_GPREL16
 	  && fix->fx_r_type != BFD_RELOC_VTABLE_INHERIT
 	  && fix->fx_r_type != BFD_RELOC_VTABLE_ENTRY
@@ -5742,6 +5765,31 @@ ppc_handle_align (struct frag *fragP)
       char *dest = fragP->fr_literal + fragP->fr_fix;
 
       fragP->fr_var = 4;
+
+      if (count > 4 * nop_limit && count < 0x2000000)
+	{
+	  struct frag *rest;
+
+	  /* Make a branch, then follow with nops.  Insert another
+	     frag to handle the nops.  */
+	  md_number_to_chars (dest, 0x48000000 + count, 4);
+	  count -= 4;
+	  if (count == 0)
+	    return;
+
+	  rest = xmalloc (SIZEOF_STRUCT_FRAG + 4);
+	  memcpy (rest, fragP, SIZEOF_STRUCT_FRAG);
+	  fragP->fr_next = rest;
+	  fragP = rest;
+	  rest->fr_address += rest->fr_fix + 4;
+	  rest->fr_fix = 0;
+	  /* If we leave the next frag as rs_align_code we'll come here
+	     again, resulting in a bunch of branches rather than a
+	     branch followed by nops.  */
+	  rest->fr_type = rs_align;
+	  dest = rest->fr_literal;
+	}
+
       md_number_to_chars (dest, 0x60000000, 4);
 
       if ((ppc_cpu & PPC_OPCODE_POWER6) != 0

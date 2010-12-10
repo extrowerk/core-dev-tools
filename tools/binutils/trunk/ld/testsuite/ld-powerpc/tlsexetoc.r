@@ -47,7 +47,7 @@ Program Headers:
  +0+ +
  +01 +\.interp 
  +02 +\.interp \.hash \.dynsym \.dynstr \.rela\.dyn \.rela\.plt \.text 
- +03 +\.tdata \.dynamic \.got \.plt 
+ +03 +\.tdata \.dynamic (\.branch_lt |)\.got \.plt 
  +04 +\.dynamic 
  +05 +\.tdata \.tbss 
 
@@ -62,31 +62,31 @@ Relocation section '\.rela\.plt' at offset .* contains 1 entries:
 [0-9a-f ]+R_PPC64_JMP_SLOT +0+ __tls_get_addr_opt \+ 0
 
 Symbol table '\.dynsym' contains [0-9]+ entries:
- +Num: +Value +Size Type +Bind +Vis +Ndx Name
+ +Num: +Value +Size +Type +Bind +Vis +Ndx +Name
 .* NOTYPE +LOCAL +DEFAULT +UND 
-.* TLS +GLOBAL DEFAULT +UND gd
-.* TLS +GLOBAL DEFAULT +UND ld
-.* NOTYPE +GLOBAL DEFAULT +ABS __bss_start
-.* FUNC +GLOBAL DEFAULT +UND __tls_get_addr_opt
-.* NOTYPE +GLOBAL DEFAULT +ABS _edata
-.* NOTYPE +GLOBAL DEFAULT +ABS _end
+.* TLS +GLOBAL +DEFAULT +UND gd
+.* TLS +GLOBAL +DEFAULT +UND ld
+.* NOTYPE +GLOBAL +DEFAULT +ABS __bss_start
+.* FUNC +GLOBAL +DEFAULT +UND __tls_get_addr_opt
+.* NOTYPE +GLOBAL +DEFAULT +ABS _edata
+.* NOTYPE +GLOBAL +DEFAULT +ABS _end
 
 Symbol table '\.symtab' contains [0-9]+ entries:
- +Num: +Value +Size Type +Bind +Vis +Ndx Name
+ +Num: +Value +Size +Type +Bind +Vis +Ndx +Name
 .* NOTYPE +LOCAL +DEFAULT +UND 
-.* SECTION LOCAL +DEFAULT +1 
-.* SECTION LOCAL +DEFAULT +2 
-.* SECTION LOCAL +DEFAULT +3 
-.* SECTION LOCAL +DEFAULT +4 
-.* SECTION LOCAL +DEFAULT +5 
-.* SECTION LOCAL +DEFAULT +6 
-.* SECTION LOCAL +DEFAULT +7 
-.* SECTION LOCAL +DEFAULT +8 
-.* SECTION LOCAL +DEFAULT +9 
-.* SECTION LOCAL +DEFAULT +10 
-.* SECTION LOCAL +DEFAULT +11 
-.* SECTION LOCAL +DEFAULT +12 
-.* SECTION LOCAL +DEFAULT +13 
+.* SECTION +LOCAL +DEFAULT +1 
+.* SECTION +LOCAL +DEFAULT +2 
+.* SECTION +LOCAL +DEFAULT +3 
+.* SECTION +LOCAL +DEFAULT +4 
+.* SECTION +LOCAL +DEFAULT +5 
+.* SECTION +LOCAL +DEFAULT +6 
+.* SECTION +LOCAL +DEFAULT +7 
+.* SECTION +LOCAL +DEFAULT +8 
+.* SECTION +LOCAL +DEFAULT +9 
+.* SECTION +LOCAL +DEFAULT +10 
+.* SECTION +LOCAL +DEFAULT +11 
+.* SECTION +LOCAL +DEFAULT +12 
+.* SECTION +LOCAL +DEFAULT +13 
 .* TLS +LOCAL +DEFAULT +8 gd4
 .* TLS +LOCAL +DEFAULT +8 ld4
 .* TLS +LOCAL +DEFAULT +8 ld5
@@ -95,21 +95,21 @@ Symbol table '\.symtab' contains [0-9]+ entries:
 .* TLS +LOCAL +DEFAULT +8 le4
 .* TLS +LOCAL +DEFAULT +8 le5
 .* NOTYPE +LOCAL +DEFAULT +12 \.Lie0
-.* OBJECT +LOCAL +HIDDEN +10 _DYNAMIC
+.* OBJECT +LOCAL +DEFAULT +10 _DYNAMIC
 .* (NOTYPE +LOCAL +DEFAULT +7 00000010\.plt_call\.__tls_get_addr(|_opt)\+0|(FUNC|NOTYPE) +LOCAL +DEFAULT +UND \.__tls_get_addr(|_opt))
 .* (NOTYPE +LOCAL +DEFAULT +7 __glink_PLTresolve|NOTYPE +LOCAL +DEFAULT +7 00000010\.plt_call\.__tls_get_addr(|_opt)\+0)
 .* ((FUNC|NOTYPE) +LOCAL +DEFAULT +UND \.__tls_get_addr(|_opt)|NOTYPE +LOCAL +DEFAULT +7 __glink_PLTresolve)
-.* TLS +GLOBAL DEFAULT +UND gd
-.* TLS +GLOBAL DEFAULT +9 le0
-.* TLS +GLOBAL DEFAULT +9 ld0
-.* TLS +GLOBAL DEFAULT +9 le1
-.* TLS +GLOBAL DEFAULT +UND ld
-.* NOTYPE +GLOBAL DEFAULT +7 _start
-.* TLS +GLOBAL DEFAULT +9 ld2
-.* TLS +GLOBAL DEFAULT +9 ld1
-.* NOTYPE +GLOBAL DEFAULT +ABS __bss_start
-.* FUNC +GLOBAL DEFAULT +UND __tls_get_addr_opt
-.* NOTYPE +GLOBAL DEFAULT +ABS _edata
-.* NOTYPE +GLOBAL DEFAULT +ABS _end
-.* TLS +GLOBAL DEFAULT +9 gd0
-.* TLS +GLOBAL DEFAULT +9 ie0
+.* TLS +GLOBAL +DEFAULT +UND gd
+.* TLS +GLOBAL +DEFAULT +9 le0
+.* TLS +GLOBAL +DEFAULT +9 ld0
+.* TLS +GLOBAL +DEFAULT +9 le1
+.* TLS +GLOBAL +DEFAULT +UND ld
+.* NOTYPE +GLOBAL +DEFAULT +7 _start
+.* TLS +GLOBAL +DEFAULT +9 ld2
+.* TLS +GLOBAL +DEFAULT +9 ld1
+.* NOTYPE +GLOBAL +DEFAULT +ABS __bss_start
+.* FUNC +GLOBAL +DEFAULT +UND __tls_get_addr_opt
+.* NOTYPE +GLOBAL +DEFAULT +ABS _edata
+.* NOTYPE +GLOBAL +DEFAULT +ABS _end
+.* TLS +GLOBAL +DEFAULT +9 gd0
+.* TLS +GLOBAL +DEFAULT +9 ie0

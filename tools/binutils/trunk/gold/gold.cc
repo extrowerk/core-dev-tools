@@ -1,6 +1,6 @@
 // gold.cc -- main linker functions
 
-// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -178,7 +178,7 @@ queue_initial_tasks(const General_options& options,
     thread_count = cmdline.number_of_input_files();
   workqueue->set_thread_count(thread_count);
 
-  if (cmdline.options().incremental())
+  if (parameters->incremental())
     {
       Incremental_checker incremental_checker(
           parameters->options().output_file_name(),
@@ -206,7 +206,7 @@ queue_initial_tasks(const General_options& options,
       next_blocker->add_blocker();
       workqueue->queue(new Read_symbols(input_objects, symtab, layout,
 					&search_path, 0, mapfile, &*p, NULL,
-					this_blocker, next_blocker));
+					NULL, this_blocker, next_blocker));
       this_blocker = next_blocker;
     }
 
@@ -229,7 +229,7 @@ queue_initial_tasks(const General_options& options,
       || parameters->options().icf_enabled())
     {
       workqueue->queue(new Task_function(new Gc_runner(options,
-                                                       input_objects,
+						       input_objects,
                                                        symtab,
                                                        layout,
                                                        mapfile),
@@ -265,19 +265,27 @@ queue_middle_gc_tasks(const General_options& options,
 {
   // Read_relocs for all the objects must be done and processed to find
   // unused sections before any scanning of the relocs can take place.
-  Task_token* blocker = new Task_token(true);
-  Task_token* symtab_lock = new Task_token(false);
+  Task_token* this_blocker = NULL;
   for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
        p != input_objects->relobj_end();
        ++p)
     {
-      // We can read and process the relocations in any order.  
-      blocker->add_blocker();
-      workqueue->queue(new Read_relocs(options, symtab, layout, *p,
-				       symtab_lock, blocker));
+      Task_token* next_blocker = new Task_token(true);
+      next_blocker->add_blocker();
+      workqueue->queue(new Read_relocs(symtab, layout, *p, this_blocker,
+				       next_blocker));
+      this_blocker = next_blocker;
     }
 
-  Task_token* this_blocker = new Task_token(true);
+  // If we are given only archives in input, we have no regular
+  // objects and THIS_BLOCKER is NULL here.  Create a dummy
+  // blocker here so that we can run the middle tasks immediately.
+  if (this_blocker == NULL)
+    {
+      gold_assert(input_objects->number_of_relobjs() == 0);
+      this_blocker = new Task_token(true);
+    }
+
   workqueue->queue(new Task_function(new Middle_runner(options,
                                                        input_objects,
                                                        symtab,
@@ -301,7 +309,7 @@ queue_middle_tasks(const General_options& options,
 		   Mapfile* mapfile)
 {
   // Add any symbols named with -u options to the symbol table.
-  symtab->add_undefined_symbols_from_command_line();
+  symtab->add_undefined_symbols_from_command_line(layout);
 
   // If garbage collection was chosen, relocs have been read and processed
   // at this point by pre_middle_tasks.  Layout can then be done for all 
@@ -314,7 +322,7 @@ queue_middle_tasks(const General_options& options,
         start_sym = symtab->lookup(parameters->options().entry());
       else
         start_sym = symtab->lookup("_start");
-      if (start_sym !=NULL)
+      if (start_sym != NULL)
         {
           bool is_ordinary;
           unsigned int shndx = start_sym->shndx(&is_ordinary);
@@ -325,7 +333,7 @@ queue_middle_tasks(const General_options& options,
             }
         }
       // Symbols named with -u should not be considered garbage.
-      symtab->gc_mark_undef_symbols();
+      symtab->gc_mark_undef_symbols(layout);
       gold_assert(symtab->gc() != NULL);
       // Do a transitive closure on all references to determine the worklist.
       symtab->gc()->do_transitive_closure();
@@ -371,7 +379,7 @@ queue_middle_tasks(const General_options& options,
            ++p)
         {
           // Update the value of output_section stored in rd.
-          Read_relocs_data *rd = (*p)->get_relocs_data();
+          Read_relocs_data* rd = (*p)->get_relocs_data();
           for (Read_relocs_data::Relocs_list::iterator q = rd->relocs.begin();
                q != rd->relocs.end();
                ++q)
@@ -443,6 +451,13 @@ queue_middle_tasks(const General_options& options,
   // TODO: if this is too slow, do this as a task, rather than inline.
   symtab->detect_odr_violations(task, options.output_file_name());
 
+  // Do the --no-undefined-version check.
+  if (!parameters->options().undefined_version())
+    {
+      Script_options* so = layout->script_options();
+      so->version_script_info()->check_unmatched_names(symtab);
+    }
+
   // Create any automatic note sections.
   layout->create_notes();
 
@@ -472,8 +487,18 @@ queue_middle_tasks(const General_options& options,
   // Make sure we have symbols for any required group signatures.
   layout->define_group_signatures(symtab);
 
-  Task_token* blocker = new Task_token(true);
-  Task_token* symtab_lock = new Task_token(false);
+  Task_token* this_blocker = NULL;
+
+  // Allocate common symbols.  We use a blocker to run this before the
+  // Scan_relocs tasks, because it writes to the symbol table just as
+  // they do.
+  if (parameters->options().define_common())
+    {
+      this_blocker = new Task_token(true);
+      this_blocker->add_blocker();
+      workqueue->queue(new Allocate_commons_task(symtab, layout, mapfile,
+						 this_blocker));
+    }
 
   // If doing garbage collection, the relocations have already been read.
   // Otherwise, read and scan the relocations.
@@ -483,11 +508,14 @@ queue_middle_tasks(const General_options& options,
       for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
            p != input_objects->relobj_end();
            ++p)
-        {
-          blocker->add_blocker();
-          workqueue->queue(new Scan_relocs(options, symtab, layout, *p, 
-                           (*p)->get_relocs_data(),symtab_lock, blocker));
-        }
+	{
+	  Task_token* next_blocker = new Task_token(true);
+	  next_blocker->add_blocker();
+	  workqueue->queue(new Scan_relocs(symtab, layout, *p, 
+					   (*p)->get_relocs_data(),
+					   this_blocker, next_blocker));
+	  this_blocker = next_blocker;
+	}
     }
   else
     {
@@ -506,24 +534,31 @@ queue_middle_tasks(const General_options& options,
            p != input_objects->relobj_end();
            ++p)
         {
-          // We can read and process the relocations in any order.  But we
-          // only want one task to write to the symbol table at a time.
-          // So we queue up a task for each object to read the
-          // relocations.  That task will in turn queue a task to wait
-          // until it can write to the symbol table.
-          blocker->add_blocker();
-          workqueue->queue(new Read_relocs(options, symtab, layout, *p,
-                   symtab_lock, blocker));
+	  Task_token* next_blocker = new Task_token(true);
+	  next_blocker->add_blocker();
+          workqueue->queue(new Read_relocs(symtab, layout, *p, this_blocker,
+					   next_blocker));
+	  this_blocker = next_blocker;
         }
     }
 
-  // Allocate common symbols.  This requires write access to the
-  // symbol table, but is independent of the relocation processing.
-  if (parameters->options().define_common())
+  if (this_blocker == NULL)
     {
-      blocker->add_blocker();
-      workqueue->queue(new Allocate_commons_task(symtab, layout, mapfile,
-						 symtab_lock, blocker));
+      if (input_objects->number_of_relobjs() == 0)
+	{
+	  // If we are given only archives in input, we have no regular
+	  // objects and THIS_BLOCKER is NULL here.  Create a dummy
+	  // blocker here so that we can run the layout task immediately.
+	  this_blocker = new Task_token(true);
+	}
+      else 
+	{
+	  // If we failed to open any input files, it's possible for
+	  // THIS_BLOCKER to be NULL here.  There's no real point in
+	  // continuing if that happens.
+	  gold_assert(parameters->errors()->error_count() > 0);
+	  gold_exit(false);
+	}
     }
 
   // When all those tasks are complete, we can start laying out the
@@ -536,7 +571,7 @@ queue_middle_tasks(const General_options& options,
                                                             target,
 							    layout,
 							    mapfile),
-				     blocker,
+				     this_blocker,
 				     "Task_function Layout_task_runner"));
 }
 
@@ -562,17 +597,26 @@ queue_final_tasks(const General_options& options,
   // written out.
   Task_token* input_sections_blocker = NULL;
   if (!any_postprocessing_sections)
-    input_sections_blocker = new Task_token(true);
+    {
+      input_sections_blocker = new Task_token(true);
+      input_sections_blocker->add_blockers(input_objects->number_of_relobjs());
+    }
 
   // Use a blocker to block any objects which have to wait for the
   // output sections to complete before they can apply relocations.
   Task_token* output_sections_blocker = new Task_token(true);
+  output_sections_blocker->add_blocker();
 
   // Use a blocker to block the final cleanup task.
   Task_token* final_blocker = new Task_token(true);
+  // Write_symbols_task, Write_sections_task, Write_data_task,
+  // Relocate_tasks.
+  final_blocker->add_blockers(3);
+  final_blocker->add_blockers(input_objects->number_of_relobjs());
+  if (!any_postprocessing_sections)
+    final_blocker->add_blocker();
 
   // Queue a task to write out the symbol table.
-  final_blocker->add_blocker();
   workqueue->queue(new Write_symbols_task(layout,
 					  symtab,
 					  input_objects,
@@ -582,13 +626,10 @@ queue_final_tasks(const General_options& options,
 					  final_blocker));
 
   // Queue a task to write out the output sections.
-  output_sections_blocker->add_blocker();
-  final_blocker->add_blocker();
   workqueue->queue(new Write_sections_task(layout, of, output_sections_blocker,
 					   final_blocker));
 
   // Queue a task to write out everything else.
-  final_blocker->add_blocker();
   workqueue->queue(new Write_data_task(layout, symtab, of, final_blocker));
 
   // Queue a task for each input object to relocate the sections and
@@ -596,15 +637,10 @@ queue_final_tasks(const General_options& options,
   for (Input_objects::Relobj_iterator p = input_objects->relobj_begin();
        p != input_objects->relobj_end();
        ++p)
-    {
-      if (input_sections_blocker != NULL)
-	input_sections_blocker->add_blocker();
-      final_blocker->add_blocker();
-      workqueue->queue(new Relocate_task(options, symtab, layout, *p, of,
-					 input_sections_blocker,
-					 output_sections_blocker,
-					 final_blocker));
-    }
+    workqueue->queue(new Relocate_task(symtab, layout, *p, of,
+				       input_sections_blocker,
+				       output_sections_blocker,
+				       final_blocker));
 
   // Queue a task to write out the output sections which depend on
   // input sections.  If there are any sections which require
@@ -612,7 +648,6 @@ queue_final_tasks(const General_options& options,
   // the output file.
   if (!any_postprocessing_sections)
     {
-      final_blocker->add_blocker();
       Task* t = new Write_after_input_sections_task(layout, of,
 						    input_sections_blocker,
 						    final_blocker);
@@ -620,7 +655,7 @@ queue_final_tasks(const General_options& options,
     }
   else
     {
-      Task_token *new_final_blocker = new Task_token(true);
+      Task_token* new_final_blocker = new Task_token(true);
       new_final_blocker->add_blocker();
       Task* t = new Write_after_input_sections_task(layout, of,
 						    final_blocker,

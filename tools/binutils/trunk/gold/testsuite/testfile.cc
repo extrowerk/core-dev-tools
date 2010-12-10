@@ -44,17 +44,15 @@ class Target_test : public Sized_target<size, big_endian>
   { }
 
   void
-  gc_process_relocs(const General_options&, Symbol_table*, Layout*,
-                    Sized_relobj<size, big_endian>*, unsigned int,
-                    unsigned int, const unsigned char*, size_t, Output_section*,
-                    bool, size_t, const unsigned char*)
+  gc_process_relocs(Symbol_table*, Layout*, Sized_relobj<size, big_endian>*,
+		    unsigned int, unsigned int, const unsigned char*, size_t,
+		    Output_section*, bool, size_t, const unsigned char*)
   { ERROR("call to Target_test::gc_process_relocs"); }
 
   void
-  scan_relocs(const General_options&, Symbol_table*, Layout*,
-	      Sized_relobj<size, big_endian>*, unsigned int,
-	      unsigned int, const unsigned char*, size_t, Output_section*,
-	      bool, size_t, const unsigned char*)
+  scan_relocs(Symbol_table*, Layout*, Sized_relobj<size, big_endian>*,
+	      unsigned int, unsigned int, const unsigned char*, size_t,
+	      Output_section*, bool, size_t, const unsigned char*)
   { ERROR("call to Target_test::scan_relocs"); }
 
   void
@@ -65,7 +63,7 @@ class Target_test : public Sized_target<size, big_endian>
   { ERROR("call to Target_test::relocate_section"); }
 
   void
-  scan_relocatable_relocs(const General_options&, Symbol_table*, Layout*,
+  scan_relocatable_relocs(Symbol_table*, Layout*,
 			  Sized_relobj<size, big_endian>*, unsigned int,
 			  unsigned int, const unsigned char*,
 			  size_t, Output_section*, bool, size_t,
@@ -103,7 +101,9 @@ const Target::Target_info Target_test<size, big_endian>::test_target_info =
   elfcpp::SHN_UNDEF,			// small_common_shndx
   elfcpp::SHN_UNDEF,			// large_common_shndx
   0,					// small_common_section_flags
-  0					// large_common_section_flags
+  0,					// large_common_section_flags
+  NULL,					// attributes_section
+  NULL					// attributes_vendor
 };
 
 // The test targets.

@@ -400,6 +400,7 @@ ldxstx:
 	strexh	r1, r2, [r4]
 	strex	r1, r2, [r4]
 	strexd	r1, r2, r3, [r4]
+	strexd	r1, r3, r3, [r4]
 
 	ldrex	r1, [r4,#516]
 	strex	r1, r2, [r4,#516]
@@ -630,6 +631,8 @@ rrx:
 	rrx	r1, r2
 	rrxs	r3, r4
 
+	.arch armv7-a
+	.arch_extension sec
 smc:
 	smc	#0
 	smc	#0xabcd

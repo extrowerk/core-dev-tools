@@ -84,10 +84,10 @@ proc default_binutils_run { prog progargs } {
 }
 
 #
-# default_binutils_assemble
+# default_binutils_assemble_flags
 #	assemble a file
 #
-proc default_binutils_assemble { source object } {
+proc default_binutils_assemble_flags { source object asflags } {
     global srcdir
     global host_triplet
 
@@ -105,7 +105,7 @@ proc default_binutils_assemble { source object } {
 	set source asm.s
     }
 
-    set exec_output [target_assemble $source $object ""]
+    set exec_output [target_assemble $source $object $asflags]
     set exec_output [prune_warnings $exec_output]
 
     if [string match "" $exec_output] {
@@ -118,41 +118,59 @@ proc default_binutils_assemble { source object } {
     }
 }
 
-#
-# is_elf_format
-#	true if the object format is known to be ELF
+# True if the object format is known to be ELF.
 #
 proc is_elf_format {} {
-    if { ![istarget *-*-sysv4*] \
-	 && ![istarget *-*-unixware*] \
-	 && ![istarget *-*-elf*] \
-	 && ![istarget *-*-eabi*] \
-	 && ![istarget hppa*64*-*-hpux*] \
-	 && ![istarget ia64-*-hpux*] \
-	 && ![istarget *-*-linux*] \
-	 && ![istarget *-*-irix5*] \
-	 && ![istarget *-*-irix6*] \
-	 && ![istarget *-*-netbsd*] \
+    if { ![istarget *-*-sysv4*]
+	 && ![istarget *-*-unixware*]
+	 && ![istarget *-*-elf*]
+	 && ![istarget *-*-eabi*]
+	 && ![istarget *-*-rtems*]
+	 && ![istarget hppa*64*-*-hpux*]
+	 && ![istarget ia64-*-hpux*]
+	 && ![istarget *-*-linux*]
+	 && ![istarget frv-*-uclinux*]
+	 && ![istarget bfin-*-uclinux]
+	 && ![istarget sh*-*-uclinux*]
+	 && ![istarget *-*-irix5*]
+	 && ![istarget *-*-irix6*]
+	 && ![istarget *-*-netbsd*]
+	 && ![istarget *-*-openbsd*]
 	 && ![istarget *-*-solaris2*] } {
 	return 0
     }
 
-    if { [istarget *-*-linux*aout*] \
-	 || [istarget *-*-linux*oldld*] } {
+    if { [istarget *-*-linux*aout*]
+	 || [istarget *-*-linux*oldld*]
+	 || [istarget h8500-*-rtems*]
+	 || [istarget i960-*-rtems*]
+	 || [istarget *-*-rtemscoff*] } {
 	return 0
     }
 
-    if { ![istarget *-*-netbsdelf*] \
-	 && ([istarget *-*-netbsd*aout*] \
-	     || [istarget *-*-netbsdpe*] \
-	     || [istarget arm*-*-netbsd*] \
-	     || [istarget sparc-*-netbsd*] \
-	     || [istarget i*86-*-netbsd*] \
-	     || [istarget m68*-*-netbsd*] \
-	     || [istarget vax-*-netbsd*] \
+    if { ![istarget *-*-netbsdelf*]
+	 && ([istarget *-*-netbsd*aout*]
+	     || [istarget *-*-netbsdpe*]
+	     || [istarget arm*-*-netbsd*]
+	     || [istarget sparc-*-netbsd*]
+	     || [istarget i*86-*-netbsd*]
+	     || [istarget m68*-*-netbsd*]
+	     || [istarget vax-*-netbsd*]
 	     || [istarget ns32k-*-netbsd*]) } {
     	return 0
     }
+
+    if { [istarget arm-*-openbsd*]
+	 || [istarget i386-*-openbsd\[0-2\].*]
+	 || [istarget i386-*-openbsd3.\[0-2\]]
+	 || [istarget m68*-*-openbsd*]
+	 || [istarget ns32k-*-openbsd*]
+	 || [istarget sparc-*-openbsd\[0-2\].*]
+	 || [istarget sparc-*-openbsd3.\[0-1\]]
+	 || [istarget vax-*-openbsd*] } {
+	return 0
+    }
+
     return 1
 }
 
@@ -281,6 +299,7 @@ proc run_dump_test { name {extra_options {}} } {
     global subdir srcdir
     global OBJDUMP NM OBJCOPY READELF STRIP
     global OBJDUMPFLAGS NMFLAGS OBJCOPYFLAGS READELFFLAGS STRIPFLAGS
+    global ELFEDIT ELFEDITFLAGS
     global host_triplet
     global env
     global copyfile
@@ -300,6 +319,7 @@ proc run_dump_test { name {extra_options {}} } {
     }
     set opts(addr2line) {}
     set opts(ar) {}
+    set opts(as) {}
     set opts(nm) {}
     set opts(objcopy) {}
     set opts(objdump) {}
@@ -309,6 +329,7 @@ proc run_dump_test { name {extra_options {}} } {
     set opts(size) {}
     set opts(strings) {}
     set opts(name) {}
+    set opts(elfedit) {}
     set opts(PROG) {}
     set opts(DUMPPROG) {}
     set opts(source) {}
@@ -325,6 +346,11 @@ proc run_dump_test { name {extra_options {}} } {
 	    unresolved $subdir/$name
 	    return
 	}
+
+	# Permit the option to use $srcdir to refer to the source
+	# directory.
+	regsub -all "\\\$srcdir" "$opt_val" "$srcdir/$subdir" opt_val
+
 	if [string length $opts($opt_name)] {
 	    perror "option $opt_name multiply set in $file.d"
 	    unresolved $subdir/$name
@@ -341,6 +367,11 @@ proc run_dump_test { name {extra_options {}} } {
 	    unresolved $subdir/$name
 	    return
 	}
+
+	# Permit the option to use $srcdir to refer to the source
+	# directory.
+	regsub -all "\\\$srcdir" "$opt_val" "$srcdir/$subdir" opt_val
+
 	# add extra option to end of existing option, adding space
 	# if necessary.
 	if [string length $opts($opt_name)] {
@@ -372,6 +403,7 @@ proc run_dump_test { name {extra_options {}} } {
 	    set destopt "-o"
 	}
 	strings	{ set program strings }
+	elfedit { set program elfedit }
 	default	{
 	    perror "unrecognized program option $opts(PROG) in $file.d"
 	    unresolved $testname
@@ -462,7 +494,7 @@ proc run_dump_test { name {extra_options {}} } {
 	set srcfile $srcdir/$subdir/$opts(source)
     }
 
-    set exec_output [binutils_assemble ${srcfile} $tempfile]
+    set exec_output [binutils_assemble_flags ${srcfile} $tempfile $opts(as)]
     if [string match "" $exec_output] then {
 	send_log "$exec_output\n"
 	verbose "$exec_output"

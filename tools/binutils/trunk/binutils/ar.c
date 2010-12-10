@@ -1,6 +1,6 @@
 /* ar.c - Archive modify and extract.
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
    Free Software Foundation, Inc.
 
    This file is part of GNU Binutils.
@@ -45,11 +45,6 @@
 #else
 #define EXT_NAME_LEN 6		/* Ditto for *NIX.  */
 #endif
-
-/* Kludge declaration from BFD!  This is ugly!  FIXME!  XXX  */
-
-struct ar_hdr *
-  bfd_special_undocumented_glue (bfd * abfd, const char *filename);
 
 /* Static declarations.  */
 
@@ -136,6 +131,8 @@ static bfd_boolean full_pathname = FALSE;
 
 /* Whether to create a "thin" archive (symbol index only -- no files).  */
 static bfd_boolean make_thin_archive = FALSE;
+
+static const char *plugin_target = NULL;
 
 int interactive = 0;
 
@@ -247,6 +244,7 @@ usage (int help)
       fprintf (s, _("  p            - print file(s) found in the archive\n"));
       fprintf (s, _("  q[f]         - quick append file(s) to the archive\n"));
       fprintf (s, _("  r[ab][f][u]  - replace existing or insert new file(s) into the archive\n"));
+      fprintf (s, _("  s            - act as ranlib\n"));
       fprintf (s, _("  t            - display contents of archive\n"));
       fprintf (s, _("  x[o]         - extract file(s) from the archive\n"));
       fprintf (s, _(" command specific modifiers:\n"));
@@ -308,22 +306,7 @@ normalize (const char *file, bfd *abfd)
   if (full_pathname)
     return file;
 
-  filename = strrchr (file, '/');
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-  {
-    /* We could have foo/bar\\baz, or foo\\bar, or d:bar.  */
-    char *bslash = strrchr (file, '\\');
-
-    if (filename == NULL || (bslash != NULL && bslash > filename))
-      filename = bslash;
-    if (filename == NULL && file[0] != '\0' && file[1] == ':')
-      filename = file + 1;
-  }
-#endif
-  if (filename != (char *) NULL)
-    filename++;
-  else
-    filename = file;
+  filename = lbasename (file);
 
   if (ar_truncate
       && abfd != NULL
@@ -402,24 +385,8 @@ main (int argc, char **argv)
 
   if (is_ranlib < 0)
     {
-      char *temp;
+      const char *temp = lbasename (program_name);
 
-      temp = strrchr (program_name, '/');
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-      {
-	/* We could have foo/bar\\baz, or foo\\bar, or d:bar.  */
-	char *bslash = strrchr (program_name, '\\');
-
-	if (temp == NULL || (bslash != NULL && bslash > temp))
-	  temp = bslash;
-	if (temp == NULL && program_name[0] != '\0' && program_name[1] == ':')
-	  temp = program_name + 1;
-      }
-#endif
-      if (temp == NULL)
-	temp = program_name;
-      else
-	++temp;
       if (strlen (temp) >= 6
 	  && FILENAME_CMP (temp + strlen (temp) - 6, "ranlib") == 0)
 	is_ranlib = 1;
@@ -508,6 +475,8 @@ main (int argc, char **argv)
 
       arg_index += 2;
       arg_ptr = argv[arg_index];
+
+      plugin_target = "plugin";
 #else
       fprintf (stderr, _("sorry - this program has been built without plugin support\n"));
       xexit (1);
@@ -752,7 +721,7 @@ open_inarch (const char *archive_filename, const char *file)
 
   bfd_set_error (bfd_error_no_error);
 
-  target = NULL;
+  target = plugin_target;
 
   if (stat (archive_filename, &sbuf) != 0)
     {
@@ -783,7 +752,7 @@ open_inarch (const char *archive_filename, const char *file)
 	{
 	  bfd *obj;
 
-	  obj = bfd_openr (file, NULL);
+	  obj = bfd_openr (file, target);
 	  if (obj != NULL)
 	    {
 	      if (bfd_check_format (obj, bfd_object))
@@ -1168,14 +1137,14 @@ move_members (bfd *arch, char **files_to_move)
 	    {
 	      /* Move this file to the end of the list - first cut from
 		 where it is.  */
-	      bfd *link;
+	      bfd *link_bfd;
 	      *current_ptr_ptr = current_ptr->archive_next;
 
 	      /* Now glue to end */
 	      after_bfd = get_pos_bfd (&arch->archive_next, pos_end, NULL);
-	      link = *after_bfd;
+	      link_bfd = *after_bfd;
 	      *after_bfd = current_ptr;
-	      current_ptr->archive_next = link;
+	      current_ptr->archive_next = link_bfd;
 
 	      if (verbose)
 		printf ("m - %s\n", *files_to_move);
@@ -1241,7 +1210,7 @@ replace_members (bfd *arch, char **files_to_move, bfd_boolean quick)
 		  after_bfd = get_pos_bfd (&arch->archive_next, pos_after,
 					   current->filename);
 		  if (ar_emul_replace (after_bfd, *files_to_move,
-				       verbose))
+				       plugin_target, verbose))
 		    {
 		      /* Snip out this entry from the chain.  */
 		      *current_ptr = (*current_ptr)->archive_next;
@@ -1257,8 +1226,8 @@ replace_members (bfd *arch, char **files_to_move, bfd_boolean quick)
       /* Add to the end of the archive.  */
       after_bfd = get_pos_bfd (&arch->archive_next, pos_end, NULL);
 
-      if (ar_emul_append (after_bfd, *files_to_move, verbose,
-                          make_thin_archive))
+      if (ar_emul_append (after_bfd, *files_to_move, plugin_target,
+			  verbose, make_thin_archive))
 	changed = TRUE;
 
     next_file:;

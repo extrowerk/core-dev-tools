@@ -41,6 +41,7 @@ static int fix_cortex_a8 = -1;
 static int no_enum_size_warning = 0;
 static int no_wchar_size_warning = 0;
 static int pic_veneer = 0;
+static int merge_exidx_entries = -1;
 
 static void
 gld${EMULATION_NAME}_before_parse (void)
@@ -276,7 +277,8 @@ gld${EMULATION_NAME}_after_allocation (void)
       /* Build a sorted list of input text sections, then use that to process
 	 the unwind table index.  */
       unsigned int list_size = 10;
-      asection **sec_list = xmalloc (list_size * sizeof (asection *));
+      asection **sec_list = (asection **)
+          xmalloc (list_size * sizeof (asection *));
       unsigned int sec_count = 0;
 
       LANG_FOR_EACH_INPUT_STATEMENT (is)
@@ -302,8 +304,8 @@ gld${EMULATION_NAME}_after_allocation (void)
 		  if (sec_count == list_size)
 		    {
 		      list_size *= 2;
-		      sec_list = xrealloc (sec_list,
-					   list_size * sizeof (asection *));
+		      sec_list = (asection **) 
+                          xrealloc (sec_list, list_size * sizeof (asection *));
 		    }
 
 		  sec_list[sec_count++] = sec;
@@ -313,7 +315,8 @@ gld${EMULATION_NAME}_after_allocation (void)
 	
       qsort (sec_list, sec_count, sizeof (asection *), &compare_output_sec_vma);
       
-      if (elf32_arm_fix_exidx_coverage (sec_list, sec_count, &link_info))
+      if (elf32_arm_fix_exidx_coverage (sec_list, sec_count, &link_info,
+					   merge_exidx_entries))
 	need_laying_out = 1;
       
       free (sec_list);
@@ -525,6 +528,7 @@ PARSE_AND_LIST_PROLOGUE='
 #define OPTION_NO_WCHAR_SIZE_WARNING	313
 #define OPTION_FIX_CORTEX_A8		314
 #define OPTION_NO_FIX_CORTEX_A8		315
+#define OPTION_NO_MERGE_EXIDX_ENTRIES   316
 '
 
 PARSE_AND_LIST_SHORTOPTS=p
@@ -546,13 +550,14 @@ PARSE_AND_LIST_LONGOPTS='
   { "no-wchar-size-warning", no_argument, NULL, OPTION_NO_WCHAR_SIZE_WARNING},
   { "fix-cortex-a8", no_argument, NULL, OPTION_FIX_CORTEX_A8 },
   { "no-fix-cortex-a8", no_argument, NULL, OPTION_NO_FIX_CORTEX_A8 },
+  { "no-merge-exidx-entries", no_argument, NULL, OPTION_NO_MERGE_EXIDX_ENTRIES },
 '
 
 PARSE_AND_LIST_OPTIONS='
   fprintf (file, _("  --thumb-entry=<sym>         Set the entry point to be Thumb symbol <sym>\n"));
   fprintf (file, _("  --be8                       Output BE8 format image\n"));
-  fprintf (file, _("  --target1=rel               Interpret R_ARM_TARGET1 as R_ARM_REL32\n"));
-  fprintf (file, _("  --target1=abs               Interpret R_ARM_TARGET1 as R_ARM_ABS32\n"));
+  fprintf (file, _("  --target1-rel               Interpret R_ARM_TARGET1 as R_ARM_REL32\n"));
+  fprintf (file, _("  --target1-abs               Interpret R_ARM_TARGET1 as R_ARM_ABS32\n"));
   fprintf (file, _("  --target2=<type>            Specify definition of R_ARM_TARGET2\n"));
   fprintf (file, _("  --fix-v4bx                  Rewrite BX rn as MOV pc, rn for ARMv4\n"));
   fprintf (file, _("  --fix-v4bx-interworking     Rewrite BX rn branch to ARMv4 interworking veneer\n"));
@@ -573,6 +578,8 @@ PARSE_AND_LIST_OPTIONS='
                            the linker should choose suitable defaults.\n"
  		   ));
   fprintf (file, _("  --[no-]fix-cortex-a8        Disable/enable Cortex-A8 Thumb-2 branch erratum fix\n"));
+  fprintf (file, _("  --no-merge-exidx-entries    Disable merging exidx entries\n"));
+ 
 '
 
 PARSE_AND_LIST_ARGS_CASES='
@@ -652,6 +659,10 @@ PARSE_AND_LIST_ARGS_CASES='
     case OPTION_NO_FIX_CORTEX_A8:
       fix_cortex_a8 = 0;
       break;
+
+   case OPTION_NO_MERGE_EXIDX_ENTRIES:
+      merge_exidx_entries = 0;
+
 '
 
 # We have our own before_allocation etc. functions, but they call

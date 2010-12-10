@@ -1,6 +1,6 @@
 /* bucomm.c -- Bin Utils COMmon code.
    Copyright 1991, 1992, 1993, 1994, 1995, 1997, 1998, 2000, 2001, 2002,
-   2003, 2005, 2006, 2007, 2008, 2009
+   2003, 2005, 2006, 2007, 2008, 2009, 2010
    Free Software Foundation, Inc.
 
    This file is part of GNU Binutils.
@@ -52,8 +52,10 @@ char *program_name;
 void
 bfd_nonfatal (const char *string)
 {
-  const char *errmsg = bfd_errmsg (bfd_get_error ());
+  const char *errmsg;
 
+  errmsg = bfd_errmsg (bfd_get_error ());
+  fflush (stdout);
   if (string)
     fprintf (stderr, "%s: %s: %s\n", program_name, string, errmsg);
   else
@@ -70,27 +72,30 @@ bfd_nonfatal (const char *string)
    PROGRAM:file: bfd-error-message
    PROGRAM:file[section]: bfd-error-message
    PROGRAM:file: printf-message: bfd-error-message
-   PROGRAM:file[section]: printf-message: bfd-error-message
-*/
+   PROGRAM:file[section]: printf-message: bfd-error-message.  */
 
 void
 bfd_nonfatal_message (const char *filename,
-		      const bfd *bfd, const asection *section,
+		      const bfd *abfd,
+		      const asection *section,
 		      const char *format, ...)
 {
-  const char *errmsg = bfd_errmsg (bfd_get_error ());
-  const char *section_name = NULL;
+  const char *errmsg;
+  const char *section_name;
   va_list args;
 
+  errmsg = bfd_errmsg (bfd_get_error ());
+  fflush (stdout);
+  section_name = NULL;
   va_start (args, format);
   fprintf (stderr, "%s", program_name);
   
-  if (bfd)
+  if (abfd)
     {
       if (!filename)
-	filename = bfd_get_archive_filename (bfd);
+	filename = bfd_get_archive_filename (abfd);
       if (section)
-	section_name = bfd_get_section_name (bfd, section);
+	section_name = bfd_get_section_name (abfd, section);
     }
   if (section_name)
     fprintf (stderr, ":%s[%s]", filename, section_name);
@@ -116,6 +121,7 @@ bfd_fatal (const char *string)
 void
 report (const char * format, va_list args)
 {
+  fflush (stdout);
   fprintf (stderr, "%s: ", program_name);
   vfprintf (stderr, format, args);
   putc ('\n', stderr);
@@ -165,6 +171,7 @@ set_default_bfd_target (void)
 void
 list_matching_formats (char **p)
 {
+  fflush (stdout);
   fprintf (stderr, _("%s: Matching formats:"), program_name);
   while (*p)
     fprintf (stderr, " %s", *p++);
@@ -177,13 +184,14 @@ void
 list_supported_targets (const char *name, FILE *f)
 {
   int t;
-  const char **targ_names = bfd_target_list ();
+  const char **targ_names;
 
   if (name == NULL)
     fprintf (f, _("Supported targets:"));
   else
     fprintf (f, _("%s: supported targets:"), name);
 
+  targ_names = bfd_target_list ();
   for (t = 0; targ_names[t] != NULL; t++)
     fprintf (f, " %s", targ_names[t]);
   fprintf (f, "\n");
@@ -552,7 +560,7 @@ parse_vma (const char *s, const char *arg)
 
 /* Returns the size of the named file.  If the file does not
    exist, or if it is not a real file, then a suitable non-fatal
-   error message is printed and zero is returned.  */
+   error message is printed and (off_t) -1 is returned.  */
 
 off_t
 get_file_size (const char * file_name)

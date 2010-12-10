@@ -1,6 +1,6 @@
 /* SPU specific support for 32-bit ELF
 
-   Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+   Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -272,7 +272,8 @@ spu_elf_object_p (bfd *abfd)
 	      {
 		Elf_Internal_Shdr *shdr = elf_elfsections (abfd)[j];
 
-		if (ELF_IS_SECTION_IN_SEGMENT_MEMORY (shdr, phdr))
+		if (ELF_SECTION_SIZE (shdr, phdr) != 0
+		    && ELF_SECTION_IN_SEGMENT (shdr, phdr))
 		  {
 		    asection *sec = shdr->bfd_section;
 		    spu_elf_section_data (sec)->u.o.ovl_index = num_ovl;
@@ -356,7 +357,8 @@ struct got_entry
 };
 
 #define spu_hash_table(p) \
-  ((struct spu_link_hash_table *) ((p)->hash))
+  (elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) \
+  == SPU_ELF_DATA ? ((struct spu_link_hash_table *) ((p)->hash)) : NULL)
 
 struct call_info
 {
@@ -443,7 +445,8 @@ spu_elf_link_hash_table_create (bfd *abfd)
 
   if (!_bfd_elf_link_hash_table_init (&htab->elf, abfd,
 				      _bfd_elf_link_hash_newfunc,
-				      sizeof (struct elf_link_hash_entry)))
+				      sizeof (struct elf_link_hash_entry),
+				      SPU_ELF_DATA))
     {
       free (htab);
       return NULL;
@@ -599,9 +602,12 @@ spu_elf_create_sections (struct bfd_link_info *info)
     {
       asection *s;
       flagword flags;
-      ibfd = info->input_bfds;
-      flags = SEC_LOAD | SEC_ALLOC | SEC_READONLY | SEC_HAS_CONTENTS
-	      | SEC_IN_MEMORY;
+
+      if (htab->elf.dynobj == NULL)
+	htab->elf.dynobj = ibfd;
+      ibfd = htab->elf.dynobj;
+      flags = (SEC_LOAD | SEC_ALLOC | SEC_READONLY | SEC_HAS_CONTENTS
+	       | SEC_IN_MEMORY | SEC_LINKER_CREATED);
       s = bfd_make_section_anyway_with_flags (ibfd, ".fixup", flags);
       if (s == NULL || !bfd_set_section_alignment (ibfd, s, 2))
 	return FALSE;
@@ -4401,7 +4407,7 @@ spu_elf_auto_overlay (struct bfd_link_info *info)
 	  struct call_info *call, *pasty;
 	  struct _spu_elf_section_data *sec_data;
 	  struct spu_elf_stack_info *sinfo;
-	  int k;
+	  unsigned int k;
 
 	  /* See whether we can add this section to the current
 	     overlay without overflowing our overlay buffer.  */
@@ -4421,7 +4427,7 @@ spu_elf_auto_overlay (struct bfd_link_info *info)
 	    {
 	      /* Pasted sections must stay together, so add their
 		 sizes too.  */
-	      struct call_info *pasty = find_pasted_call (sec);
+	      pasty = find_pasted_call (sec);
 	      while (pasty != NULL)
 		{
 		  struct function_info *call_fun = pasty->fun;
@@ -4448,7 +4454,7 @@ spu_elf_auto_overlay (struct bfd_link_info *info)
 	  pasty = NULL;
 	  sec_data = spu_elf_section_data (sec);
 	  sinfo = sec_data->u.i.stack_info;
-	  for (k = 0; k < sinfo->num_fun; ++k)
+	  for (k = 0; k < (unsigned) sinfo->num_fun; ++k)
 	    for (call = sinfo->fun[k].call_list; call; call = call->next)
 	      if (call->is_pasted)
 		{
@@ -4478,7 +4484,6 @@ spu_elf_auto_overlay (struct bfd_link_info *info)
 	  num_stubs = 0;
 	  for (call = dummy_caller.call_list; call; call = call->next)
 	    {
-	      unsigned int k;
 	      unsigned int stub_delta = 1;
 
 	      if (htab->params->ovly_flavour == ovly_soft_icache)
@@ -4825,14 +4830,12 @@ spu_elf_relocate_section (bfd *output_bfd,
       bfd_vma addend;
       bfd_reloc_status_type r;
       bfd_boolean unresolved_reloc;
-      bfd_boolean warned;
       enum _stub_type stub_type;
 
       r_symndx = ELF32_R_SYM (rel->r_info);
       r_type = ELF32_R_TYPE (rel->r_info);
       howto = elf_howto_table + r_type;
       unresolved_reloc = FALSE;
-      warned = FALSE;
       h = NULL;
       sym = NULL;
       sec = NULL;
@@ -4888,21 +4891,13 @@ spu_elf_relocate_section (bfd *output_bfd,
 						      input_section,
 						      rel->r_offset, err))
 		return FALSE;
-	      warned = TRUE;
 	    }
 	  sym_name = h->root.root.string;
 	}
 
       if (sec != NULL && elf_discarded_section (sec))
-	{
-	  /* For relocs against symbols from removed linkonce sections,
-	     or sections discarded by a linker script, we just want the
-	     section contents zeroed.  Avoid any special processing.  */
-	  _bfd_clear_contents (howto, input_bfd, contents + rel->r_offset);
-	  rel->r_info = 0;
-	  rel->r_addend = 0;
-	  continue;
-	}
+	RELOC_AGAINST_DISCARDED_SECTION (info, input_bfd, input_section,
+					 rel, relend, howto, contents);
 
       if (info->relocatable)
 	continue;
@@ -5089,12 +5084,19 @@ spu_elf_relocate_section (bfd *output_bfd,
 	}
       input_section->reloc_count = wrel - relocs;
       /* Backflips for _bfd_elf_link_output_relocs.  */
-      rel_hdr = &elf_section_data (input_section)->rel_hdr;
+      rel_hdr = _bfd_elf_single_rel_hdr (input_section);
       rel_hdr->sh_size = input_section->reloc_count * rel_hdr->sh_entsize;
       ret = 2;
     }
 
   return ret;
+}
+
+static bfd_boolean
+spu_elf_finish_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
+				 struct bfd_link_info *info ATTRIBUTE_UNUSED)
+{
+  return TRUE;
 }
 
 /* Adjust _SPUEAR_ syms to point at their overlay stubs.  */
@@ -5253,7 +5255,7 @@ spu_elf_modify_segment_map (bfd *abfd, struct bfd_link_info *info)
       if ((*p)->p_type == PT_LOAD && (*p)->count == 1
 	  && spu_elf_section_data ((*p)->sections[0])->u.o.ovl_index != 0)
 	{
-	  struct elf_segment_map *m = *p;
+	  m = *p;
 	  *p = m->next;
 	  *p_overlay = m;
 	  p_overlay = &m->next;
@@ -5403,7 +5405,8 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 
 	      /* If there aren't any relocs, then there's nothing more
 	         to do.  */
-	      if ((isec->flags & SEC_RELOC) == 0
+	      if ((isec->flags & SEC_ALLOC) == 0
+		  || (isec->flags & SEC_RELOC) == 0
 		  || isec->reloc_count == 0)
 		continue;
 
@@ -5446,6 +5449,7 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 #define TARGET_BIG_SYM		bfd_elf32_spu_vec
 #define TARGET_BIG_NAME		"elf32-spu"
 #define ELF_ARCH		bfd_arch_spu
+#define ELF_TARGET_ID		SPU_ELF_DATA
 #define ELF_MACHINE_CODE	EM_SPU
 /* This matches the alignment need for DMA.  */
 #define ELF_MAXPAGESIZE		0x80
@@ -5457,6 +5461,7 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 #define elf_info_to_howto			spu_elf_info_to_howto
 #define elf_backend_count_relocs		spu_elf_count_relocs
 #define elf_backend_relocate_section		spu_elf_relocate_section
+#define elf_backend_finish_dynamic_sections	spu_elf_finish_dynamic_sections
 #define elf_backend_symbol_processing		spu_elf_backend_symbol_processing
 #define elf_backend_link_output_symbol_hook	spu_elf_output_symbol_hook
 #define elf_backend_object_p			spu_elf_object_p

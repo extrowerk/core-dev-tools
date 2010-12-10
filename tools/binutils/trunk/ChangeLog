@@ -1,7 +1,536 @@
+2010-11-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/12258
+	* configure.ac: Correct comments for --enable-gold/--enable-ld.
+	Properly check default linker.
+	* configure: Regnerated.
+
+2010-11-23  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: For --enable-gold, handle value `default' instead of
+	`both*'.   New configure option --{en,dis}able-ld.
+	* configure: Regenerate.
+
+2010-11-03  Ian Lance Taylor  <iant@google.com>
+	    Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR lto/46273
+	* configure.ac: Remove libelf tests.  Build lto-plugin on ELF always
+	and on other supported platforms whenever LTO is enabled.
+	* configure: Rebuild.
+
+2010-11-02  Alan Modra  <amodra@gmail.com>
+
+	PR binutils/12110
+	* configure.ac: Error when source path contains spaces.
+	* configure: Regenerate.
+
+2010-10-20  Ian Lance Taylor  <iant@google.com>
+
+	* Makefile.def (target_modules): Set lib_path to src/.libs for
+	libstdc++-v3 module.
+	* Makefile.tpl: Fix typo in TARGET_LIB_PATH comment.
+	* Makefile.in: Rebuild.
+
+2010-10-08  Bernd Schmidt  <bernds@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* COPYING.LIBGLOSS: Add National Semiconductor and CodeSourcery
+	notices.
+	* COPYING.NEWLIB: Add Texas Instruments notice.
+
+2010-10-07  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* configure.ac (build_lto_plugin): New shell variable.
+	(--enable-lto): Turn on by default for all non-ELF platforms that
+	have had LTO support added so far.  Set build_lto_plugin appropriately
+	for both ELF and non-ELF.
+	(configdirs): Add lto-plugin or not based on build_lto_plugin.
+	* configure: Regenerate.
+
+2010-10-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/45326
+	PR bootstrap/45174
+	* configure.ac: Honor initial values of $build_configargs,
+	$host_configargs, $target_configargs.  Mark the precious, so
+	environment settings get recorded.
+	* configure: Regenerate.
+
+2010-10-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Sync from GCC:
+
+	2010-09-30  Michael Eager  <eager@eagercon.com>
+
+	* configure.ac (microblaze): Add target-libssp to noconfigdirs.
+	* configure: Regenerate.
+
+	2010-09-21  Iain Sandoe  <iains@gcc.gnu.org>
+
+	* configure.ac (enable-lto): Add Darwin to the list of supported lto
+	targets and amend comment.
+	* configure: Regenerate.
+
+	2010-09-03  Jack Howarth <howarth@bromo.med.uc.edu>
+
+	* configure.ac: Enable LTO by default on Darwin.
+	* configure: Regenerate.
+
+	2010-07-23  Marc Glisse <marc.glisse@normalesup.org>
+
+	PR bootstrap/44455
+	* configure.ac (extra_mpfr_configure_flags): Copy from
+	extra_mpc_gmp_configure_flags.
+	* configure: Re-generated.
+
+2010-09-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Sync from GCC:
+
+	PR bootstrap/45796
+	* Makefile.def (info-gcc, dvi-gcc, pdf-gcc, html-gcc):
+	Depend on all-build-libiberty.
+	* Makefile.in: Regenerate.
+
+2010-09-27  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Sync from GCC:
+
+	PR bootstrap/44621
+	* configure.ac: Fix unportable shell quoting.
+	* configure: Regenerate.
+
+2010-07-26  Naveen.H.S  <naveen.S@kpitcummins.com>
+
+	* configure.ac: Support all v850 targets.
+	* configure: Regenerate.
+
+2010-07-17  Jack Howarth  <howarth@bromo.med.uc.edu>
+
+	PR target/44862
+	* Makefile.tpl (POSTSTAGE1_CXX_EXPORT):
+	Provide -B option to allow for link spec %s substitutions for
+	libstdc++.a on darwin.
+	* Makefile.in: Regenerate.
+
+2010-06-10  Alexandre Oliva  <aoliva@redhat.com>
+
+	* Makefile.def (configure-gcc): Depend on all-libelf.
+	* Makefile.in: Rebuild.
+
+2010-06-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* config.sub, config.guess: Update from upstream sources.
+
+2010-06-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Sync from GCC:
+
+	2010-05-05  Sebastian Pop  <sebastian.pop@amd.com>
+	* configure.ac: Allow all the versions greater than 0.10 of PPL.
+	* configure: Regenerated.
+
+	2010-04-20  Eric Botcazou  <ebotcazou@adacore.com>
+	* configure.ac (BUILD_CONFIG): Redirect output to /dev/null.
+	* configure: Regenerate.
+
+	2010-04-17  Ralf Cors<E9>pius  <ralf.corsepius@rtems.org>
+	* configure.ac (*-*-rtems*): Add target-libiberty to $skipdirs.
+	* configure: Regenerate.
+
+	2010-04-16  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+	* configure.ac: Check for elf_getshdrstrndx or elf_getshstrndx
+	separately.
+	* configure: Regenerate.
+
+	2010-04-13  Steve Ellcey  <sje@cup.hp.com>
+	* configure: Regenerate after change to elf.m4.
+
+	2010-04-02  Sebastian Pop  <sebastian.pop@amd.com>
+	* configure.ac: Add brackets around AC_TRY_COMPILE alternative.
+	* configure: Regenerated.
+
+	2010-04-02  Sebastian Pop  <sebastian.pop@amd.com>
+	* configure.ac: Print "buggy but acceptable" when CLooG
+	revision is less than 9.
+	* configure: Regenerated.
+
+2010-05-26  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	Merge from gcc:
+
+	2010-05-18  Steven Bosscher  <steven@gcc.gnu.org>
+	* configure.ac (--enable-lto): All *-apple-darwin* now support LTO.
+	* configure: Regenerate.
+
+	2010-05-07  Steven Bosscher  <steven@gcc.gnu.org>
+	* configure.ac (--enable-lto): Add x86_64-apple-darwin* as
+	a platform that supports LTO.
+	* configure: Regenerate.
+
+	2010-04-27  Dave Korn  <dave.korn.cygwin@gmail.com>
+	PR lto/42776
+	* configure.ac (--enable-lto): Refactor handling so libelf tests
+	are only performed inside then-clause of ACX_ELF_TARGET_IFELSE,
+	and allow LTO to be explicitly enabled on non-ELF platforms that
+	are known to support it inside else-clause.
+	* configure: Regenerate.
+
+2010-04-27  Roland McGrath  <roland@redhat.com>
+	    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (--enable-gold): Support both, both/gold and
+	both/bfd to add gold to configdirs without removing ld.
+	* configure: Regenerated.
+
+	* Makefile.def: Add install-gold dependency to install-ld.
+	* Makefile.in: Regenerated.
+
+2010-04-14  Tristan Gingold  <gingold@adacore.com>
+
+	* configure.ac (alpha*-*-*vms*): Remove ld from noconfigdirs.
+	* configure: Regenerate.
+
+2010-04-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Merge from gcc:
+	PR bootstrap/43615
+	PR bootstrap/43328
+	Revert:
+	2010-03-31  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+	* configure.ac: Do not pass --enable-multilib nor
+	--disable-multilib in baseargs.  Accept explicitly passed
+	--enable_multilib.
+	* configure: Regenerate.
+
+2010-03-31  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/43328
+	* configure.ac: Do not pass --enable-multilib nor
+	--disable-multilib in baseargs.  Accept explicitly passed
+	--enable_multilib.
+	* configure: Regenerate.
+
+2010-03-23  Joseph Myers  <joseph@codesourcery.com>
+
+	* configure.ac (tic6x-*-*): New case.
+	* configure: Regenerate.
+
+2010-03-23  Joseph Myers  <joseph@codesourcery.com>
+
+	Merge from gcc:
+	2010-03-19  Jack Howarth <howarth@bromo.med.uc.edu>
+	PR ada/42554
+	* configure.ac: Only pass -c to ranlib for darwin9 and earlier.
+	* configure: Regenerate.
+
+2010-03-23  Joseph Myers  <joseph@codesourcery.com>
+
+	* config.sub: Update to version 2010-03-22.
+	* config.guess: Update to version 2009-12-30.
+
+2010-03-14  Joseph Myers  <joseph@codesourcery.com>
+
+	Merge from gcc:
+	2010-01-11  Richard Guenther  <rguenther@suse.de>
+	PR lto/41569
+	* Makefile.def (all-lto-plugin): Depend on all-gcc.
+	* Makefile.in: Regenerated.
+
+2010-03-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libstdc++/32499
+	* configure.ac (RANLIB): Default to true.
+	(STRIP): Likewise.
+	(RANLIB_FOR_TARGET): Remove superfluous : argument.
+	* configure: Regenerate.
+
+2010-02-17  Nick Clifton  <nickc@redhat.com>
+
+	PR 11238
+	* Makefile.tpl (local-distclean): Also remove config.cache files in
+	sub-directories as there may not be Makefiles present in the
+	sub-directories.
+	* Makefile.tpl: Use "-exec rm {}" rather than "-delete" to delete
+	the config.cache files found by the find command.
+
+	* Makefile.in: Regenerate.
+	* configure.ac: Revert previous delta.
+	* configure: Regenerate.
+
+2010-02-15  Nick Clifton  <nickc@redhat.com>
+
+	PR 11238
+	* configure.ac: Delete config.cache files in sub-directories when
+	deleting Makefiles.
+	* configure: Regenerate.
+
+2010-02-15  Nick Clifton  <nickc@redhat.com>
+
+	* configure.ac: Sync from gcc.
+	* configure: Regenerate.
+
+2010-01-31  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Sync from gcc:
+	* configure.ac: Add "recommended" version checks for GMP/MPC.
+	Update recommended GMP/MPFR/MPC versions.
+	* configure: Regenerate.
+
+2010-01-25  Joern Rennecke  <amylaar@spamcop.net>
+
+	gcc PR libstdc++/36101, gcc PR libstdc++/42813
+	* configure.ac (bootstrap_target_libs): Make inclusion of
+	target-libgomp conditional on libgomb being in target_configdirs.
+	* configure: Regenerate.
+
+2010-01-23  Joern Rennecke  <amylaar@spamcop.net>
+
+	gcc PR libstdc++/36101, gcc PR libstdc++/42813
+	* configure.ac (bootstrap_target_libs): Include target-libgomp.
+	* configure: Regenerate.
+
+2010-01-22  Joern Rennecke  <amylaar@spamcop.net>
+
+	gcc PR libstdc++/36101, gcc PR libstdc++/42813
+	* configure.ac (target_configdirs): Substitute.
+	* Makefile.def: Bootstrap target module libgomp.
+	Add dependency of all-target-libstdc++-v3 on configure-target-libgomp.
+	* Makefile.tpl (TARGET_CONFIGDIRS): New makefile variable.
+	(BASE_TARGET_EXPORTS): Export TARGET_CONFIGDIRS.
+	* configure, Makefile.in: Regenerate.
+
+2009-12-09  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* libtool.m4: Sync from git Libtool.
+	* ltmain.sh: Likewise.
+	* ltoptions.m4: Likewise.
+	* ltversion.m4: Likewise.
+	* lt~obsolete.m4: Likewise.
+
+2010-01-07  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+            Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR bootstrap/42424
+	* configure.ac: Include libtool m4 files.
+        (_LT_CHECK_OBJDIR): Call it.
+	(extra_mpc_mpfr_configure_flags, extra_mpc_gmp_configure_flags,
+	gmplibs, ppllibs, clooglibs): Use $lt_cv_objdir.
+
+	* configure: Regenerate.
+
+2010-01-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/41818
+	* Makefile.tpl (BASE_TARGET_EXPORTS): Only add TARGET_LIB_PATH
+	to $(RPATH_ENVVAR) if bootstrapping.  Fix typo in comment.
+	* Makefile.in: Regenerate.
+
+2009-12-18  Ben Elliston  <bje@au.ibm.com>
+
+	* config.sub, config.guess: Update from upstream sources.
+
+2009-12-17  Jeff Johnston  <jjohnstn@redhat.com>
+
+	* COPYING.NEWLIB: Update copyright date.
+	* COPYING.LIBGLOSS: Ditto.
+
+2009-12-07  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	PR middle-end/30447
+	PR middle-end/30789
+	PR other/40302
+
+	* configure.ac: Require MPC.
+	* configure: Regenerate.
+
+	* configure.ac: Update minimum MPC version to 0.8.
+	* configure: Regenerate.
+
+2009-11-20  Paolo Bonzini  <bonzini@gnu.org>
+
+	* config.guess: Sync with upstream and gcc.
+	* config.sub: Sync with upstream and gcc.
+
+2009-11-16  Alexandre Oliva  <aoliva@redhat.com>
+
+	* Makefile.def: Restore host and target settings for gmp.
+	* Makefile.in: Rebuild.
+
+2009-11-16  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure.ac: Add libelf to host_libs.  Enable in-tree configury
+	of ppl and cloog.  Fix in-tree configury of libelf, skip tests.
+	Fix portability of test of C++ as bootstrap language.  Add
+	ppl/src/ppl-config.o to the bootstrap compare exclusion list.
+	* configure: Rebuild.
+	* Makefile.def: Drop host and target settings from gmp, mpfr, ppl,
+	and cloog.  Fix in-tree ppl configuration.  Introduce libelf
+	in-tree building.
+	* Makefile.tpl (POSTSTAGE1_CXX_EXPORT): New.
+	(POSTSTAGE1_HOST_EXPORTS): Use it.
+	(STAGE[+id+]_CXXFLAGS): New.
+	(BASE_FLAGS_TO_PASS): Pass it down.
+	(configure-stage[+id+]-[+prefix+][+module+]): Use it.  Add
+	extra_exports.
+	(all-stage[+id+]-[+prefix+][+module+]): Likewise.
+	(configure-[+prefix+][+module+], all-[+prefix+][+module+]): Add
+	extra_exports.
+	* Makefile.in: Rebuild.
+
+2009-11-06  Ozkan Sezer  <sezeroz@gmail.com>
+
+	* configure.ac (FLAGS_FOR_TARGET):  Add -L and -isystem
+	paths for *-w64-mingw* and x86_64-*mingw*.
+	* configure: Regenerated.
+
+2009-10-30  Kai Tietz  <kai.tietz@onevision.com>
+
+	* configure.ac: Disable target-winsup & co for
+	x86_64-*-mingw* and *-w64-mingw* targets.
+	* configure: Regenerated.
+
+2009-10-23  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (CLooG test): Use = with test.
+	* configure: Regenerate.
+
+2009-10-22  Richard Guenther  <rguenther@suse.de>
+
+	* configure.ac: Do not set LIBS for ppl/cloog checks.  Disable
+	cloog if the ppl version check failed.  Move flags saving
+	before setting in libelf check.
+	* configure: Regenerate.
+
+2009-10-21  Richard Guenther  <rguenther@suse.de>
+
+	* configure.ac: Adjust the ppl and cloog configure to work as
+	documented.  Disable cloog if ppl was disabled.  Omit the version
+	checks if they were disabled.
+	* configure: Re-generate.
+
+2009-10-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac: Add 'lto' to enable_languages, not
+	new_enable_languages, and only if not already present.
+	* configure: Regenerate.
+
 2009-10-06  Ian Lance Taylor  <iant@google.com>
 
 	* Makefile.def: check-gold depends upon all-gas.
 	* Makefile.in: Rebuild.
+
+2009-10-03  2009-02-05  Rafael Avila de Espindola  <espindola@google.com>
+
+	* Makefile.def: all-lto-plugin depends on all-libiberty.
+	set bootstrap=true for lto-plugin.
+	Add lto-plugin.
+	* Makefile.in: Regenerate.
+	* configure.ac (host_libs): Add lto-plugin.
+	* configure: Regenerate.
+
+2009-10-03  Diego Novillo  <dnovillo@google.com>
+
+	* Makefile.tpl (HOST_EXPORTS): Add LIBELFLIBS and LIBELFINC.
+	(HOST_LIBELFLIBS): Define.
+	(HOST_LIBELFINC): Define.
+	* Makefile.in: Regenerate.
+	* configure.ac: Add --enable-lto.
+	Add --with-libelf, --with-libelf-include and --with-libelf-lib.
+	If --enable-lto is used, add 'lto' to new_enable_languages.
+	If --enable-lto is used and gold is enabled, add
+	lto-plugin to configdirs.
+	* configure: Regenerate.
+
+2009-10-03  Simon Baldwin  <simonb@google.com>
+
+	* configure.ac: If --with-system-zlib, suppress local zlib and
+	pass --with-system-zlib to subdir configure scripts.
+	* configure: Regenerate.
+
+2009-10-01  Loren J. Rittle <ljrittle@acm.org>
+	    Paolo Bonzini  <bonzini@gnu.org>
+
+	* Makefile.tpl (POSTSTAGE1_HOST_EXPORTS): Use $$s rather than
+	$(srcdir).
+	* Makefile.in: Rebuilt.
+
+2009-09-29  Paolo Bonzini  <bonzini@gnu.org>
+
+	Sync from gcc:
+	2009-09-26  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* configure.ac: Update minimum MPC version to 0.7.
+	* configure: Regenerate.
+
+2009-09-25  Nick Clifton  <nickc@redhat.com>
+
+	* configure.ac: Pass any --cache-file=/dev/null option on to
+	subconfigures.
+	* configure: Regenerate.
+
+2009-09-23  Nick Clifton  <nickc@redhat.com>
+
+	* config.sub, config.guess: Update from upstream sources.
+
+2009-09-22  Loren J. Rittle <ljrittle@acm.org>
+
+	* Makefile.tpl (POSTSTAGE1_HOST_EXPORTS): Remove stray $$r/.
+	* Makefile.in: Rebuilt.
+
+2009-09-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/32272
+	* configure.ac: Error out if $srcdir isn't '.' but contains
+	host-${host_noncanonical}.
+	* configure: Regenerate.
+
+2009-09-21  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac: If bootstrapping a combined tree with
+	--enable-gold, require c++ in stage1_languages.
+	* configure: Regenerate.
+
+	* configure.ac: Also add target_libs of stage1_languages to
+	bootstrap_target_libs.
+	* configure: Regenerate.
+
+	* configure.ac: Diagnose --enable-build-with-cxx bootstrap
+	with --enable-languages not containing c++.
+	* configure: Regenerate.
+
+2009-09-16  Jie Zhang  <jie.zhang@analog.com>
+
+	* configure.ac: Disable java and boehm-gc for bfin-*-*.
+	* configure: Regenerate.
+
+2009-09-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac: Do not use $extrasub for replacing @if/@endif
+	parts in Makefile; instead, use additional arguments to
+	AC_CONFIG_COMMANDS to do the replacement manually, with several
+	sed invocations, to avoid HP-UX sed command limits.
+	* configure: Regenerate.
+
+2009-09-04  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure.ac (with-build-config): Document.  Handle without.
+	Handle missing argument.
+	* configure: Rebuilt.
+
+2009-09-03  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure.ac (--with-build-config): New.  Set BUILD_CONFIG.
+	Default to bootstrap-debug only if compare-debug works.
+	* configure: Rebuilt.
+	* Makefile.tpl: Make BUILD_CONFIG configure-configurable.
+	* Makefile.in: Rebuilt.
+
+2009-09-01  Alexandre Oliva  <aoliva@redhat.com>
+
+	* Makefile.tpl (BUILD_CONFIG): Default to bootstrap-debug.
+	* Makefile.in: Rebuilt.
 
 2009-09-02  Paolo Bonzini  <bonzini@gnu.org>
 

@@ -60,7 +60,7 @@ Copy_relocs<sh_type, size, big_endian>::copy_reloc(
     Sized_symbol<size>* sym,
     Sized_relobj<size, big_endian>* object,
     unsigned int shndx,
-    Output_section *output_section,
+    Output_section* output_section,
     const Reloc& rel,
     Output_data_reloc<sh_type, true, size, big_endian>* reloc_section)
 {
@@ -141,7 +141,7 @@ Copy_relocs<sh_type, size, big_endian>::emit_copy_reloc(
       layout->add_output_section_data(".bss",
 				      elfcpp::SHT_NOBITS,
 				      elfcpp::SHF_ALLOC | elfcpp::SHF_WRITE,
-				      this->dynbss_, false);
+				      this->dynbss_, ORDER_BSS, false);
     }
 
   Output_data_space* dynbss = this->dynbss_;

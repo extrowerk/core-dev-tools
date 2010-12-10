@@ -39,6 +39,8 @@ STRINGS_PROG=strings
 
 READELF_PROG=readelf
 
+ELFEDIT_PROG=elfedit
+
 # These should all be the same program too.
 SIZE_PROG=size
 NM_PROG=nm-new
@@ -58,7 +60,7 @@ DLLWRAP_PROG=dllwrap
 
 SRCONV_PROG=srconv$(EXEEXT) sysdump$(EXEEXT) coffdump$(EXEEXT)
 
-bin_PROGRAMS = $(SIZE_PROG) $(OBJDUMP_PROG) $(AR_PROG) $(STRINGS_PROG) $(RANLIB_PROG) $(OBJCOPY_PROG) @BUILD_NLMCONV@ @BUILD_SRCONV@ @BUILD_DLLTOOL@ @BUILD_WINDRES@ @BUILD_WINDMC@ $(ADDR2LINE_PROG) $(READELF_PROG) @BUILD_DLLWRAP@ @BUILD_INSTALL_MISC@
+bin_PROGRAMS = $(SIZE_PROG) $(OBJDUMP_PROG) $(AR_PROG) $(STRINGS_PROG) $(RANLIB_PROG) $(OBJCOPY_PROG) @BUILD_NLMCONV@ @BUILD_SRCONV@ @BUILD_DLLTOOL@ @BUILD_WINDRES@ @BUILD_WINDMC@ $(ADDR2LINE_PROG) $(READELF_PROG) $(ELFEDIT_PROG) @BUILD_DLLWRAP@ @BUILD_INSTALL_MISC@
 
 ## We need a special rule to install the programs which are built with
 ## -new, and to rename cxxfilt to c++filt.
@@ -100,7 +102,7 @@ CFILES = \
 	rclex.c rdcoff.c rddbg.c readelf.c rename.c \
 	resbin.c rescoff.c resrc.c resres.c \
 	size.c srconv.c stabs.c strings.c sysdump.c \
-	unwind-ia64.c version.c \
+	unwind-ia64.c elfedit.c version.c \
 	windres.c winduni.c wrstabs.c \
 	windmc.c mclex.c
 
@@ -179,6 +181,7 @@ windres_DEPENDENCIES =   $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
 windmc_DEPENDENCIES =    $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
 addr2line_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
 readelf_DEPENDENCIES =   $(LIBINTL_DEP) $(LIBIBERTY)
+elfedit_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY)
 dllwrap_DEPENDENCIES =   $(LIBINTL_DEP) $(LIBIBERTY)
 
 LDADD = $(BFDLIB) $(LIBIBERTY) $(LIBINTL)
@@ -192,6 +195,9 @@ strings_SOURCES = strings.c $(BULIBS)
 readelf_SOURCES = readelf.c version.c unwind-ia64.c dwarf.c
 readelf_LDADD   = $(LIBINTL) $(LIBIBERTY)
 
+elfedit_SOURCES = elfedit.c version.c
+elfedit_LDADD = $(LIBINTL) $(LIBIBERTY)
+
 strip_new_SOURCES = objcopy.c is-strip.c rename.c $(WRITE_DEBUG_SRCS) $(BULIBS)
 
 nm_new_SOURCES = nm.c $(BULIBS)
@@ -199,7 +205,7 @@ nm_new_SOURCES = nm.c $(BULIBS)
 objdump_SOURCES = objdump.c dwarf.c prdbg.c $(DEBUG_SRCS) $(BULIBS)
 objdump_LDADD = $(OPCODES) $(BFDLIB) $(LIBIBERTY) $(LIBINTL)
 
-objdump.o:objdump.c
+objdump.@OBJEXT@:objdump.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(OBJDUMP_DEFS) $(srcdir)/objdump.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -250,25 +256,25 @@ sysroff.c: sysinfo$(EXEEXT_FOR_BUILD) sysroff.info
 sysroff.h: sysinfo$(EXEEXT_FOR_BUILD) sysroff.info
 	./sysinfo$(EXEEXT_FOR_BUILD) -d <$(srcdir)/sysroff.info >sysroff.h
 
-sysinfo$(EXEEXT_FOR_BUILD): sysinfo.o syslex.o
-	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -o $@ sysinfo.o syslex.o
+sysinfo$(EXEEXT_FOR_BUILD): sysinfo.@OBJEXT@ syslex.@OBJEXT@
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -o $@ sysinfo.@OBJEXT@ syslex.@OBJEXT@
 
-syslex.o: syslex.c sysinfo.h config.h
+syslex.@OBJEXT@: syslex.c sysinfo.h config.h
 	if [ -r syslex.c ]; then \
 	  $(CC_FOR_BUILD) -c -I. $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(NO_WERROR) syslex.c ; \
 	else \
 	  $(CC_FOR_BUILD) -c -I. -I$(srcdir) $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(NO_WERROR) $(srcdir)/syslex.c ;\
 	fi
 
-sysinfo.o: sysinfo.c
+sysinfo.@OBJEXT@: sysinfo.c
 	if [ -r sysinfo.c ]; then \
 	  $(CC_FOR_BUILD) -c -I. $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(NO_WERROR) sysinfo.c ; \
 	else \
 	  $(CC_FOR_BUILD) -c -I. $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(NO_WERROR) $(srcdir)/sysinfo.c ; \
 	fi
 
-bin2c$(EXEEXT_FOR_BUILD):
-	$(CC_FOR_BUILD) -o $@ $(AM_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $(srcdir)/bin2c.c $(srcdir)/version.c
+bin2c$(EXEEXT_FOR_BUILD): bin2c.c
+	$(CC_FOR_BUILD) -o $@ $(AM_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $(srcdir)/bin2c.c
 
 embedspu: embedspu.sh
 	sed "s@^program_transform_name=@program_transform_name=$(program_transform_name)@" < $< > $@
@@ -279,7 +285,7 @@ sysinfo.h: sysinfo.c
 
 # Disable -Werror, if it has been enabled, since old versions of bison/
 # yacc will produce working code which contain compile time warnings.
-arparse.o: arparse.c
+arparse.@OBJEXT@: arparse.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f arparse.c || echo $(srcdir)/`arparse.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -291,7 +297,7 @@ endif
 	$(COMPILE) -c `test -f arparse.c || echo $(srcdir)/`arparse.c $(NO_WERROR)
 endif
 
-arlex.o: arlex.c
+arlex.@OBJEXT@: arlex.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f arlex.c || echo $(srcdir)/`arlex.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -303,7 +309,7 @@ endif
 	$(COMPILE) -c `test -f arlex.c || echo $(srcdir)/`arlex.c $(NO_WERROR)
 endif
 
-sysroff.o: sysroff.c
+sysroff.@OBJEXT@: sysroff.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f sysroff.c || echo $(srcdir)/`sysroff.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -315,7 +321,7 @@ endif
 	$(COMPILE) -c `test -f sysroff.c || echo $(srcdir)/`sysroff.c $(NO_WERROR)
 endif
 
-defparse.o: defparse.c
+defparse.@OBJEXT@: defparse.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f defparse.c || echo $(srcdir)/`defparse.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -327,7 +333,7 @@ endif
 	$(COMPILE) -c `test -f defparse.c || echo $(srcdir)/`defparse.c $(NO_WERROR)
 endif
 
-deflex.o: deflex.c
+deflex.@OBJEXT@: deflex.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f deflex.c || echo $(srcdir)/`deflex.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -339,7 +345,7 @@ endif
 	$(COMPILE) -c `test -f deflex.c || echo $(srcdir)/`deflex.c $(NO_WERROR)
 endif
 
-nlmheader.o: nlmheader.c
+nlmheader.@OBJEXT@: nlmheader.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f nlmheader.c || echo $(srcdir)/`nlmheader.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -351,7 +357,7 @@ endif
 	$(COMPILE) -c `test -f nlmheader.c || echo $(srcdir)/`nlmheader.c $(NO_WERROR)
 endif
 
-rcparse.o: rcparse.c
+rcparse.@OBJEXT@: rcparse.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f rcparse.c || echo $(srcdir)/`rcparse.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -363,7 +369,7 @@ endif
 	$(COMPILE) -c `test -f rcparse.c || echo $(srcdir)/`rcparse.c $(NO_WERROR)
 endif
 
-mcparse.o: mcparse.c
+mcparse.@OBJEXT@: mcparse.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `test -f mcparse.c || echo $(srcdir)/`mcparse.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -375,7 +381,7 @@ endif
 	$(COMPILE) -c `test -f mcparse.c || echo $(srcdir)/`mcparse.c $(NO_WERROR)
 endif
 
-rclex.o: rclex.c
+rclex.@OBJEXT@: rclex.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/rclex.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -387,7 +393,7 @@ endif
 	$(COMPILE) -c $(srcdir)/rclex.c $(NO_WERROR)
 endif
 
-mclex.o: mclex.c
+mclex.@OBJEXT@: mclex.c
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $(srcdir)/mclex.c $(NO_WERROR)
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -400,12 +406,12 @@ endif
 endif
 
 srconv_SOURCES = srconv.c coffgrok.c $(BULIBS)
-srconv.o: sysroff.c
+srconv.@OBJEXT@: sysroff.c
 
 dlltool_SOURCES = dlltool.c defparse.y deflex.l $(BULIBS)
 dlltool_LDADD = $(BFDLIB) $(LIBIBERTY) @LEXLIB@ $(LIBINTL)
 
-dlltool.o:
+dlltool.@OBJEXT@:
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@  $(DLLTOOL_DEFS) $(srcdir)/dlltool.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -417,7 +423,7 @@ endif
 	$(COMPILE) -c $(DLLTOOL_DEFS) $(srcdir)/dlltool.c
 endif
 
-rescoff.o:
+rescoff.@OBJEXT@:
 if am__fastdepCC
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@  $(DLLTOOL_DEFS) $(srcdir)/rescoff.c
 	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
@@ -432,11 +438,11 @@ endif
 coffdump_SOURCES = coffdump.c coffgrok.c $(BULIBS)
 
 sysdump_SOURCES = sysdump.c $(BULIBS)
-sysdump.o: sysroff.c
+sysdump.@OBJEXT@: sysroff.c
 
 # coff/sym.h and coff/ecoff.h won't be found by the automatic dependency
 # scripts, since they are only included conditionally.
-nlmconv.o: nlmconv.c
+nlmconv.@OBJEXT@: nlmconv.c
 if am__fastdepCC
 	ldname=`echo ld | sed '$(transform)'`; \
 	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ \
@@ -471,6 +477,10 @@ EXTRA_DIST = arparse.c arparse.h arlex.c nlmheader.c sysinfo.c sysinfo.h \
 
 diststuff: $(EXTRA_DIST) info
 all: info
+
+# We extract version from bfd/configure.in, make sure to rerun configure
+# when BFD's version changes.
+CONFIG_STATUS_DEPENDENCIES = $(BFDDIR)/configure.in
 
 DISTCLEANFILES = sysroff.c sysroff.h site.exp site.bak
 

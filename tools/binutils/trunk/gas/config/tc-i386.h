@@ -1,6 +1,6 @@
 /* tc-i386.h -- Header file for tc-i386.c
    Copyright 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
    Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
@@ -61,6 +61,11 @@ extern unsigned long i386_mach (void);
 #define ELF_TARGET_FORMAT64	"elf64-x86-64-freebsd"
 #elif defined (TE_VXWORKS)
 #define ELF_TARGET_FORMAT	"elf32-i386-vxworks"
+#endif
+
+#ifdef TE_SOLARIS
+#define ELF_TARGET_FORMAT	"elf32-i386-sol2"
+#define ELF_TARGET_FORMAT64	"elf64-x86-64-sol2"
 #endif
 
 #ifndef ELF_TARGET_FORMAT
@@ -149,15 +154,14 @@ extern int tc_i386_fix_adjustable (struct fix *);
 /* This expression evaluates to true if the relocation is for a local
    object for which we still want to do the relocation at runtime.
    False if we are willing to perform this relocation while building
-   the .o file.  GOTOFF does not need to be checked here because it is
-   not pcrel.  I am not sure if some of the others are ever used with
-   pcrel, but it is easier to be safe than sorry.  */
+   the .o file.  GOTOFF and GOT32 do not need to be checked here because 
+   they are not pcrel.  .*/
 
 #define TC_FORCE_RELOCATION_LOCAL(FIX)			\
   (!(FIX)->fx_pcrel					\
    || (FIX)->fx_r_type == BFD_RELOC_386_PLT32		\
-   || (FIX)->fx_r_type == BFD_RELOC_386_GOT32		\
    || (FIX)->fx_r_type == BFD_RELOC_386_GOTPC		\
+   || (FIX)->fx_r_type == BFD_RELOC_X86_64_GOTPCREL	\
    || TC_FORCE_RELOCATION (FIX))
 
 extern int i386_parse_name (char *, expressionS *, char *);
@@ -221,7 +225,8 @@ enum processor_type
   PROCESSOR_K8,
   PROCESSOR_GENERIC32,
   PROCESSOR_GENERIC64,
-  PROCESSOR_AMDFAM10
+  PROCESSOR_AMDFAM10,
+  PROCESSOR_BDVER1
 };
 
 extern enum processor_type cpu_arch_tune;

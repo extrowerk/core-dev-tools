@@ -40,6 +40,9 @@
 #include "ldver.h"
 #include "ldemul.h"
 #include "demangle.h"
+#ifdef ENABLE_PLUGINS
+#include "plugin.h"
+#endif /* ENABLE_PLUGINS */
 
 #ifndef PATH_SEPARATOR
 #if defined (__MSDOS__) || (defined (_WIN32) && ! defined (__CYGWIN32__))
@@ -90,6 +93,7 @@ enum option_values
   OPTION_NO_WHOLE_ARCHIVE,
   OPTION_OFORMAT,
   OPTION_RELAX,
+  OPTION_NO_RELAX,
   OPTION_RETAIN_SYMBOLS_FILE,
   OPTION_RPATH,
   OPTION_RPATH_LINK,
@@ -125,10 +129,10 @@ enum option_values
   OPTION_SPLIT_BY_RELOC,
   OPTION_SPLIT_BY_FILE ,
   OPTION_WHOLE_ARCHIVE,
-  OPTION_ADD_NEEDED,
-  OPTION_NO_ADD_NEEDED,
-  OPTION_AS_NEEDED,
-  OPTION_NO_AS_NEEDED,
+  OPTION_ADD_DT_NEEDED_FOR_DYNAMIC,
+  OPTION_NO_ADD_DT_NEEDED_FOR_DYNAMIC,
+  OPTION_ADD_DT_NEEDED_FOR_REGULAR,
+  OPTION_NO_ADD_DT_NEEDED_FOR_REGULAR,
   OPTION_WRAP,
   OPTION_FORCE_EXE_SUFFIX,
   OPTION_GC_SECTIONS,
@@ -166,7 +170,11 @@ enum option_values
   OPTION_WARN_SHARED_TEXTREL,
   OPTION_WARN_ALTERNATE_EM,
   OPTION_REDUCE_MEMORY_OVERHEADS,
-  OPTION_DEFAULT_SCRIPT
+#ifdef ENABLE_PLUGINS
+  OPTION_PLUGIN,
+  OPTION_PLUGIN_OPT,
+#endif /* ENABLE_PLUGINS */
+  OPTION_DEFAULT_SCRIPT,
 };
 
 /* The long options.  This structure is used for both the option
@@ -270,6 +278,12 @@ static const struct ld_option ld_options[] =
     'o', N_("FILE"), N_("Set output file name"), EXACTLY_TWO_DASHES },
   { {NULL, required_argument, NULL, '\0'},
     'O', NULL, N_("Optimize output file"), ONE_DASH },
+#ifdef ENABLE_PLUGINS
+  { {"plugin", required_argument, NULL, OPTION_PLUGIN},
+    '\0', N_("PLUGIN"), N_("Load named plugin"), ONE_DASH },
+  { {"plugin-opt", required_argument, NULL, OPTION_PLUGIN_OPT},
+    '\0', N_("ARG"), N_("Send arg to last-loaded plugin"), ONE_DASH },
+#endif /* ENABLE_PLUGINS */
   { {"Qy", no_argument, NULL, OPTION_IGNORE},
     '\0', NULL, N_("Ignored for SVR4 compatibility"), ONE_DASH },
   { {"emit-relocs", no_argument, NULL, 'q'},
@@ -333,19 +347,22 @@ static const struct ld_option ld_options[] =
      OPTION_NO_ACCEPT_UNKNOWN_INPUT_ARCH},
     '\0', NULL, N_("Reject input files whose architecture is unknown"),
     TWO_DASHES },
-  { {"add-needed", no_argument, NULL, OPTION_ADD_NEEDED},
-    '\0', NULL, N_("Set DT_NEEDED tags for DT_NEEDED entries in\n"
-		   "                                following dynamic libs"),
-    TWO_DASHES },
-  { {"no-add-needed", no_argument, NULL, OPTION_NO_ADD_NEEDED},
-    '\0', NULL, N_("Do not set DT_NEEDED tags for DT_NEEDED entries\n"
-		   "                                in following dynamic libs"),
-    TWO_DASHES },
-  { {"as-needed", no_argument, NULL, OPTION_AS_NEEDED},
+
+  /* The next two options are deprecated because of their similarity to
+     --as-needed and --no-as-needed.  They have been replaced by
+     --resolve-implicit-dynamic-symbols and
+     --no-resolve-implicit-dynamic-symbols.  */
+  { {"add-needed", no_argument, NULL, OPTION_ADD_DT_NEEDED_FOR_DYNAMIC},
+    '\0', NULL, NULL, NO_HELP },
+  { {"no-add-needed", no_argument, NULL, OPTION_NO_ADD_DT_NEEDED_FOR_DYNAMIC},
+    '\0', NULL, NULL, NO_HELP },
+
+  { {"as-needed", no_argument, NULL, OPTION_ADD_DT_NEEDED_FOR_REGULAR},
     '\0', NULL, N_("Only set DT_NEEDED for following dynamic libs if used"),
     TWO_DASHES },
-  { {"no-as-needed", no_argument, NULL, OPTION_NO_AS_NEEDED},
-    '\0', NULL, N_("Always set DT_NEEDED for following dynamic libs"),
+  { {"no-as-needed", no_argument, NULL, OPTION_NO_ADD_DT_NEEDED_FOR_REGULAR},
+    '\0', NULL, N_("Always set DT_NEEDED for dynamic libraries mentioned on\n"
+		   "                                the command line"),
     TWO_DASHES },
   { {"assert", required_argument, NULL, OPTION_ASSERT},
     '\0', N_("KEYWORD"), N_("Ignored for SunOS compatibility"), ONE_DASH },
@@ -373,6 +390,15 @@ static const struct ld_option ld_options[] =
   { {"no-check-sections", no_argument, NULL, OPTION_NO_CHECK_SECTIONS},
     '\0', NULL, N_("Do not check section addresses for overlaps"),
     TWO_DASHES },
+  { {"copy-dt-needed-entries", no_argument, NULL,
+     OPTION_ADD_DT_NEEDED_FOR_DYNAMIC},
+    '\0', NULL, N_("Copy DT_NEEDED links mentioned inside DSOs that follow"),
+    TWO_DASHES },
+  { {"no-copy-dt-needed-entries", no_argument, NULL,
+     OPTION_NO_ADD_DT_NEEDED_FOR_DYNAMIC},
+    '\0', NULL, N_("Do not copy DT_NEEDED links mentioned inside DSOs that follow"),
+    TWO_DASHES },
+
   { {"cref", no_argument, NULL, OPTION_CREF},
     '\0', NULL, N_("Output cross reference table"), TWO_DASHES },
   { {"defsym", required_argument, NULL, OPTION_DEFSYM},
@@ -467,7 +493,9 @@ static const struct ld_option ld_options[] =
     '\0', NULL, N_("Reduce memory overheads, possibly taking much longer"),
     TWO_DASHES },
   { {"relax", no_argument, NULL, OPTION_RELAX},
-    '\0', NULL, N_("Relax branches on certain targets"), TWO_DASHES },
+    '\0', NULL, N_("Reduce code size by using target specific optimizations"), TWO_DASHES },
+  { {"no-relax", no_argument, NULL, OPTION_NO_RELAX},
+    '\0', NULL, N_("Do not use relaxation techniques to reduce code size"), TWO_DASHES },
   { {"retain-symbols-file", required_argument, NULL,
      OPTION_RETAIN_SYMBOLS_FILE},
     '\0', N_("FILE"), N_("Keep only symbols listed in FILE"), TWO_DASHES },
@@ -1025,6 +1053,16 @@ parse_args (unsigned argc, char **argv)
 	case OPTION_OFORMAT:
 	  lang_add_output_format (optarg, NULL, NULL, 0);
 	  break;
+#ifdef ENABLE_PLUGINS
+	case OPTION_PLUGIN:
+	  if (plugin_opt_plugin (optarg))
+	    einfo(_("%P%F: bad -plugin option\n"));
+	  break;
+	case OPTION_PLUGIN_OPT:
+	  if (plugin_opt_plugin_arg (optarg))
+	    einfo(_("%P%F: bad -plugin-opt option\n"));
+	  break;
+#endif /* ENABLE_PLUGINS */
 	case 'q':
 	  link_info.emitrelocations = TRUE;
 	  break;
@@ -1120,8 +1158,11 @@ parse_args (unsigned argc, char **argv)
 	      command_line.rpath_link = buf;
 	    }
 	  break;
+	case OPTION_NO_RELAX:
+	  DISABLE_RELAXATION;
+	  break;
 	case OPTION_RELAX:
-	  command_line.relax = TRUE;
+	  ENABLE_RELAXATION;
 	  break;
 	case OPTION_RETAIN_SYMBOLS_FILE:
 	  add_keepsyms_file (optarg);
@@ -1266,7 +1307,7 @@ parse_args (unsigned argc, char **argv)
 	  config.dynamic_link = FALSE;
 	  break;
 	case 'u':
-	  ldlang_add_undef (optarg);
+	  ldlang_add_undef (optarg, TRUE);
 	  break;
 	case OPTION_UNIQUE:
 	  if (optarg != NULL)
@@ -1379,17 +1420,17 @@ parse_args (unsigned argc, char **argv)
 	case OPTION_WHOLE_ARCHIVE:
 	  whole_archive = TRUE;
 	  break;
-	case OPTION_ADD_NEEDED:
-	  add_needed = TRUE;
+	case OPTION_ADD_DT_NEEDED_FOR_DYNAMIC:
+	  add_DT_NEEDED_for_dynamic = TRUE;
 	  break;
-	case OPTION_NO_ADD_NEEDED:
-	  add_needed = FALSE;
+	case OPTION_NO_ADD_DT_NEEDED_FOR_DYNAMIC:
+	  add_DT_NEEDED_for_dynamic = FALSE;
 	  break;
-	case OPTION_AS_NEEDED:
-	  as_needed = TRUE;
+	case OPTION_ADD_DT_NEEDED_FOR_REGULAR:
+	  add_DT_NEEDED_for_regular = TRUE;
 	  break;
-	case OPTION_NO_AS_NEEDED:
-	  as_needed = FALSE;
+	case OPTION_NO_ADD_DT_NEEDED_FOR_REGULAR:
+	  add_DT_NEEDED_for_regular = FALSE;
 	  break;
 	case OPTION_WRAP:
 	  add_wrap (optarg);
@@ -1441,18 +1482,15 @@ parse_args (unsigned argc, char **argv)
 	  command_line.accept_unknown_input_arch = FALSE;
 	  break;
 	case '(':
-	  if (ingroup)
-	    einfo (_("%P%F: may not nest groups (--help for usage)\n"));
-
 	  lang_enter_group ();
-	  ingroup = 1;
+	  ingroup++;
 	  break;
 	case ')':
 	  if (! ingroup)
 	    einfo (_("%P%F: group ended before it began (--help for usage)\n"));
 
 	  lang_leave_group ();
-	  ingroup = 0;
+	  ingroup--;
 	  break;
 
 	case OPTION_INIT:
@@ -1483,8 +1521,11 @@ parse_args (unsigned argc, char **argv)
 	}
     }
 
-  if (ingroup)
-    lang_leave_group ();
+  while (ingroup)
+    {
+      lang_leave_group ();
+      ingroup--;
+    }
 
   if (default_dirlist != NULL)
     {
@@ -1499,6 +1540,12 @@ parse_args (unsigned argc, char **argv)
   if (link_info.unresolved_syms_in_shared_libs == RM_NOT_YET_SET)
     /* FIXME: Should we allow emulations a chance to set this ?  */
     link_info.unresolved_syms_in_shared_libs = how_to_report_unresolved_symbols;
+
+#ifdef ENABLE_PLUGINS
+  /* Now all the plugin arguments have been gathered, we can load them.  */
+  if (plugin_load_plugins ())
+    einfo (_("%P%F: %s: error loading plugin\n"), plugin_error_plugin ());
+#endif /* ENABLE_PLUGINS */
 }
 
 /* Add the (colon-separated) elements of DIRLIST_PTR to the
