@@ -304,12 +304,25 @@ if {$embedded_elf} {
     run_dump_test "eh-frame3"
     run_dump_test "eh-frame4"
 }
+if {$linux_gnu} {
+    set eh_frame5_test {
+	{"MIPS eh-frame 5"
+	 "-melf32btsmip -shared -Teh-frame5.ld"
+	 "-32 -EB"
+	 {eh-frame5.s}
+	 {{readelf {--relocs -wf} eh-frame5.d}}
+	 "eh-frame5.so"}
+    }
+    run_ld_link_tests $eh_frame5_test
+}
 
 run_dump_test "jaloverflow"
 run_dump_test "jaloverflow-2"
 if {$has_newabi} {
     run_dump_test "jalbal"
 }
+
+run_dump_test "mode-change-error-1"
 
 run_dump_test "mips16-hilo"
 if {$has_newabi} {
@@ -466,11 +479,6 @@ run_ld_link_tests $mips16_intermix_test
 
 run_dump_test "mips16-local-stubs-1"
 
-# The elf32btsmip target is only supported on linux and netbsd style targets.
-if {! [istarget "mips*-*-*linux"] } {
-    return
-}
-
 run_dump_test "attr-gnu-4-00"
 run_dump_test "attr-gnu-4-01"
 run_dump_test "attr-gnu-4-02"
@@ -513,4 +521,12 @@ if { $linux_gnu } {
 	  {readelf --relocs got-vers-1.rd}}
 	 "got-vers-1.so"}
     }
+}
+
+run_dump_test "undefined"
+
+# Test the conversion from jr to b
+if { $linux_gnu } {
+    run_dump_test "jr-to-b-1"
+    run_dump_test "jr-to-b-2"
 }

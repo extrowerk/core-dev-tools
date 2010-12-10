@@ -1,6 +1,6 @@
 // plugin.h -- plugin manager for gold      -*- C++ -*-
 
-// Copyright 2008, 2009 Free Software Foundation, Inc.
+// Copyright 2008, 2009, 2010 Free Software Foundation, Inc.
 // Written by Cary Coutant <ccoutant@google.com>.
 
 // This file is part of gold.
@@ -54,7 +54,8 @@ class Plugin
       args_(),
       claim_file_handler_(NULL),
       all_symbols_read_handler_(NULL),
-      cleanup_handler_(NULL)      
+      cleanup_handler_(NULL),
+      cleanup_done_(false)
   { }
 
   ~Plugin()
@@ -66,7 +67,7 @@ class Plugin
 
   // Call the claim-file handler.
   bool
-  claim_file(struct ld_plugin_input_file *plugin_input_file);
+  claim_file(struct ld_plugin_input_file* plugin_input_file);
 
   // Call the all-symbols-read handler.
   void
@@ -93,7 +94,7 @@ class Plugin
 
   // Add an argument
   void
-  add_option(const char *arg)
+  add_option(const char* arg)
   {
     this->args_.push_back(arg);
   }
@@ -112,6 +113,8 @@ class Plugin
   ld_plugin_claim_file_handler claim_file_handler_;
   ld_plugin_all_symbols_read_handler all_symbols_read_handler_;
   ld_plugin_cleanup_handler cleanup_handler_;
+  // TRUE if the cleanup handlers have been called.
+  bool cleanup_done_;
 };
 
 // A manager class for plugins.
@@ -121,10 +124,10 @@ class Plugin_manager
  public:
   Plugin_manager(const General_options& options)
     : plugins_(), objects_(), deferred_layout_objects_(), input_file_(NULL),
-      plugin_input_file_(), in_replacement_phase_(false), cleanup_done_(false),
+      plugin_input_file_(), in_replacement_phase_(false),
       options_(options), workqueue_(NULL), task_(NULL), input_objects_(NULL),
       symtab_(NULL), layout_(NULL), dirpath_(NULL), mapfile_(NULL),
-      this_blocker_(NULL)
+      this_blocker_(NULL), extra_search_path_()
   { this->current_ = plugins_.end(); }
 
   ~Plugin_manager();
@@ -148,7 +151,7 @@ class Plugin_manager
 
   // Call the plugin claim-file handlers in turn to see if any claim the file.
   Pluginobj*
-  claim_file(Input_file *input_file, off_t offset, off_t filesize);
+  claim_file(Input_file* input_file, off_t offset, off_t filesize);
 
   // Call the all-symbols-read handlers.
   void
@@ -219,7 +222,7 @@ class Plugin_manager
   // Get input file information with an open (possibly re-opened)
   // file descriptor.
   ld_plugin_status
-  get_input_file(unsigned int handle, struct ld_plugin_input_file *file);
+  get_input_file(unsigned int handle, struct ld_plugin_input_file* file);
 
   // Release an input file.
   ld_plugin_status
@@ -227,7 +230,11 @@ class Plugin_manager
 
   // Add a new input file.
   ld_plugin_status
-  add_input_file(char *pathname, bool is_lib);
+  add_input_file(const char* pathname, bool is_lib);
+
+  // Set the extra library path.
+  ld_plugin_status
+  set_extra_library_path(const char* path);
 
   // Return TRUE if we are in the replacement phase.
   bool
@@ -263,9 +270,6 @@ class Plugin_manager
   // placeholder symbols from the Pluginobj objects.
   bool in_replacement_phase_;
 
-  // TRUE if the cleanup handlers have been called.
-  bool cleanup_done_;
-
   const General_options& options_;
   Workqueue* workqueue_;
   Task* task_;
@@ -275,6 +279,10 @@ class Plugin_manager
   Dirsearch* dirpath_;
   Mapfile* mapfile_;
   Task_token* this_blocker_;
+
+  // An extra directory to seach for the libraries passed by
+  // add_input_library.
+  std::string extra_search_path_;
 };
 
 
@@ -367,6 +375,10 @@ class Sized_pluginobj : public Pluginobj
   void
   do_add_symbols(Symbol_table*, Read_symbols_data*, Layout*);
 
+  Archive::Should_include
+  do_should_include_member(Symbol_table* symtab, Layout*, Read_symbols_data*,
+                           std::string* why);
+
   // Get the size of a section.
   uint64_t
   do_section_size(unsigned int shndx);
@@ -414,6 +426,10 @@ class Sized_pluginobj : public Pluginobj
   // Get symbol counts.
   void
   do_get_global_symbol_counts(const Symbol_table*, size_t*, size_t*) const;
+
+  // Get global symbols.
+  const Symbols*
+  do_get_global_symbols() const;
 
   // Add placeholder symbols from a claimed file.
   ld_plugin_status

@@ -7,6 +7,8 @@ bignum.h
 bit_fix.h
 cgen.c
 cgen.h
+compress-debug.c
+compress-debug.h
 cond.c
 config/atof-ieee.c
 config/atof-vax.c
@@ -89,8 +91,6 @@ config/tc-m68hc11.c
 config/tc-m68hc11.h
 config/tc-m68k.c
 config/tc-m68k.h
-config/tc-maxq.c
-config/tc-maxq.h
 config/tc-mcore.c
 config/tc-mcore.h
 config/tc-mep.c
@@ -122,6 +122,8 @@ config/tc-pj.c
 config/tc-pj.h
 config/tc-ppc.c
 config/tc-ppc.h
+config/tc-rx.c
+config/tc-rx.h
 config/tc-s390.c
 config/tc-s390.h
 config/tc-score.c
@@ -140,6 +142,8 @@ config/tc-tic4x.c
 config/tc-tic4x.h
 config/tc-tic54x.c
 config/tc-tic54x.h
+config/tc-tic6x.c
+config/tc-tic6x.h
 config/tc-v850.c
 config/tc-v850.h
 config/tc-vax.c

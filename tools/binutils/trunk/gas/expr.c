@@ -45,7 +45,6 @@ static valueT generic_bignum_to_int64 (void);
 #endif
 static void integer_constant (int radix, expressionS * expressionP);
 static void mri_char_constant (expressionS *);
-static void current_location (expressionS *);
 static void clean_up_expression (expressionS * expressionP);
 static segT operand (expressionS *, enum expr_mode);
 static operatorT operatorf (int *);
@@ -695,7 +694,7 @@ mri_char_constant (expressionS *expressionP)
 /* Return an expression representing the current location.  This
    handles the magic symbol `.'.  */
 
-static void
+void
 current_location (expressionS *expressionp)
 {
   if (now_seg == absolute_section)
@@ -1057,6 +1056,15 @@ operand (expressionS *expressionP, enum expr_mode mode)
 	      {
 		for (i = 0; i < expressionP->X_add_number; ++i)
 		  generic_bignum[i] = ~generic_bignum[i];
+
+		/* Extend the bignum to at least the size of .octa.  */
+		if (expressionP->X_add_number < SIZE_OF_LARGE_NUMBER)
+		  {
+		    expressionP->X_add_number = SIZE_OF_LARGE_NUMBER;
+		    for (; i < expressionP->X_add_number; ++i)
+		      generic_bignum[i] = ~(LITTLENUM_TYPE) 0;
+		  }
+
 		if (c == '-')
 		  for (i = 0; i < expressionP->X_add_number; ++i)
 		    {
@@ -1067,14 +1075,12 @@ operand (expressionS *expressionP, enum expr_mode mode)
 	      }
 	    else if (c == '!')
 	      {
-		int nonzero = 0;
 		for (i = 0; i < expressionP->X_add_number; ++i)
-		  {
-		    if (generic_bignum[i])
-		      nonzero = 1;
-		    generic_bignum[i] = 0;
-		  }
-		generic_bignum[0] = nonzero;
+		  if (generic_bignum[i] != 0)
+		    break;
+		expressionP->X_add_number = i >= expressionP->X_add_number;
+		expressionP->X_op = O_constant;
+		expressionP->X_unsigned = 1;
 	      }
 	  }
 	else if (expressionP->X_op != O_illegal
@@ -1587,13 +1593,13 @@ operatorf (int *num_chars)
   if (is_name_beginner (c))
     {
       char *name = input_line_pointer;
-      char c = get_symbol_end ();
+      char ec = get_symbol_end ();
 
-      ret = md_operator (name, 2, &c);
+      ret = md_operator (name, 2, &ec);
       switch (ret)
 	{
 	case O_absent:
-	  *input_line_pointer = c;
+	  *input_line_pointer = ec;
 	  input_line_pointer = name;
 	  break;
 	case O_uminus:
@@ -1603,7 +1609,7 @@ operatorf (int *num_chars)
 	  ret = O_illegal;
 	  /* FALLTHROUGH */
 	default:
-	  *input_line_pointer = c;
+	  *input_line_pointer = ec;
 	  *num_chars = input_line_pointer - name;
 	  input_line_pointer = name;
 	  return ret;
@@ -1740,6 +1746,7 @@ expr (int rankarg,		/* Larger # is higher rank.  */
 
       input_line_pointer += op_chars;	/* -> after operator.  */
 
+      right.X_md = 0;
       rightseg = expr (op_rank[(int) op_left], &right, mode);
       if (right.X_op == O_absent)
 	{
@@ -1962,16 +1969,27 @@ expr (int rankarg,		/* Larger # is higher rank.  */
 
       if (retval != rightseg)
 	{
-	  if (! SEG_NORMAL (retval))
-	    {
-	      if (retval != undefined_section || SEG_NORMAL (rightseg))
-		retval = rightseg;
-	    }
-	  else if (SEG_NORMAL (rightseg)
+	  if (retval == undefined_section)
+	    ;
+	  else if (rightseg == undefined_section)
+	    retval = rightseg;
+	  else if (retval == expr_section)
+	    ;
+	  else if (rightseg == expr_section)
+	    retval = rightseg;
+	  else if (retval == reg_section)
+	    ;
+	  else if (rightseg == reg_section)
+	    retval = rightseg;
+	  else if (rightseg == absolute_section)
+	    ;
+	  else if (retval == absolute_section)
+	    retval = rightseg;
 #ifdef DIFF_EXPR_OK
-		   && op_left != O_subtract
+	  else if (op_left == O_subtract)
+	    ;
 #endif
-		   )
+	  else
 	    as_bad (_("operation combines symbols in different segments"));
 	}
 

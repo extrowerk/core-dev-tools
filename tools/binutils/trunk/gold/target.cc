@@ -21,10 +21,11 @@
 // MA 02110-1301, USA.
 
 #include "gold.h"
-#include "target.h"
-#include "dynobj.h"
-#include "output.h"
 #include "elfcpp.h"
+#include "dynobj.h"
+#include "symtab.h"
+#include "output.h"
+#include "target.h"
 
 namespace gold
 {
@@ -35,7 +36,7 @@ namespace gold
 // in _bfd_elf_is_local_label_name().
 
 bool
-Target::do_is_local_label_name (const char* name) const
+Target::do_is_local_label_name(const char* name) const
 {
   // Normal local symbols start with ``.L''.
   if (name[0] == '.' && name[1] == 'L')
@@ -142,6 +143,15 @@ Target::do_make_output_section(const char* name, elfcpp::Elf_Word type,
 			       elfcpp::Elf_Xword flags)
 {
   return new Output_section(name, type, flags);
+}
+
+// Default for whether a reloc is a call to a non-split function is
+// whether the symbol is a function.
+
+bool
+Target::do_is_call_to_non_split(const Symbol* sym, unsigned int) const
+{
+  return sym->type() == elfcpp::STT_FUNC;
 }
 
 // Default conversion for -fsplit-stack is to give an error.

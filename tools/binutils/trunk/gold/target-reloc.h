@@ -1,6 +1,6 @@
 // target-reloc.h -- target specific relocation support  -*- C++ -*-
 
-// Copyright 2006, 2007, 2008 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -43,7 +43,6 @@ template<int size, bool big_endian, typename Target_type, int sh_type,
 	 typename Scan>
 inline void
 scan_relocs(
-    const General_options& options,
     Symbol_table* symtab,
     Layout* layout,
     Target_type* target,
@@ -84,7 +83,8 @@ scan_relocs(
 	  shndx = object->adjust_sym_shndx(r_sym, shndx, &is_ordinary);
 	  if (is_ordinary
 	      && shndx != elfcpp::SHN_UNDEF
-	      && !object->is_section_included(shndx))
+	      && !object->is_section_included(shndx)
+              && !symtab->is_section_folded(object, shndx))
 	    {
 	      // RELOC is a relocation against a local symbol in a
 	      // section we are discarding.  We can ignore this
@@ -103,8 +103,7 @@ scan_relocs(
 
 	      continue;
 	    }
-
-	  scan.local(options, symtab, layout, target, object, data_shndx,
+	  scan.local(symtab, layout, target, object, data_shndx,
 		     output_section, reloc, r_type, lsym);
 	}
       else
@@ -114,7 +113,7 @@ scan_relocs(
 	  if (gsym->is_forwarder())
 	    gsym = symtab->resolve_forwards(gsym);
 
-	  scan.global(options, symtab, layout, target, object, data_shndx,
+	  scan.global(symtab, layout, target, object, data_shndx,
 		      output_section, reloc, r_type, gsym);
 	}
     }
@@ -143,6 +142,31 @@ get_comdat_behavior(const char* name)
       || strcmp(name, ".gcc_except_table") == 0)
     return CB_IGNORE;
   return CB_WARNING;
+}
+
+// Give an error for a symbol with non-default visibility which is not
+// defined locally.
+
+inline void
+visibility_error(const Symbol* sym)
+{
+  const char* v;
+  switch (sym->visibility())
+    {
+    case elfcpp::STV_INTERNAL:
+      v = _("internal");
+      break;
+    case elfcpp::STV_HIDDEN:
+      v = _("hidden");
+      break;
+    case elfcpp::STV_PROTECTED:
+      v = _("protected");
+      break;
+    default:
+      gold_unreachable();
+    }
+  gold_error(_("%s symbol '%s' is not defined locally"),
+	     v, sym->name());
 }
 
 // This function implements the generic part of relocation processing.
@@ -218,6 +242,8 @@ relocate_section(
 
       Symbol_value<size> symval;
       const Symbol_value<size> *psymval;
+      bool is_defined_in_discarded_section;
+      unsigned int shndx;
       if (r_sym < local_count
 	  && (reloc_symbol_changes == NULL
 	      || (*reloc_symbol_changes)[i] == NULL))
@@ -231,38 +257,12 @@ relocate_section(
           // counterpart in the kept section.  The symbol must not 
           // correspond to a section we are folding.
 	  bool is_ordinary;
-	  unsigned int shndx = psymval->input_shndx(&is_ordinary);
-	  if (is_ordinary
-	      && shndx != elfcpp::SHN_UNDEF
-	      && !object->is_section_included(shndx) 
-              && !(relinfo->symtab->is_section_folded(object, shndx)))
-	    {
-	      if (comdat_behavior == CB_UNDETERMINED)
-	        {
-	          std::string name = object->section_name(relinfo->data_shndx);
-	          comdat_behavior = get_comdat_behavior(name.c_str());
-	        }
-	      if (comdat_behavior == CB_PRETEND)
-	        {
-                  bool found;
-	          typename elfcpp::Elf_types<size>::Elf_Addr value =
-	            object->map_to_kept_section(shndx, &found);
-	          if (found)
-	            symval.set_output_value(value + psymval->input_value());
-                  else
-                    symval.set_output_value(0);
-	        }
-	      else
-	        {
-	          if (comdat_behavior == CB_WARNING)
-                    gold_warning_at_location(relinfo, i, offset,
-                                             _("relocation refers to discarded "
-                                               "comdat section"));
-                  symval.set_output_value(0);
-	        }
-	      symval.set_no_output_symtab_entry();
-	      psymval = &symval;
-	    }
+	  shndx = psymval->input_shndx(&is_ordinary);
+	  is_defined_in_discarded_section =
+	    (is_ordinary
+	     && shndx != elfcpp::SHN_UNDEF
+	     && !object->is_section_included(shndx)
+	     && !relinfo->symtab->is_section_folded(object, shndx));
 	}
       else
 	{
@@ -279,12 +279,56 @@ relocate_section(
 	    }
 
 	  sym = static_cast<const Sized_symbol<size>*>(gsym);
-	  if (sym->has_symtab_index())
+	  if (sym->has_symtab_index() && sym->symtab_index() != -1U)
 	    symval.set_output_symtab_index(sym->symtab_index());
 	  else
 	    symval.set_no_output_symtab_entry();
 	  symval.set_output_value(sym->value());
+	  if (gsym->type() == elfcpp::STT_TLS)
+	    symval.set_is_tls_symbol();
+	  else if (gsym->type() == elfcpp::STT_GNU_IFUNC)
+	    symval.set_is_ifunc_symbol();
 	  psymval = &symval;
+
+	  is_defined_in_discarded_section =
+	    (gsym->is_defined_in_discarded_section()
+	     && gsym->is_undefined());
+	  shndx = 0;
+	}
+
+      Symbol_value<size> symval2;
+      if (is_defined_in_discarded_section)
+	{
+	  if (comdat_behavior == CB_UNDETERMINED)
+	    {
+	      std::string name = object->section_name(relinfo->data_shndx);
+	      comdat_behavior = get_comdat_behavior(name.c_str());
+	    }
+	  if (comdat_behavior == CB_PRETEND)
+	    {
+	      // FIXME: This case does not work for global symbols.
+	      // We have no place to store the original section index.
+	      // Fortunately this does not matter for comdat sections,
+	      // only for sections explicitly discarded by a linker
+	      // script.
+	      bool found;
+	      typename elfcpp::Elf_types<size>::Elf_Addr value =
+		object->map_to_kept_section(shndx, &found);
+	      if (found)
+		symval2.set_output_value(value + psymval->input_value());
+	      else
+		symval2.set_output_value(0);
+	    }
+	  else
+	    {
+	      if (comdat_behavior == CB_WARNING)
+		gold_warning_at_location(relinfo, i, offset,
+					 _("relocation refers to discarded "
+					   "section"));
+	      symval2.set_output_value(0);
+	    }
+	  symval2.set_no_output_symtab_entry();
+	  psymval = &symval2;
 	}
 
       if (!relocate.relocate(relinfo, target, output_section, i, reloc,
@@ -301,12 +345,17 @@ relocate_section(
 	}
 
       if (sym != NULL
-	  && sym->is_undefined()
+	  && (sym->is_undefined() || sym->is_placeholder())
 	  && sym->binding() != elfcpp::STB_WEAK
+	  && !is_defined_in_discarded_section
           && !target->is_defined_by_abi(sym)
 	  && (!parameters->options().shared()       // -shared
               || parameters->options().defs()))     // -z defs
 	gold_undefined_symbol_at_location(sym, relinfo, i, offset);
+      else if (sym != NULL
+	       && sym->visibility() != elfcpp::STV_DEFAULT
+	       && (sym->is_undefined() || sym->is_from_dynobj()))
+	visibility_error(sym);
 
       if (sym != NULL && sym->has_warning())
 	relinfo->symtab->issue_warning(sym, relinfo, i, offset);
@@ -384,7 +433,6 @@ template<int size, bool big_endian, int sh_type,
 	 typename Scan_relocatable_reloc>
 void
 scan_relocatable_relocs(
-    const General_options&,
     Symbol_table*,
     Layout*,
     Sized_relobj<size, big_endian>* object,
@@ -447,6 +495,9 @@ scan_relocatable_relocs(
 		  if (strategy != Relocatable_relocs::RELOC_DISCARD)
                     object->output_section(shndx)->set_needs_symtab_index();
 		}
+
+	      if (strategy == Relocatable_relocs::RELOC_COPY)
+		object->set_must_have_output_symtab_entry(r_sym);
 	    }
 	}
 
@@ -468,7 +519,7 @@ relocate_for_relocatable(
     const Relocatable_relocs* rr,
     unsigned char* view,
     typename elfcpp::Elf_types<size>::Elf_Addr view_address,
-    section_size_type,
+    section_size_type view_size,
     unsigned char* reloc_view,
     section_size_type reloc_view_size)
 {
@@ -490,6 +541,19 @@ relocate_for_relocatable(
       if (strategy == Relocatable_relocs::RELOC_DISCARD)
 	continue;
 
+      if (strategy == Relocatable_relocs::RELOC_SPECIAL)
+	{
+	  // Target wants to handle this relocation.
+	  Sized_target<size, big_endian>* target =
+	    parameters->sized_target<size, big_endian>();
+	  target->relocate_special_relocatable(relinfo, sh_type, prelocs,
+					       i, output_section,
+					       offset_in_output_section,
+					       view, view_address,
+					       view_size, pwrite);
+	  pwrite += reloc_size;
+	  continue;
+	}
       Reltype reloc(prelocs);
       Reltype_write reloc_write(pwrite);
 
@@ -505,8 +569,13 @@ relocate_for_relocatable(
 	  switch (strategy)
 	    {
 	    case Relocatable_relocs::RELOC_COPY:
-	      new_symndx = object->symtab_index(r_sym);
-	      gold_assert(new_symndx != -1U);
+	      if (r_sym == 0)
+		new_symndx = 0;
+	      else
+		{
+		  new_symndx = object->symtab_index(r_sym);
+		  gold_assert(new_symndx != -1U);
+		}
 	      break;
 
 	    case Relocatable_relocs::RELOC_ADJUST_FOR_SECTION_RELA:

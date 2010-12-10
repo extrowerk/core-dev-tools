@@ -116,6 +116,24 @@ proc gas_run { prog as_opts redir } {
     return [list $comp_output ""]
 }
 
+proc gas_run_stdin { prog as_opts redir } {
+    global AS
+    global ASFLAGS
+    global comp_output
+    global srcdir
+    global subdir
+    global host_triplet
+
+    set status [gas_host_run "$AS $ASFLAGS $as_opts < $srcdir/$subdir/$prog" "$redir"]
+    set comp_output [lindex $status 1]
+    if { [lindex $status 0] != 0 && [regexp "2>.*" $redir] } then {
+	append comp_output "child process exited abnormally"
+    }
+    set comp_output [prune_warnings $comp_output]
+    verbose "output was $comp_output"
+    return [list $comp_output ""]
+}
+
 proc all_ones { args } {
     foreach x $args { if [expr $x!=1] { return 0 } }
     return 1
@@ -259,50 +277,55 @@ proc gas_init { args } {
     return
 }
 
-#
-# is_elf_format
-#	true if the object format is known to be ELF
+# True if the object format is known to be ELF.
 #
 proc is_elf_format {} {
-    if { ![istarget *-*-sysv4*] \
-	 && ![istarget *-*-unixware*] \
-	 && ![istarget *-*-elf*] \
-	 && ![istarget *-*-eabi*] \
-	 && ![istarget hppa*64*-*-hpux*] \
-	 && ![istarget *-*-linux*] \
-	 && ![istarget frv-*-uclinux*] \
-	 && ![istarget *-*-irix5*] \
-	 && ![istarget *-*-irix6*] \
-	 && ![istarget *-*-netbsd*] \
-	 && ![istarget *-*-openbsd*] \
+    if { ![istarget *-*-sysv4*]
+	 && ![istarget *-*-unixware*]
+	 && ![istarget *-*-elf*]
+	 && ![istarget *-*-eabi*]
+	 && ![istarget *-*-rtems*]
+	 && ![istarget hppa*64*-*-hpux*]
+	 && ![istarget ia64-*-hpux*]
+	 && ![istarget *-*-linux*]
+	 && ![istarget frv-*-uclinux*]
+	 && ![istarget bfin-*-uclinux]
+	 && ![istarget sh*-*-uclinux*]
+	 && ![istarget *-*-irix5*]
+	 && ![istarget *-*-irix6*]
+	 && ![istarget *-*-netbsd*]
+	 && ![istarget *-*-openbsd*]
 	 && ![istarget *-*-solaris2*] } {
 	return 0
     }
 
-    if { [istarget *-*-linux*aout*] \
-	 || [istarget *-*-linux*oldld*] } {
+    if { [istarget *-*-linux*aout*]
+	 || [istarget *-*-linux*oldld*]
+	 || [istarget h8500-*-rtems*]
+	 || [istarget i960-*-rtems*]
+	 || [istarget *-*-rtemscoff*] } {
 	return 0
     }
 
-    if { ![istarget *-*-netbsdelf*] \
-	 && ([istarget *-*-netbsd*aout*] \
-	     || [istarget *-*-netbsdpe*] \
-	     || [istarget arm*-*-netbsd*] \
-	     || [istarget sparc-*-netbsd*] \
-	     || [istarget i*86-*-netbsd*] \
-	     || [istarget m68*-*-netbsd*] \
-	     || [istarget vax-*-netbsd*] \
+    if { ![istarget *-*-netbsdelf*]
+	 && ([istarget *-*-netbsd*aout*]
+	     || [istarget *-*-netbsdpe*]
+	     || [istarget arm*-*-netbsd*]
+	     || [istarget sparc-*-netbsd*]
+	     || [istarget i*86-*-netbsd*]
+	     || [istarget m68*-*-netbsd*]
+	     || [istarget vax-*-netbsd*]
 	     || [istarget ns32k-*-netbsd*]) } {
     	return 0
     }
 
-    if { [istarget arm-*-openbsd*] \
-	 || [istarget i386-*-openbsd\[0-2\].*] \
-	 || [istarget i386-*-openbsd3.\[0-3\]] \
-	 || [istarget m68*-*-openbsd*] \
-	 || [istarget ns32k-*-openbsd*] \
-	 || [istarget sparc-*-openbsd\[0-2\].*] \
-	 || [istarget sparc-*-openbsd3.\[0-1\]] \
+    if { [istarget arm-*-openbsd*]
+	 || [istarget i386-*-openbsd\[0-2\].*]
+	 || [istarget i386-*-openbsd3.\[0-2\]]
+	 || [istarget m68*-*-openbsd*]
+	 || [istarget ns32k-*-openbsd*]
+	 || [istarget sparc-*-openbsd\[0-2\].*]
+	 || [istarget sparc-*-openbsd3.\[0-1\]]
 	 || [istarget vax-*-openbsd*] } {
 	return 0
     }
@@ -310,16 +333,63 @@ proc is_elf_format {} {
     return 1
 }
 
+# True if the object format is known to be a.out.
+#
+proc is_aout_format {} {
+    if { [istarget *-*-netbsdelf]
+	 || [istarget sparc64-*-netbsd*]
+	 || [istarget sparc64-*-openbsd*] } {
+	return 0
+    }
+    if { [istarget *-*-*\[ab\]out*]
+	 || [istarget *-*-linux*oldld*]
+	 || [istarget *-*-bsd*]
+	 || [istarget *-*-msdos*]
+	 || [istarget arm-*-netbsd*]
+	 || [istarget arm-*-openbsd*]
+	 || [istarget arm-*-riscix*]
+	 || [istarget i?86-*-freebsd\[12\]*]
+	 || [istarget i?86-*-netbsd*]
+	 || [istarget i?86-*-openbsd\[0-2\]*]
+	 || [istarget i?86-*-openbsd3.\[0-2\]*]
+	 || [istarget i?86-*-vsta]
+	 || [istarget i?86-*-mach*]
+	 || [istarget m68*-*-netbsd*]
+	 || [istarget m68*-*-openbsd*]
+	 || [istarget ns32k-*-*]
+	 || [istarget pdp11-*-*]
+	 || [istarget sparc*-*-sunos4*]
+	 || [istarget sparc*-*-netbsd*]
+	 || [istarget sparc*-*-openbsd\[0-2\]*]
+	 || [istarget sparc*-*-openbsd3.\[0-1\]*]
+	 || [istarget sparc*-fujitsu-none]
+	 || [istarget vax-dec-ultrix*]
+	 || [istarget vax-*-netbsd] } {
+	return 1
+    }
+    return 0
+}
+
 # True if the object format is known to be PE COFF.
 #
 proc is_pecoff_format {} {
-    if { ![istarget *-*-mingw*] \
-	 && ![istarget *-*-cygwin*] \
+    if { ![istarget *-*-mingw*]
+	 && ![istarget *-*-cygwin*]
+	 && ![istarget *-*-cegcc*]
 	 && ![istarget *-*-pe*] } {
 	return 0
     }
 
     return 1
+}
+
+# Internal procedure: return the names of the standard sections
+#
+proc get_standard_section_names {} {
+    if [istarget "rx-*-*"] {
+        return { "P" "D_1" "B_1" }
+    }
+    return
 }
 
 # run_dump_tests TESTCASES EXTRA_OPTIONS
@@ -383,6 +453,7 @@ proc run_dump_tests { testcases {extra_options {}} } {
 #   as: FLAGS
 #	When assembling FILE.s, pass FLAGS to the assembler.
 #
+#   addr2line: FLAGS
 #   nm: FLAGS
 #   objcopy: FLAGS
 #   objdump: FLAGS
@@ -391,12 +462,22 @@ proc run_dump_tests { testcases {extra_options {}} } {
 #	FLAGS, in addition to the .o file name.  Note that they are run
 #	with LC_ALL=C in the environment to give consistent sorting
 #	of symbols.  If no FLAGS are needed then use:
-#        PROG: [nm objcopy objdump readelf]
+#        PROG: [nm objcopy objdump readelf addr2line]
 #       instead.
+#	Note: for objdump, we automatically replaces the standard section
+#	names (.text, .data and .bss) by target ones if any (eg. rx-elf
+#	uses "P" instead of .text).  The substition is done for both
+#	the objdump options (eg: "-j .text" is replaced by "-j P") and the
+#	reference file.
 #
 #   source: SOURCE
 #	Assemble the file SOURCE.s.  If omitted, this defaults to FILE.s.
 #       This is useful if several .d files want to share a .s file.
+#
+#   dump: DUMP
+#	Match against DUMP.d.  If omitted, this defaults to FILE.d.  This
+#	is useful if several .d files differ by options only.  Options are
+#	always read from FILE.d.
 #
 #   target: GLOBS...
 #       Run this test only on a specified list of targets.  More precisely,
@@ -438,6 +519,9 @@ proc run_dump_tests { testcases {extra_options {}} } {
 #       is expected to exit unsuccessfully (therefore PROG, objdump, nm,
 #       and objcopy have no meaning and should not be supplied).
 #
+#   section-subst: no
+#       Means that the section substitution for objdump is disabled.
+#
 # Each option may occur at most once.
 #
 # After the option lines come regexp lines.  `run_dump_test' calls
@@ -449,6 +533,7 @@ proc run_dump_test { name {extra_options {}} } {
     global subdir srcdir
     global OBJDUMP NM AS OBJCOPY READELF
     global OBJDUMPFLAGS NMFLAGS ASFLAGS OBJCOPYFLAGS READELFFLAGS
+    global ADDR2LINE ADDR2LINEFLAGS
     global host_triplet
     global env
 
@@ -464,6 +549,7 @@ proc run_dump_test { name {extra_options {}} } {
 	unresolved $subdir/$name
 	return
     }
+    set opts(addr2line) {}
     set opts(as) {}
     set opts(objdump) {}
     set opts(nm) {}
@@ -472,6 +558,7 @@ proc run_dump_test { name {extra_options {}} } {
     set opts(name) {}
     set opts(PROG) {}
     set opts(source) {}
+    set opts(dump) {}
     set opts(stderr) {}
     set opts(error) {}
     set opts(error-output) {}
@@ -480,6 +567,7 @@ proc run_dump_test { name {extra_options {}} } {
     set opts(not-target) {}
     set opts(skip) {}
     set opts(not-skip) {}
+    set opts(section-subst) {}
 
     foreach i $opt_array {
 	set opt_name [lindex $i 0]
@@ -542,6 +630,7 @@ proc run_dump_test { name {extra_options {}} } {
     if { $opts(error) == "" && $opts(error-output) == "" } {
 	if {$opts(PROG) != ""} {
 	    switch -- $opts(PROG) {
+		addr2line { set program addr2line }
 		objdump	{ set program objdump }
 		nm	{ set program nm }
 		objcopy	{ set program objcopy }
@@ -553,7 +642,7 @@ proc run_dump_test { name {extra_options {}} } {
 	    }
 	} else {
 	    # Guess which program to run, by seeing which option was specified.
-	    foreach p {objdump objcopy nm readelf} {
+	    foreach p {objdump objcopy nm readelf addr2line} {
 		if {$opts($p) != ""} {
 		    if {$program != ""} {
 			perror "ambiguous dump program in $file.d"
@@ -629,6 +718,12 @@ proc run_dump_test { name {extra_options {}} } {
 	set sourcefile $srcdir/$subdir/$opts(source)
     }
 
+    if { $opts(dump) == "" } {
+	set dumpfile ${file}.d
+    } else {
+	set dumpfile $srcdir/$subdir/$opts(dump)
+    }
+
     set cmd "$AS $ASFLAGS $opts(as) -o dump.o $sourcefile"
     send_log "$cmd\n"
     set status [gas_host_run $cmd ""]
@@ -683,7 +778,7 @@ proc run_dump_test { name {extra_options {}} } {
 	    }
 	    set stderrfile $srcdir/$subdir/$opts(stderr)
 	    verbose "wrote pruned stderr to dump.stderr" 3
-	    if { [regexp_diff "dump.stderr" "$stderrfile"] } then {
+	    if { [regexp_diff "dump.stderr" "$stderrfile" ""] } then {
 		if { $opts(error) != "" } {
 		    verbose -log "$exitstat with: <$comp_output>, expected: <$opts(error)>"
 		    if [regexp $opts(error) $comp_output] {
@@ -715,6 +810,15 @@ proc run_dump_test { name {extra_options {}} } {
     if { ![is_remote host] && [which $binary] == 0 } {
 	untested $testname
 	return
+    }
+
+    # For objdump, automatically translate standard section names to the targets one,
+    # if they are different.
+    set sect_names [get_standard_section_names]
+    if { $sect_names != "" && $program == "objdump" && $opts(section-subst) == ""} {
+        regsub -- "-j \\.text" $progopts1 "-j [lindex $sect_names 0]" progopts1
+        regsub -- "-j \\.data" $progopts1 "-j [lindex $sect_names 1]" progopts1
+        regsub -- "-j \\.bss"  $progopts1 "-j [lindex $sect_names 2]" progopts1
     }
 
     if { $progopts1 == "" } { set $progopts1 "-r" }
@@ -749,8 +853,18 @@ proc run_dump_test { name {extra_options {}} } {
 	return
     }
 
+    # Create the substition list only for objdump reference.
+    if { $sect_names != "" && $program == "objdump" } {
+        # Some testcases use ".text" while others use "\.text".
+        set regexp_subst [list "\\\\?\\.text" [lindex $sect_names 0] \
+                           "\\\\?\\.data" [lindex $sect_names 1] \
+                          "\\\\?\\.bss" [lindex $sect_names 2] ]
+    } else {
+        set regexp_subst ""
+    }
+
     verbose_eval {[file_contents "dump.out"]} 3
-    if { [regexp_diff "dump.out" "${file}.d"] } then {
+    if { [regexp_diff "dump.out" "${dumpfile}" $regexp_subst] } then {
 	fail $testname
 	verbose "output is [file_contents "dump.out"]" 2
 	return
@@ -771,7 +885,7 @@ proc slurp_options { file } {
     set nws {[^ 	]*}
     # whitespace is ignored anywhere except within the options list;
     # option names are alphabetic plus dash
-    set pat "^#${ws}(\[a-zA-Z-\]*)$ws:${ws}(.*)$ws\$"
+    set pat "^#${ws}(\[a-zA-Z0-9-\]*)$ws:${ws}(.*)$ws\$"
     while { [gets $f line] != -1 } {
 	set line [string trim $line]
 	# Whitespace here is space-tab.
@@ -824,13 +938,14 @@ expect_after -i {
     eof				{ perror "eof" }
 }
 
-# regexp_diff, based on simple_diff taken from ld test suite
-#	compares two files line-by-line
-#	file1 contains strings, file2 contains regexps and #-comments
-#	blank lines are ignored in either file
-#	returns non-zero if differences exist
+# regexp_diff, based on simple_diff taken from ld test suite.
+#	Compares two files line-by-line.
+#	FILE_1 contains strings, FILE_2 contains regexps and #-comments
+#	Blank lines are ignored in either file.
+#	Subsitutions in REF_SUBST are applied on FILE_2 lines.
+#	Returns non-zero if differences exist.
 #
-proc regexp_diff { file_1 file_2 } {
+proc regexp_diff { file_1 file_2 ref_subst} {
 
     set eof -1
     set end_1 0
@@ -859,6 +974,7 @@ proc regexp_diff { file_1 file_2 } {
 	set line_a ""
 	set line_b ""
 	while { [string length $line_a] == 0 } {
+            # Ignore blank line in FILE_1.
 	    if { [gets $file_a line_a] == $eof } {
 		set end_1 1
 		break
@@ -875,6 +991,10 @@ proc regexp_diff { file_1 file_2 } {
 		    set diff_pass 1
 		    break
 		}
+                # Substitute on the reference.
+                foreach {name value} $ref_subst {
+                    regsub -- $name $line_b $value line_b
+                }
 		verbose "looking for \"^$line_b$\"" 3
 		while { ![regexp "^$line_b$" "$line_a"] } {
 		    verbose "skipping    \"$line_a\"" 3
@@ -906,6 +1026,10 @@ proc regexp_diff { file_1 file_2 } {
             set differences 1
             break
         } else {
+            # Substitute on the reference.
+            foreach {name value} $ref_subst {
+                regsub -- $name $line_b $value line_b
+            }
             verbose "regexp \"^$line_b$\"\nline   \"$line_a\"" 3
             if ![regexp "^$line_b$" "$line_a"] {
 		send_log "regexp_diff match failure\n"
@@ -983,7 +1107,26 @@ proc run_list_test { name {opts {}} {testname {}} } {
     }
     set file $srcdir/$subdir/$name
     gas_run ${name}.s $opts ">&dump.out"
-    if { [regexp_diff "dump.out" "${file}.l"] } then {
+    if { [regexp_diff "dump.out" "${file}.l" ""] } then {
+	fail $testname
+	verbose "output is [file_contents "dump.out"]" 2
+	return
+    }
+    pass $testname
+}
+
+# run_list_test_stdin NAME (optional): OPTS TESTNAME
+#
+# Similar to run_list_test, but use stdin as input.
+
+proc run_list_test_stdin { name {opts {}} {testname {}} } {
+    global srcdir subdir
+    if { [string length $testname] == 0 } then {
+	set testname "[file tail $subdir] $name"
+    }
+    set file $srcdir/$subdir/$name
+    gas_run_stdin ${name}.s $opts ">&dump.out"
+    if { [regexp_diff "dump.out" "${file}.l" ""] } then {
 	fail $testname
 	verbose "output is [file_contents "dump.out"]" 2
 	return

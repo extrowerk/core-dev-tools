@@ -1,6 +1,6 @@
 /* tc-s390.c -- Assemble for the S390
    Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
-   2009  Free Software Foundation, Inc.
+   2009, 2010  Free Software Foundation, Inc.
    Contributed by Martin Schwidefsky (schwidefsky@de.ibm.com).
 
    This file is part of GAS, the GNU Assembler.
@@ -399,6 +399,8 @@ md_parse_option (int c, char *arg)
 	    current_cpu = S390_OPCODE_Z9_EC;
 	  else if (strcmp (arg + 5, "z10") == 0)
 	    current_cpu = S390_OPCODE_Z10;
+	  else if (strcmp (arg + 5, "z196") == 0)
+	    current_cpu = S390_OPCODE_Z196;
 	  else
 	    {
 	      as_bad (_("invalid switch -m%s"), arg);
@@ -504,13 +506,18 @@ md_begin (void)
 	    break;
 	  op++;
         }
-      retval = hash_insert (s390_opcode_hash, op->name, (void *) op);
-      if (retval != (const char *) NULL)
-        {
-          as_bad (_("Internal assembler error for instruction %s"),
-		  op->name);
-	  dup_insn = TRUE;
+
+      if (op->min_cpu <= current_cpu && (op->modes & current_mode_mask))
+	{
+	  retval = hash_insert (s390_opcode_hash, op->name, (void *) op);
+	  if (retval != (const char *) NULL)
+	    {
+	      as_bad (_("Internal assembler error for instruction %s"),
+		      op->name);
+	      dup_insn = TRUE;
+	    }
 	}
+
       while (op < op_end - 1 && strcmp (op->name, op[1].name) == 0)
 	op++;
       }
@@ -1145,14 +1152,12 @@ md_gather_operands (char *str,
   elf_suffix_type suffix;
   bfd_reloc_code_real_type reloc;
   int skip_optional;
-  int parentheses;
   char *f;
   int fc, i;
 
   while (ISSPACE (*str))
     str++;
 
-  parentheses = 0;
   skip_optional = 0;
 
   /* Gather the operands.  */
@@ -2264,4 +2269,11 @@ tc_s390_regname_to_dw2regnum (char *regname)
   else if (strcmp (regname, "cc") == 0)
     regnum = 33;
   return regnum;
+}
+
+void
+s390_elf_final_processing (void)
+{
+  if (s390_arch_size == 32 && (current_mode_mask & (1 << S390_OPCODE_ZARCH)))
+    elf_elfheader (stdoutput)->e_flags |= EF_S390_HIGH_GPRS;
 }

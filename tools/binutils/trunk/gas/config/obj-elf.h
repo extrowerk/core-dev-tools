@@ -164,6 +164,7 @@ extern void elf_file_symbol (const char *, int);
 extern void obj_elf_section_change_hook (void);
 
 extern void obj_elf_section (int);
+extern char * obj_elf_section_name (void);
 extern void obj_elf_previous (int);
 extern void obj_elf_version (int);
 extern void obj_elf_common (int);
@@ -194,6 +195,11 @@ void elf_copy_symbol_attributes (symbolS *, symbolS *);
 #ifndef OBJ_COPY_SYMBOL_ATTRIBUTES
 #define OBJ_COPY_SYMBOL_ATTRIBUTES(DEST, SRC) \
   (elf_copy_symbol_attributes (DEST, SRC))
+#endif
+
+void elf_adjust_symtab (void);
+#ifndef obj_adjust_symtab
+#define obj_adjust_symtab	elf_adjust_symtab
 #endif
 
 #ifndef SEPARATE_STAB_SECTIONS

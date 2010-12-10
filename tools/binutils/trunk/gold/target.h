@@ -1,6 +1,6 @@
 // target.h -- target support for gold   -*- C++ -*-
 
-// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -41,7 +41,6 @@
 namespace gold
 {
 
-class General_options;
 class Object;
 class Relobj;
 template<int size, bool big_endian>
@@ -54,7 +53,9 @@ class Symbol;
 template<int size>
 class Sized_symbol;
 class Symbol_table;
+class Output_data;
 class Output_section;
+class Input_objects;
 
 // The abstract class for target specific handling.
 
@@ -63,6 +64,34 @@ class Target
  public:
   virtual ~Target()
   { }
+
+  // Virtual function which is set to return true by a target if
+  // it can use relocation types to determine if a function's
+  // pointer is taken.
+  virtual bool
+  can_check_for_function_pointers() const
+  { return false; }
+
+  // This function is used in ICF (icf.cc).  This is set to true by
+  // the target if a relocation to a merged section can be processed
+  // to retrieve the contents of the merged section.
+  virtual bool
+  can_icf_inline_merge_sections () const
+  { return false; }
+
+  // Whether a section called SECTION_NAME may have function pointers to
+  // sections not eligible for safe ICF folding.
+  virtual bool
+  section_may_have_icf_unsafe_pointers(const char* section_name) const
+  {
+    // We recognize sections for normal vtables, construction vtables and
+    // EH frames.
+    return (!is_prefix_of(".rodata._ZTV", section_name)
+	    && !is_prefix_of(".data.rel.ro._ZTV", section_name)
+	    && !is_prefix_of(".rodata._ZTC", section_name)
+	    && !is_prefix_of(".data.rel.ro._ZTC", section_name)
+	    && !is_prefix_of(".eh_frame", section_name));
+  }
 
   // Return the bit size that this target implements.  This should
   // return 32 or 64.
@@ -79,6 +108,16 @@ class Target
   elfcpp::EM
   machine_code() const
   { return this->pti_->machine_code; }
+
+  // Processor specific flags to store in e_flags field of ELF header.
+  elfcpp::Elf_Word
+  processor_specific_flags() const
+  { return this->processor_specific_flags_; }
+
+  // Whether processor specific flags are set at least once.
+  bool
+  are_processor_specific_flags_set() const
+  { return this->are_processor_specific_flags_set_; }
 
   // Whether this target has a specific make_symbol function.
   bool
@@ -184,8 +223,9 @@ class Target
   // This is called to tell the target to complete any sections it is
   // handling.  After this all sections must have their final size.
   void
-  finalize_sections(Layout* layout)
-  { return this->do_finalize_sections(layout); }
+  finalize_sections(Layout* layout, const Input_objects* input_objects,
+		    Symbol_table* symtab)
+  { return this->do_finalize_sections(layout, input_objects, symtab); }
 
   // Return the value to use for a global symbol which needs a special
   // value in the dynamic symbol table.  This will only be called if
@@ -218,6 +258,36 @@ class Target
   bool
   is_local_label_name(const char* name) const
   { return this->do_is_local_label_name(name); }
+
+  // Get the symbol index to use for a target specific reloc.
+  unsigned int
+  reloc_symbol_index(void* arg, unsigned int type) const
+  { return this->do_reloc_symbol_index(arg, type); }
+
+  // Get the addend to use for a target specific reloc.
+  uint64_t
+  reloc_addend(void* arg, unsigned int type, uint64_t addend) const
+  { return this->do_reloc_addend(arg, type, addend); }
+
+  // Return the PLT section to use for a global symbol.  This is used
+  // for STT_GNU_IFUNC symbols.
+  Output_data*
+  plt_section_for_global(const Symbol* sym) const
+  { return this->do_plt_section_for_global(sym); }
+
+  // Return the PLT section to use for a local symbol.  This is used
+  // for STT_GNU_IFUNC symbols.
+  Output_data*
+  plt_section_for_local(const Relobj* object, unsigned int symndx) const
+  { return this->do_plt_section_for_local(object, symndx); }
+
+  // Return true if a reference to SYM from a reloc of type R_TYPE
+  // means that the current function may call an object compiled
+  // without -fsplit-stack.  SYM is known to be defined in an object
+  // compiled without -fsplit-stack.
+  bool
+  is_call_to_non_split(const Symbol* sym, unsigned int r_type) const
+  { return this->do_is_call_to_non_split(sym, r_type); }
 
   // A function starts at OFFSET in section SHNDX in OBJECT.  That
   // function was compiled with -fsplit-stack, but it refers to a
@@ -271,6 +341,45 @@ class Target
     return this->do_relax(pass, input_objects, symtab, layout);
   } 
 
+  // Return the target-specific name of attributes section.  This is
+  // NULL if a target does not use attributes section or if it uses
+  // the default section name ".gnu.attributes".
+  const char*
+  attributes_section() const
+  { return this->pti_->attributes_section; }
+
+  // Return the vendor name of vendor attributes.
+  const char*
+  attributes_vendor() const
+  { return this->pti_->attributes_vendor; }
+
+  // Whether a section called NAME is an attribute section.
+  bool
+  is_attributes_section(const char* name) const
+  {
+    return ((this->pti_->attributes_section != NULL
+	     && strcmp(name, this->pti_->attributes_section) == 0)
+	    || strcmp(name, ".gnu.attributes") == 0); 
+  }
+
+  // Return a bit mask of argument types for attribute with TAG.
+  int
+  attribute_arg_type(int tag) const
+  { return this->do_attribute_arg_type(tag); }
+
+  // Return the attribute tag of the position NUM in the list of fixed
+  // attributes.  Normally there is no reordering and
+  // attributes_order(NUM) == NUM.
+  int
+  attributes_order(int num) const
+  { return this->do_attributes_order(num); }
+
+  // When a target is selected as the default target, we call this method,
+  // which may be used for expensive, target-specific initialization.
+  void
+  select_as_default_target()
+  { this->do_select_as_default_target(); } 
+
  protected:
   // This struct holds the constant information for a child class.  We
   // use a struct to avoid the overhead of virtual function calls for
@@ -312,10 +421,15 @@ class Target
     elfcpp::Elf_Xword small_common_section_flags;
     // Section flags for large common section.
     elfcpp::Elf_Xword large_common_section_flags;
+    // Name of attributes section if it is not ".gnu.attributes".
+    const char* attributes_section;
+    // Vendor name of vendor attributes.
+    const char* attributes_vendor;
   };
 
   Target(const Target_info* pti)
-    : pti_(pti)
+    : pti_(pti), processor_specific_flags_(0),
+      are_processor_specific_flags_set_(false)
   { }
 
   // Virtual function which may be implemented by the child class.
@@ -325,7 +439,7 @@ class Target
 
   // Virtual function which may be implemented by the child class.
   virtual void
-  do_finalize_sections(Layout*)
+  do_finalize_sections(Layout*, const Input_objects*, Symbol_table*)
   { }
 
   // Virtual function which may be implemented by the child class.
@@ -356,6 +470,34 @@ class Target
   virtual bool
   do_is_local_label_name(const char*) const;
 
+  // Virtual function that must be overridden by a target which uses
+  // target specific relocations.
+  virtual unsigned int
+  do_reloc_symbol_index(void*, unsigned int) const
+  { gold_unreachable(); }
+
+  // Virtual function that must be overidden by a target which uses
+  // target specific relocations.
+  virtual uint64_t
+  do_reloc_addend(void*, unsigned int, uint64_t) const
+  { gold_unreachable(); }
+
+  // Virtual functions that must be overridden by a target that uses
+  // STT_GNU_IFUNC symbols.
+  virtual Output_data*
+  do_plt_section_for_global(const Symbol*) const
+  { gold_unreachable(); }
+
+  virtual Output_data*
+  do_plt_section_for_local(const Relobj*, unsigned int) const
+  { gold_unreachable(); }
+
+  // Virtual function which may be overridden by the child class.  The
+  // default implementation is that any function not defined by the
+  // ABI is a call to a non-split function.
+  virtual bool
+  do_is_call_to_non_split(const Symbol* sym, unsigned int) const;
+
   // Virtual function which may be overridden by the child class.
   virtual void
   do_calls_non_split(Relobj* object, unsigned int, section_offset_type,
@@ -363,8 +505,16 @@ class Target
 		     std::string*, std::string*) const;
 
   // make_elf_object hooks.  There are four versions of these for
-  // different address sizes and endianities.
+  // different address sizes and endianness.
 
+  // Set processor specific flags.
+  void
+  set_processor_specific_flags(elfcpp::Elf_Word flags)
+  {
+    this->processor_specific_flags_ = flags;
+    this->are_processor_specific_flags_set_ = true;
+  }
+  
 #ifdef HAVE_TARGET_32_LITTLE
   // Virtual functions which may be overriden by the child class.
   virtual Object*
@@ -420,9 +570,25 @@ class Target
   set_view_to_nop(unsigned char* view, section_size_type view_size,
 		  section_offset_type offset, size_t len) const;
 
+  // This must be overriden by the child class if it has target-specific
+  // attributes subsection in the attribute section. 
+  virtual int
+  do_attribute_arg_type(int) const
+  { gold_unreachable(); }
+
+  // This may be overridden by the child class.
+  virtual int
+  do_attributes_order(int num) const
+  { return num; }
+
+  // This may be overridden by the child class.
+  virtual void
+  do_select_as_default_target()
+  { }
+
  private:
   // The implementations of the four do_make_elf_object virtual functions are
-  // almost identical except for their sizes and endianity.  We use a template.
+  // almost identical except for their sizes and endianness.  We use a template.
   // for their implementations.
   template<int size, bool big_endian>
   inline Object*
@@ -434,6 +600,10 @@ class Target
 
   // The target information.
   const Target_info* pti_;
+  // Processor-specific flags.
+  elfcpp::Elf_Word processor_specific_flags_;
+  // Whether the processor-specific flags are set at least once.
+  bool are_processor_specific_flags_set_;
 };
 
 // The abstract class for a specific size and endianness of target.
@@ -467,34 +637,32 @@ class Sized_target : public Target
   // used to determine unreferenced garbage sections. This procedure is
   // only called during garbage collection.
   virtual void
-  gc_process_relocs(const General_options& options,
-	      Symbol_table* symtab,
-	      Layout* layout,
-	      Sized_relobj<size, big_endian>* object,
-	      unsigned int data_shndx,
-	      unsigned int sh_type,
-	      const unsigned char* prelocs,
-	      size_t reloc_count,
-	      Output_section* output_section,
-	      bool needs_special_offset_handling,
-	      size_t local_symbol_count,
-	      const unsigned char* plocal_symbols) = 0;
+  gc_process_relocs(Symbol_table* symtab,
+		    Layout* layout,
+		    Sized_relobj<size, big_endian>* object,
+		    unsigned int data_shndx,
+		    unsigned int sh_type,
+		    const unsigned char* prelocs,
+		    size_t reloc_count,
+		    Output_section* output_section,
+		    bool needs_special_offset_handling,
+		    size_t local_symbol_count,
+		    const unsigned char* plocal_symbols) = 0;
 
   // Scan the relocs for a section, and record any information
-  // required for the symbol.  OPTIONS is the command line options.
-  // SYMTAB is the symbol table.  OBJECT is the object in which the
-  // section appears.  DATA_SHNDX is the section index that these
-  // relocs apply to.  SH_TYPE is the type of the relocation section,
-  // SHT_REL or SHT_RELA.  PRELOCS points to the relocation data.
-  // RELOC_COUNT is the number of relocs.  LOCAL_SYMBOL_COUNT is the
-  // number of local symbols.  OUTPUT_SECTION is the output section.
+  // required for the symbol.  SYMTAB is the symbol table.  OBJECT is
+  // the object in which the section appears.  DATA_SHNDX is the
+  // section index that these relocs apply to.  SH_TYPE is the type of
+  // the relocation section, SHT_REL or SHT_RELA.  PRELOCS points to
+  // the relocation data.  RELOC_COUNT is the number of relocs.
+  // LOCAL_SYMBOL_COUNT is the number of local symbols.
+  // OUTPUT_SECTION is the output section.
   // NEEDS_SPECIAL_OFFSET_HANDLING is true if offsets to the output
   // sections are not mapped as usual.  PLOCAL_SYMBOLS points to the
   // local symbol data from OBJECT.  GLOBAL_SYMBOLS is the array of
   // pointers to the global symbol table from OBJECT.
   virtual void
-  scan_relocs(const General_options& options,
-	      Symbol_table* symtab,
+  scan_relocs(Symbol_table* symtab,
 	      Layout* layout,
 	      Sized_relobj<size, big_endian>* object,
 	      unsigned int data_shndx,
@@ -533,8 +701,7 @@ class Sized_target : public Target
   // like scan_relocs, with an additional Relocatable_relocs
   // parameter, used to record the disposition of the relocs.
   virtual void
-  scan_relocatable_relocs(const General_options& options,
-			  Symbol_table* symtab,
+  scan_relocatable_relocs(Symbol_table* symtab,
 			  Layout* layout,
 			  Sized_relobj<size, big_endian>* object,
 			  unsigned int data_shndx,
@@ -564,6 +731,68 @@ class Sized_target : public Target
 			   section_size_type view_size,
 			   unsigned char* reloc_view,
 			   section_size_type reloc_view_size) = 0;
+ 
+  // Perform target-specific processing in a relocatable link.  This is
+  // only used if we use the relocation strategy RELOC_SPECIAL.
+  // RELINFO points to a Relocation_info structure. SH_TYPE is the relocation
+  // section type. PRELOC_IN points to the original relocation.  RELNUM is
+  // the index number of the relocation in the relocation section.
+  // OUTPUT_SECTION is the output section to which the relocation is applied.
+  // OFFSET_IN_OUTPUT_SECTION is the offset of the relocation input section
+  // within the output section.  VIEW points to the output view of the
+  // output section.  VIEW_ADDRESS is output address of the view.  VIEW_SIZE
+  // is the size of the output view and PRELOC_OUT points to the new
+  // relocation in the output object.
+  //
+  // A target only needs to override this if the generic code in
+  // target-reloc.h cannot handle some relocation types.
+
+  virtual void
+  relocate_special_relocatable(const Relocate_info<size, big_endian>*
+				/*relinfo */,
+			       unsigned int /* sh_type */,
+			       const unsigned char* /* preloc_in */,
+			       size_t /* relnum */,
+			       Output_section* /* output_section */,
+			       off_t /* offset_in_output_section */,
+			       unsigned char* /* view */,
+			       typename elfcpp::Elf_types<size>::Elf_Addr
+				 /* view_address */,
+			       section_size_type /* view_size */,
+			       unsigned char* /* preloc_out*/)
+  { gold_unreachable(); }
+ 
+  // Return the number of entries in the GOT.  This is only used for
+  // laying out the incremental link info sections.  A target needs
+  // to implement this to support incremental linking.
+
+  virtual unsigned int
+  got_entry_count() const
+  { gold_unreachable(); }
+
+  // Return the number of entries in the PLT.  This is only used for
+  // laying out the incremental link info sections.  A target needs
+  // to implement this to support incremental linking.
+
+  virtual unsigned int
+  plt_entry_count() const
+  { gold_unreachable(); }
+
+  // Return the offset of the first non-reserved PLT entry.  This is
+  // only used for laying out the incremental link info sections.
+  // A target needs to implement this to support incremental linking.
+
+  virtual unsigned int
+  first_plt_entry_offset() const
+  { gold_unreachable(); }
+
+  // Return the size of each PLT entry.  This is only used for
+  // laying out the incremental link info sections.  A target needs
+  // to implement this to support incremental linking.
+
+  virtual unsigned int
+  plt_entry_size() const
+  { gold_unreachable(); }
 
  protected:
   Sized_target(const Target::Target_info* pti)

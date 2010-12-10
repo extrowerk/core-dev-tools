@@ -28,6 +28,8 @@ vmxoff
 getsec
 # Xsave
 xgetbv
+# Xsaveopt
+xsaveopt (%ecx)
 # AES
 aesenc  (%ecx),%xmm0
 # PCLMUL
@@ -56,3 +58,5 @@ vmload
 lzcnt %ecx,%ebx
 # PadLock
 xstorerng
+# nop
+nopl (%eax)

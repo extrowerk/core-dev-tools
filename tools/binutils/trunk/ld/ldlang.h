@@ -1,6 +1,6 @@
 /* ldlang.h - linker command language support
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
    Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
@@ -270,18 +270,26 @@ typedef struct lang_input_statement_struct
 
   /* Whether DT_NEEDED tags should be added for dynamic libraries in
      DT_NEEDED tags from this entry.  */
-  unsigned int add_needed : 1;
+  unsigned int add_DT_NEEDED_for_dynamic : 1;
 
   /* Whether this entry should cause a DT_NEEDED tag only when
      satisfying references from regular files, or always.  */
-  unsigned int as_needed : 1;
+  unsigned int add_DT_NEEDED_for_regular : 1;
 
   /* Whether to include the entire contents of an archive.  */
   unsigned int whole_archive : 1;
 
+  /* Set when bfd opening is successful.  */
   unsigned int loaded : 1;
 
   unsigned int real : 1;
+
+  /* Set if the file does not exist.  */
+  unsigned int missing_file : 1;
+
+  /* Set if the file was claimed by a plugin.  */
+  unsigned int claimed : 1;
+
 } lang_input_statement_type;
 
 typedef struct
@@ -462,6 +470,7 @@ extern lang_statement_list_type file_chain;
 extern lang_statement_list_type input_file_chain;
 
 extern int lang_statement_iteration;
+extern bfd_boolean missing_file;
 
 extern void lang_init
   (void);
@@ -559,7 +568,7 @@ extern lang_output_section_statement_type *lang_output_section_statement_lookup
 extern lang_output_section_statement_type *next_matching_output_section_statement
   (lang_output_section_statement_type *, int);
 extern void ldlang_add_undef
-  (const char *const);
+  (const char *const, bfd_boolean);
 extern void lang_add_output_format
   (const char *, const char *, const char *, int);
 extern void lang_list_init
@@ -575,6 +584,8 @@ extern void lang_add_reloc
    union etree_union *);
 extern void lang_for_each_statement
   (void (*) (lang_statement_union_type *));
+extern void lang_for_each_statement_worker
+  (void (*) (lang_statement_union_type *), lang_statement_union_type *);
 extern void *stat_alloc
   (size_t);
 extern void strip_excluded_output_sections

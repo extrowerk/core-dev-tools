@@ -40,7 +40,7 @@ repository without obtaining approval first:
   DJ Delorie <dj@redhat.com>
   Alan Modra <amodra@gmail.com>
   Michael Meissner <gnu@the-meissners.org>
-  Daniel Jacobowitz <dan@debian.org>
+  Daniel Jacobowitz <dan@codesourcery.com>
   Richard Sandiford <rdsandiford@googlemail.com>
 
       --------- Maintainers ---------
@@ -63,10 +63,10 @@ responsibility among the other maintainers.
   ARM (Symbian)	   Mark Mitchell <mark@codesourcery.com>
   AVR		   Denis Chertykov <denisc@overta.ru>
   AVR		   Marek Michalkiewicz <marekm@amelek.gda.pl>
-  BFIN		   Jie Zhang <jie.zhang@analog.com>
+  BFIN		   Jie Zhang <jie@codesourcery.com>
   BFIN		   Bernd Schmidt <bernd.schmidt@analog.com>
-  BUILD SYSTEM	   Ben Elliston <bje@gnu.org>
-  BUILD SYSTEM	   Daniel Jacobowitz <dan@debian.org>
+  BFIN		   Mike Frysinger <michael.frysinger@analog.com>
+  BUILD SYSTEM	   Daniel Jacobowitz <dan@codesourcery.com>
   CR16		   M R Swami Reddy <MR.Swami.Reddy@nsc.com>
   CRIS		   Hans-Peter Nilsson <hp@axis.com>
   CRX		   M R Swami Reddy <MR.Swami.Reddy@nsc.com>
@@ -88,6 +88,7 @@ responsibility among the other maintainers.
   ix86 PE/COFF	   Dave Korn <dave.korn.cygwin@gmail.com>
   ix86 INTEL MODE  Jan Beulich <jbeulich@novell.com>
   LM32             Jon Beniston <jon@beniston.com>
+  M32R             Doug Evans <dje@sebabeach.org>
   M68HC11 M68HC12  Stephane Carrez <stcarrez@nerim.fr>
   M88k		   Mark Kettenis <kettenis@gnu.org>
   MACH-O           Tristan Gingold <gingold@adacore.com>
@@ -104,15 +105,17 @@ responsibility among the other maintainers.
   PPC		   Geoff Keating <geoffk@geoffk.org>
   PPC		   Alan Modra <amodra@gmail.com>
   PPC vector ext   Aldy Hernandez <aldyh@redhat.com>
+  RX               DJ Delorie <dj@redhat.com>
+  RX               Nick Clifton <nickc@redhat.com>
   s390, s390x	   Martin Schwidefsky <schwidefsky@de.ibm.com>
   SCORE		   Mei Ligang <ligang@sunnorth.com.cn>
   SH		   Alexandre Oliva <aoliva@redhat.com>
   SH		   Kaz Kojima <kkojima@rr.iij4u.or.jp>
   SPARC		   Jakub Jelinek <jakub@redhat.com>
   SPU		   Alan Modra <amodra@gmail.com>
-  TESTSUITES	   Ben Elliston <bje@gnu.org>
   TIC4X            Svein Seldal <svein@dev.seldal.com>
   TIC54X           Timothy Wall <twall@alum.mit.edu>
+  TIC6X            Joseph Myers <joseph@codesourcery.com>
   VAX		   Matt Thomas <matt@netbsd.org>
   VAX		   Jan-Benedict Glaw <jbglaw@lug-owl.de>
   VMS		   Tristan Gingold <gingold@adacore.com>
@@ -172,7 +175,7 @@ burden of maintaining the branch in sync with the mainline becomes too
 great).  If you are uncertain as to whether a patch is appropriate for
 the branch, ask the branch maintainer.  This is:
 
-   Daniel Jacobowitz  <dan@debian.org>
+   Tristan Gingold  <gingold@adacore.com>
 
     -------- Testsuites ---------------
 

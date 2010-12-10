@@ -1,6 +1,7 @@
 /* tc-hppa.c -- Assemble for the PA
    Copyright 1989, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+   Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -1401,7 +1402,8 @@ tc_gen_reloc (asection *section, fixS *fixp)
   /* ??? It might be better to hide this +8 stuff in tc_cfi_emit_pcrel_expr,
      undefine DIFF_EXPR_OK, and let these sorts of complex expressions fail
      when R_HPPA_COMPLEX == R_PARISC_UNIMPLEMENTED.  */
-  if (fixp->fx_r_type == R_HPPA_COMPLEX && fixp->fx_pcrel)
+  if (fixp->fx_r_type == (bfd_reloc_code_real_type) R_HPPA_COMPLEX
+      && fixp->fx_pcrel)
     {
       fixp->fx_r_type = R_HPPA_PCREL_CALL;
       fixp->fx_offset += 8;
@@ -2561,7 +2563,6 @@ pa_get_absolute_expression (struct pa_it *insn, char **strp)
   if (insn->exp.X_op == O_modulus)
     {
       char *s, c;
-      int retval;
 
       input_line_pointer = *strp;
       s = *strp;
@@ -2571,7 +2572,7 @@ pa_get_absolute_expression (struct pa_it *insn, char **strp)
       c = *s;
       *s = 0;
 
-      retval = pa_get_absolute_expression (insn, strp);
+      pa_get_absolute_expression (insn, strp);
 
       input_line_pointer = save_in;
       *s = c;
@@ -3968,6 +3969,12 @@ pa_ip (char *str)
 
 		  /* Handle an add condition.  */
 		  case 'A':
+		    /* PR gas/11395
+		       If we are looking for 64-bit add conditions and we
+		       do not have the ",*" prefix, then we have no match.  */
+		    if (*s != ',')
+		      break;
+		    /* Fall through.  */
 		  case 'a':
 		    cmpltr = 0;
 		    flag = 0;
@@ -5961,12 +5968,44 @@ pa_build_unwind_subspace (struct call_info *call_info)
   subsegT save_subseg;
   unsigned int unwind;
   int reloc;
-  char *p;
+  char *name, *p;
+  symbolS *symbolP;
 
   if ((bfd_get_section_flags (stdoutput, now_seg)
        & (SEC_ALLOC | SEC_LOAD | SEC_READONLY))
       != (SEC_ALLOC | SEC_LOAD | SEC_READONLY))
     return;
+
+  if (call_info->start_symbol == NULL)
+    /* This can happen if there were errors earlier on in the assembly.  */
+    return;
+
+  /* Replace the start symbol with a local symbol that will be reduced
+     to a section offset.  This avoids problems with weak functions with
+     multiple definitions, etc.  */
+  name = xmalloc (strlen ("L$\001start_")
+		  + strlen (S_GET_NAME (call_info->start_symbol))
+		  + 1);
+  strcpy (name, "L$\001start_");
+  strcat (name, S_GET_NAME (call_info->start_symbol));
+
+  /* If we have a .procend preceded by a .exit, then the symbol will have
+     already been defined.  In that case, we don't want another unwind
+     entry.  */
+  symbolP = symbol_find (name);
+  if (symbolP)
+    {
+      xfree (name);
+      return;
+    }
+  else
+    {
+      symbolP = symbol_new (name, now_seg,
+			    S_GET_VALUE (call_info->start_symbol), frag_now);
+      gas_assert (symbolP);
+      S_CLEAR_EXTERNAL (symbolP);
+      symbol_table_insert (symbolP);
+    }
 
   reloc = R_PARISC_SEGREL32;
   save_seg = now_seg;
@@ -5993,7 +6032,7 @@ pa_build_unwind_subspace (struct call_info *call_info)
   /* Relocation info. for start offset of the function.  */
   md_number_to_chars (p, 0, 4);
   fix_new_hppa (frag_now, p - frag_now->fr_literal, 4,
-		call_info->start_symbol, (offsetT) 0,
+		symbolP, (offsetT) 0,
 		(expressionS *) NULL, 0, reloc,
 		e_fsel, 32, 0, 0);
 
@@ -6464,6 +6503,7 @@ process_exit (void)
   /* Mark the end of the function, stuff away the location of the frag
      for the end of the function, and finally call pa_build_unwind_subspace
      to add an entry in the unwind table.  */
+  (void) where;
   hppa_elf_mark_end_of_function ();
   pa_build_unwind_subspace (last_call_info);
 #else
@@ -6605,6 +6645,8 @@ pa_type_args (symbolS *symbolP, int is_export)
      to the SOM BFD backend.  */
 #ifdef obj_set_symbol_type
   obj_set_symbol_type (bfdsym, (int) type);
+#else
+  (void) type;
 #endif
 
   /* Now that the type of the exported symbol has been handled,
@@ -6627,6 +6669,8 @@ pa_type_args (symbolS *symbolP, int is_export)
 	  arg_reloc = pa_align_arg_reloc (temp, pa_build_arg_reloc (name));
 #if defined (OBJ_SOM) || defined (ELF_ARG_RELOC)
 	  symbol_arg_reloc_info (symbolP) |= arg_reloc;
+#else
+	  (void) arg_reloc;
 #endif
 	  *input_line_pointer = c;
 	}
@@ -6641,6 +6685,8 @@ pa_type_args (symbolS *symbolP, int is_export)
 	  arg_reloc = pa_build_arg_reloc (name);
 #if defined (OBJ_SOM) || defined (ELF_ARG_RELOC)
 	  symbol_arg_reloc_info (symbolP) |= arg_reloc;
+#else
+	  (void) arg_reloc;
 #endif
 	  *input_line_pointer = c;
 	}
@@ -7341,7 +7387,7 @@ pa_subspace (int create_new)
 {
   char *name, *ss_name, c;
   char loadable, code_only, comdat, common, dup_common, zero, sort;
-  int i, access, space_index, alignment, quadrant, applicable, flags;
+  int i, access_ctr, space_index, alignment, quadrant, applicable, flags;
   sd_chain_struct *space;
   ssd_chain_struct *ssd;
   asection *section;
@@ -7364,7 +7410,7 @@ pa_subspace (int create_new)
 
       /* Load default values.  */
       sort = 0;
-      access = 0x7f;
+      access_ctr = 0x7f;
       loadable = 1;
       comdat = 0;
       common = 0;
@@ -7409,7 +7455,7 @@ pa_subspace (int create_new)
 		  space_index = pa_def_subspaces[i].space_index;
 		  alignment = pa_def_subspaces[i].alignment;
 		  quadrant = pa_def_subspaces[i].quadrant;
-		  access = pa_def_subspaces[i].access;
+		  access_ctr = pa_def_subspaces[i].access;
 		  sort = pa_def_subspaces[i].sort;
 		  break;
 		}
@@ -7447,7 +7493,7 @@ pa_subspace (int create_new)
 		{
 		  *input_line_pointer = c;
 		  input_line_pointer++;
-		  access = get_absolute_expression ();
+		  access_ctr = get_absolute_expression ();
 		}
 	      else if ((strncasecmp (name, "sort", 4) == 0))
 		{
@@ -7555,14 +7601,14 @@ pa_subspace (int create_new)
 
 	current_subspace = update_subspace (space, ss_name, loadable,
 					    code_only, comdat, common,
-					    dup_common, sort, zero, access,
+					    dup_common, sort, zero, access_ctr,
 					    space_index, alignment, quadrant,
 					    section);
       else
 	current_subspace = create_new_subspace (space, ss_name, loadable,
 						code_only, comdat, common,
 						dup_common, zero, sort,
-						access, space_index,
+						access_ctr, space_index,
 						alignment, quadrant, section);
 
       demand_empty_rest_of_line ();
@@ -7793,7 +7839,7 @@ create_new_subspace (sd_chain_struct *space,
 		     int dup_common,
 		     int is_zero ATTRIBUTE_UNUSED,
 		     int sort,
-		     int access,
+		     int access_ctr,
 		     int space_index ATTRIBUTE_UNUSED,
 		     int alignment ATTRIBUTE_UNUSED,
 		     int quadrant,
@@ -7848,7 +7894,7 @@ create_new_subspace (sd_chain_struct *space,
     }
 
 #ifdef obj_set_subsection_attributes
-  obj_set_subsection_attributes (seg, space->sd_seg, access, sort,
+  obj_set_subsection_attributes (seg, space->sd_seg, access_ctr, sort,
 				 quadrant, comdat, common, dup_common);
 #endif
 
@@ -7868,7 +7914,7 @@ update_subspace (sd_chain_struct *space,
 		 int dup_common,
 		 int sort,
 		 int zero ATTRIBUTE_UNUSED,
-		 int access,
+		 int access_ctr,
 		 int space_index ATTRIBUTE_UNUSED,
 		 int alignment ATTRIBUTE_UNUSED,
 		 int quadrant,
@@ -7879,7 +7925,7 @@ update_subspace (sd_chain_struct *space,
   chain_entry = is_defined_subspace (name);
 
 #ifdef obj_set_subsection_attributes
-  obj_set_subsection_attributes (section, space->sd_seg, access, sort,
+  obj_set_subsection_attributes (section, space->sd_seg, access_ctr, sort,
 				 quadrant, comdat, common, dup_common);
 #endif
 

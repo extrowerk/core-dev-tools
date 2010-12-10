@@ -1,6 +1,6 @@
 # Support routines for LD testsuite.
 #   Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-#    2004, 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
+#    2004, 2005, 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
 #
 # This file is part of the GNU Binutils.
 #
@@ -179,17 +179,20 @@ proc default_ld_simple_link { ld target objects } {
     # based on the name of the compiler.
     set ldexe $ld
     set ldparm [string first " " $ld]
+    set ldflags ""
     if { $ldparm > 0 } then {
+	set ldflags [string range $ld $ldparm end]
 	set ldexe [string range $ld 0 $ldparm]
+	set ld $ldexe
     }
     set ldexe [string replace $ldexe 0 [string last "/" $ldexe] ""]
     if {[string match "*gcc*" $ldexe] || [string match "*++*" $ldexe]} then {
-	set flags "$gcc_ld_flag $flags"
+	set ldflags "$gcc_ld_flag $ldflags"
     }
 
     remote_file host delete $target
 
-    set exec_output [run_host_cmd "$ld" "$flags -o $target $objects"]
+    set exec_output [run_host_cmd "$ld" "$ldflags $flags -o $target $objects"]
     set exec_output [prune_warnings $exec_output]
 
     # We don't care if we get a warning about a non-existent start
@@ -366,6 +369,11 @@ proc ld_simple_link_defsyms {} {
         append flags " --defsym __gccmain=0"
     }
 
+    # Windows targets need __main, prefixed with underscore.
+    if {[istarget *-*-cygwin* ] || [istarget *-*-mingw*]} {
+        append flags " --defsym ___main=0"
+    }
+
     # PowerPC EABI code calls __eabi.
     if {[istarget powerpc*-*-eabi*] || [istarget powerpc*-*-rtems*]} {
 	append flags " --defsym __eabi=0"
@@ -396,37 +404,56 @@ proc ld_simple_link_defsyms {} {
 # True if the object format is known to be ELF.
 #
 proc is_elf_format {} {
-    if { ![istarget *-*-sysv4*] \
-	 && ![istarget *-*-unixware*] \
-	 && ![istarget *-*-elf*] \
-	 && ![istarget *-*-eabi*] \
-	 && ![istarget hppa*64*-*-hpux*] \
-	 && ![istarget *-*-linux*] \
-	 && ![istarget frv-*-uclinux*] \
-	 && ![istarget bfin-*-uclinux] \
-	 && ![istarget *-*-irix5*] \
-	 && ![istarget *-*-irix6*] \
-	 && ![istarget *-*-netbsd*] \
+    if { ![istarget *-*-sysv4*]
+	 && ![istarget *-*-unixware*]
+	 && ![istarget *-*-elf*]
+	 && ![istarget *-*-eabi*]
+	 && ![istarget *-*-rtems*]
+	 && ![istarget hppa*64*-*-hpux*]
+	 && ![istarget ia64-*-hpux*]
+	 && ![istarget *-*-linux*]
+	 && ![istarget frv-*-uclinux*]
+	 && ![istarget bfin-*-uclinux]
+	 && ![istarget sh*-*-uclinux*]
+	 && ![istarget *-*-irix5*]
+	 && ![istarget *-*-irix6*]
+	 && ![istarget *-*-netbsd*]
+	 && ![istarget *-*-openbsd*]
 	 && ![istarget *-*-solaris2*] } {
 	return 0
     }
 
-    if { [istarget *-*-linux*aout*] \
-	 || [istarget *-*-linux*oldld*] } {
+    if { [istarget *-*-linux*aout*]
+	 || [istarget *-*-linux*oldld*]
+	 || [istarget h8500-*-rtems*]
+	 || [istarget i960-*-rtems*]
+	 || [istarget *-*-rtemscoff*] } {
 	return 0
     }
 
-    if { ![istarget *-*-netbsdelf*] \
-	 && ([istarget *-*-netbsd*aout*] \
-	     || [istarget *-*-netbsdpe*] \
-	     || [istarget arm*-*-netbsd*] \
-	     || [istarget sparc-*-netbsd*] \
-	     || [istarget i*86-*-netbsd*] \
-	     || [istarget m68*-*-netbsd*] \
-	     || [istarget vax-*-netbsd*] \
+    if { ![istarget *-*-netbsdelf*]
+	 && ([istarget *-*-netbsd*aout*]
+	     || [istarget *-*-netbsdpe*]
+	     || [istarget arm*-*-netbsd*]
+	     || [istarget sparc-*-netbsd*]
+	     || [istarget i*86-*-netbsd*]
+	     || [istarget m68*-*-netbsd*]
+	     || [istarget vax-*-netbsd*]
 	     || [istarget ns32k-*-netbsd*]) } {
     	return 0
     }
+
+    if { [istarget arm-*-openbsd*]
+	 || [istarget i386-*-openbsd\[0-2\].*]
+	 || [istarget i386-*-openbsd3.\[0-2\]]
+	 || [istarget m68*-*-openbsd*]
+	 || [istarget ns32k-*-openbsd*]
+	 || [istarget sparc-*-openbsd\[0-2\].*]
+	 || [istarget sparc-*-openbsd3.\[0-1\]]
+	 || [istarget vax-*-openbsd*] } {
+	return 0
+    }
+
     return 1
 }
 
@@ -458,27 +485,35 @@ proc is_elf64 { binary_file } {
 # True if the object format is known to be a.out.
 #
 proc is_aout_format {} {
-    if { [istarget *-*-*\[ab\]out*] \
-	     || [istarget *-*-linux*oldld*] \
-	     || [istarget *-*-msdos*] \
-	     || [istarget arm-*-netbsd] \
-	     || [istarget i?86-*-netbsd] \
-	     || [istarget i?86-*-mach*] \
-	     || [istarget i?86-*-vsta] \
-	     || [istarget pdp11-*-*] \
-	     || [istarget m68*-ericsson-ose] \
-	     || [istarget m68k-hp-bsd*] \
-	     || [istarget m68*-*-hpux*] \
-	     || [istarget m68*-*-netbsd] \
-	     || [istarget m68*-*-netbsd*4k*] \
-	     || [istarget m68k-sony-*] \
-	     || [istarget m68*-sun-sunos\[34\]*] \
-	     || [istarget m68*-wrs-vxworks*] \
-	     || [istarget ns32k-*-*] \
-	     || [istarget sparc*-*-netbsd] \
-	     || [istarget sparc-sun-sunos4*] \
-	     || [istarget vax-dec-ultrix*] \
-	     || [istarget vax-*-netbsd] } {
+    if { [istarget *-*-netbsdelf]
+	 || [istarget sparc64-*-netbsd*]
+	 || [istarget sparc64-*-openbsd*] } {
+	return 0
+    }
+    if { [istarget *-*-*\[ab\]out*]
+	 || [istarget *-*-linux*oldld*]
+	 || [istarget *-*-bsd*]
+	 || [istarget *-*-msdos*]
+	 || [istarget arm-*-netbsd*]
+	 || [istarget arm-*-openbsd*]
+	 || [istarget arm-*-riscix*]
+	 || [istarget i?86-*-freebsd\[12\]*]
+	 || [istarget i?86-*-netbsd*]
+	 || [istarget i?86-*-openbsd\[0-2\]*]
+	 || [istarget i?86-*-openbsd3.\[0-2\]*]
+	 || [istarget i?86-*-vsta]
+	 || [istarget i?86-*-mach*]
+	 || [istarget m68*-*-netbsd*]
+	 || [istarget m68*-*-openbsd*]
+	 || [istarget ns32k-*-*]
+	 || [istarget pdp11-*-*]
+	 || [istarget sparc*-*-sunos4*]
+	 || [istarget sparc*-*-netbsd*]
+	 || [istarget sparc*-*-openbsd\[0-2\]*]
+	 || [istarget sparc*-*-openbsd3.\[0-1\]*]
+	 || [istarget sparc*-fujitsu-none]
+	 || [istarget vax-dec-ultrix*]
+	 || [istarget vax-*-netbsd] } {
 	return 1
     }
     return 0
@@ -487,9 +522,9 @@ proc is_aout_format {} {
 # True if the object format is known to be PE COFF.
 #
 proc is_pecoff_format {} {
-    if { ![istarget *-*-mingw*] \
-	 && ![istarget *-*-cygwin*] \
-	 && ![istarget *-*-cegcc*] \
+    if { ![istarget *-*-mingw*]
+	 && ![istarget *-*-cygwin*]
+	 && ![istarget *-*-cegcc*]
 	 && ![istarget *-*-pe*] } {
 	return 0
     }
@@ -654,11 +689,13 @@ proc simple_diff { file_1 file_2 } {
 #   error: REGEX
 #	An error with message matching REGEX must be emitted for the test
 #	to pass.  The PROG, objdump, nm and objcopy options have no
-#	meaning and need not supplied if this is present.
+#	meaning and need not supplied if this is present.  Multiple "error"
+#	directives append to the expected linker error message.
 #
 #   warning: REGEX
 #	Expect a linker warning matching REGEX.  It is an error to issue
-#	both "error" and "warning".
+#	both "error" and "warning".  Multiple "warning" directives
+#	append to the expected linker warning message.
 #
 # Each option may occur at most once unless otherwise mentioned.
 #
@@ -725,6 +762,8 @@ proc run_dump_test { name } {
 	    xfail {}
 	    target {}
 	    notarget {}
+	    warning {}
+	    error {}
 	    source {
 		# Move any source-specific as-flags to a separate array to
 		# simplify processing.
@@ -925,8 +964,9 @@ proc run_dump_test { name } {
 	    send_log "$comp_output\n"
 	    verbose "$comp_output" 3
 
-	    if { [regexp $expmsg $comp_output] \
-		    && (($cmdret == 0) == ($opts(warning) != "")) } {
+	    if { ($expmsg == "") == ($comp_output == "") \
+		    && [regexp $expmsg $comp_output] \
+		    && (($cmdret == 0) == ($opts(error) == "")) } {
 		# We have the expected output from ld.
 		if { $opts(error) != "" || $program == "" } {
 		    pass $testname
@@ -974,6 +1014,7 @@ proc run_dump_test { name } {
     set env(LC_ALL) "C"
     send_log "$cmd\n"
     set cmdret [remote_exec host [concat sh -c [list "$cmd 2>ld.tmp"]] "" "/dev/null"]
+    set cmdret [lindex $cmdret 0]
     remote_upload host "ld.tmp"
     set comp_output [prune_warnings [file_contents "ld.tmp"]]
     remote_file host delete "ld.tmp"
@@ -983,8 +1024,8 @@ proc run_dump_test { name } {
     } else {
 	unset env(LC_ALL)
     }
-    if ![string match "" $comp_output] then {
-	send_log "$comp_output\n"
+    if { $cmdret != 0 || $comp_output != "" } {
+	send_log "exited abnormally with $cmdret, output:$comp_output\n"
 	fail $testname
 	return
     }
@@ -1039,6 +1080,7 @@ proc regexp_diff { file_1 file_2 } {
     set end_2 0
     set differences 0
     set diff_pass 0
+    set fail_if_match 0
 
     if [file exists $file_1] then {
 	set file_a [open $file_1 r]
@@ -1071,6 +1113,10 @@ proc regexp_diff { file_1 file_2 } {
 		set end_2 1
 		set diff_pass 1
 		break
+	    } elseif [ string match "#failif" $line_b ] {
+		send_log "fail if no difference\n"
+		verbose "fail if no difference" 3
+		set fail_if_match 1
 	    } elseif [ string match "#..." $line_b ] {
 		if { [gets $file_b line_b] == $eof } {
 		    set end_2 1
@@ -1110,6 +1156,7 @@ proc regexp_diff { file_1 file_2 } {
         } else {
             verbose "regexp \"^$line_b$\"\nline   \"$line_a\"" 3
             if ![regexp "^$line_b$" "$line_a"] {
+		verbose "regexp_diff match failure\n" 3
 		send_log "regexp_diff match failure\n"
 		send_log "regexp \"^$line_b$\"\nline   \"$line_a\"\n"
 		set differences 1
@@ -1123,6 +1170,14 @@ proc regexp_diff { file_1 file_2 } {
 	set differences 1
     }
 
+    if { $fail_if_match } {
+	if { $differences == 0 } {
+	    set differences 1
+	} else {
+	    set differences 0
+	}
+    }
+
     close $file_a
     close $file_b
 
@@ -1134,6 +1189,12 @@ proc file_contents { filename } {
     set contents [read $file]
     close $file
     return $contents
+}
+
+proc set_file_contents { filename contents } {
+    set file [open $filename w]
+    puts $file "$contents"
+    close $file
 }
 
 # Create an archive using ar
@@ -1162,6 +1223,10 @@ proc ar_simple_create { ar aropts target objects } {
 # objdump: Apply objdump options on result.  Compare with regex (last arg).
 # nm: Apply nm options on result.  Compare with regex (last arg).
 # readelf: Apply readelf options on result.  Compare with regex (last arg).
+# ld: Don't apply anything on result.  Compare output during linking with 
+#     regex (second arg).  Note that this *must* be the first action if it
+#     is to be used at all; in all other cases, any output from the linker
+#     during linking is treated as a sign of an error and FAILs the test.
 #
 proc run_ld_link_tests { ldtests } {
     global ld
@@ -1176,6 +1241,7 @@ proc run_ld_link_tests { ldtests } {
     global CC
     global CFLAGS
     global runtests
+    global exec_output
 
     foreach testitem $ldtests {
 	set testname [lindex $testitem 0]
@@ -1193,6 +1259,8 @@ proc run_ld_link_tests { ldtests } {
 	set objfiles {}
 	set is_unresolved 0
 	set failed 0
+	set maybe_failed 0
+	set ld_output ""
 
 #	verbose -log "Testname is $testname"
 #	verbose -log "ld_options is $ld_options"
@@ -1227,7 +1295,7 @@ proc run_ld_link_tests { ldtests } {
 	    continue
 	}
 
-	if { [regexp ".*a$" $binfile] } {
+	if { [regexp ".*\\.a$" $binfile] } {
 	    if { ![ar_simple_create $ar $ld_options $binfile "$objfiles"] } {
 		fail $testname
 		set failed 1
@@ -1235,8 +1303,8 @@ proc run_ld_link_tests { ldtests } {
 		set failed 0
 	    }
 	} elseif { ![ld_simple_link $ld $binfile "-L$srcdir/$subdir $ld_options $objfiles"] } {
-	    fail $testname
-	    set failed 1
+	    set maybe_failed 1
+	    set ld_output "$exec_output"
 	} else {
 	    set failed 0
 	}
@@ -1257,6 +1325,8 @@ proc run_ld_link_tests { ldtests } {
 		        { set dump_prog $nm }
 		    readelf
 		        { set dump_prog $READELF }
+		    ld
+		        { set dump_prog "ld" }
 		    default
 			{
 			    perror "Unrecognized action $action"
@@ -1265,7 +1335,21 @@ proc run_ld_link_tests { ldtests } {
 			}
 		    }
 
-		if { $dump_prog != "" } {
+		if { $action == "ld" } {
+		    set dumpfile [lindex $actionlist 1]
+		    verbose "dumpfile is $dumpfile"
+		    set_file_contents "tmpdir/ld.messages" "$ld_output"
+		    verbose "ld.messages has '[file_contents tmpdir/ld.messages]'"
+		    if { [regexp_diff "tmpdir/ld.messages" "$srcdir/$subdir/$dumpfile"] } then {
+			verbose "output is $ld_output" 2
+			set failed 1
+			break
+		    }
+		    set maybe_failed 0
+		} elseif { $maybe_failed != 0 } {
+		    set failed 1
+		    break
+		} elseif { $dump_prog != "" } {
 		    set dumpfile [lindex $actionlist 2]
 		    set binary $dump_prog
 
@@ -1538,7 +1622,7 @@ proc run_cc_link_tests { ldtests } {
 	    set cc_cmd $CC
 	}
 
-	if { [regexp ".*a$" $binfile] } {
+	if { [regexp ".*\\.a$" $binfile] } {
 	    if { ![ar_simple_create $ar $ldflags $binfile "$objfiles"] } {
 		fail $testname
 		set failed 1
@@ -1633,9 +1717,19 @@ proc check_gc_sections_available { } {
     if {![info exists gc_sections_available_saved]} {
 	# Some targets don't support gc-sections despite whatever's
 	# advertised by ld's options.
-	if { [istarget alpha*-*-*]
-	     || [istarget mep-*-*]
+	if {[istarget arc-*-*]
+	     || [istarget d30v-*-*]
+	     || [istarget dlx-*-*]
+	     || [istarget i960-*-*]
+	     || [istarget or32-*-*]
+	     || [istarget pj*-*-*]
+	     || [istarget alpha-*-*]
+	     || [istarget hppa64-*-*]
+	     || [istarget i370-*-*]
+	     || [istarget i860-*-*]
 	     || [istarget ia64-*-*]
+	     || [istarget mep-*-*]
+	     || [istarget mn10200-*-*]
 	     || [istarget *-*-cygwin]
 	     || [istarget *-*-mingw*] } {
 	    set gc_sections_available_saved 0
@@ -1659,6 +1753,22 @@ proc check_gc_sections_available { } {
 	}
     }
     return $gc_sections_available_saved
+}
+
+# Returns true if the target ld supports the plugin API.
+proc check_plugin_api_available { } {
+    global plugin_api_available_saved
+    global ld
+    if {![info exists plugin_api_available_saved]} {
+	# Check if the ld used by gcc supports --plugin.
+	set ld_output [remote_exec host $ld "--help"]
+	if { [ string first "-plugin" $ld_output ] >= 0 } {
+	    set plugin_api_available_saved 1
+	} else {
+	    set plugin_api_available_saved 0
+	}
+    }
+    return $plugin_api_available_saved
 }
 
 # Check if the assembler supports CFI statements.

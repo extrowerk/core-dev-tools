@@ -1,18 +1,311 @@
-2009-09-30  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+2010-11-12  Ian Lance Taylor  <iant@google.com>
 
-	* hashtab.c [HAVE_INTTYPES_H]: Include <inttypes.h>.
+	PR other/46332
+	* cp-demangle.c (d_print_function_type): Don't print parentheses
+	if there are no modifiers to print.
+	* testsuite/demangle-expected: Tweak one test case, add another.
 
-2009-09-23  Tristan Gingold  <gingold@adacore.com>
+2010-11-04  Richard Henderson  <rth@redhat.com>
 
-	* config.h-vms: Remove HAVE_STDINT_H which was committed by mistake.
+	* configure.ac (AC_CHECK_HEADERS): Add process.h.
+	(checkfuncs): Add dup3, spawnve, spawnvpe; sort the list.
+	(AC_CHECK_FUNCS): Add dup3, spawnve, spawnvpe.
+	* configure, config.in: Rebuild.
+	* pex-unix.c [HAVE_SPAWNVE] (pex_unix_exec_child): New function.
+	[HAVE_SPAWNVE] (save_and_install_fd, restore_fd): New functions.
+
+2010-11-02  Ian Lance Taylor  <iant@google.com>
+	    Dave Korn  <dave.korn.cygwin@gmail.com>
+	    Iain Sandoe  <iains@gcc.gnu.org>
+
+	* simple-object.c: New file.
+	* simple-object-common.h: New file.
+	* simple-object-elf.c: New file.
+	* simple-object-mach-o.c: New file.
+	* simple-object-coff.c: New file.
+	* simple-object.txh: New file.
+	* configure.ac: Add AC_TYPE_SSIZE_T.
+	* Makefile.in: Rebuild dependencies.
+	(CFILES): Add simple-object.c, simple-object-coff,
+	simple-object-elf.c, and simple-object-mach-o.c.
+	(REQUIRED_OFILES): Add corresponding object files.
+	* configure: Rebuild.
+	* config.in: Rebuild.
+	* functions.texi: Rebuild.
+
+2010-10-29  Ian Lance Taylor  <iant@google.com>
+
+	* setproctitle.c: Add space after function name in @deftypefn
+	comment.
+	* functions.texi: Rebuild.
+
+2010-10-26  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4 (AC_LANG_FUNC_LINK_TRY(C)): Delete.
+	* configure: Regenerate.
+
+2010-10-07  Andi Kleen <ak@linux.intel.com>
+
+	* configure: Regenerate.
+	* configure.ac: Turn PR_SET_NAME check into link check.
+
+2010-10-06  Andi Kleen <ak@linux.intel.com>
+
+	* Makefile.in (CFILES): Add setproctitle.
+	(CONFIGURED_OFILES): Add setproctitle.
+	(setproctitle): Add rule.
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Add checks for prctl PR_SET_NAME and setproctitle.
+	* setproctitle.c: Add file.
+	* functions.texi: Regenerate.
+
+2010-09-22 Tristan Gingold  <gingold@adacore.com>
+
+	* cplus-dem.c (ada_demangle): Add comments.
+	Handle stream and controlled type operations.
+	Decoding of some uppercase letters moved before separators.
+	* testsuite/demangle-expected: Add tests.
+
+2010-09-10  James Lyon  <jameslyon0@googlemail.com>
+
+	http://sourceware.org/bugzilla/show_bug.cgi?id=11572
+	* cp-demangle.c (d_find_pack): Add case for
+	DEMANGLE_COMPONENT_LAMBDA.
+	* testsuite/demangle-expected: Add regression test.
+
+2010-09-08  Tristan Gingold  <gingold@adacore.com>
+
+	PR 44001
+	* maint-tool (missing): Fix pattern for object file.
+	(deps): Use $(objext) for object extension.
+	* Makefile.in (objext): New variable.
+	Replace all occurences of .o with .$(objext)
+	Regenerate with maint-deps
+	* configure.ac (pexecute): Set to the basename.
+	* configure: Regenerate.
+
+2010-08-20  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* pex-common.c (pex_read_err): Set stderr_pipe to -1 if a
+	corresponding stream has been opened.
+	(pex_free): Close pipe file descriptors corresponding to child's
+	stdout and stderr before waiting.
+
+2010-08-13  Nick Clifton  <nickc@redhat.com>
+
+	* argv.c (expandargv): Limit the number of times that response
+	files are opened in order to prevent infinite recursion.
+
+2010-07-21  Pascal Obry  <obry@adacore.com>
+
+	* make-temp-file.c (choose_tmpdir): Append a dot to P_tmpdir if needed.
+
+2010-07-06  Ken Werner  <ken.werner@de.ibm.com>
+
+	* floatformat.c (floatformat_ieee_half_big): New variable.
+	(floatformat_ieee_half_little): Likewise.
+
+2010-06-14  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* libiberty.texi: Remove reference to GCC 3 and 2001 (thrice).
+	Update copyright years.
+	Move to GFDL 1.3.
+
+2010-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/43838
+	* cp-demangle.c (struct d_print_info): Add flush_count field.
+	(d_print_init): Initialize it to 0.
+	(d_print_flush): Increment it.
+	(d_print_comp): If needed flush before appending ", ".  Only
+	decrement dpi->len if no flushes happened during the recursive
+	call.
+	* testsuite/demangle-expected: Add a test for this.
+
+2010-06-08  Laurynas Biveinis  <laurynas.biveinis@gmail.com>
+
+	* splay-tree.c: Update copyright years.
+	(splay_tree_new_typed_alloc): New.
+	(splay_tree_new_with_allocator): Use it.
+
+	* hashtab.c: Update copyright years.
+	(htab_create_typed_alloc): New.
+	(htab_create_alloc): Use it.
+
+	* functions.texi: Regenerate.
+
+2010-06-03  Joern Rennecke <joern.rennecke@embecosm.com>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/42798
+	* configure.ac: Check for declaration of 'basename(char *)'.
+	* configure: Regenerate.
+
+2010-05-26  Kai Tietz  <kai.tietz@onevision.com>
+
+	* testsuite/demangle-expected: Add tests for __int128
+	and unsigned __int128 types.
+
+2010-05-06  Magnus Fromreide  <magfr@lysator.liu.se>
+	    Jason Merrill  <jason@redhat.com>
+
+	* cp-demangle.c (cplus_demangle_builtin_types): Add nullptr.
+	(cplus_demangle_type): Handle nullptr.
+	* testsuite/demangle-expected: Test it.
+
+2010-04-23  Pedro Alves  <pedro@codesourcery.com>
+
+	* lbasename.c (lbasename): Split into ...
+	(unix_lbasename, dos_basename): ... these.
+	(lbasename): ... and reimplement on top of them.
+	* Makefile.in (lbasename.o): Add dependency on
+	$(INCDIR)/filenames.h.
+
+2010-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	* regex.c (byte_re_match_2_internal): Avoid set but not used
+	warning.
+
+2010-03-22  Jason Merrill  <jason@redhat.com>
+
+	* cp-demangle.c (d_print_mod): Use () rather than [] for vectors.
+
+2010-03-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (all): Do not use exec.
+
+2010-02-04  Tom Tromey  <tromey@redhat.com>
+
+	* testsuite/demangle-expected: Add missing --format=gnu-v3.
+
+2010-02-03  Jason Merrill  <jason@redhat.com>
+
+	* cp-demangle.c (d_expression): Handle dependent operator name.
+
+	PR c++/12909
+	* cp-demangle.c (d_number_component, d_vector_type): New.
+	(cplus_demangle_type, d_print_comp, d_print_mod): Handle vectors.
+
+2010-01-25  Ian Lance Taylor  <iant@google.com>
+
+	* cp-demangle.c (cplus_demangle_type): Check for invalid type
+	after "DF".
+	* testsuite/demangle-expected: Add test.
+
+2010-01-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/42338
+	* cp-demangle.c (d_print_comp): Fix array index printing.
+
+2010-01-11  Tristan Gingold  <gingold@adacore.com>
+
+	* cplus-dem.c (ada_demangle): Remove prototype.
+	(grow_vect): Removed.
+	(ada_demangle): Rewritten.
+	(cplus_demangle): Fix indentation.
+	* testsuite/demangle-expected: Add tests for Ada.
+
+2010-01-09  Ian Lance Taylor  <iant@google.com>
+
+	PR other/42230
+	* cp-demangle.c (d_demangle): Return dgs.alc on success.
+
+2010-01-04  Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+
+	PR target/42316
+	* configure.ac (PICFLAG): Use -fPIC on SH hosts.
+	* configure: Regenerate.
+
+2009-12-07  Doug Evans  <dje@google.com>
+
+	* pex-unix.c (pex_unix_exec_child): Save/restore environ.
+
+2009-11-26  Ben Elliston  <bje@au.ibm.com>
+
+	* configure.ac (AC_CHECK_FUNCS): Sort into alphabetic order.
+	* configure: Regenerate.
+
+2009-11-25  Ben Elliston  <bje@au.ibm.com>
+
+	* functions.texi: Rebuild.
+
+2009-11-25  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+	    Ben Elliston  <bje@au.ibm.com>
+
+	* README: Mention changes to Makefile.in and functions.texi.
+	* gather-docs: Mention 'make stamp-functions' in the header.
+
+2009-11-23  Ben Elliston  <bje@au.ibm.com>
+	    Ian Lance Taylor  <iant@google.com>
+
+	* pex-unix.c (pex_child_error): Improve warning avoidance by
+	checking the results of write(3) and exiting with -2 if any write
+	returns a negative value.
+
+2009-11-22  Steve Ward  <planet36@gmail.com>
+
+	* dyn-string.c (dyn_string_append_char): Fix typo in comment.
+
+2009-11-20  Ben Elliston  <bje@au.ibm.com>
+
+	* pex-unix.c (pex_child_error): Define writeerr macro to avoid
+	unused result warnings from write(3) calls.  Undefine writeerr
+	after all uses.
+
+2009-10-08  Daniel Gutson  <dgutson@codesourcery.com>
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Pedro Alves  <pedro@codesourcery.com>
+
+	libiberty/
+	* argv.c (consume_whitespace): New function.
+	(only_whitespace): New function.
+	(buildargv): Always use ISSPACE by calling consume_whitespace.
+	(expandargv): Skip empty files.  Do not stop at the first empty
+	argument (calling only_whitespace)..
+	* testsuite/test-expandargv.c: (test_data): Test empty lines
+	and empty arguments.
+	(run_tests): Fix false positives due to shorter arguments.
+
+2009-09-30  Martin Thuresson  <martint@google.com>
+
+	* regex.c (byte_re_match_2_internal): Split declaration and
+	assignment to avoid -Wc++-compat warning due to goto.
+
+2009-09-29  Jason Merrill  <jason@redhat.com>
+
+	* Makefile.in: Enable demangle target.
+	* cp-demangle.c (d_lambda, d_unnamed_type, d_make_default_arg): New.
+	(d_name, d_prefix, d_unqualified_name, d_local_name): Handle lambdas.
+	(d_parmlist): Factor out from d_bare_function_type.
+	(d_compact_number): Factor out from d_template_param and d_expression.
+	(d_append_num): Factor out from d_print_comp.
+	(d_print_comp, d_print_mod_list): Handle lambdas.
+	* testsuite/demangle-expected: Add lambda tests.
 
 2009-09-23  Matthew Gingell  <gingell@adacore.com>
 
 	* cplus-dem.c (ada_demangle): Ensure demangled is freed.
 
+2009-09-22  Ozkan Sezer  <sezeroz@gmail.com>
+
+	* choose-temp.c: Include unistd.h for mingw targets.
+
+2009-09-16  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* hashtab.c [HAVE_INTTYPES_H]: Include <inttypes.h>.
+
 2009-09-15  Tristan Gingold  <gingold@adacore.com>
 
 	* config.h-vms (intptr_t): Define to compile hashtab.c
+
+2009-09-04  Ozkan Sezer  <sezeroz@gmail.com>
+
+	PR target/39065
+	* configure.ac: Replace AC_CHECK_TYPE() for intptr_t and uintptr_t
+	with AC_TYPE_INTPTR_T and AC_TYPE_UINTPTR_T.
+	* config.in: Regenerated.
+	* configure: Regenerated.
 
 2009-09-03  Ozkan Sezer  <sezeroz@gmail.com>
 
@@ -196,7 +489,7 @@
 	with other than 1 operand.
 	(d_print_comp): Handle function parameters.  Fix bug with
 	function used in type of function.
-	* testsuite/demangle-expected: Upate tests.
+	* testsuite/demangle-expected: Update tests.
 
 2009-02-21  Mark Mitchell  <mark@codesourcery.com>
 

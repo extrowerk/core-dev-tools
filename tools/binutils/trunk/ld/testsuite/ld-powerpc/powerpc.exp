@@ -101,8 +101,11 @@ set ppcelftests {
     {"Reloc section order" "-melf32ppc -shared -z nocombreloc" "-a32" {reloc.s}
      {{objdump -hw reloc.d}} "reloc.so"}
     {"APUinfo section processing" "-melf32ppc"
-     "-a32 -me500" {apuinfo1.s apuinfo2.s}
+     "-a32 -me500" {apuinfo1.s apuinfo-nul.s apuinfo2.s}
     {{readelf -x2 apuinfo.rd}} "apuinfo"}
+    {"APUinfo NULL section processing" "-melf32ppc"
+     "-a32 -me500" {apuinfo-nul1.s apuinfo-nul.s}
+    {{readelf -x2 apuinfo-nul.rd}} "apuinfo"}
     {"TLS32 static exec" "-melf32ppc" "-a32"  {tls32.s tlslib32.s}
      {{objdump -dr tls32.d} {objdump -sj.got tls32.g}
       {objdump -sj.tdata tls32.t}}
@@ -175,6 +178,8 @@ set ppc64elftests {
       "tlsmark"}
     {"sym@tocbase" "-shared -melf64ppc" "-a64" {symtocbase-1.s symtocbase-2.s}
 	{{objdump -dj.data symtocbase.d}} "symtocbase.so"}
+    {"TOC opt" "-melf64ppc" "-a64"  {tocopt.s}
+     {{objdump -s tocopt.d}} "tocopt"}
 }
 
 

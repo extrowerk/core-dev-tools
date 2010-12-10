@@ -253,10 +253,8 @@ z80_start_line_hook (void)
     {
       char c, *rest, *line_start;
       int len;
-      symbolS * symbolP;
 
       line_start = input_line_pointer;
-      LISTING_NEWLINE ();
       if (ignore_input ())
 	return 0;
 
@@ -275,20 +273,17 @@ z80_start_line_hook (void)
 	len = 4;
       else
 	len = 0;
-      if (len && (rest[len] == ' ' || rest[len] == '\t'))
+      if (len && (!ISALPHA(rest[len]) ) )
 	{
 	  /* Handle assignment here.  */
-	  input_line_pointer = rest + len;
 	  if (line_start[-1] == '\n')
-	    bump_line_counters ();
-	  /* Most Z80 assemblers require the first definition of a
-             label to use "EQU" and redefinitions to have "DEFL".  */
-	  if (len == 3 && (symbolP = symbol_find (line_start)) != NULL) 
 	    {
-	      if (S_IS_DEFINED (symbolP) || symbol_equated_p (symbolP))
-		as_bad (_("symbol `%s' is already defined"), line_start);
+	      bump_line_counters ();
+	      LISTING_NEWLINE ();
 	    }
-	  equals (line_start, 1);
+	  input_line_pointer = rest + len - 1;
+	  /* Allow redefining with "DEFL" (len == 4), but not with "EQU".  */
+	  equals (line_start, len == 4);
 	  return 1;
 	}
       else
@@ -774,8 +769,12 @@ emit_mx (char prefix, char opcode, int shift, expressionS * arg)
       q = frag_more (2);
       *q++ = (rnum & R_IX) ? 0xDD : 0xFD;
       *q = (prefix) ? prefix : (opcode + (6 << shift));
-      emit_byte (symbol_get_value_expression (arg->X_add_symbol),
-		 BFD_RELOC_Z80_DISP8);
+      {
+	expressionS offset = *arg;
+	offset.X_op = O_symbol;
+	offset.X_add_number = 0;
+	emit_byte (&offset, BFD_RELOC_Z80_DISP8);
+      }
       if (prefix)
 	{
 	  q = frag_more (1);
@@ -1603,8 +1602,13 @@ emit_ld (char prefix_in ATTRIBUTE_UNUSED, char opcode_in ATTRIBUTE_UNUSED,
   switch (dst.X_op)
     {
     case O_md1:
-      emit_ldxhl ((dst.X_add_number & R_IX) ? 0xDD : 0xFD, 0x70,
-		  &src, symbol_get_value_expression (dst.X_add_symbol));
+      {
+        expressionS dst_offset = dst;
+	dst_offset.X_op = O_symbol;
+	dst_offset.X_add_number = 0;
+	emit_ldxhl ((dst.X_add_number & R_IX) ? 0xDD : 0xFD, 0x70,
+		    &src, &dst_offset);
+      }
       break;
 
     case O_register:

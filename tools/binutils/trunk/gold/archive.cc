@@ -1,6 +1,6 @@
 // archive.cc -- archive support for gold
 
-// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -36,8 +36,10 @@
 #include "readsyms.h"
 #include "symtab.h"
 #include "object.h"
+#include "layout.h"
 #include "archive.h"
 #include "plugin.h"
+#include "incremental.h"
 
 namespace gold
 {
@@ -88,7 +90,8 @@ Archive::Archive(const std::string& name, Input_file* input_file,
   : name_(name), input_file_(input_file), armap_(), armap_names_(),
     extended_names_(), armap_checked_(), seen_offsets_(), members_(),
     is_thin_archive_(is_thin_archive), included_member_(false),
-    nested_archives_(), dirpath_(dirpath), task_(task), num_members_(0)
+    nested_archives_(), dirpath_(dirpath), task_(task), num_members_(0),
+    incremental_info_(NULL)
 {
   this->no_export_ =
     parameters->options().check_excluded_libs(input_file->found_name());
@@ -275,7 +278,8 @@ Archive::interpret_header(const Archive_header* hdr, off_t off,
   else if (hdr->ar_name[1] == ' ')
     {
       // This is the symbol table.
-      pname->clear();
+      if (!pname->empty())
+	pname->clear();
     }
   else if (hdr->ar_name[1] == '/')
     {
@@ -562,7 +566,7 @@ Archive::get_elf_object_for_member(off_t off, bool* punconfigured)
       return NULL;
     }
 
-  Object *obj = make_elf_object((std::string(this->input_file_->filename())
+  Object* obj = make_elf_object((std::string(this->input_file_->filename())
 				 + "(" + member_name + ")"),
 				input_file, memoff, ehdr, read_size,
 				punconfigured);
@@ -599,6 +603,82 @@ Archive::read_symbols(off_t off)
   obj->read_symbols(sd);
   Archive_member member(obj, sd);
   this->members_[off] = member;
+}
+
+Archive::Should_include
+Archive::should_include_member(Symbol_table* symtab, Layout* layout,
+			       const char* sym_name, Symbol** symp,
+			       std::string* why, char** tmpbufp,
+                               size_t* tmpbuflen)
+{
+  // In an object file, and therefore in an archive map, an
+  // '@' in the name separates the symbol name from the
+  // version name.  If there are two '@' characters, this is
+  // the default version.
+  char* tmpbuf = *tmpbufp;
+  const char* ver = strchr(sym_name, '@');
+  bool def = false;
+  if (ver != NULL)
+    {
+      size_t symlen = ver - sym_name;
+      if (symlen + 1 > *tmpbuflen)
+        {
+          tmpbuf = static_cast<char*>(xrealloc(tmpbuf, symlen + 1));
+          *tmpbufp = tmpbuf;
+          *tmpbuflen = symlen + 1;
+        }
+      memcpy(tmpbuf, sym_name, symlen);
+      tmpbuf[symlen] = '\0';
+      sym_name = tmpbuf;
+
+      ++ver;
+      if (*ver == '@')
+        {
+          ++ver;
+          def = true;
+        }
+    }
+
+  Symbol* sym = symtab->lookup(sym_name, ver);
+  if (def
+      && ver != NULL
+      && (sym == NULL
+          || !sym->is_undefined()
+          || sym->binding() == elfcpp::STB_WEAK))
+    sym = symtab->lookup(sym_name, NULL);
+
+  *symp = sym;
+
+  if (sym == NULL)
+    {
+      // Check whether the symbol was named in a -u option.
+      if (parameters->options().is_undefined(sym_name))
+        {
+          *why = "-u ";
+          *why += sym_name;
+        }
+      else if (layout->script_options()->is_referenced(sym_name))
+	{
+	  size_t alc = 100 + strlen(sym_name);
+	  char* buf = new char[alc];
+	  snprintf(buf, alc, _("script or expression reference to %s"),
+		   sym_name);
+	  *why = buf;
+	  delete[] buf;
+	}
+      else
+	return Archive::SHOULD_INCLUDE_UNKNOWN;
+    }
+  else if (!sym->is_undefined())
+    return Archive::SHOULD_INCLUDE_NO;
+  // PR 12001: Do not include an archive when the undefined
+  // symbol has actually been defined on the command line.
+  else if (layout->script_options()->is_pending_assignment(sym_name))
+    return Archive::SHOULD_INCLUDE_NO;
+  else if (sym->binding() == elfcpp::STB_WEAK)
+    return Archive::SHOULD_INCLUDE_UNKNOWN;
+
+  return Archive::SHOULD_INCLUDE_YES;
 }
 
 // Select members from the archive and add them to the link.  We walk
@@ -660,64 +740,23 @@ Archive::add_symbols(Symbol_table* symtab, Layout* layout,
 	  const char* sym_name = (this->armap_names_.data()
 				  + this->armap_[i].name_offset);
 
-	  // In an object file, and therefore in an archive map, an
-	  // '@' in the name separates the symbol name from the
-	  // version name.  If there are two '@' characters, this is
-	  // the default version.
-	  const char* ver = strchr(sym_name, '@');
-	  bool def = false;
-	  if (ver != NULL)
-	    {
-	      size_t symlen = ver - sym_name;
-	      if (symlen + 1 > tmpbuflen)
-		{
-		  tmpbuf = static_cast<char*>(realloc(tmpbuf, symlen + 1));
-		  tmpbuflen = symlen + 1;
-		}
-	      memcpy(tmpbuf, sym_name, symlen);
-	      tmpbuf[symlen] = '\0';
-	      sym_name = tmpbuf;
+          Symbol* sym;
+          std::string why;
+          Archive::Should_include t =
+	    Archive::should_include_member(symtab, layout, sym_name, &sym,
+					   &why, &tmpbuf, &tmpbuflen);
 
-	      ++ver;
-	      if (*ver == '@')
-		{
-		  ++ver;
-		  def = true;
-		}
-	    }
+	  if (t == Archive::SHOULD_INCLUDE_NO
+              || t == Archive::SHOULD_INCLUDE_YES)
+	    this->armap_checked_[i] = true;
 
-	  Symbol* sym = symtab->lookup(sym_name, ver);
-	  if (def
-	      && (sym == NULL
-		  || !sym->is_undefined()
-		  || sym->binding() == elfcpp::STB_WEAK))
-	    sym = symtab->lookup(sym_name, NULL);
-
-	  if (sym == NULL)
-	    {
-	      // Check whether the symbol was named in a -u option.
-	      if (!parameters->options().is_undefined(sym_name))
-		continue;
-	    }
-	  else if (!sym->is_undefined())
-	    {
-              this->armap_checked_[i] = true;
-	      continue;
-	    }
-	  else if (sym->binding() == elfcpp::STB_WEAK)
+	  if (t != Archive::SHOULD_INCLUDE_YES)
 	    continue;
 
 	  // We want to include this object in the link.
 	  last_seen_offset = this->armap_[i].file_offset;
 	  this->seen_offsets_.insert(last_seen_offset);
-          this->armap_checked_[i] = true;
 
-	  std::string why;
-	  if (sym == NULL)
-	    {
-	      why = "-u ";
-	      why += sym_name;
-	    }
 	  if (!this->include_member(symtab, layout, input_objects,
 				    last_seen_offset, mapfile, sym,
 				    why.c_str()))
@@ -809,9 +848,9 @@ Archive::include_member(Symbol_table* symtab, Layout* layout,
   std::map<off_t, Archive_member>::const_iterator p = this->members_.find(off);
   if (p != this->members_.end())
     {
-      Object *obj = p->second.obj_;
+      Object* obj = p->second.obj_;
 
-      Read_symbols_data *sd = p->second.sd_;
+      Read_symbols_data* sd = p->second.sd_;
       if (mapfile != NULL)
         mapfile->report_include_archive_member(obj->name(), sym, why);
       if (input_objects->add_object(obj))
@@ -831,11 +870,7 @@ Archive::include_member(Symbol_table* symtab, Layout* layout,
       && this->searched_for()
       && obj == NULL
       && unconfigured)
-    {
-      if (obj != NULL)
-	delete obj;
-      return false;
-    }
+    return false;
 
   if (obj == NULL)
     return true;
@@ -852,13 +887,23 @@ Archive::include_member(Symbol_table* symtab, Layout* layout,
     }
 
   if (!input_objects->add_object(obj))
-    delete obj;
+    {
+      // If this is an external member of a thin archive, unlock the
+      // file.
+      if (obj->offset() == 0)
+	obj->unlock(this->task_);
+      delete obj;
+    }
   else
     {
-      Read_symbols_data sd;
-      obj->read_symbols(&sd);
-      obj->layout(symtab, layout, &sd);
-      obj->add_symbols(symtab, &sd, layout);
+      {
+	if (layout->incremental_inputs() != NULL)
+	  layout->incremental_inputs()->report_object(obj, this);
+	Read_symbols_data sd;
+	obj->read_symbols(&sd);
+	obj->layout(symtab, layout, &sd);
+	obj->add_symbols(symtab, &sd, layout);
+      }
 
       // If this is an external member of a thin archive, unlock the file
       // for the next task.
@@ -915,6 +960,11 @@ Add_archive_symbols::locks(Task_locker* tl)
 void
 Add_archive_symbols::run(Workqueue* workqueue)
 {
+  // For an incremental link, begin recording layout information.
+  Incremental_inputs* incremental_inputs = this->layout_->incremental_inputs();
+  if (incremental_inputs != NULL)
+    incremental_inputs->report_archive_begin(this->archive_);
+
   bool added = this->archive_->add_symbols(this->symtab_, this->layout_,
 					   this->input_objects_,
 					   this->mapfile_);
@@ -941,10 +991,171 @@ Add_archive_symbols::run(Workqueue* workqueue)
     this->input_group_->add_archive(this->archive_);
   else
     {
+      // For an incremental link, finish recording the layout information.
+      Incremental_inputs* incremental_inputs = this->layout_->incremental_inputs();
+      if (incremental_inputs != NULL)
+	incremental_inputs->report_archive_end(this->archive_);
+
       // We no longer need to know about this archive.
       delete this->archive_;
       this->archive_ = NULL;
     }
+}
+
+// Class Lib_group static variables.
+unsigned int Lib_group::total_lib_groups;
+unsigned int Lib_group::total_members;
+unsigned int Lib_group::total_members_loaded;
+
+Lib_group::Lib_group(const Input_file_lib* lib, Task* task)
+  : lib_(lib), task_(task), members_()
+{
+  this->members_.resize(lib->size());
+}
+
+// Select members from the lib group and add them to the link.  We walk
+// through the the members, and check if each one up should be included.
+// If the object says it should be included, we do so.  We have to do
+// this in a loop, since including one member may create new undefined
+// symbols which may be satisfied by other members.
+
+void
+Lib_group::add_symbols(Symbol_table* symtab, Layout* layout,
+                       Input_objects* input_objects)
+{
+  ++Lib_group::total_lib_groups;
+
+  Lib_group::total_members += this->members_.size();
+
+  bool added_new_object;
+  do
+    {
+      added_new_object = false;
+      unsigned int i = 0;
+      while (i < this->members_.size())
+	{
+	  const Archive_member& member = this->members_[i];
+	  Object* obj = member.obj_;
+	  std::string why;
+
+          // Skip files with no symbols. Plugin objects have
+          // member.sd_ == NULL.
+          if (obj != NULL
+	      && (member.sd_ == NULL || member.sd_->symbol_names != NULL))
+            {
+	      Archive::Should_include t = obj->should_include_member(symtab,
+								     layout,
+								     member.sd_,
+								     &why);
+
+	      if (t != Archive::SHOULD_INCLUDE_YES)
+		{
+		  ++i;
+		  continue;
+		}
+
+	      this->include_member(symtab, layout, input_objects, member);
+
+	      added_new_object = true;
+	    }
+          else
+            {
+              if (member.sd_ != NULL)
+		{
+		  // The file must be locked in order to destroy the views
+		  // associated with it.
+		  gold_assert(obj != NULL);
+		  obj->lock(this->task_);
+		  delete member.sd_;
+		  obj->unlock(this->task_);
+		}
+            }
+
+	  this->members_[i] = this->members_.back();
+	  this->members_.pop_back();
+	}
+    }
+  while (added_new_object);
+}
+
+// Include a lib group member in the link.
+
+void
+Lib_group::include_member(Symbol_table* symtab, Layout* layout,
+			  Input_objects* input_objects,
+			  const Archive_member& member)
+{
+  ++Lib_group::total_members_loaded;
+
+  Object* obj = member.obj_;
+  gold_assert(obj != NULL);
+
+  Pluginobj* pluginobj = obj->pluginobj();
+  if (pluginobj != NULL)
+    {
+      pluginobj->add_symbols(symtab, NULL, layout);
+      return;
+    }
+
+  Read_symbols_data* sd = member.sd_;
+  gold_assert(sd != NULL);
+  obj->lock(this->task_);
+  if (input_objects->add_object(obj))
+    {
+      // FIXME: Record incremental link info for --start-lib/--end-lib.
+      if (layout->incremental_inputs() != NULL)
+	layout->incremental_inputs()->report_object(obj, NULL);
+      obj->layout(symtab, layout, sd);
+      obj->add_symbols(symtab, sd, layout);
+    }
+  delete sd;
+  // Unlock the file for the next task.
+  obj->unlock(this->task_);
+}
+
+// Print statistical information to stderr.  This is used for --stats.
+
+void
+Lib_group::print_stats()
+{
+  fprintf(stderr, _("%s: lib groups: %u\n"),
+          program_name, Lib_group::total_lib_groups);
+  fprintf(stderr, _("%s: total lib groups members: %u\n"),
+          program_name, Lib_group::total_members);
+  fprintf(stderr, _("%s: loaded lib groups members: %u\n"),
+          program_name, Lib_group::total_members_loaded);
+}
+
+Task_token*
+Add_lib_group_symbols::is_runnable()
+{
+  if (this->readsyms_blocker_ != NULL && this->readsyms_blocker_->is_blocked())
+    return this->readsyms_blocker_;
+  if (this->this_blocker_ != NULL && this->this_blocker_->is_blocked())
+    return this->this_blocker_;
+  return NULL;
+}
+
+void
+Add_lib_group_symbols::locks(Task_locker* tl)
+{
+  tl->add(this, this->next_blocker_);
+}
+
+void
+Add_lib_group_symbols::run(Workqueue*)
+{
+  this->lib_->add_symbols(this->symtab_, this->layout_, this->input_objects_);
+
+  // FIXME: Record incremental link info for --start_lib/--end_lib.
+}
+
+Add_lib_group_symbols::~Add_lib_group_symbols()
+{
+  if (this->this_blocker_ != NULL)
+    delete this->this_blocker_;
+  // next_blocker_ is deleted by the task associated with the next
+  // input file.
 }
 
 } // End namespace gold.

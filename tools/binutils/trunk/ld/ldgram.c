@@ -2736,17 +2736,17 @@ yyreduce:
 
   case 56:
 #line 290 "ldgram.y"
-    { ldlang_add_undef ((yyvsp[(1) - (1)].name)); }
+    { ldlang_add_undef ((yyvsp[(1) - (1)].name), FALSE); }
     break;
 
   case 57:
 #line 292 "ldgram.y"
-    { ldlang_add_undef ((yyvsp[(2) - (2)].name)); }
+    { ldlang_add_undef ((yyvsp[(2) - (2)].name), FALSE); }
     break;
 
   case 58:
 #line 294 "ldgram.y"
-    { ldlang_add_undef ((yyvsp[(3) - (3)].name)); }
+    { ldlang_add_undef ((yyvsp[(3) - (3)].name), FALSE); }
     break;
 
   case 59:
@@ -2885,32 +2885,32 @@ yyreduce:
 
   case 98:
 #line 381 "ldgram.y"
-    { (yyval.integer) = as_needed; as_needed = TRUE; }
+    { (yyval.integer) = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
     break;
 
   case 99:
 #line 383 "ldgram.y"
-    { as_needed = (yyvsp[(3) - (5)].integer); }
+    { add_DT_NEEDED_for_regular = (yyvsp[(3) - (5)].integer); }
     break;
 
   case 100:
 #line 385 "ldgram.y"
-    { (yyval.integer) = as_needed; as_needed = TRUE; }
+    { (yyval.integer) = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
     break;
 
   case 101:
 #line 387 "ldgram.y"
-    { as_needed = (yyvsp[(5) - (7)].integer); }
+    { add_DT_NEEDED_for_regular = (yyvsp[(5) - (7)].integer); }
     break;
 
   case 102:
 #line 389 "ldgram.y"
-    { (yyval.integer) = as_needed; as_needed = TRUE; }
+    { (yyval.integer) = add_DT_NEEDED_for_regular; add_DT_NEEDED_for_regular = TRUE; }
     break;
 
   case 103:
 #line 391 "ldgram.y"
-    { as_needed = (yyvsp[(4) - (6)].integer); }
+    { add_DT_NEEDED_for_regular = (yyvsp[(4) - (6)].integer); }
     break;
 
   case 108:

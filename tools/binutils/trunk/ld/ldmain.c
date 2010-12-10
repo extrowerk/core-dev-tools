@@ -40,6 +40,11 @@
 #include "ldfile.h"
 #include "ldemul.h"
 #include "ldctor.h"
+#ifdef ENABLE_PLUGINS
+#include "plugin.h"
+#include "plugin-api.h"
+#include "libbfd.h"
+#endif /* ENABLE_PLUGINS */
 
 /* Somewhere above, sys/stat.h got included.  */
 #if !defined(S_ISDIR) && defined(S_IFDIR)
@@ -93,13 +98,14 @@ bfd_boolean version_printed;
 /* Nonzero means link in every member of an archive.  */
 bfd_boolean whole_archive;
 
-/* Nonzero means create DT_NEEDED entries only if a dynamic library
-   actually satisfies some reference in a regular object.  */
-bfd_boolean as_needed;
+/* True means only create DT_NEEDED entries for dynamic libraries
+   if they actually satisfy some reference in a regular object.  */
+bfd_boolean add_DT_NEEDED_for_regular;
 
-/* Nonzero means never create DT_NEEDED entries for dynamic libraries
-   in DT_NEEDED tags.  */
-bfd_boolean add_needed = TRUE;
+/* True means create DT_NEEDED entries for dynamic libraries that
+   are DT_NEEDED by dynamic libraries specifically mentioned on
+   the command line.  */
+bfd_boolean add_DT_NEEDED_for_dynamic = TRUE;
 
 /* TRUE if we should demangle symbol names.  */
 bfd_boolean demangling;
@@ -115,7 +121,7 @@ static const char *get_sysroot
 static char *get_emulation
   (int, char **);
 static bfd_boolean add_archive_element
-  (struct bfd_link_info *, bfd *, const char *);
+  (struct bfd_link_info *, bfd *, const char *, bfd **);
 static bfd_boolean multiple_definition
   (struct bfd_link_info *, const char *, bfd *, asection *, bfd_vma,
    bfd *, asection *, bfd_vma);
@@ -252,6 +258,7 @@ main (int argc, char **argv)
   command_line.warn_mismatch = TRUE;
   command_line.warn_search_mismatch = TRUE;
   command_line.check_section_addresses = -1;
+  command_line.disable_target_specific_optimizations = -1;
 
   /* We initialize DEMANGLING based on the environment variable
      COLLECT_NO_DEMANGLE.  The gcc collect2 program will demangle the
@@ -471,6 +478,12 @@ main (int argc, char **argv)
     check_nocrossrefs ();
 
   lang_finish ();
+
+#ifdef ENABLE_PLUGINS
+  /* Now everything is finished, we can tell the plugins to clean up.  */
+  if (plugin_call_cleanup ())
+    info_msg (_("%P: %s: error in plugin cleanup (ignored)\n"), plugin_error_plugin ());
+#endif /* ENABLE_PLUGINS */
 
   /* Even if we're producing relocatable output, some non-fatal errors should
      be reported in the exit status.  (What non-fatal errors, if any, do we
@@ -779,15 +792,64 @@ add_keepsyms_file (const char *filename)
 static bfd_boolean
 add_archive_element (struct bfd_link_info *info,
 		     bfd *abfd,
-		     const char *name)
+		     const char *name,
+		     bfd **subsbfd ATTRIBUTE_UNUSED)
 {
   lang_input_statement_type *input;
+  lang_input_statement_type orig_input;
 
   input = (lang_input_statement_type *)
       xcalloc (1, sizeof (lang_input_statement_type));
   input->filename = abfd->filename;
   input->local_sym_name = abfd->filename;
   input->the_bfd = abfd;
+
+  /* Save the original data for trace files/tries below, as plugins
+     (if enabled) may possibly alter it to point to a replacement
+     BFD, but we still want to output the original BFD filename.  */
+  orig_input = *input;
+#ifdef ENABLE_PLUGINS
+  if (bfd_my_archive (abfd) != NULL && plugin_active_plugins_p ())
+    {
+      /* We must offer this archive member to the plugins to claim.  */
+      int fd = open (bfd_my_archive (abfd)->filename, O_RDONLY | O_BINARY);
+      if (fd >= 0)
+	{
+	  struct ld_plugin_input_file file;
+	  int claimed = 0;
+	  /* Offset and filesize must refer to the individual archive
+	     member, not the whole file, and must exclude the header.
+	     Fortunately for us, that is how the data is stored in the
+	     origin field of the bfd and in the arelt_data.  */
+	  file.name = bfd_my_archive (abfd)->filename;
+	  file.offset = abfd->origin;
+	  file.filesize = arelt_size (abfd);
+	  file.fd = fd;
+	  /* We create a dummy BFD, initially empty, to house
+	     whatever symbols the plugin may want to add.  */
+	  file.handle = plugin_get_ir_dummy_bfd (abfd->filename, abfd);
+	  if (plugin_call_claim_file (&file, &claimed))
+	    einfo (_("%P%F: %s: plugin reported error claiming file\n"),
+	      plugin_error_plugin ());
+	  /* fd belongs to us, not the plugin; but we don't need it.  */
+	  close (fd);
+	  if (claimed)
+	    {
+	      /* Substitute the dummy BFD.  */
+	      input->the_bfd = file.handle;
+	      input->claimed = TRUE;
+	      bfd_make_readable (input->the_bfd);
+	      *subsbfd = input->the_bfd;
+	    }
+	  else
+	    {
+	      /* Abandon the dummy BFD.  */
+	      bfd_close_all_done (file.handle);
+	      input->claimed = FALSE;
+	    }
+	}
+    }
+#endif /* ENABLE_PLUGINS */
 
   ldlang_add_file (input);
 
@@ -869,8 +931,7 @@ add_archive_element (struct bfd_link_info *info,
     }
 
   if (trace_files || trace_file_tries)
-    info_msg ("%I\n", input);
-
+    info_msg ("%I\n", &orig_input);
   return TRUE;
 }
 
@@ -887,6 +948,17 @@ multiple_definition (struct bfd_link_info *info ATTRIBUTE_UNUSED,
 		     asection *nsec,
 		     bfd_vma nval)
 {
+#ifdef ENABLE_PLUGINS
+  /* We may get called back even when --allow-multiple-definition is in
+     effect, as the plugin infrastructure needs to use this hook in
+     order to swap out IR-only symbols for real ones.  In that case,
+     it will let us know not to continue by returning TRUE even if this
+     is not an IR-only vs. non-IR symbol conflict.  */
+  if (plugin_multiple_definition (info, name, obfd, osec, oval, nbfd,
+	nsec, nval))
+    return TRUE;
+#endif /* ENABLE_PLUGINS */
+
   /* If either section has the output_section field set to
      bfd_abs_section_ptr, it means that the section is being
      discarded, and this is not really a multiple definition at all.
@@ -905,10 +977,10 @@ multiple_definition (struct bfd_link_info *info ATTRIBUTE_UNUSED,
   if (obfd != NULL)
     einfo (_("%D: first defined here\n"), obfd, osec, oval);
 
-  if (command_line.relax)
+  if (RELAXATION_ENABLED)
     {
       einfo (_("%P: Disabling relaxation: it will not work with multiple definitions\n"));
-      command_line.relax = 0;
+      command_line.disable_target_specific_optimizations = -1;
     }
 
   return TRUE;
@@ -1102,7 +1174,7 @@ warning_callback (struct bfd_link_info *info ATTRIBUTE_UNUSED,
     einfo ("%B: %s%s\n", abfd, _("warning: "), warning);
   else
     {
-      struct warning_callback_info info;
+      struct warning_callback_info cinfo;
 
       /* Look through the relocs to see if we can find a plausible
 	 address.  */
@@ -1110,13 +1182,13 @@ warning_callback (struct bfd_link_info *info ATTRIBUTE_UNUSED,
       if (!bfd_generic_link_read_symbols (abfd))
 	einfo (_("%B%F: could not read symbols: %E\n"), abfd);
 
-      info.found = FALSE;
-      info.warning = warning;
-      info.symbol = symbol;
-      info.asymbols = bfd_get_outsymbols (abfd);
-      bfd_map_over_sections (abfd, warning_find_reloc, &info);
+      cinfo.found = FALSE;
+      cinfo.warning = warning;
+      cinfo.symbol = symbol;
+      cinfo.asymbols = bfd_get_outsymbols (abfd);
+      bfd_map_over_sections (abfd, warning_find_reloc, &cinfo);
 
-      if (! info.found)
+      if (! cinfo.found)
 	einfo ("%B: %s%s\n", abfd, _("warning: "), warning);
     }
 
@@ -1369,7 +1441,10 @@ unattached_reloc (struct bfd_link_info *info ATTRIBUTE_UNUSED,
 
 /* This is called if link_info.notice_all is set, or when a symbol in
    link_info.notice_hash is found.  Symbols are put in notice_hash
-   using the -y option.  */
+   using the -y option, while notice_all is set if the --cref option
+   has been supplied, or if there are any NOCROSSREFS sections in the
+   linker script; and if plugins are active, since they need to monitor
+   all references from non-IR files.  */
 
 static bfd_boolean
 notice (struct bfd_link_info *info,
@@ -1385,9 +1460,17 @@ notice (struct bfd_link_info *info,
       return TRUE;
     }
 
-  if (! info->notice_all
-      || (info->notice_hash != NULL
-	  && bfd_hash_lookup (info->notice_hash, name, FALSE, FALSE) != NULL))
+#ifdef ENABLE_PLUGINS
+  /* We should hide symbols in the dummy IR BFDs from the nocrossrefs list
+     and let the real object files that are generated and added later trip
+     the error instead.  Similarly would be better to trace the real symbol
+     from the real file than the temporary dummy.  */
+  if (!plugin_notice (info, name, abfd, section, value))
+    return TRUE;
+#endif /* ENABLE_PLUGINS */
+
+  if (info->notice_hash != NULL
+	&& bfd_hash_lookup (info->notice_hash, name, FALSE, FALSE) != NULL)
     {
       if (bfd_is_und_section (section))
 	einfo ("%B: reference to %s\n", abfd, name);

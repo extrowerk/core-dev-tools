@@ -197,7 +197,8 @@ coff_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
 static bfd_boolean
 coff_link_check_ar_symbols (bfd *abfd,
 			    struct bfd_link_info *info,
-			    bfd_boolean *pneeded)
+			    bfd_boolean *pneeded,
+			    bfd **subsbfd)
 {
   bfd_size_type symesz;
   bfd_byte *esym;
@@ -243,7 +244,8 @@ coff_link_check_ar_symbols (bfd *abfd,
 	  if (h != (struct bfd_link_hash_entry *) NULL
 	      && h->type == bfd_link_hash_undefined)
 	    {
-	      if (! (*info->callbacks->add_archive_element) (info, abfd, name))
+	      if (! (*info->callbacks->add_archive_element)
+					(info, abfd, name, subsbfd))
 		return FALSE;
 	      *pneeded = TRUE;
 	      return TRUE;
@@ -267,14 +269,23 @@ coff_link_check_archive_element (bfd *abfd,
 				 struct bfd_link_info *info,
 				 bfd_boolean *pneeded)
 {
+  bfd *subsbfd = NULL;
+
   if (! _bfd_coff_get_external_symbols (abfd))
     return FALSE;
 
-  if (! coff_link_check_ar_symbols (abfd, info, pneeded))
+  if (! coff_link_check_ar_symbols (abfd, info, pneeded, &subsbfd))
+    return FALSE;
+
+  /* Potentially, the add_archive_element hook may have set a
+     substitute BFD for us.  */
+  if (*pneeded
+      && subsbfd
+      && ! _bfd_coff_get_external_symbols (subsbfd))
     return FALSE;
 
   if (*pneeded
-      && ! coff_link_add_symbols (abfd, info))
+      && ! coff_link_add_symbols (subsbfd ? subsbfd : abfd, info))
     return FALSE;
 
   if ((! info->keep_memory || ! *pneeded)
@@ -1514,11 +1525,13 @@ _bfd_coff_link_input_bfd (struct coff_final_link_info *finfo, bfd *input_bfd)
       /* Skip section symbols for sections which are not going to be
 	 emitted.  */
       if (!skip
-	  && dont_skip_symbol == 0
+	  && !dont_skip_symbol
 	  && isym.n_sclass == C_STAT
 	  && isym.n_type == T_NULL
-          && isym.n_numaux > 0
-	  && (*secpp)->output_section == bfd_abs_section_ptr)
+	  && isym.n_numaux > 0
+	  && ((*secpp)->output_section == bfd_abs_section_ptr
+	      || bfd_section_removed_from_list (output_bfd,
+						(*secpp)->output_section)))
 	skip = TRUE;
 #endif
 
