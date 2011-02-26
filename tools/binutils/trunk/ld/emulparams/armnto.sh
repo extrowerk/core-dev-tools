@@ -14,6 +14,7 @@ TEXT_START_SYMBOLS='_btext = . ;'
 DATA_START_SYMBOLS='__data_start = . ;';
 
 GENERATE_SHLIB_SCRIPT=yes
+GENERATE_PIE_SCRIPT=yes
 
 ARCH=arm
 MACHINE=
