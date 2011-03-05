@@ -7566,6 +7566,7 @@ sh_elf_encode_eh_address (bfd *abfd,
 #define ELF_MACHINE_CODE	EM_SH
 #ifdef __QNXTARGET__
 #define ELF_MAXPAGESIZE		0x1000
+#define ELF_COMMONPAGESIZE	0x1000
 #else
 #define ELF_MAXPAGESIZE		0x80
 #endif
