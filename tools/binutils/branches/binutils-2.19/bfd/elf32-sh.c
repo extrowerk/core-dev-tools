@@ -6050,6 +6050,7 @@ sh_elf_plt_sym_val (bfd_vma i, const asection *plt,
 #define ELF_MACHINE_CODE	EM_SH
 #ifdef __QNXTARGET__
 #define ELF_MAXPAGESIZE		0x1000
+#define ELF_COMMONPAGESIZE	0x1000
 #else
 #define ELF_MAXPAGESIZE		0x80
 #endif
