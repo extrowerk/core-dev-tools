@@ -2334,6 +2334,8 @@ static void
 nto_mourn_inferior (struct target_ops *ops)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+  const pid_t pid = PIDGET (inferior_ptid);
+
   nto_trace (0) ("nto_mourn_inferior()\n");
 
   nto_send_init (DStMsg_detach, 0, SET_CHANNEL_DEBUG);
@@ -2343,6 +2345,7 @@ nto_mourn_inferior (struct target_ops *ops)
   nto_send (sizeof (tran.pkt.detach), 1);
 
   generic_mourn_inferior ();
+  delete_inferior (pid);
 }
 
 int

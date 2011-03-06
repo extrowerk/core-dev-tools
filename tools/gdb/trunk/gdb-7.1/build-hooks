@@ -111,6 +111,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-tui"
 	configure_opts="${configure_opts} --disable-sim --without-sim"
 	configure_opts="${configure_opts} --with-expat=no"
+	configure_opts="${configure_opts} --disable-werror"
 	configure_opts="${configure_opts} --enable-targets=i386-linux"
         if [ ${GDB_SUFFIX} ]; then
            configure_opts="${configure_opts} --program-suffix=${GDB_SUFFIX}"

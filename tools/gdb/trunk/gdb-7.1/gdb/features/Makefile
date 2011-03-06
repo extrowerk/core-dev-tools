@@ -30,7 +30,7 @@
 # in the GDB repository.  To generate C files:
 #   make GDB=/path/to/gdb XMLTOC="xml files" cfiles
 
-WHICH = arm-with-iwmmxt arm-nto-with-iwmmxt arm-with-vfpv2 arm-with-vfpv3 arm-with-neon \
+WHICH = arm-with-iwmmxt arm-nto-with-iwmmxt arm-nto-with-neon arm-with-vfpv2 arm-with-vfpv3 arm-with-neon \
 	i386/i386 i386/i386-linux \
 	i386/i386-mmx i386/i386-mmx-linux \
 	i386/amd64 i386/amd64-linux \

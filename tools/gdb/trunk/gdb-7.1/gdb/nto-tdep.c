@@ -926,8 +926,12 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
 	      buff += sizeof_auxv_t;
 	      len_read += sizeof_auxv_t;
 	    }
-	  if (a_type == AT_PHNUM) /* That's all we need.  */
-	    break;
+	  else
+	    {
+	      break;
+	    }
+	  //if (a_type == AT_PHNUM) /* That's all we need.  */
+	   // break;
 	  initial_stack += sizeof_auxv_t;
 	}
       else
