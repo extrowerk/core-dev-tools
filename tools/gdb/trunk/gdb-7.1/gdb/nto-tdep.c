@@ -765,7 +765,6 @@ nto_break_on_this_solib_event (enum bptype type)
 }
 
 
-#if 0
 /* NTO Core handling.  */
 
 extern struct gdbarch *core_gdbarch;
@@ -847,9 +846,11 @@ nto_core_add_thread_private_data (bfd *abfd, asection *sect, void *notused)
 }
 static void (*original_core_open) (char *, int);
 static void (*original_core_close) (int);
-#endif
 
-//struct target_ops nto_core_ops;
+/* When opening a core, we do not want to set inferior hooks.  */
+static struct target_so_ops backup_so_ops;
+
+struct target_ops nto_core_ops;
 
 struct auxv_buf
 {
@@ -940,8 +941,7 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
   return len_read;
 }
 
-#if 0
-FIXME
+
 /* Read AUXV from note.  */
 static void
 nto_core_read_auxv_from_note (bfd *abfd, asection *sect, void *pauxv_buf)
@@ -1032,12 +1032,14 @@ nto_core_close (int i)
   nto_core_ops.to_close (i);
   //unpush_target (nto_core_ops);
 }
-#endif
+
+extern struct target_ops core_ops;
+
 
 static void
 init_nto_core_ops ()
 {
-  /*gdb_assert (core_ops.to_shortname != NULL 
+  gdb_assert (core_ops.to_shortname != NULL 
 	      && !!"core_ops must be initialized first!");
   nto_core_ops = core_ops;
   core_ops.to_extra_thread_info = nto_extra_thread_info;
@@ -1045,7 +1047,6 @@ init_nto_core_ops ()
   core_ops.to_close = nto_core_close;
   core_ops.to_xfer_partial = nto_core_xfer_partial;
   core_ops.to_pid_to_str = nto_pid_to_str;
-*/
 }
 
 int
