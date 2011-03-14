@@ -70,6 +70,9 @@ function hook_preconfigure {
 	win32*)
 	  root_dir="/c"
 	  ;;
+	darwin*)
+	  root_dir="/Developer/SDKs/"
+	  ;;
 	*)
 	  root_dir="/opt"
 	  ;;
