@@ -1780,8 +1780,10 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
       buf2 = read_program_headers_from_bfd (exec_bfd, &phdrs2_size);
       if (buf != NULL && buf2 != NULL
 	  && (phdrs_size != phdrs2_size
-	      || memcmp (buf, buf2, phdrs_size) != 0))
-	ok = 0;
+	      || memcmp (buf, buf2, phdrs_size) != 0)) {
+	warning (_("Executable headers don't match. But continue anyway."));
+	//ok = 0;
+      }
 
       xfree (buf);
       xfree (buf2);
