@@ -331,7 +331,7 @@ static char ch_text_packet[] =
 
 #if defined(__QNXNTO__) || defined (__SOLARIS__)
 #define errnoconvert(x) x
-#elif defined(__linux__) || defined (__CYGWIN__) || defined (__MINGW32__)
+#elif defined(__linux__) || defined (__CYGWIN__) || defined (__MINGW32__) || defined(__APPLE__)
 
 struct errnomap_t { int nto; int other; };
 
@@ -351,6 +351,11 @@ errnoconvert(int x)
       {NTO_ENAMETOOLONG, ENAMETOOLONG}, {NTO_ELIBACC, ESRCH},
       {NTO_ELIBBAD, ESRCH}, {NTO_ELIBSCN, ENOEXEC}, {NTO_ELIBMAX, EPERM},
       {NTO_ELIBEXEC, ENOEXEC}, {NTO_EILSEQ, EILSEQ}, {NTO_ENOSYS, ENOSYS}
+    #elif defined(__APPLE__)
+      {NTO_ENAMETOOLONG, ENAMETOOLONG}, {NTO_ELIBACC, ESRCH},
+      {NTO_ELIBBAD, ESRCH}, {NTO_ELIBSCN, ENOEXEC}, {NTO_ELIBMAX, EPERM},
+      {NTO_ELIBEXEC, ENOEXEC}, {NTO_EILSEQ, EILSEQ}, {NTO_ENOSYS, ENOSYS}
+
     #endif
   };
   int i;
