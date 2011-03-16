@@ -1379,7 +1379,7 @@ find_separate_debug_file_by_debuglink (struct objfile *objfile)
       if (IS_DIR_SEPARATOR (dir[i]))
 	break;
     }
-  gdb_assert (i >= 0 && IS_DIR_SEPARATOR (dir[i]));
+  //gdb_assert (i >= 0 && IS_DIR_SEPARATOR (dir[i]));
   dir[i+1] = '\0';
 
   /* Set I to max (strlen (canon_name), strlen (dir)). */
