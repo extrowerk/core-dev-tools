@@ -56,6 +56,9 @@ function hook_preconfigure {
 	win32)
 		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
 		;;
+	darwin)
+		basedir=/Developer/SDKs/qnx650/host/darwin/x86/usr
+		;;
 	*)
 		echo "Don't have config for ${SYSNAME}"
 		exit 1
