@@ -81,7 +81,7 @@ function hook_preconfigure {
 	  ;;
 	esac
 	
-	/* INSTALL_ROOT can override build-hooks setting.  */
+	# INSTALL_ROOT can override build-hooks setting. 
 	if [ x$INSTALL_ROOT = x ]; then
 	  INSTALL_ROOT=$root_dir/$qnx_install_version/host
 	fi
