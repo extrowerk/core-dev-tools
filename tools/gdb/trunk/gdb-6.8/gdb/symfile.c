@@ -1430,7 +1430,7 @@ find_separate_debug_file (struct objfile *objfile)
       if (IS_DIR_SEPARATOR (dir[i]))
 	break;
     }
-  gdb_assert (i >= 0 && IS_DIR_SEPARATOR (dir[i]));
+  //gdb_assert (i >= 0 && IS_DIR_SEPARATOR (dir[i]));
   dir[i+1] = '\0';
 
   debugfile = alloca (strlen (debug_file_directory) + 1
