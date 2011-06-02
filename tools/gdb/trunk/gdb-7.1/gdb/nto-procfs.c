@@ -48,9 +48,18 @@
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\
 		_DEBUG_FLAG_TRACE_WR|_DEBUG_FLAG_TRACE_MODIFY)
 
+/* Typedefs, we use gdb specific type names... to be consistent,
+   we use them here too.  */
+typedef debug_thread_t nto_procfs_status;
+typedef debug_process_t nto_procfs_info;
+
+extern int nto_stopped_by_watchpoint (void);
+
 static struct target_ops procfs_ops;
 
 int ctl_fd;
+
+extern unsigned int nto_inferior_stopped_flags;
 
 static void (*ofunc) ();
 
@@ -659,7 +668,7 @@ do_attach (ptid_t ptid)
   snprintf (path, PATH_MAX - 1, "%s/%d/as", nto_procfs_path, PIDGET (ptid));
   ctl_fd = open (path, O_RDWR);
   if (ctl_fd == -1)
-    error (_("Couldn't open proc file %s, error %d (%s)"), path, errno,
+    error (_("couldn't open /proc file %s, error %d (%s)"), path, errno,
 	   safe_strerror (errno));
   if (devctl (ctl_fd, DCMD_PROC_STOP, &status, sizeof (status), 0) != EOK)
     error (_("Couldn't stop process"));
@@ -723,6 +732,7 @@ procfs_wait (struct target_ops *ops,
   static int exit_signo = 0;	/* To track signals that cause termination.  */
 
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
+  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -743,6 +753,8 @@ procfs_wait (struct target_ops *ops,
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
+
+  nto_inferior_stopped_flags = status.flags;
 
   if (status.flags & _DEBUG_FLAG_SSTEP)
     {
@@ -782,9 +794,6 @@ procfs_wait (struct target_ops *ops,
 
 	case _DEBUG_WHY_TERMINATED:
 	  {
-	    int waitval = 0;
-
-	    waitpid (PIDGET (inferior_ptid), &waitval, WNOHANG);
 	    if (exit_signo)
 	      {
 		/* Abnormal death.  */
@@ -795,7 +804,7 @@ procfs_wait (struct target_ops *ops,
 	      {
 		/* Normal death.  */
 		ourstatus->kind = TARGET_WAITKIND_EXITED;
-		ourstatus->value.integer = WEXITSTATUS (waitval);
+		ourstatus->value.integer = status.what;
 	      }
 	    exit_signo = 0;
 	    break;
@@ -920,7 +929,7 @@ procfs_detach (struct target_ops *ops, char *args, int from_tty)
       char *exec_file = get_exec_file (0);
       if (exec_file == 0)
 	exec_file = "";
-      printf_unfiltered ("Detaching from program: %s %s\n",
+      printf_unfiltered ("Detaching from program: %s, %s\n",
 			 exec_file, target_pid_to_str (inferior_ptid));
       gdb_flush (gdb_stdout);
     }
@@ -1042,16 +1051,17 @@ procfs_resume (struct target_ops *ops,
 static void
 procfs_mourn_inferior (struct target_ops *ops)
 {
+  const pid_t pid = ptid_get_pid (inferior_ptid);
   if (!ptid_equal (inferior_ptid, null_ptid))
     {
       SignalKill (nto_node (), PIDGET (inferior_ptid), 0, SIGKILL, 0, 0);
       close (ctl_fd);
-      delete_inferior (ptid_get_pid (inferior_ptid));
     }
-  inferior_ptid = null_ptid;
   init_thread_list ();
   unpush_target (&procfs_ops);
   generic_mourn_inferior ();
+  if (pid != 0)
+    delete_inferior (ptid_get_pid (inferior_ptid));
 }
 
 /* This function breaks up an argument string into an argument
@@ -1220,11 +1230,12 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
     close (fds[2]);
 
   inferior_ptid = do_attach (pid_to_ptid (pid));
-  procfs_find_new_threads (ops);
 
   inf = current_inferior ();
   inferior_appeared (inf, pid);
   inf->attach_flag = 0;
+
+  procfs_find_new_threads (ops);
 
   flags = _DEBUG_FLAG_KLC;	/* Kill-on-Last-Close flag.  */
   errn = devctl (ctl_fd, DCMD_PROC_SET_FLAG, &flags, sizeof (flags), 0);
@@ -1431,7 +1442,7 @@ init_procfs_ops (void)
   procfs_ops.to_remove_hw_breakpoint = procfs_remove_breakpoint;
   procfs_ops.to_insert_watchpoint = procfs_insert_hw_watchpoint;
   procfs_ops.to_remove_watchpoint = procfs_remove_hw_watchpoint;
-  procfs_ops.to_stopped_by_watchpoint = procfs_stopped_by_watchpoint;
+  procfs_ops.to_stopped_by_watchpoint = nto_stopped_by_watchpoint;
   procfs_ops.to_terminal_init = terminal_init_inferior;
   procfs_ops.to_terminal_inferior = terminal_inferior;
   procfs_ops.to_terminal_ours_for_output = terminal_ours_for_output;
@@ -1535,8 +1546,3 @@ procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type)
   return procfs_hw_watchpoint (addr, len, type);
 }
 
-static int
-procfs_stopped_by_watchpoint (void)
-{
-  return 0;
-}
