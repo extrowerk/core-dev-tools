@@ -10169,7 +10169,9 @@ elf32_arm_merge_eabi_attributes (bfd *ibfd, bfd *obfd)
 		 follow the requirement of the input.  */
 	      if (out_attr[i].i == 0)
 		{
-		  BFD_ASSERT (out_attr[Tag_ABI_HardFP_use].i == 0);
+		/*  Remove assert as binutils 2.19.1 generated */
+		/*  Tag_ABI_HardFP_use without Tag_FP_arch */
+		/*  BFD_ASSERT (out_attr[Tag_ABI_HardFP_use].i == 0); */
 		  out_attr[i].i = in_attr[i].i;
 		  out_attr[Tag_ABI_HardFP_use].i
 		    = in_attr[Tag_ABI_HardFP_use].i;
@@ -10179,7 +10181,9 @@ elf32_arm_merge_eabi_attributes (bfd *ibfd, bfd *obfd)
 		 nothing.  */
 	      else if (in_attr[i].i == 0)
 		{
-		  BFD_ASSERT (in_attr[Tag_ABI_HardFP_use].i == 0);
+		/*  Remove assert as binutils 2.19.1 generated */
+		/*  Tag_ABI_HardFP_use without Tag_FP_arch */
+		/*  BFD_ASSERT (in_attr[Tag_ABI_HardFP_use].i == 0); */
 		  break;
 		}
 
