@@ -160,7 +160,7 @@ Index: qnx_svnupdate.sh
 +atrev=${atrev##*revision }
 +atrev=${atrev%\.}
 +
-+versionin="7.1 EXPERIMENTAL (rev. ${atrev})"
++versionin="7.3 EXPERIMENTAL (rev. ${atrev})"
 +
 +if [ "${APPEND_DATE}" ]; then
 +  now=`date +"%Y%m%d%H%M%S"`
