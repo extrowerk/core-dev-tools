@@ -1,7 +1,7 @@
 Index: nto-x86-o-ntox86/GNUmakefile
 ===================================================================
 --- nto-x86-o-ntox86/GNUmakefile	(revision 0)
-+++ nto-x86-o-ntox86/GNUmakefile	(revision 0)
++++ nto-x86-o-ntox86/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -13,7 +13,7 @@ Index: nto-x86-o-ntox86/GNUmakefile
 Index: nto-x86-o-ntosh/GNUmakefile
 ===================================================================
 --- nto-x86-o-ntosh/GNUmakefile	(revision 0)
-+++ nto-x86-o-ntosh/GNUmakefile	(revision 0)
++++ nto-x86-o-ntosh/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -25,7 +25,7 @@ Index: nto-x86-o-ntosh/GNUmakefile
 Index: darwin-x86-ntox86/GNUmakefile
 ===================================================================
 --- darwin-x86-ntox86/GNUmakefile	(revision 0)
-+++ darwin-x86-ntox86/GNUmakefile	(revision 0)
++++ darwin-x86-ntox86/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -37,7 +37,7 @@ Index: darwin-x86-ntox86/GNUmakefile
 Index: linux-x86-o-ntoarm/GNUmakefile
 ===================================================================
 --- linux-x86-o-ntoarm/GNUmakefile	(revision 0)
-+++ linux-x86-o-ntoarm/GNUmakefile	(revision 0)
++++ linux-x86-o-ntoarm/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -49,7 +49,7 @@ Index: linux-x86-o-ntoarm/GNUmakefile
 Index: Makefile
 ===================================================================
 --- Makefile	(revision 0)
-+++ Makefile	(revision 0)
++++ Makefile	(revision 551257)
 @@ -0,0 +1,3 @@
 +LIST=OS CPU VARIANT
 +MAKEFILE=GNUmakefile
@@ -57,7 +57,7 @@ Index: Makefile
 Index: linux-x86-o-ntoppc/GNUmakefile
 ===================================================================
 --- linux-x86-o-ntoppc/GNUmakefile	(revision 0)
-+++ linux-x86-o-ntoppc/GNUmakefile	(revision 0)
++++ linux-x86-o-ntoppc/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -68,8 +68,8 @@ Index: linux-x86-o-ntoppc/GNUmakefile
 +
 Index: libiberty/pex-unix.c
 ===================================================================
---- libiberty/pex-unix.c	(revision 552)
-+++ libiberty/pex-unix.c	(working copy)
+--- libiberty/pex-unix.c	(revision 551242)
++++ libiberty/pex-unix.c	(revision 551257)
 @@ -546,9 +546,9 @@ pex_unix_exec_child (struct pex_obj *obj ATTRIBUTE
        typedef const char * const *cc_cp;
  
@@ -85,7 +85,7 @@ Index: libiberty/pex-unix.c
 Index: darwin-x86-ntosh/GNUmakefile
 ===================================================================
 --- darwin-x86-ntosh/GNUmakefile	(revision 0)
-+++ darwin-x86-ntosh/GNUmakefile	(revision 0)
++++ darwin-x86-ntosh/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -97,14 +97,14 @@ Index: darwin-x86-ntosh/GNUmakefile
 Index: qnx_make
 ===================================================================
 --- qnx_make	(revision 0)
-+++ qnx_make	(revision 0)
++++ qnx_make	(revision 551257)
 @@ -0,0 +1,2 @@
 +#!/bin/sh
 +make -j4 OSLIST=win32 & make -j4 OSLIST=linux & make -j4 OSLIST=nto
 Index: nto-x86-o-ntomips/GNUmakefile
 ===================================================================
 --- nto-x86-o-ntomips/GNUmakefile	(revision 0)
-+++ nto-x86-o-ntomips/GNUmakefile	(revision 0)
++++ nto-x86-o-ntomips/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -116,7 +116,7 @@ Index: nto-x86-o-ntomips/GNUmakefile
 Index: qnx_svnupdate.sh
 ===================================================================
 --- qnx_svnupdate.sh	(revision 0)
-+++ qnx_svnupdate.sh	(revision 0)
++++ qnx_svnupdate.sh	(revision 551257)
 @@ -0,0 +1,52 @@
 +#!/bin/sh
 +# svnupdate.sh - script for generating proper (rev. NN) number
@@ -173,7 +173,7 @@ Index: qnx_svnupdate.sh
 Index: win32-x86-o-ntosh/GNUmakefile
 ===================================================================
 --- win32-x86-o-ntosh/GNUmakefile	(revision 0)
-+++ win32-x86-o-ntosh/GNUmakefile	(revision 0)
++++ win32-x86-o-ntosh/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -185,7 +185,7 @@ Index: win32-x86-o-ntosh/GNUmakefile
 Index: qnx_cleanall.sh
 ===================================================================
 --- qnx_cleanall.sh	(revision 0)
-+++ qnx_cleanall.sh	(revision 0)
++++ qnx_cleanall.sh	(revision 551257)
 @@ -0,0 +1,51 @@
 +#!/bin/bash
 +# Cleanup all build directories (but leave GNUmakefile files).
@@ -241,19 +241,7 @@ Index: qnx_cleanall.sh
 Index: win32-x86-o-ntoarm/GNUmakefile
 ===================================================================
 --- win32-x86-o-ntoarm/GNUmakefile	(revision 0)
-+++ win32-x86-o-ntoarm/GNUmakefile	(revision 0)
-@@ -0,0 +1,7 @@
-+ifndef QCONFIG
-+QCONFIG=qconfig.mk
-+endif
-+include $(QCONFIG)
-+
-+include $(MKFILES_ROOT)/qmake-cfg.mk
-+
-Index: linux-x86-o-ntox86/GNUmakefile
-===================================================================
---- linux-x86-o-ntox86/GNUmakefile	(revision 0)
-+++ linux-x86-o-ntox86/GNUmakefile	(revision 0)
++++ win32-x86-o-ntoarm/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -265,7 +253,19 @@ Index: linux-x86-o-ntox86/GNUmakefile
 Index: win32-x86-o-ntoppc/GNUmakefile
 ===================================================================
 --- win32-x86-o-ntoppc/GNUmakefile	(revision 0)
-+++ win32-x86-o-ntoppc/GNUmakefile	(revision 0)
++++ win32-x86-o-ntoppc/GNUmakefile	(revision 551257)
+@@ -0,0 +1,7 @@
++ifndef QCONFIG
++QCONFIG=qconfig.mk
++endif
++include $(QCONFIG)
++
++include $(MKFILES_ROOT)/qmake-cfg.mk
++
+Index: linux-x86-o-ntox86/GNUmakefile
+===================================================================
+--- linux-x86-o-ntox86/GNUmakefile	(revision 0)
++++ linux-x86-o-ntox86/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -277,7 +277,7 @@ Index: win32-x86-o-ntoppc/GNUmakefile
 Index: darwin-x86-ntomips/GNUmakefile
 ===================================================================
 --- darwin-x86-ntomips/GNUmakefile	(revision 0)
-+++ darwin-x86-ntomips/GNUmakefile	(revision 0)
++++ darwin-x86-ntomips/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -289,7 +289,7 @@ Index: darwin-x86-ntomips/GNUmakefile
 Index: linux-x86-o-ntomips/GNUmakefile
 ===================================================================
 --- linux-x86-o-ntomips/GNUmakefile	(revision 0)
-+++ linux-x86-o-ntomips/GNUmakefile	(revision 0)
++++ linux-x86-o-ntomips/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -301,7 +301,7 @@ Index: linux-x86-o-ntomips/GNUmakefile
 Index: win32-x86-o-ntomips/GNUmakefile
 ===================================================================
 --- win32-x86-o-ntomips/GNUmakefile	(revision 0)
-+++ win32-x86-o-ntomips/GNUmakefile	(revision 0)
++++ win32-x86-o-ntomips/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -313,7 +313,7 @@ Index: win32-x86-o-ntomips/GNUmakefile
 Index: nto-x86-o-ntoarm/GNUmakefile
 ===================================================================
 --- nto-x86-o-ntoarm/GNUmakefile	(revision 0)
-+++ nto-x86-o-ntoarm/GNUmakefile	(revision 0)
++++ nto-x86-o-ntoarm/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -325,7 +325,7 @@ Index: nto-x86-o-ntoarm/GNUmakefile
 Index: build-hooks
 ===================================================================
 --- build-hooks	(revision 0)
-+++ build-hooks	(revision 0)
++++ build-hooks	(revision 551257)
 @@ -0,0 +1,164 @@
 +target=${PWD##*-}
 +target_cpu=${target#nto*}
@@ -494,7 +494,7 @@ Index: build-hooks
 Index: nto-x86-o-ntoppc/GNUmakefile
 ===================================================================
 --- nto-x86-o-ntoppc/GNUmakefile	(revision 0)
-+++ nto-x86-o-ntoppc/GNUmakefile	(revision 0)
++++ nto-x86-o-ntoppc/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -506,7 +506,7 @@ Index: nto-x86-o-ntoppc/GNUmakefile
 Index: win32-x86-o-ntox86/GNUmakefile
 ===================================================================
 --- win32-x86-o-ntox86/GNUmakefile	(revision 0)
-+++ win32-x86-o-ntox86/GNUmakefile	(revision 0)
++++ win32-x86-o-ntox86/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -517,8 +517,8 @@ Index: win32-x86-o-ntox86/GNUmakefile
 +
 Index: bfd/sysdep.h
 ===================================================================
---- bfd/sysdep.h	(revision 552)
-+++ bfd/sysdep.h	(working copy)
+--- bfd/sysdep.h	(revision 551242)
++++ bfd/sysdep.h	(revision 551257)
 @@ -199,4 +199,18 @@ extern int fseeko64 (FILE *stream, off64_t offset,
  # define N_(String) (String)
  #endif
@@ -540,8 +540,8 @@ Index: bfd/sysdep.h
  #endif /* ! defined (BFD_SYSDEP_H) */
 Index: bfd/config.bfd
 ===================================================================
---- bfd/config.bfd	(revision 552)
-+++ bfd/config.bfd	(working copy)
+--- bfd/config.bfd	(revision 551242)
++++ bfd/config.bfd	(revision 551257)
 @@ -918,6 +918,10 @@ case "${targ}" in
      targ_defvec=bfd_elf32_tradbigmips_vec
      targ_selvecs="bfd_elf32_tradlittlemips_vec bfd_elf64_tradbigmips_vec bfd_elf64_tradlittlemips_vec ecoff_big_vec ecoff_little_vec"
@@ -555,8 +555,8 @@ Index: bfd/config.bfd
      targ_selvecs=ecoff_big_vec
 Index: bfd/coffcode.h
 ===================================================================
---- bfd/coffcode.h	(revision 552)
-+++ bfd/coffcode.h	(working copy)
+--- bfd/coffcode.h	(revision 551242)
++++ bfd/coffcode.h	(revision 551257)
 @@ -369,6 +369,8 @@ CODE_FRAGMENT
  #include "coffswap.h"
  #endif
@@ -569,7 +569,7 @@ Index: bfd/coffcode.h
 Index: gdb/ppc-nto-tdep.c
 ===================================================================
 --- gdb/ppc-nto-tdep.c	(revision 0)
-+++ gdb/ppc-nto-tdep.c	(revision 0)
++++ gdb/ppc-nto-tdep.c	(revision 551257)
 @@ -0,0 +1,928 @@
 +/* PPC specific functionality for QNX Neutrino.
 +
@@ -1501,8 +1501,8 @@ Index: gdb/ppc-nto-tdep.c
 +}
 Index: gdb/nto-tdep.c
 ===================================================================
---- gdb/nto-tdep.c	(revision 552)
-+++ gdb/nto-tdep.c	(working copy)
+--- gdb/nto-tdep.c	(revision 551242)
++++ gdb/nto-tdep.c	(revision 551257)
 @@ -35,22 +35,40 @@
  #include "gdbcore.h"
  #include "objfiles.h"
@@ -2579,8 +2579,8 @@ Index: gdb/nto-tdep.c
  }
 Index: gdb/nto-tdep.h
 ===================================================================
---- gdb/nto-tdep.h	(revision 552)
-+++ gdb/nto-tdep.h	(working copy)
+--- gdb/nto-tdep.h	(revision 551242)
++++ gdb/nto-tdep.h	(revision 551257)
 @@ -50,14 +50,14 @@ struct nto_target_ops
     regset it came from.  If reg == -1 update all regsets.  */
    int (*regset_id) (int);
@@ -2684,7 +2684,7 @@ Index: gdb/nto-tdep.h
 Index: gdb/arm-nto-tdep.c
 ===================================================================
 --- gdb/arm-nto-tdep.c	(revision 0)
-+++ gdb/arm-nto-tdep.c	(revision 0)
++++ gdb/arm-nto-tdep.c	(revision 551257)
 @@ -0,0 +1,721 @@
 +/* ARM specific functionality for QNX Neutrino.
 +
@@ -3409,8 +3409,8 @@ Index: gdb/arm-nto-tdep.c
 +}
 Index: gdb/testsuite/Makefile.in
 ===================================================================
---- gdb/testsuite/Makefile.in	(revision 552)
-+++ gdb/testsuite/Makefile.in	(working copy)
+--- gdb/testsuite/Makefile.in	(revision 551242)
++++ gdb/testsuite/Makefile.in	(revision 551257)
 @@ -120,6 +120,10 @@ $(abs_builddir)/site.exp site.exp: ./config.status
  	@echo "set build_triplet ${build_canonical}" >> ./tmp0
  	@echo "set srcdir ${srcdir}" >> ./tmp0
@@ -3422,10 +3422,25 @@ Index: gdb/testsuite/Makefile.in
  	@echo "## All variables above are generated by configure. Do Not Edit ##" >> ./tmp0
  		@cat ./tmp0 > site.exp
  	@cat site.bak | sed \
+Index: gdb/testsuite/qnxboardfiles/qnx.exp
+===================================================================
+--- gdb/testsuite/qnxboardfiles/qnx.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnx.exp	(revision 551257)
+@@ -0,0 +1,10 @@
++load_generic_config "unix"
++load_lib mi-support.exp
++load_lib libqnx.exp
++
++process_multilib_options ""
++
++global qnx_target_host
++global qnx_target_port
++set qnx_target_host 
++set qnx_target_port 
 Index: gdb/testsuite/qnxboardfiles/qnxmipsbe.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxmipsbe.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxmipsbe.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxmipsbe.exp	(revision 551257)
 @@ -0,0 +1,11 @@
 +load_generic_config "unix"
 +load_lib "mi-support.exp"
@@ -3441,7 +3456,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxmipsbe.exp
 Index: gdb/testsuite/qnxboardfiles/qnxx86self.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxx86self.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxx86self.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxx86self.exp	(revision 551257)
 @@ -0,0 +1,8 @@
 +load_generic_config "unix"
 +
@@ -3451,25 +3466,10 @@ Index: gdb/testsuite/qnxboardfiles/qnxx86self.exp
 +set CC_FOR_TARGET [find_gcc]
 +
 +
-Index: gdb/testsuite/qnxboardfiles/qnx.exp
-===================================================================
---- gdb/testsuite/qnxboardfiles/qnx.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnx.exp	(revision 0)
-@@ -0,0 +1,10 @@
-+load_generic_config "unix"
-+load_lib mi-support.exp
-+load_lib libqnx.exp
-+
-+process_multilib_options ""
-+
-+global qnx_target_host
-+global qnx_target_port
-+set qnx_target_host 
-+set qnx_target_port 
 Index: gdb/testsuite/qnxboardfiles/qnxarmle.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxarmle.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxarmle.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxarmle.exp	(revision 551257)
 @@ -0,0 +1,11 @@
 +load_generic_config "unix"
 +load_lib mi-support.exp
@@ -3485,7 +3485,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxarmle.exp
 Index: gdb/testsuite/qnxboardfiles/qnxppc.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxppc.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxppc.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxppc.exp	(revision 551257)
 @@ -0,0 +1,12 @@
 +load_generic_config "unix"
 +load_lib mi-support.exp
@@ -3502,7 +3502,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxppc.exp
 Index: gdb/testsuite/qnxboardfiles/qnxx86.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxx86.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxx86.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxx86.exp	(revision 551257)
 @@ -0,0 +1,17 @@
 +send_user "****************************************\n"
 +send_user "************** QNX X86 *****************\n"
@@ -3524,7 +3524,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxx86.exp
 Index: gdb/testsuite/qnxboardfiles/qnxarmbe.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxarmbe.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxarmbe.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxarmbe.exp	(revision 551257)
 @@ -0,0 +1,11 @@
 +load_generic_config "unix"
 +load_lib mi-support.exp
@@ -3540,7 +3540,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxarmbe.exp
 Index: gdb/testsuite/qnxboardfiles/qnxmipsle.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxmipsle.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxmipsle.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxmipsle.exp	(revision 551257)
 @@ -0,0 +1,12 @@
 +load_generic_config "unix"
 +load_lib "mi-support.exp"
@@ -3557,7 +3557,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxmipsle.exp
 Index: gdb/testsuite/qnxboardfiles/qnxsh.exp
 ===================================================================
 --- gdb/testsuite/qnxboardfiles/qnxsh.exp	(revision 0)
-+++ gdb/testsuite/qnxboardfiles/qnxsh.exp	(revision 0)
++++ gdb/testsuite/qnxboardfiles/qnxsh.exp	(revision 551257)
 @@ -0,0 +1,11 @@
 +load_generic_config "unix"
 +load_lib mi-support.exp
@@ -3573,7 +3573,7 @@ Index: gdb/testsuite/qnxboardfiles/qnxsh.exp
 Index: gdb/testsuite/lib/libqnx.exp
 ===================================================================
 --- gdb/testsuite/lib/libqnx.exp	(revision 0)
-+++ gdb/testsuite/lib/libqnx.exp	(revision 0)
++++ gdb/testsuite/lib/libqnx.exp	(revision 551257)
 @@ -0,0 +1,116 @@
 +# File Name: libqnx.exp
 +# Author:    Wade Hawkins
@@ -3693,8 +3693,8 @@ Index: gdb/testsuite/lib/libqnx.exp
 +
 Index: gdb/testsuite/lib/mi-support.exp
 ===================================================================
---- gdb/testsuite/lib/mi-support.exp	(revision 552)
-+++ gdb/testsuite/lib/mi-support.exp	(working copy)
+--- gdb/testsuite/lib/mi-support.exp	(revision 551242)
++++ gdb/testsuite/lib/mi-support.exp	(revision 551257)
 @@ -1571,6 +1571,9 @@ proc mi_send_resuming_command_raw {command test} {
              # as real failure.
  	    return 0
@@ -3707,8 +3707,8 @@ Index: gdb/testsuite/lib/mi-support.exp
              return -1
 Index: gdb/testsuite/gdb.base/siginfo.c
 ===================================================================
---- gdb/testsuite/gdb.base/siginfo.c	(revision 552)
-+++ gdb/testsuite/gdb.base/siginfo.c	(working copy)
+--- gdb/testsuite/gdb.base/siginfo.c	(revision 551242)
++++ gdb/testsuite/gdb.base/siginfo.c	(revision 551257)
 @@ -21,6 +21,7 @@
  #include <string.h>
  #include <signal.h>
@@ -3754,8 +3754,8 @@ Index: gdb/testsuite/gdb.base/siginfo.c
    while (!done);
 Index: gdb/testsuite/gdb.base/sigall.exp
 ===================================================================
---- gdb/testsuite/gdb.base/sigall.exp	(revision 552)
-+++ gdb/testsuite/gdb.base/sigall.exp	(working copy)
+--- gdb/testsuite/gdb.base/sigall.exp	(revision 551242)
++++ gdb/testsuite/gdb.base/sigall.exp	(revision 551257)
 @@ -12,8 +12,7 @@
  # GNU General Public License for more details.
  #
@@ -3798,8 +3798,8 @@ Index: gdb/testsuite/gdb.base/sigall.exp
  	    setup_xfail "i*86-pc-linuxoldld-gnu" "i*86-pc-linuxaout-gnu"
 Index: gdb/testsuite/gdb.base/attach.exp
 ===================================================================
---- gdb/testsuite/gdb.base/attach.exp	(revision 552)
-+++ gdb/testsuite/gdb.base/attach.exp	(working copy)
+--- gdb/testsuite/gdb.base/attach.exp	(revision 551242)
++++ gdb/testsuite/gdb.base/attach.exp	(revision 551257)
 @@ -241,8 +241,50 @@ proc do_attach_tests {} {
  	-re "Attaching to process $testpid.*Reading symbols from $escapedbinfile.*main.*at .*$gdb_prompt $" {
  	    pass "$test"
@@ -3853,8 +3853,8 @@ Index: gdb/testsuite/gdb.base/attach.exp
  
 Index: gdb/testsuite/gdb.base/signals.exp
 ===================================================================
---- gdb/testsuite/gdb.base/signals.exp	(revision 552)
-+++ gdb/testsuite/gdb.base/signals.exp	(working copy)
+--- gdb/testsuite/gdb.base/signals.exp	(revision 551242)
++++ gdb/testsuite/gdb.base/signals.exp	(revision 551257)
 @@ -104,7 +104,7 @@ if [runto_main] then {
  
      # ...setup the signal
@@ -3879,8 +3879,8 @@ Index: gdb/testsuite/gdb.base/signals.exp
  return 0
 Index: gdb/testsuite/gdb.base/sigstep.c
 ===================================================================
---- gdb/testsuite/gdb.base/sigstep.c	(revision 552)
-+++ gdb/testsuite/gdb.base/sigstep.c	(working copy)
+--- gdb/testsuite/gdb.base/sigstep.c	(revision 551242)
++++ gdb/testsuite/gdb.base/sigstep.c	(revision 551257)
 @@ -22,6 +22,7 @@
  #include <signal.h>
  #include <sys/time.h>
@@ -3891,8 +3891,8 @@ Index: gdb/testsuite/gdb.base/sigstep.c
  
 Index: gdb/testsuite/gdb.base/sigstep.exp
 ===================================================================
---- gdb/testsuite/gdb.base/sigstep.exp	(revision 552)
-+++ gdb/testsuite/gdb.base/sigstep.exp	(working copy)
+--- gdb/testsuite/gdb.base/sigstep.exp	(revision 551242)
++++ gdb/testsuite/gdb.base/sigstep.exp	(revision 551257)
 @@ -27,6 +27,12 @@ if [target_info exists gdb,nosignals] {
      continue
  }
@@ -3927,8 +3927,8 @@ Index: gdb/testsuite/gdb.base/sigstep.exp
  
 Index: gdb/testsuite/gdb.base/interrupt.exp
 ===================================================================
---- gdb/testsuite/gdb.base/interrupt.exp	(revision 552)
-+++ gdb/testsuite/gdb.base/interrupt.exp	(working copy)
+--- gdb/testsuite/gdb.base/interrupt.exp	(revision 551242)
++++ gdb/testsuite/gdb.base/interrupt.exp	(revision 551257)
 @@ -43,6 +43,13 @@ if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}
       return -1
  }
@@ -3971,8 +3971,8 @@ Index: gdb/testsuite/gdb.base/interrupt.exp
  	gdb_expect {
 Index: gdb/testsuite/gdb.base/signals.c
 ===================================================================
---- gdb/testsuite/gdb.base/signals.c	(revision 552)
-+++ gdb/testsuite/gdb.base/signals.c	(working copy)
+--- gdb/testsuite/gdb.base/signals.c	(revision 551242)
++++ gdb/testsuite/gdb.base/signals.c	(revision 551257)
 @@ -45,8 +45,8 @@ main ()
  #ifdef SIGALRM
    signal (SIGALRM, handler);
@@ -3986,8 +3986,8 @@ Index: gdb/testsuite/gdb.base/signals.c
    ++count; /* first */
 Index: gdb/testsuite/gdb.base/fileio.c
 ===================================================================
---- gdb/testsuite/gdb.base/fileio.c	(revision 552)
-+++ gdb/testsuite/gdb.base/fileio.c	(working copy)
+--- gdb/testsuite/gdb.base/fileio.c	(revision 551242)
++++ gdb/testsuite/gdb.base/fileio.c	(revision 551257)
 @@ -1,9 +1,9 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -4003,7 +4003,7 @@ Index: gdb/testsuite/gdb.base/fileio.c
 Index: gdb/sh-nto-tdep.c
 ===================================================================
 --- gdb/sh-nto-tdep.c	(revision 0)
-+++ gdb/sh-nto-tdep.c	(revision 0)
++++ gdb/sh-nto-tdep.c	(revision 551257)
 @@ -0,0 +1,562 @@
 +/* SH4 specific functionality for QNX Neutrino.
 +
@@ -4570,7 +4570,7 @@ Index: gdb/sh-nto-tdep.c
 Index: gdb/nto-share/dsmsgs.h
 ===================================================================
 --- gdb/nto-share/dsmsgs.h	(revision 0)
-+++ gdb/nto-share/dsmsgs.h	(revision 0)
++++ gdb/nto-share/dsmsgs.h	(revision 551257)
 @@ -0,0 +1,754 @@
 +/*
 + * $QNXtpLicenseC:  
@@ -5329,7 +5329,7 @@ Index: gdb/nto-share/dsmsgs.h
 Index: gdb/nto-share/debug.h
 ===================================================================
 --- gdb/nto-share/debug.h	(revision 0)
-+++ gdb/nto-share/debug.h	(revision 0)
++++ gdb/nto-share/debug.h	(revision 551257)
 @@ -0,0 +1,281 @@
 +/*
 + * $QNXtpLicenseC: $
@@ -5614,8 +5614,8 @@ Index: gdb/nto-share/debug.h
 +#endif /* __DEBUG_H_INCLUDED */
 Index: gdb/nto-procfs.c
 ===================================================================
---- gdb/nto-procfs.c	(revision 552)
-+++ gdb/nto-procfs.c	(working copy)
+--- gdb/nto-procfs.c	(revision 551242)
++++ gdb/nto-procfs.c	(revision 551257)
 @@ -48,10 +48,14 @@
  #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\
  		_DEBUG_FLAG_TRACE_WR|_DEBUG_FLAG_TRACE_MODIFY)
@@ -5926,7 +5926,7 @@ Index: gdb/nto-procfs.c
 Index: gdb/mips-nto-tdep.c
 ===================================================================
 --- gdb/mips-nto-tdep.c	(revision 0)
-+++ gdb/mips-nto-tdep.c	(revision 0)
++++ gdb/mips-nto-tdep.c	(revision 551257)
 @@ -0,0 +1,631 @@
 +/* MIPS specific functionality for QNX Neutrino.
 +
@@ -6561,8 +6561,8 @@ Index: gdb/mips-nto-tdep.c
 +}
 Index: gdb/configure.tgt
 ===================================================================
---- gdb/configure.tgt	(revision 552)
-+++ gdb/configure.tgt	(working copy)
+--- gdb/configure.tgt	(revision 551242)
++++ gdb/configure.tgt	(revision 551257)
 @@ -85,6 +85,12 @@ arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
  	# Target: NetBSD/arm
  	gdb_target_obs="arm-tdep.o armnbsd-tdep.o solib.o solib-svr4.o"
@@ -6630,7 +6630,7 @@ Index: gdb/configure.tgt
 Index: gdb/remote-nto.c
 ===================================================================
 --- gdb/remote-nto.c	(revision 0)
-+++ gdb/remote-nto.c	(revision 0)
++++ gdb/remote-nto.c	(revision 551257)
 @@ -0,0 +1,3521 @@
 +/*
 + * $QNXtpLicenseC:  
@@ -10155,15 +10155,15 @@ Index: gdb/remote-nto.c
 +}
 Index: gdb/version.in
 ===================================================================
---- gdb/version.in	(revision 552)
-+++ gdb/version.in	(working copy)
+--- gdb/version.in	(revision 551242)
++++ gdb/version.in	(revision 551257)
 @@ -1 +1 @@
 -7.2.90.20110616-cvs
 +7.2.90.20110616-cvs qnx-nto
 Index: gdb/i386-nto-tdep.c
 ===================================================================
---- gdb/i386-nto-tdep.c	(revision 552)
-+++ gdb/i386-nto-tdep.c	(working copy)
+--- gdb/i386-nto-tdep.c	(revision 551242)
++++ gdb/i386-nto-tdep.c	(revision 551257)
 @@ -78,7 +78,7 @@ nto_reg_offset (int regnum)
  }
  
@@ -10244,8 +10244,8 @@ Index: gdb/i386-nto-tdep.c
  {
 Index: gdb/gdbserver/Makefile.in
 ===================================================================
---- gdb/gdbserver/Makefile.in	(revision 552)
-+++ gdb/gdbserver/Makefile.in	(working copy)
+--- gdb/gdbserver/Makefile.in	(revision 551242)
++++ gdb/gdbserver/Makefile.in	(revision 551257)
 @@ -367,6 +367,8 @@ linux-amd64-ipa.o: linux-amd64-ipa.c $(server_h)
  amd64-linux-ipa.o : amd64-linux.c $(regdef_h)
  	$(CC) -c $(IPAGENT_CFLAGS) $< -o amd64-linux-ipa.o
@@ -10268,7 +10268,7 @@ Index: gdb/gdbserver/Makefile.in
 Index: gdb/nto-signals.c
 ===================================================================
 --- gdb/nto-signals.c	(revision 0)
-+++ gdb/nto-signals.c	(revision 0)
++++ gdb/nto-signals.c	(revision 551257)
 @@ -0,0 +1,156 @@
 +/* nto-signals.c - QNX Neutrino signal translation.
 +
@@ -10429,7 +10429,7 @@ Index: gdb/nto-signals.c
 Index: gdb/nto-signals.h
 ===================================================================
 --- gdb/nto-signals.h	(revision 0)
-+++ gdb/nto-signals.h	(revision 0)
++++ gdb/nto-signals.h	(revision 551257)
 @@ -0,0 +1,25 @@
 +/* nto-signals.h - QNX Neutrino signal translation.
 +
@@ -10458,8 +10458,8 @@ Index: gdb/nto-signals.h
 +
 Index: gdb/solib-svr4.c
 ===================================================================
---- gdb/solib-svr4.c	(revision 552)
-+++ gdb/solib-svr4.c	(working copy)
+--- gdb/solib-svr4.c	(revision 551242)
++++ gdb/solib-svr4.c	(revision 551257)
 @@ -1149,7 +1149,7 @@ svr4_current_sos (void)
  
        next_lm = LM_NEXT (new);
@@ -10471,8 +10471,8 @@ Index: gdb/solib-svr4.c
  	  free_so (new);
 Index: gdb/solib-svr4.h
 ===================================================================
---- gdb/solib-svr4.h	(revision 552)
-+++ gdb/solib-svr4.h	(working copy)
+--- gdb/solib-svr4.h	(revision 551242)
++++ gdb/solib-svr4.h	(revision 551257)
 @@ -35,6 +35,14 @@ struct link_map_offsets
      /* Offset and size of r_debug.r_version.  */
      int r_version_offset, r_version_size;
@@ -10491,7 +10491,7 @@ Index: gdb/solib-svr4.h
 Index: gdb/features/arm-nto-with-neon.c
 ===================================================================
 --- gdb/features/arm-nto-with-neon.c	(revision 0)
-+++ gdb/features/arm-nto-with-neon.c	(revision 0)
++++ gdb/features/arm-nto-with-neon.c	(revision 551257)
 @@ -0,0 +1,107 @@
 +/* THIS FILE IS GENERATED manually by using arm-with-neon.c as a base.
 +
@@ -10602,8 +10602,8 @@ Index: gdb/features/arm-nto-with-neon.c
 +}
 Index: gdb/features/Makefile
 ===================================================================
---- gdb/features/Makefile	(revision 552)
-+++ gdb/features/Makefile	(working copy)
+--- gdb/features/Makefile	(revision 551242)
++++ gdb/features/Makefile	(revision 551257)
 @@ -30,7 +30,7 @@
  # in the GDB repository.  To generate C files:
  #   make GDB=/path/to/gdb XMLTOC="xml files" cfiles
@@ -10624,7 +10624,7 @@ Index: gdb/features/Makefile
 Index: gdb/features/arm-nto-with-iwmmxt.c
 ===================================================================
 --- gdb/features/arm-nto-with-iwmmxt.c	(revision 0)
-+++ gdb/features/arm-nto-with-iwmmxt.c	(revision 0)
++++ gdb/features/arm-nto-with-iwmmxt.c	(revision 551257)
 @@ -0,0 +1,64 @@
 +/* THIS FILE IS GENERATED.  Original: arm-with-iwmmxt.xml */
 +
@@ -10693,7 +10693,7 @@ Index: gdb/features/arm-nto-with-iwmmxt.c
 Index: darwin-x86-ntoarm/GNUmakefile
 ===================================================================
 --- darwin-x86-ntoarm/GNUmakefile	(revision 0)
-+++ darwin-x86-ntoarm/GNUmakefile	(revision 0)
++++ darwin-x86-ntoarm/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -10705,7 +10705,7 @@ Index: darwin-x86-ntoarm/GNUmakefile
 Index: linux-x86-o-ntosh/GNUmakefile
 ===================================================================
 --- linux-x86-o-ntosh/GNUmakefile	(revision 0)
-+++ linux-x86-o-ntosh/GNUmakefile	(revision 0)
++++ linux-x86-o-ntosh/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
@@ -10717,7 +10717,7 @@ Index: linux-x86-o-ntosh/GNUmakefile
 Index: darwin-x86-ntoppc/GNUmakefile
 ===================================================================
 --- darwin-x86-ntoppc/GNUmakefile	(revision 0)
-+++ darwin-x86-ntoppc/GNUmakefile	(revision 0)
++++ darwin-x86-ntoppc/GNUmakefile	(revision 551257)
 @@ -0,0 +1,7 @@
 +ifndef QCONFIG
 +QCONFIG=qconfig.mk
