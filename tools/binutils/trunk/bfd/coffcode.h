@@ -369,6 +369,10 @@ CODE_FRAGMENT
 #include "coffswap.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #define STRING_SIZE_SIZE 4
 
 #define DOT_DEBUG	".debug"
