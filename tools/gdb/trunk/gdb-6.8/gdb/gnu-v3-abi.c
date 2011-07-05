@@ -420,6 +420,11 @@ gnuv3_baseclass_offset (struct type *type, int index, const bfd_byte *valaddr,
   vbasetype = TYPE_VPTR_BASETYPE (type);
   vbasetype_vptr_fieldno = get_vptr_fieldno (vbasetype, NULL);
 
+  if (TYPE_MAIN_TYPE (vbasetype)->fields == NULL)
+	{
+		error (_("Base class could not be determined. Object not yet initialized?"));
+	}
+
   if (vbasetype_vptr_fieldno >= 0
       && TYPE_FIELD_BITPOS (vbasetype, vbasetype_vptr_fieldno) != 0)
     error (_("Illegal vptr offset in class %s"),
