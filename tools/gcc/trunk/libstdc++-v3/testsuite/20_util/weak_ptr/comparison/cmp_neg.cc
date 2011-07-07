@@ -1,7 +1,7 @@
 // { dg-options "-std=gnu++0x " }
 // { dg-do compile }
 
-// Copyright (C) 2008, 2009 Free Software Foundation
+// Copyright (C) 2008, 2009, 2010, 2011 Free Software Foundation
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -21,7 +21,6 @@
 // 20.6.6.3 Template class weak_ptr [util.smartptr.weak]
 
 #include <memory>
-#include <testsuite_hooks.h>
 
 struct A { };
 
@@ -30,10 +29,10 @@ struct A { };
 int
 test01()
 {
-    std::weak_ptr<A> p1;
-    // { dg-excess-errors "deleted function" }
-    p1 < p1;  // { dg-error "used here" }
-    return 0;
+  std::weak_ptr<A> p1;
+  p1 < p1;  // { dg-error "no match" }
+  // { dg-error "candidate" "candidate note" { target *-*-* } 33 }
+  return 0;
 }
 
 int 
@@ -42,3 +41,13 @@ main()
   test01();
   return 0;
 }
+
+// { dg-warning "note" "" { target *-*-* } 354 }
+// { dg-warning "note" "" { target *-*-* } 1086 }
+// { dg-warning "note" "" { target *-*-* } 467 }
+// { dg-warning "note" "" { target *-*-* } 587 }
+// { dg-warning "note" "" { target *-*-* } 1050 }
+// { dg-warning "note" "" { target *-*-* } 1056 }
+// { dg-warning "note" "" { target *-*-* } 342 }
+// { dg-warning "note" "" { target *-*-* } 292 }
+// { dg-warning "note" "" { target *-*-* } 207 }

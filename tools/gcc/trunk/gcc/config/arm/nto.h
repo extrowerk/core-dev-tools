@@ -155,6 +155,6 @@ crtbegin.o%s "
 }
 
 #undef FPUTYPE_DEFAULT
-#define FPUTYPE_DEFAULT FPUTYPE_VFP
+#define FPUTYPE_DEFAULT "vfp" 
 
 #define USE_OLD_ATBASE
