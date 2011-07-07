@@ -121,7 +121,7 @@ do {                                            \
 {                                                                       \
  register unsigned long _beg __asm ("a1") = (unsigned long) (BEG);      \
   register unsigned long _len __asm ("a2") = (unsigned long) (END) - (unsigned long) (BEG); \
-  register unsigned long _flg __asm ("a3") = 0x2;			\
+  register unsigned long _flg __asm ("a3") = 0x1000000;			\
   __asm __volatile ("bl	msync"						\
                     : "=r" (_beg)					\
                     : "r" (_beg), "r" (_len), "r" (_flg));		\

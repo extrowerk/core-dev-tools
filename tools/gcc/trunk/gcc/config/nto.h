@@ -28,11 +28,11 @@ do { \
     char *qnx_host = getenv ("QNX_HOST"); \
     char *qnx_target = getenv ("QNX_TARGET"); \
     if (qnx_host == NULL && qnx_target == NULL) \
-      fatal ("error: environment variables QNX_HOST and QNX_TARGET not defined"); \
+      fatal_error ("error: environment variables QNX_HOST and QNX_TARGET not defined"); \
     if (qnx_host == NULL) \
-      fatal ("error: environment variable QNX_HOST not defined"); \
+      fatal_error ("error: environment variable QNX_HOST not defined"); \
     if (qnx_target == NULL) \
-      fatal ("error: environment variable QNX_TARGET not defined"); \
+      fatal_error ("error: environment variable QNX_TARGET not defined"); \
     standard_libexec_prefix = concat (qnx_host, "/usr/lib/gcc/", NULL); \
     standard_exec_prefix = concat (qnx_host, "/usr/lib/gcc/", NULL); \
     standard_startfile_prefix = concat (qnx_host, "/usr/lib/", NULL); \
@@ -64,12 +64,6 @@ do { \
 #define DWARF_DEBUGGING_INFO
 #define DWARF2_DEBUGGING_INFO
 
-/* Handle various #pragma's, including pack, pop and weak */
-#undef  HANDLE_SYSV_PRAGMA
-#define HANDLE_SYSV_PRAGMA 1
-#define HANDLE_PRAGMA_PACK 1
-#undef HANDLE_PRAGMA_PACK_PUSH_POP
-#define HANDLE_PRAGMA_PACK_PUSH_POP 1 
 #define SUPPORTS_WEAK 1
 
 #undef MD_EXEC_PREFIX
@@ -100,7 +94,7 @@ do {                                            \
 #define THREAD_MODEL_SPEC "posix"
 
 /* Under Neutrino, there is one set of header files for all targets. wchar_t is
-   defined as a 32 bit signed integer */
+   defined as a 32 bit unsigned integer */
 #undef WCHAR_TYPE
 #define WCHAR_TYPE "unsigned int"
 

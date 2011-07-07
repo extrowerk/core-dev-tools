@@ -1,7 +1,7 @@
 /*  -*- Mode: Asm -*-  */
 /* Copyright (C) 1998, 1999, 2000, 2007, 2008, 2009
    Free Software Foundation, Inc.
-   Contributed by Denis Chertykov <denisc@overta.ru>
+   Contributed by Denis Chertykov <chertykov@gmail.com>
 
 This file is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -645,6 +645,7 @@ __epilogue_restores__:
 _exit:
 	.weak	exit
 exit:
+	.endfunc
 
 	/* Code from .fini8 ... .fini1 sections inserted by ld script.  */
 
@@ -652,7 +653,6 @@ exit:
 	cli
 __stop_program:
 	rjmp	__stop_program
-	.endfunc
 #endif /* defined (L_exit) */
 
 #ifdef L_cleanup
