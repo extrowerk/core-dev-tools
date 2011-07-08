@@ -1,5 +1,5 @@
 This is doc/gfortran.info, produced by makeinfo version 4.13 from
-/d/gcc-4.6.0/gcc-4.6.0/gcc/fortran/gfortran.texi.
+/d/gcc-4.6.1/gcc-4.6.1/gcc/fortran/gfortran.texi.
 
 Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
@@ -885,7 +885,8 @@ produced by GNU Fortran:
      recommend avoiding and that we believe are easy to avoid.  This
      currently includes `-Waliasing', `-Wampersand', `-Wconversion',
      `-Wsurprising', `-Wintrinsics-std', `-Wno-tabs',
-     `-Wintrinsic-shadow', `-Wline-truncation', and `-Wunused'.
+     `-Wintrinsic-shadow', `-Wline-truncation', `-Wreal-q-constant' and
+     `-Wunused'.
 
 `-Waliasing'
      Warn about possible aliasing of dummy arguments. Specifically, it
@@ -946,6 +947,10 @@ produced by GNU Fortran:
      treats it as `EXTERNAL' procedure because of this.
      `-fall-intrinsics' can be used to never trigger this behavior and
      always link to the intrinsic regardless of the selected standard.
+
+`-Wreal-q-constant'
+     Produce a warning if a real-literal-constant contains a `q'
+     exponent-letter.
 
 `-Wsurprising'
      Produce a warning when "suspicious" code constructs are
@@ -2166,6 +2171,7 @@ without warning.
 * Missing period in FORMAT specifications::
 * I/O item lists::
 * BOZ literal constants::
+* `Q' exponent-letter::
 * Real array indices::
 * Unary operators::
 * Implicitly convert LOGICAL and INTEGER values::
@@ -2341,9 +2347,22 @@ To support legacy codes, GNU Fortran allows the input item list of the
 statements, to start with a comma.
 
 
-File: gfortran.info,  Node: BOZ literal constants,  Next: Real array indices,  Prev: I/O item lists,  Up: Extensions implemented in GNU Fortran
+File: gfortran.info,  Node: `Q' exponent-letter,  Next: Real array indices,  Prev: BOZ literal constants,  Up: Extensions implemented in GNU Fortran
 
-6.1.8 BOZ literal constants
+6.1.8 `Q' exponent-letter
+-------------------------
+
+GNU Fortran accepts real literal constants with an exponent-letter of
+`Q', for example, `1.23Q45'.  The constant is interpreted as a
+`REAL(16)' entity on targets that suppports this type.  If the target
+does not support `REAL(16)' but has a `REAL(10)' type, then the
+real-literal-constant will be interpreted as a `REAL(10)' entity.  In
+the absence of `REAL(16)' and `REAL(10)', an error will occur.
+
+
+File: gfortran.info,  Node: BOZ literal constants,  Next: `Q' exponent-letter,  Prev: I/O item lists,  Up: Extensions implemented in GNU Fortran
+
+6.1.9 BOZ literal constants
 ---------------------------
 
 Besides decimal constants, Fortran also supports binary (`b'), octal
@@ -2388,10 +2407,10 @@ used as a workaround for legacy code that initializes integers in this
 manner.
 
 
-File: gfortran.info,  Node: Real array indices,  Next: Unary operators,  Prev: BOZ literal constants,  Up: Extensions implemented in GNU Fortran
+File: gfortran.info,  Node: Real array indices,  Next: Unary operators,  Prev: `Q' exponent-letter,  Up: Extensions implemented in GNU Fortran
 
-6.1.9 Real array indices
-------------------------
+6.1.10 Real array indices
+-------------------------
 
 As an extension, GNU Fortran allows the use of `REAL' expressions or
 variables as array indices.
@@ -2399,7 +2418,7 @@ variables as array indices.
 
 File: gfortran.info,  Node: Unary operators,  Next: Implicitly convert LOGICAL and INTEGER values,  Prev: Real array indices,  Up: Extensions implemented in GNU Fortran
 
-6.1.10 Unary operators
+6.1.11 Unary operators
 ----------------------
 
 As an extension, GNU Fortran allows unary plus and unary minus operators
@@ -2411,7 +2430,7 @@ the need for parenthesis.
 
 File: gfortran.info,  Node: Implicitly convert LOGICAL and INTEGER values,  Next: Hollerith constants support,  Prev: Unary operators,  Up: Extensions implemented in GNU Fortran
 
-6.1.11 Implicitly convert `LOGICAL' and `INTEGER' values
+6.1.12 Implicitly convert `LOGICAL' and `INTEGER' values
 --------------------------------------------------------
 
 As an extension for backwards compatibility with other compilers, GNU
@@ -2434,7 +2453,7 @@ interpreted as `.TRUE.'.
 
 File: gfortran.info,  Node: Hollerith constants support,  Next: Cray pointers,  Prev: Implicitly convert LOGICAL and INTEGER values,  Up: Extensions implemented in GNU Fortran
 
-6.1.12 Hollerith constants support
+6.1.13 Hollerith constants support
 ----------------------------------
 
 GNU Fortran supports Hollerith constants in assignments, function
@@ -2470,7 +2489,7 @@ obtained by using the `TRANSFER' statement, as in this example.
 
 File: gfortran.info,  Node: Cray pointers,  Next: CONVERT specifier,  Prev: Hollerith constants support,  Up: Extensions implemented in GNU Fortran
 
-6.1.13 Cray pointers
+6.1.14 Cray pointers
 --------------------
 
 Cray pointers are part of a non-standard extension that provides a
@@ -2584,7 +2603,7 @@ will not change the base address of the array that was passed.
 
 File: gfortran.info,  Node: CONVERT specifier,  Next: OpenMP,  Prev: Cray pointers,  Up: Extensions implemented in GNU Fortran
 
-6.1.14 `CONVERT' specifier
+6.1.15 `CONVERT' specifier
 --------------------------
 
 GNU Fortran allows the conversion of unformatted data between little-
@@ -2631,7 +2650,7 @@ you, it is best if you use this only for data that needs to be portable.
 
 File: gfortran.info,  Node: OpenMP,  Next: Argument list functions,  Prev: CONVERT specifier,  Up: Extensions implemented in GNU Fortran
 
-6.1.15 OpenMP
+6.1.16 OpenMP
 -------------
 
 OpenMP (Open Multi-Processing) is an application programming interface
@@ -2683,7 +2702,7 @@ OpenMP Application Program Interface v2.5:
 
 File: gfortran.info,  Node: Argument list functions,  Prev: OpenMP,  Up: Extensions implemented in GNU Fortran
 
-6.1.16 Argument list functions `%VAL', `%REF' and `%LOC'
+6.1.17 Argument list functions `%VAL', `%REF' and `%LOC'
 --------------------------------------------------------
 
 GNU Fortran supports argument list functions `%VAL', `%REF' and `%LOC'
@@ -16310,43 +16329,45 @@ look up both forms.
 * undef:                                 Preprocessing Options.
                                                               (line 110)
 * Waliasing:                             Error and Warning Options.
-                                                              (line  68)
+                                                              (line  69)
 * Walign-commons:                        Error and Warning Options.
-                                                              (line 179)
+                                                              (line 184)
 * Wall:                                  Error and Warning Options.
                                                               (line  61)
 * Wampersand:                            Error and Warning Options.
-                                                              (line  85)
+                                                              (line  86)
 * Warray-temporaries:                    Error and Warning Options.
-                                                              (line  93)
+                                                              (line  94)
 * Wcharacter-truncation:                 Error and Warning Options.
-                                                              (line  98)
+                                                              (line  99)
 * Wconversion:                           Error and Warning Options.
-                                                              (line 104)
+                                                              (line 105)
 * Wconversion-extra:                     Error and Warning Options.
-                                                              (line 108)
+                                                              (line 109)
 * Werror:                                Error and Warning Options.
-                                                              (line 185)
+                                                              (line 190)
 * Wimplicit-interface:                   Error and Warning Options.
-                                                              (line 111)
+                                                              (line 112)
 * Wimplicit-procedure:                   Error and Warning Options.
-                                                              (line 117)
+                                                              (line 118)
 * Wintrinsic-shadow:                     Error and Warning Options.
-                                                              (line 162)
+                                                              (line 167)
 * Wintrinsics-std:                       Error and Warning Options.
-                                                              (line 121)
+                                                              (line 122)
 * Wline-truncation:                      Error and Warning Options.
-                                                              (line 101)
+                                                              (line 102)
+* Wreal-q-constant:                      Error and Warning Options.
+                                                              (line 129)
 * Wsurprising:                           Error and Warning Options.
-                                                              (line 128)
+                                                              (line 133)
 * Wtabs:                                 Error and Warning Options.
-                                                              (line 150)
+                                                              (line 155)
 * Wunderflow:                            Error and Warning Options.
-                                                              (line 158)
+                                                              (line 163)
 * Wunused-dummy-argument:                Error and Warning Options.
-                                                              (line 168)
+                                                              (line 173)
 * Wunused-parameter:                     Error and Warning Options.
-                                                              (line 172)
+                                                              (line 177)
 
 
 File: gfortran.info,  Node: Keyword Index,  Prev: Option Index,  Up: Top
@@ -16366,7 +16387,7 @@ Keyword Index
 * %VAL:                                  Argument list functions.
                                                               (line   6)
 * &:                                     Error and Warning Options.
-                                                              (line  85)
+                                                              (line  86)
 * [...]:                                 Fortran 2003 status. (line  68)
 * _gfortran_set_args:                    _gfortran_set_args.  (line   6)
 * _gfortran_set_convert:                 _gfortran_set_convert.
@@ -16395,10 +16416,10 @@ Keyword Index
 * ALARM:                                 ALARM.               (line   6)
 * ALGAMA:                                LOG_GAMMA.           (line   6)
 * aliasing:                              Error and Warning Options.
-                                                              (line  68)
+                                                              (line  69)
 * alignment of COMMON blocks <1>:        Code Gen Options.    (line 310)
 * alignment of COMMON blocks:            Error and Warning Options.
-                                                              (line 179)
+                                                              (line 184)
 * ALL:                                   ALL.                 (line   6)
 * all warnings:                          Error and Warning Options.
                                                               (line  61)
@@ -16633,7 +16654,7 @@ Keyword Index
 * Contributing:                          Contributing.        (line   6)
 * Contributors:                          Contributors.        (line   6)
 * conversion:                            Error and Warning Options.
-                                                              (line 104)
+                                                              (line 105)
 * conversion, to character:              CHAR.                (line   6)
 * conversion, to complex <1>:            DCMPLX.              (line   6)
 * conversion, to complex <2>:            COMPLEX.             (line   6)
@@ -16746,7 +16767,7 @@ Keyword Index
 * DTANH:                                 TANH.                (line   6)
 * DTIME:                                 DTIME.               (line   6)
 * dummy argument, unused:                Error and Warning Options.
-                                                              (line 168)
+                                                              (line 173)
 * elapsed time <1>:                      SECOND.              (line   6)
 * elapsed time <2>:                      SECNDS.              (line   6)
 * elapsed time:                          DTIME.               (line   6)
@@ -16924,7 +16945,7 @@ Keyword Index
 * Interoperability:                      Mixed-Language Programming.
                                                               (line   6)
 * intrinsic:                             Error and Warning Options.
-                                                              (line 162)
+                                                              (line 167)
 * intrinsic Modules:                     Intrinsic Modules.   (line   6)
 * intrinsic procedures:                  Intrinsic Procedures.
                                                               (line   6)
@@ -17167,6 +17188,7 @@ Keyword Index
 * program termination:                   EXIT.                (line   6)
 * program termination, with core dump:   ABORT.               (line   6)
 * PROTECTED statement:                   Fortran 2003 status. (line 104)
+* Q exponent-letter:                     Q exponent-letter.   (line   6)
 * RADIX:                                 RADIX.               (line   6)
 * radix, real:                           SELECTED_REAL_KIND.  (line   6)
 * RAN:                                   RAN.                 (line   6)
@@ -17330,7 +17352,7 @@ Keyword Index
 * system, working directory:             CHDIR.               (line   6)
 * SYSTEM_CLOCK:                          SYSTEM_CLOCK.        (line   6)
 * tabulators:                            Error and Warning Options.
-                                                              (line 150)
+                                                              (line 155)
 * TAN:                                   TAN.                 (line   6)
 * tangent:                               TAN.                 (line   6)
 * tangent, hyperbolic:                   TANH.                (line   6)
@@ -17383,14 +17405,14 @@ Keyword Index
 * UCOBOUND:                              UCOBOUND.            (line   6)
 * UMASK:                                 UMASK.               (line   6)
 * underflow:                             Error and Warning Options.
-                                                              (line 158)
+                                                              (line 163)
 * underscore:                            Code Gen Options.    (line  54)
 * UNLINK:                                UNLINK.              (line   6)
 * UNPACK:                                UNPACK.              (line   6)
 * unused dummy argument:                 Error and Warning Options.
-                                                              (line 168)
+                                                              (line 173)
 * unused parameter:                      Error and Warning Options.
-                                                              (line 172)
+                                                              (line 177)
 * USE, INTRINSIC statement:              Fortran 2003 status. (line 118)
 * user id:                               GETUID.              (line   6)
 * VALUE statement:                       Fortran 2003 status. (line 106)
@@ -17403,45 +17425,47 @@ Keyword Index
 * version of the compiler:               COMPILER_VERSION.    (line   6)
 * VOLATILE statement:                    Fortran 2003 status. (line 108)
 * warnings, aliasing:                    Error and Warning Options.
-                                                              (line  68)
+                                                              (line  69)
 * warnings, alignment of COMMON blocks:  Error and Warning Options.
-                                                              (line 179)
+                                                              (line 184)
 * warnings, all:                         Error and Warning Options.
                                                               (line  61)
 * warnings, ampersand:                   Error and Warning Options.
-                                                              (line  85)
+                                                              (line  86)
 * warnings, array temporaries:           Error and Warning Options.
-                                                              (line  93)
+                                                              (line  94)
 * warnings, character truncation:        Error and Warning Options.
-                                                              (line  98)
+                                                              (line  99)
 * warnings, conversion:                  Error and Warning Options.
-                                                              (line 104)
+                                                              (line 105)
 * warnings, implicit interface:          Error and Warning Options.
-                                                              (line 111)
+                                                              (line 112)
 * warnings, implicit procedure:          Error and Warning Options.
-                                                              (line 117)
+                                                              (line 118)
 * warnings, intrinsic:                   Error and Warning Options.
-                                                              (line 162)
+                                                              (line 167)
 * warnings, intrinsics of other standards: Error and Warning Options.
-                                                              (line 121)
+                                                              (line 122)
 * warnings, line truncation:             Error and Warning Options.
-                                                              (line 101)
+                                                              (line 102)
 * warnings, non-standard intrinsics:     Error and Warning Options.
-                                                              (line 121)
+                                                              (line 122)
+* warnings, q exponent-letter:           Error and Warning Options.
+                                                              (line 129)
 * warnings, suppressing:                 Error and Warning Options.
                                                               (line   6)
 * warnings, suspicious code:             Error and Warning Options.
-                                                              (line 128)
+                                                              (line 133)
 * warnings, tabs:                        Error and Warning Options.
-                                                              (line 150)
+                                                              (line 155)
 * warnings, to errors:                   Error and Warning Options.
-                                                              (line 185)
+                                                              (line 190)
 * warnings, underflow:                   Error and Warning Options.
-                                                              (line 158)
+                                                              (line 163)
 * warnings, unused dummy argument:       Error and Warning Options.
-                                                              (line 168)
+                                                              (line 173)
 * warnings, unused parameter:            Error and Warning Options.
-                                                              (line 172)
+                                                              (line 177)
 * write character, stream mode <1>:      FPUTC.               (line   6)
 * write character, stream mode:          FPUT.                (line   6)
 * XOR:                                   XOR.                 (line   6)
@@ -17472,339 +17496,340 @@ Node: Option Summary18212
 Node: Fortran Dialect Options21911
 Node: Preprocessing Options28947
 Node: Error and Warning Options37177
-Node: Debugging Options45137
-Node: Directory Options47753
-Node: Link Options49188
-Node: Runtime Options49812
-Node: Code Gen Options52062
-Node: Environment Variables67333
-Node: Runtime67938
-Node: GFORTRAN_STDIN_UNIT69166
-Node: GFORTRAN_STDOUT_UNIT69533
-Node: GFORTRAN_STDERR_UNIT69934
-Node: GFORTRAN_USE_STDERR70332
-Node: GFORTRAN_TMPDIR70778
-Node: GFORTRAN_UNBUFFERED_ALL71229
-Node: GFORTRAN_UNBUFFERED_PRECONNECTED71753
-Node: GFORTRAN_SHOW_LOCUS72395
-Node: GFORTRAN_OPTIONAL_PLUS72890
-Node: GFORTRAN_DEFAULT_RECL73366
-Node: GFORTRAN_LIST_SEPARATOR73857
-Node: GFORTRAN_CONVERT_UNIT74466
-Node: GFORTRAN_ERROR_DUMPCORE77328
-Node: GFORTRAN_ERROR_BACKTRACE77877
-Node: Fortran 2003 and 2008 status78429
-Node: Fortran 2003 status78669
-Node: Fortran 2008 status83316
-Node: Compiler Characteristics87970
-Node: KIND Type Parameters88486
-Node: Internal representation of LOGICAL variables89736
-Node: Thread-safety of the runtime library91093
-Node: Extensions92480
-Node: Extensions implemented in GNU Fortran93081
-Node: Old-style kind specifications94415
-Node: Old-style variable initialization95522
-Node: Extensions to namelist96834
-Node: X format descriptor without count field98831
-Node: Commas in FORMAT specifications99358
-Node: Missing period in FORMAT specifications99875
-Node: I/O item lists100437
-Node: BOZ literal constants100826
-Node: Real array indices103400
-Node: Unary operators103697
-Node: Implicitly convert LOGICAL and INTEGER values104111
-Node: Hollerith constants support105071
-Node: Cray pointers106843
-Node: CONVERT specifier112290
-Node: OpenMP114288
-Node: Argument list functions116539
-Node: Extensions not implemented in GNU Fortran118145
-Node: STRUCTURE and RECORD119067
-Node: ENCODE and DECODE statements121124
-Node: Variable FORMAT expressions122483
-Node: Alternate complex function syntax123588
-Node: Mixed-Language Programming124108
-Node: Interoperability with C124652
-Node: Intrinsic Types125990
-Node: Derived Types and struct126505
-Node: Interoperable Global Variables127861
-Node: Interoperable Subroutines and Functions129137
-Node: Working with Pointers132750
-Node: Further Interoperability of Fortran with C137067
-Node: GNU Fortran Compiler Directives138049
-Node: Non-Fortran Main Program140250
-Node: _gfortran_set_args142392
-Node: _gfortran_set_options143327
-Node: _gfortran_set_convert146233
-Node: _gfortran_set_record_marker147097
-Node: _gfortran_set_fpe147922
-Node: _gfortran_set_max_subrecord_length149136
-Node: Intrinsic Procedures150092
-Node: Introduction to Intrinsics165323
-Node: ABORT167675
-Node: ABS168432
-Node: ACCESS170049
-Node: ACHAR171970
-Node: ACOS173171
-Node: ACOSH174408
-Node: ADJUSTL175396
-Node: ADJUSTR176337
-Node: AIMAG177284
-Node: AINT178665
-Node: ALARM180252
-Node: ALL181886
-Node: ALLOCATED183804
-Node: AND184941
-Node: ANINT186238
-Node: ANY187716
-Node: ASIN189646
-Node: ASINH190872
-Node: ASSOCIATED191870
-Node: ATAN194875
-Node: ATAN2196294
-Node: ATANH197929
-Node: BESSEL_J0198925
-Node: BESSEL_J1199969
-Node: BESSEL_JN201021
-Node: BESSEL_Y0202903
-Node: BESSEL_Y1203903
-Node: BESSEL_YN204903
-Node: BGE206735
-Node: BGT207424
-Node: BIT_SIZE208071
-Node: BLE208892
-Node: BLT209571
-Node: BTEST210206
-Node: C_ASSOCIATED211089
-Node: C_FUNLOC212298
-Node: C_F_PROCPOINTER213667
-Node: C_F_POINTER215168
-Node: C_LOC216586
-Node: C_SIZEOF217863
-Node: CEILING219272
-Node: CHAR220277
-Node: CHDIR221481
-Node: CHMOD222649
-Node: CMPLX224444
-Node: COMMAND_ARGUMENT_COUNT225908
-Node: COMPILER_OPTIONS226822
-Node: COMPILER_VERSION227835
-Node: COMPLEX228803
-Node: CONJG229957
-Node: COS231037
-Node: COSH232483
-Node: COUNT233648
-Node: CPU_TIME235664
-Node: CSHIFT237018
-Node: CTIME238674
-Node: DATE_AND_TIME240327
-Node: DBLE242788
-Node: DCMPLX243581
-Node: DIGITS244775
-Node: DIM245741
-Node: DOT_PRODUCT246999
-Node: DPROD248655
-Node: DREAL249572
-Node: DSHIFTL250238
-Node: DSHIFTR251031
-Node: DTIME251825
-Node: EOSHIFT254628
-Node: EPSILON256701
-Node: ERF257427
-Node: ERFC258201
-Node: ERFC_SCALED259005
-Node: ETIME259697
-Node: EXECUTE_COMMAND_LINE261938
-Node: EXIT264518
-Node: EXP265392
-Node: EXPONENT266665
-Node: EXTENDS_TYPE_OF267425
-Node: FDATE268278
-Node: FGET269760
-Node: FGETC271578
-Node: FLOOR273377
-Node: FLUSH274361
-Node: FNUM276236
-Node: FPUT276958
-Node: FPUTC278583
-Node: FRACTION280354
-Node: FREE281255
-Node: FSEEK282090
-Node: FSTAT284384
-Node: FTELL285464
-Node: GAMMA286442
-Node: GERROR287483
-Node: GETARG288202
-Node: GET_COMMAND289966
-Node: GET_COMMAND_ARGUMENT291330
-Node: GETCWD293364
-Node: GETENV294336
-Node: GET_ENVIRONMENT_VARIABLE295759
-Node: GETGID297912
-Node: GETLOG298449
-Node: GETPID299309
-Node: GETUID300039
-Node: GMTIME300555
-Node: HOSTNM302044
-Node: HUGE302962
-Node: HYPOT303683
-Node: IACHAR304503
-Node: IALL305683
-Node: IAND307160
-Node: IANY308144
-Node: IARGC309630
-Node: IBCLR310651
-Node: IBITS311312
-Node: IBSET312227
-Node: ICHAR312883
-Node: IDATE315055
-Node: IEOR316082
-Node: IERRNO316958
-Node: IMAGE_INDEX317507
-Node: INDEX intrinsic318531
-Node: INT320072
-Node: INT2321774
-Node: INT8322539
-Node: IOR323251
-Node: IPARITY324103
-Node: IRAND325627
-Node: IS_IOSTAT_END326983
-Node: IS_IOSTAT_EOR328080
-Node: ISATTY329207
-Node: ISHFT329990
-Node: ISHFTC330970
-Node: ISNAN332186
-Node: ITIME332934
-Node: KILL333959
-Node: KIND334863
-Node: LBOUND335708
-Node: LCOBOUND337041
-Node: LEADZ338171
-Node: LEN339031
-Node: LEN_TRIM340312
-Node: LGE341294
-Node: LGT342796
-Node: LINK344263
-Node: LLE345298
-Node: LLT346792
-Node: LNBLNK348252
-Node: LOC349028
-Node: LOG349759
-Node: LOG10351162
-Node: LOG_GAMMA352136
-Node: LOGICAL353225
-Node: LONG354033
-Node: LSHIFT354789
-Node: LSTAT355874
-Node: LTIME357068
-Node: MALLOC358479
-Node: MASKL359938
-Node: MASKR360701
-Node: MATMUL361467
-Node: MAX362556
-Node: MAXEXPONENT364055
-Node: MAXLOC364871
-Node: MAXVAL366890
-Node: MCLOCK368523
-Node: MCLOCK8369526
-Node: MERGE370738
-Node: MERGE_BITS371487
-Node: MIN372348
-Node: MINEXPONENT373849
-Node: MINLOC374479
-Node: MINVAL376498
-Node: MOD378150
-Node: MODULO379757
-Node: MOVE_ALLOC380971
-Node: MVBITS382000
-Node: NEAREST383059
-Node: NEW_LINE384182
-Node: NINT384953
-Node: NORM2386356
-Node: NOT387494
-Node: NULL388078
-Node: NUM_IMAGES388983
-Node: OR389799
-Node: PACK391083
-Node: PARITY393075
-Node: PERROR394290
-Node: PRECISION394911
-Node: POPCNT395797
-Node: POPPAR396668
-Node: PRESENT397719
-Node: PRODUCT398825
-Node: RADIX400350
-Node: RAN401172
-Node: RAND401628
-Node: RANDOM_NUMBER402960
-Node: RANDOM_SEED404678
-Node: RANGE406563
-Node: REAL407251
-Node: RENAME409025
-Node: REPEAT410044
-Node: RESHAPE410770
-Node: RRSPACING412239
-Node: RSHIFT412932
-Node: SAME_TYPE_AS414070
-Node: SCALE414900
-Node: SCAN415680
-Node: SECNDS417230
-Node: SECOND418318
-Node: SELECTED_CHAR_KIND419194
-Node: SELECTED_INT_KIND420785
-Node: SELECTED_REAL_KIND421960
-Node: SET_EXPONENT424626
-Node: SHAPE425622
-Node: SHIFTA427037
-Node: SHIFTL427998
-Node: SHIFTR428833
-Node: SIGN429669
-Node: SIGNAL430953
-Node: SIN432450
-Node: SINH433548
-Node: SIZE434544
-Node: SIZEOF435852
-Node: SLEEP437263
-Node: SPACING437823
-Node: SPREAD438836
-Node: SQRT439981
-Node: SRAND441335
-Node: STAT442503
-Node: STORAGE_SIZE445670
-Node: SUM446550
-Node: SYMLNK448033
-Node: SYSTEM449165
-Node: SYSTEM_CLOCK450416
-Node: TAN452574
-Node: TANH453546
-Node: THIS_IMAGE454703
-Node: TIME456195
-Node: TIME8457299
-Node: TINY458428
-Node: TRAILZ459028
-Node: TRANSFER459845
-Node: TRANSPOSE461879
-Node: TRIM462566
-Node: TTYNAM463423
-Node: UBOUND464338
-Node: UCOBOUND465728
-Node: UMASK466860
-Node: UNLINK467538
-Node: UNPACK468515
-Node: VERIFY469803
-Node: XOR471524
-Node: Intrinsic Modules472896
-Node: ISO_FORTRAN_ENV473139
-Node: ISO_C_BINDING476979
-Node: OpenMP Modules OMP_LIB and OMP_LIB_KINDS480841
-Node: Contributing482167
-Node: Contributors483019
-Node: Projects484686
-Node: Proposed Extensions485490
-Node: Copying487501
-Node: GNU Free Documentation License525065
-Node: Funding550208
-Node: Option Index552733
-Node: Keyword Index565550
+Node: Debugging Options45270
+Node: Directory Options47886
+Node: Link Options49321
+Node: Runtime Options49945
+Node: Code Gen Options52195
+Node: Environment Variables67466
+Node: Runtime68071
+Node: GFORTRAN_STDIN_UNIT69299
+Node: GFORTRAN_STDOUT_UNIT69666
+Node: GFORTRAN_STDERR_UNIT70067
+Node: GFORTRAN_USE_STDERR70465
+Node: GFORTRAN_TMPDIR70911
+Node: GFORTRAN_UNBUFFERED_ALL71362
+Node: GFORTRAN_UNBUFFERED_PRECONNECTED71886
+Node: GFORTRAN_SHOW_LOCUS72528
+Node: GFORTRAN_OPTIONAL_PLUS73023
+Node: GFORTRAN_DEFAULT_RECL73499
+Node: GFORTRAN_LIST_SEPARATOR73990
+Node: GFORTRAN_CONVERT_UNIT74599
+Node: GFORTRAN_ERROR_DUMPCORE77461
+Node: GFORTRAN_ERROR_BACKTRACE78010
+Node: Fortran 2003 and 2008 status78562
+Node: Fortran 2003 status78802
+Node: Fortran 2008 status83449
+Node: Compiler Characteristics88103
+Node: KIND Type Parameters88619
+Node: Internal representation of LOGICAL variables89869
+Node: Thread-safety of the runtime library91226
+Node: Extensions92613
+Node: Extensions implemented in GNU Fortran93214
+Node: Old-style kind specifications94572
+Node: Old-style variable initialization95679
+Node: Extensions to namelist96991
+Node: X format descriptor without count field98988
+Node: Commas in FORMAT specifications99515
+Node: Missing period in FORMAT specifications100032
+Node: I/O item lists100594
+Node: `Q' exponent-letter100983
+Node: BOZ literal constants101589
+Node: Real array indices104164
+Node: Unary operators104461
+Node: Implicitly convert LOGICAL and INTEGER values104875
+Node: Hollerith constants support105835
+Node: Cray pointers107607
+Node: CONVERT specifier113054
+Node: OpenMP115052
+Node: Argument list functions117303
+Node: Extensions not implemented in GNU Fortran118909
+Node: STRUCTURE and RECORD119831
+Node: ENCODE and DECODE statements121888
+Node: Variable FORMAT expressions123247
+Node: Alternate complex function syntax124352
+Node: Mixed-Language Programming124872
+Node: Interoperability with C125416
+Node: Intrinsic Types126754
+Node: Derived Types and struct127269
+Node: Interoperable Global Variables128625
+Node: Interoperable Subroutines and Functions129901
+Node: Working with Pointers133514
+Node: Further Interoperability of Fortran with C137831
+Node: GNU Fortran Compiler Directives138813
+Node: Non-Fortran Main Program141014
+Node: _gfortran_set_args143156
+Node: _gfortran_set_options144091
+Node: _gfortran_set_convert146997
+Node: _gfortran_set_record_marker147861
+Node: _gfortran_set_fpe148686
+Node: _gfortran_set_max_subrecord_length149900
+Node: Intrinsic Procedures150856
+Node: Introduction to Intrinsics166087
+Node: ABORT168439
+Node: ABS169196
+Node: ACCESS170813
+Node: ACHAR172734
+Node: ACOS173935
+Node: ACOSH175172
+Node: ADJUSTL176160
+Node: ADJUSTR177101
+Node: AIMAG178048
+Node: AINT179429
+Node: ALARM181016
+Node: ALL182650
+Node: ALLOCATED184568
+Node: AND185705
+Node: ANINT187002
+Node: ANY188480
+Node: ASIN190410
+Node: ASINH191636
+Node: ASSOCIATED192634
+Node: ATAN195639
+Node: ATAN2197058
+Node: ATANH198693
+Node: BESSEL_J0199689
+Node: BESSEL_J1200733
+Node: BESSEL_JN201785
+Node: BESSEL_Y0203667
+Node: BESSEL_Y1204667
+Node: BESSEL_YN205667
+Node: BGE207499
+Node: BGT208188
+Node: BIT_SIZE208835
+Node: BLE209656
+Node: BLT210335
+Node: BTEST210970
+Node: C_ASSOCIATED211853
+Node: C_FUNLOC213062
+Node: C_F_PROCPOINTER214431
+Node: C_F_POINTER215932
+Node: C_LOC217350
+Node: C_SIZEOF218627
+Node: CEILING220036
+Node: CHAR221041
+Node: CHDIR222245
+Node: CHMOD223413
+Node: CMPLX225208
+Node: COMMAND_ARGUMENT_COUNT226672
+Node: COMPILER_OPTIONS227586
+Node: COMPILER_VERSION228599
+Node: COMPLEX229567
+Node: CONJG230721
+Node: COS231801
+Node: COSH233247
+Node: COUNT234412
+Node: CPU_TIME236428
+Node: CSHIFT237782
+Node: CTIME239438
+Node: DATE_AND_TIME241091
+Node: DBLE243552
+Node: DCMPLX244345
+Node: DIGITS245539
+Node: DIM246505
+Node: DOT_PRODUCT247763
+Node: DPROD249419
+Node: DREAL250336
+Node: DSHIFTL251002
+Node: DSHIFTR251795
+Node: DTIME252589
+Node: EOSHIFT255392
+Node: EPSILON257465
+Node: ERF258191
+Node: ERFC258965
+Node: ERFC_SCALED259769
+Node: ETIME260461
+Node: EXECUTE_COMMAND_LINE262702
+Node: EXIT265282
+Node: EXP266156
+Node: EXPONENT267429
+Node: EXTENDS_TYPE_OF268189
+Node: FDATE269042
+Node: FGET270524
+Node: FGETC272342
+Node: FLOOR274141
+Node: FLUSH275125
+Node: FNUM277000
+Node: FPUT277722
+Node: FPUTC279347
+Node: FRACTION281118
+Node: FREE282019
+Node: FSEEK282854
+Node: FSTAT285148
+Node: FTELL286228
+Node: GAMMA287206
+Node: GERROR288247
+Node: GETARG288966
+Node: GET_COMMAND290730
+Node: GET_COMMAND_ARGUMENT292094
+Node: GETCWD294128
+Node: GETENV295100
+Node: GET_ENVIRONMENT_VARIABLE296523
+Node: GETGID298676
+Node: GETLOG299213
+Node: GETPID300073
+Node: GETUID300803
+Node: GMTIME301319
+Node: HOSTNM302808
+Node: HUGE303726
+Node: HYPOT304447
+Node: IACHAR305267
+Node: IALL306447
+Node: IAND307924
+Node: IANY308908
+Node: IARGC310394
+Node: IBCLR311415
+Node: IBITS312076
+Node: IBSET312991
+Node: ICHAR313647
+Node: IDATE315819
+Node: IEOR316846
+Node: IERRNO317722
+Node: IMAGE_INDEX318271
+Node: INDEX intrinsic319295
+Node: INT320836
+Node: INT2322538
+Node: INT8323303
+Node: IOR324015
+Node: IPARITY324867
+Node: IRAND326391
+Node: IS_IOSTAT_END327747
+Node: IS_IOSTAT_EOR328844
+Node: ISATTY329971
+Node: ISHFT330754
+Node: ISHFTC331734
+Node: ISNAN332950
+Node: ITIME333698
+Node: KILL334723
+Node: KIND335627
+Node: LBOUND336472
+Node: LCOBOUND337805
+Node: LEADZ338935
+Node: LEN339795
+Node: LEN_TRIM341076
+Node: LGE342058
+Node: LGT343560
+Node: LINK345027
+Node: LLE346062
+Node: LLT347556
+Node: LNBLNK349016
+Node: LOC349792
+Node: LOG350523
+Node: LOG10351926
+Node: LOG_GAMMA352900
+Node: LOGICAL353989
+Node: LONG354797
+Node: LSHIFT355553
+Node: LSTAT356638
+Node: LTIME357832
+Node: MALLOC359243
+Node: MASKL360702
+Node: MASKR361465
+Node: MATMUL362231
+Node: MAX363320
+Node: MAXEXPONENT364819
+Node: MAXLOC365635
+Node: MAXVAL367654
+Node: MCLOCK369287
+Node: MCLOCK8370290
+Node: MERGE371502
+Node: MERGE_BITS372251
+Node: MIN373112
+Node: MINEXPONENT374613
+Node: MINLOC375243
+Node: MINVAL377262
+Node: MOD378914
+Node: MODULO380521
+Node: MOVE_ALLOC381735
+Node: MVBITS382764
+Node: NEAREST383823
+Node: NEW_LINE384946
+Node: NINT385717
+Node: NORM2387120
+Node: NOT388258
+Node: NULL388842
+Node: NUM_IMAGES389747
+Node: OR390563
+Node: PACK391847
+Node: PARITY393839
+Node: PERROR395054
+Node: PRECISION395675
+Node: POPCNT396561
+Node: POPPAR397432
+Node: PRESENT398483
+Node: PRODUCT399589
+Node: RADIX401114
+Node: RAN401936
+Node: RAND402392
+Node: RANDOM_NUMBER403724
+Node: RANDOM_SEED405442
+Node: RANGE407327
+Node: REAL408015
+Node: RENAME409789
+Node: REPEAT410808
+Node: RESHAPE411534
+Node: RRSPACING413003
+Node: RSHIFT413696
+Node: SAME_TYPE_AS414834
+Node: SCALE415664
+Node: SCAN416444
+Node: SECNDS417994
+Node: SECOND419082
+Node: SELECTED_CHAR_KIND419958
+Node: SELECTED_INT_KIND421549
+Node: SELECTED_REAL_KIND422724
+Node: SET_EXPONENT425390
+Node: SHAPE426386
+Node: SHIFTA427801
+Node: SHIFTL428762
+Node: SHIFTR429597
+Node: SIGN430433
+Node: SIGNAL431717
+Node: SIN433214
+Node: SINH434312
+Node: SIZE435308
+Node: SIZEOF436616
+Node: SLEEP438027
+Node: SPACING438587
+Node: SPREAD439600
+Node: SQRT440745
+Node: SRAND442099
+Node: STAT443267
+Node: STORAGE_SIZE446434
+Node: SUM447314
+Node: SYMLNK448797
+Node: SYSTEM449929
+Node: SYSTEM_CLOCK451180
+Node: TAN453338
+Node: TANH454310
+Node: THIS_IMAGE455467
+Node: TIME456959
+Node: TIME8458063
+Node: TINY459192
+Node: TRAILZ459792
+Node: TRANSFER460609
+Node: TRANSPOSE462643
+Node: TRIM463330
+Node: TTYNAM464187
+Node: UBOUND465102
+Node: UCOBOUND466492
+Node: UMASK467624
+Node: UNLINK468302
+Node: UNPACK469279
+Node: VERIFY470567
+Node: XOR472288
+Node: Intrinsic Modules473660
+Node: ISO_FORTRAN_ENV473903
+Node: ISO_C_BINDING477743
+Node: OpenMP Modules OMP_LIB and OMP_LIB_KINDS481605
+Node: Contributing482931
+Node: Contributors483783
+Node: Projects485450
+Node: Proposed Extensions486254
+Node: Copying488265
+Node: GNU Free Documentation License525829
+Node: Funding550972
+Node: Option Index553497
+Node: Keyword Index566455
 
 End Tag Table

@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GCC 1"
-.TH GCC 1 "2011-03-25" "gcc-4.6.0" "GNU"
+.TH GCC 1 "2011-06-27" "gcc-4.6.1" "GNU"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -204,7 +204,7 @@ in the following sections.
 .IP "\fI\*(C+ Language Options\fR" 4
 .IX Item " Language Options"
 \&\fB\-fabi\-version=\fR\fIn\fR  \fB\-fno\-access\-control  \-fcheck\-new 
-\&\-fconserve\-space  \-ffriend\-injection 
+\&\-fconserve\-space  \-fconstexpr\-depth=\fR\fIn\fR  \fB\-ffriend\-injection 
 \&\-fno\-elide\-constructors 
 \&\-fno\-enforce\-eh\-specs 
 \&\-ffor\-scope  \-fno\-for\-scope  \-fno\-gnu\-keywords 
@@ -256,7 +256,7 @@ in the following sections.
 \&\-Wno\-attributes \-Wno\-builtin\-macro\-redefined 
 \&\-Wc++\-compat \-Wc++0x\-compat \-Wcast\-align  \-Wcast\-qual  
 \&\-Wchar\-subscripts \-Wclobbered  \-Wcomment 
-\&\-Wconversion  \-Wcoverage\-mismatch  \-Wcpp  \-Wno\-deprecated  
+\&\-Wconversion  \-Wcoverage\-mismatch  \-Wno\-cpp  \-Wno\-deprecated  
 \&\-Wno\-deprecated\-declarations \-Wdisabled\-optimization  
 \&\-Wno\-div\-by\-zero \-Wdouble\-promotion \-Wempty\-body  \-Wenum\-compare 
 \&\-Wno\-endif\-labels \-Werror  \-Werror=* 
@@ -621,6 +621,11 @@ in the following sections.
 \&\fB\-m32  \-m64 \-mlarge\-data\-threshold=\fR\fInum\fR 
 \&\fB\-msse2avx \-mfentry \-m8bit\-idiv\fR
 .Sp
+\&\fIi386 and x86\-64 Windows Options\fR
+\&\fB\-mconsole \-mcygwin \-mno\-cygwin \-mdll
+\&\-mnop\-fun\-dllimport \-mthread 
+\&\-municode \-mwin32 \-mwindows \-fno\-set\-stack\-executable\fR
+.Sp
 \&\fI\s-1IA\-64\s0 Options\fR
 \&\fB\-mbig\-endian  \-mlittle\-endian  \-mgnu\-as  \-mgnu\-ld  \-mno\-pic 
 \&\-mvolatile\-asm\-stop  \-mregister\-names  \-msdata \-mno\-sdata 
@@ -913,11 +918,6 @@ See \s-1RS/6000\s0 and PowerPC Options.
 .Sp
 \&\fIx86\-64 Options\fR
 See i386 and x86\-64 Options.
-.Sp
-\&\fIi386 and x86\-64 Windows Options\fR
-\&\fB\-mconsole \-mcygwin \-mno\-cygwin \-mdll
-\&\-mnop\-fun\-dllimport \-mthread 
-\&\-municode \-mwin32 \-mwindows \-fno\-set\-stack\-executable\fR
 .Sp
 \&\fIXstormy16 Options\fR
 \&\fB\-msim\fR
@@ -1837,6 +1837,12 @@ two definitions were merged.
 .Sp
 This option is no longer useful on most targets, now that support has
 been added for putting variables into \s-1BSS\s0 without making them common.
+.IP "\fB\-fconstexpr\-depth=\fR\fIn\fR" 4
+.IX Item "-fconstexpr-depth=n"
+Set the maximum nested evaluation depth for \*(C+0x constexpr functions
+to \fIn\fR.  A limit is needed to detect endless recursion during
+constant expression evaluation.  The minimum specified by the standard
+is 512.
 .IP "\fB\-fno\-deduce\-init\-list\fR" 4
 .IX Item "-fno-deduce-init-list"
 Disable deduction of a template type parameter as
@@ -2826,8 +2832,8 @@ This warning is enabled by \fB\-Wall\fR.
 Warn whenever a comment-start sequence \fB/*\fR appears in a \fB/*\fR
 comment, or whenever a Backslash-Newline appears in a \fB//\fR comment.
 This warning is enabled by \fB\-Wall\fR.
-.IP "\fB\-Wno\-cpp \e\fR" 4
-.IX Item "-Wno-cpp "
+.IP "\fB\-Wno\-cpp\fR" 4
+.IX Item "-Wno-cpp"
 (C, Objective-C, \*(C+, Objective\-\*(C+ and Fortran only)
 .Sp
 Suppress warning messages emitted by \f(CW\*(C`#warning\*(C'\fR directives.
@@ -11865,6 +11871,66 @@ be statically or dynamically linked.
 Generate code for the large model: This model makes no assumptions
 about addresses and sizes of sections.
 .PP
+\fIi386 and x86\-64 Windows Options\fR
+.IX Subsection "i386 and x86-64 Windows Options"
+.PP
+These additional options are available for Windows targets:
+.IP "\fB\-mconsole\fR" 4
+.IX Item "-mconsole"
+This option is available for Cygwin and MinGW targets.  It
+specifies that a console application is to be generated, by
+instructing the linker to set the \s-1PE\s0 header subsystem type
+required for console applications.
+This is the default behavior for Cygwin and MinGW targets.
+.IP "\fB\-mdll\fR" 4
+.IX Item "-mdll"
+This option is available for Cygwin and MinGW targets.  It
+specifies that a \s-1DLL\s0 \- a dynamic link library \- is to be
+generated, enabling the selection of the required runtime
+startup object and entry point.
+.IP "\fB\-mnop\-fun\-dllimport\fR" 4
+.IX Item "-mnop-fun-dllimport"
+This option is available for Cygwin and MinGW targets.  It
+specifies that the dllimport attribute should be ignored.
+.IP "\fB\-mthread\fR" 4
+.IX Item "-mthread"
+This option is available for MinGW targets. It specifies
+that MinGW-specific thread support is to be used.
+.IP "\fB\-municode\fR" 4
+.IX Item "-municode"
+This option is available for mingw\-w64 targets.  It specifies
+that the \s-1UNICODE\s0 macro is getting pre-defined and that the
+unicode capable runtime startup code is chosen.
+.IP "\fB\-mwin32\fR" 4
+.IX Item "-mwin32"
+This option is available for Cygwin and MinGW targets.  It
+specifies that the typical Windows pre-defined macros are to
+be set in the pre-processor, but does not influence the choice
+of runtime library/startup code.
+.IP "\fB\-mwindows\fR" 4
+.IX Item "-mwindows"
+This option is available for Cygwin and MinGW targets.  It
+specifies that a \s-1GUI\s0 application is to be generated by
+instructing the linker to set the \s-1PE\s0 header subsystem type
+appropriately.
+.IP "\fB\-fno\-set\-stack\-executable\fR" 4
+.IX Item "-fno-set-stack-executable"
+This option is available for MinGW targets. It specifies that
+the executable flag for stack used by nested functions isn't
+set. This is necessary for binaries running in kernel mode of
+Windows, as there the user32 \s-1API\s0, which is used to set executable
+privileges, isn't available.
+.IP "\fB\-mpe\-aligned\-commons\fR" 4
+.IX Item "-mpe-aligned-commons"
+This option is available for Cygwin and MinGW targets.  It
+specifies that the \s-1GNU\s0 extension to the \s-1PE\s0 file format that
+permits the correct alignment of \s-1COMMON\s0 variables should be
+used when generating code.  It will be enabled by default if
+\&\s-1GCC\s0 detects that the target assembler found during configuration
+supports the feature.
+.PP
+See also under \fBi386 and x86\-64 Options\fR for standard options.
+.PP
 \fI\s-1IA\-64\s0 Options\fR
 .IX Subsection "IA-64 Options"
 .PP
@@ -16351,66 +16417,6 @@ is defined for compatibility with Diab.
 .IX Subsection "x86-64 Options"
 .PP
 These are listed under
-.PP
-\fIi386 and x86\-64 Windows Options\fR
-.IX Subsection "i386 and x86-64 Windows Options"
-.PP
-These additional options are available for Windows targets:
-.IP "\fB\-mconsole\fR" 4
-.IX Item "-mconsole"
-This option is available for Cygwin and MinGW targets.  It
-specifies that a console application is to be generated, by
-instructing the linker to set the \s-1PE\s0 header subsystem type
-required for console applications.
-This is the default behavior for Cygwin and MinGW targets.
-.IP "\fB\-mdll\fR" 4
-.IX Item "-mdll"
-This option is available for Cygwin and MinGW targets.  It
-specifies that a \s-1DLL\s0 \- a dynamic link library \- is to be
-generated, enabling the selection of the required runtime
-startup object and entry point.
-.IP "\fB\-mnop\-fun\-dllimport\fR" 4
-.IX Item "-mnop-fun-dllimport"
-This option is available for Cygwin and MinGW targets.  It
-specifies that the dllimport attribute should be ignored.
-.IP "\fB\-mthread\fR" 4
-.IX Item "-mthread"
-This option is available for MinGW targets. It specifies
-that MinGW-specific thread support is to be used.
-.IP "\fB\-municode\fR" 4
-.IX Item "-municode"
-This option is available for mingw\-w64 targets.  It specifies
-that the \s-1UNICODE\s0 macro is getting pre-defined and that the
-unicode capable runtime startup code is chosen.
-.IP "\fB\-mwin32\fR" 4
-.IX Item "-mwin32"
-This option is available for Cygwin and MinGW targets.  It
-specifies that the typical Windows pre-defined macros are to
-be set in the pre-processor, but does not influence the choice
-of runtime library/startup code.
-.IP "\fB\-mwindows\fR" 4
-.IX Item "-mwindows"
-This option is available for Cygwin and MinGW targets.  It
-specifies that a \s-1GUI\s0 application is to be generated by
-instructing the linker to set the \s-1PE\s0 header subsystem type
-appropriately.
-.IP "\fB\-fno\-set\-stack\-executable\fR" 4
-.IX Item "-fno-set-stack-executable"
-This option is available for MinGW targets. It specifies that
-the executable flag for stack used by nested functions isn't
-set. This is necessary for binaries running in kernel mode of
-Windows, as there the user32 \s-1API\s0, which is used to set executable
-privileges, isn't available.
-.IP "\fB\-mpe\-aligned\-commons\fR" 4
-.IX Item "-mpe-aligned-commons"
-This option is available for Cygwin and MinGW targets.  It
-specifies that the \s-1GNU\s0 extension to the \s-1PE\s0 file format that
-permits the correct alignment of \s-1COMMON\s0 variables should be
-used when generating code.  It will be enabled by default if
-\&\s-1GCC\s0 detects that the target assembler found during configuration
-supports the feature.
-.PP
-See also under \fBi386 and x86\-64 Options\fR for standard options.
 .PP
 \fIXstormy16 Options\fR
 .IX Subsection "Xstormy16 Options"
