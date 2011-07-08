@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "GFORTRAN 1"
-.TH GFORTRAN 1 "2011-03-25" "gcc-4.6.0" "GNU"
+.TH GFORTRAN 1 "2011-06-27" "gcc-4.6.1" "GNU"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -615,7 +615,7 @@ we recommend avoiding and that we believe are easy to avoid.
 This currently includes \fB\-Waliasing\fR, \fB\-Wampersand\fR, 
 \&\fB\-Wconversion\fR, \fB\-Wsurprising\fR, \fB\-Wintrinsics\-std\fR,
 \&\fB\-Wno\-tabs\fR, \fB\-Wintrinsic\-shadow\fR, \fB\-Wline\-truncation\fR,
-and \fB\-Wunused\fR.
+\&\fB\-Wreal\-q\-constant\fR and \fB\-Wunused\fR.
 .IP "\fB\-Waliasing\fR" 4
 .IX Item "-Waliasing"
 Warn about possible aliasing of dummy arguments. Specifically, it warns
@@ -678,6 +678,10 @@ available in the currently selected standard (with \fB\-std\fR) and treats
 it as \f(CW\*(C`EXTERNAL\*(C'\fR procedure because of this.  \fB\-fall\-intrinsics\fR can
 be used to never trigger this behavior and always link to the intrinsic
 regardless of the selected standard.
+.IP "\fB\-Wreal\-q\-constant\fR" 4
+.IX Item "-Wreal-q-constant"
+Produce a warning if a real-literal-constant contains a \f(CW\*(C`q\*(C'\fR
+exponent-letter.
 .IP "\fB\-Wsurprising\fR" 4
 .IX Item "-Wsurprising"
 Produce a warning when \*(L"suspicious\*(R" code constructs are encountered.
