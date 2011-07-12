@@ -56995,7 +56995,7 @@ $as_echo "$ac_ld_relro" >&6; }
     $as_echo "#define HAVE_ISNAN 1" >>confdefs.h
 
     ;;
-  *-qnx6.[12345]* )
+  *-qnx[68]* )
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
 
 
