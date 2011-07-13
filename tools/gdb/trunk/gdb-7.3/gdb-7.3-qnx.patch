@@ -11015,3 +11015,35 @@ Index: gdb/inferior.h
 +
 +
  #endif /* !defined (INFERIOR_H) */
+Index: gdb/configure.tgt
+===================================================================
+--- gdb/configure.tgt	(revision 552924)
++++ gdb/configure.tgt	(working copy)
+@@ -207,7 +207,6 @@ i[34567]86-*-nto*)
+ 	gdb_target_obs="i386-tdep.o i387-tdep.o corelow.o solib.o solib-svr4.o \
+ 			i386-nto-tdep.o nto-tdep.o nto-signals.o \
+ 			remote-nto.o"
+-	build_gdbserver=yes
+ 	;;
+ i[34567]86-*-solaris2.1[0-9]* | x86_64-*-solaris2.1[0-9]*)
+ 	# Target: Solaris x86_64
+@@ -661,9 +660,19 @@ xtensa*)
+ 	# Target: Tensilica Xtensa processors
+ 	gdb_target_obs="xtensa-tdep.o xtensa-config.o solib.o solib-svr4.o"
+ 	;;
++*-ntoall*)
++	gdb_target_obs="arm-tdep.o corelow.o solib.o solib-svr4.o \
++			arm-nto-tdep.o nto-tdep.o nto-signals.o remote-nto.o \
++			i386-tdep.o i387-tdep.o i386-nto-tdep.o "
++	;;
+ 
+ esac
+ 
++if [ $gdb_host == nto ] ; then
++	build_gdbserver=yes
++	gdb_target_obs="${gdb_target_obs} nto-procfs.o"
++fi
++
+ # map target onto default OS ABI
+ 
+ case "${targ}" in
