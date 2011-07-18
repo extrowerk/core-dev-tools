@@ -86,17 +86,18 @@ am__installdirs = "$(DESTDIR)$(toolexeclibdir)" \
 LTLIBRARIES = $(toolexeclib_LTLIBRARIES)
 am_libmudflap_la_OBJECTS = mf-runtime.lo mf-heuristics.lo mf-hooks1.lo \
 	mf-hooks2.lo
+QNXLDFLAGS = -Wl,-Bstatic -Wl,-lbacktraceS -Wl,-Bdynamic
 libmudflap_la_OBJECTS = $(am_libmudflap_la_OBJECTS)
 libmudflap_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(libmudflap_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(libmudflap_la_LDFLAGS) $(LDFLAGS) $(QNXLDFLAGS) -o $@
 am_libmudflapth_la_OBJECTS = libmudflapth_la-mf-runtime.lo \
 	libmudflapth_la-mf-heuristics.lo libmudflapth_la-mf-hooks1.lo \
 	libmudflapth_la-mf-hooks2.lo libmudflapth_la-mf-hooks3.lo
 libmudflapth_la_OBJECTS = $(am_libmudflapth_la_OBJECTS)
 libmudflapth_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libmudflapth_la_CFLAGS) \
-	$(CFLAGS) $(libmudflapth_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(CFLAGS) $(libmudflapth_la_LDFLAGS) $(LDFLAGS) $(QNXLDFLAGS) -o $@
 @LIBMUDFLAPTH_TRUE@am_libmudflapth_la_rpath = -rpath $(toolexeclibdir)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
