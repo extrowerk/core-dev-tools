@@ -1801,6 +1801,8 @@ nto_parse_notify (struct target_waitstatus *status)
       status->value.sig =
 	target_signal_from_nto (current_gdbarch, EXTRACT_SIGNED_INTEGER
 				 (&recv.pkt.notify.un.sigev.signo, 4));
+      nto_trace (1) ("Signal: %d\n", status->value.sig);
+      nto_find_new_threads ();
       break;
     case DSMSG_NOTIFY_PIDLOAD:
       current_session->cputype =
