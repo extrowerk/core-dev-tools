@@ -10656,14 +10656,6 @@ Index: gdb/configure.tgt
  sh*-*-openbsd*)
  	# Target: OpenBSD/sh
  	gdb_target_obs="sh-tdep.o sh64-tdep.o shnbsd-tdep.o \
-Index: gdb/version.in
-===================================================================
---- gdb/version.in	(revision 551242)
-+++ gdb/version.in	(working copy)
-@@ -1 +1 @@
--7.2.90.20110616-cvs
-+7.3 (rev. 553)
-\ No newline at end of file
 Index: gdb/i386-nto-tdep.c
 ===================================================================
 --- gdb/i386-nto-tdep.c	(revision 551242)
