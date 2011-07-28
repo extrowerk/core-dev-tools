@@ -1,3 +1,78 @@
+2011-07-06  Paul Pluzhnikov  <ppluzhnikov@google.com>
+
+	* gdb.base/jit-so.exp: New test.
+	* gdb.base/jit-dlmain.c: New file.
+	* gdb.base/jit-main.c: Allow "main" to be elsewhere.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.cp/temargs.exp (set sixth breakpoint for temargs): Move the test
+	to match the HEAD order.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.cp/m-static.exp: Call get_compiler_info.
+	(static const int initialized nowhere): Call setup_xfail for gcc <= 4.4.
+	* gdb.cp/pr9167.exp (p b): Likewise.
+	* gdb.cp/temargs.exp: Do not set have_pr_45024_fixed for gcc 4.6.
+	(test value of P in inner_m, test type of Z in inner_m): Call
+	setup_xfail for gcc <= 4.5.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.cp/paren-type.cc: New files.
+	* gdb.cp/paren-type.exp: New files.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Stop on first linespec terminator instead of eating what we can.
+	* gdb.cp/minsym-fallback-main.cc (main): Call also C::operator ().
+	* gdb.cp/minsym-fallback.cc (C::operator ()): Define.
+	* gdb.cp/minsym-fallback.exp (break 'C::f()'): Change to ...
+	(break C::f()): ... this one.
+	(break C::operator()()): New test.
+	* gdb.cp/minsym-fallback.h (C::operator ()): Declare.
+	* gdb.java/jmisc.exp (break jmisc.main(java.lang.String[])int): New
+	test.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Fall back linespec to minimal symbols.
+	* gdb.base/psymtab.exp (Don't search past end of psymtab.): Update the
+	error message.
+	* gdb.cp/cplusfuncs.exp (list foo::operator int*): Likewise.
+	* gdb.cp/minsym-fallback-main.cc: New file.
+	* gdb.cp/minsym-fallback.cc: New file.
+	* gdb.cp/minsym-fallback.exp: New file.
+	* gdb.cp/minsym-fallback.h: New file.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.cp/no-dmgl-verbose.cc: New file.
+	* gdb.cp/no-dmgl-verbose.exp: New file.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.base/break-interp.exp (reach_1, test_ld): Allow also the prefix
+	__GI_.
+	* gdb.cp/psymtab-parameter.cc (func): Make it a template function.
+	(f): New function.
+	* gdb.cp/psymtab-parameter.exp (complete break 'func(): Rename to ...
+	(complete p 'func<short>(): ... here.
+	* gdb.dwarf2/dw2-linkage-name-trust-main.cc: New file.
+	* gdb.dwarf2/dw2-linkage-name-trust.S: New file.
+	* gdb.dwarf2/dw2-linkage-name-trust.exp: New file.
+	* gdb.cp/temargs.exp (test type of F in k3_m, test value of F in k3_m):
+	Make them KFAIL gcc/49546.
+
+2011-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Test GCC PR debug/49546.
+	* gdb.cp/temargs.exp (set sixth breakpoint for temargs)
+	(test type of F in k3_m, test value of F in k3_m): New.
+	* gdb.cp/temargs.cc (struct S3, struct K3): New.
+	(main): New variable k3.  Call k3.k3_m.
+
 2011-06-10  Jan Kratochvil  <jan.kratochvil@redhat.com>
 
 	* gdb.dwarf2/dw2-filename.exp (info sources): New testcase.

@@ -490,7 +490,7 @@ symbol_find_demangled_name (struct general_symbol_info *gsymbol,
       || gsymbol->language == language_auto)
     {
       demangled =
-        cplus_demangle (mangled, DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE);
+        cplus_demangle (mangled, DMGL_PARAMS | DMGL_ANSI);
       if (demangled != NULL)
 	{
 	  gsymbol->language = language_cplus;
@@ -4448,7 +4448,7 @@ decode_line_spec (char *string, int funfirstline)
 
   sals = decode_line_1 (&string, funfirstline,
 			cursal.symtab, cursal.line,
-			NULL, NULL);
+			NULL);
 
   if (*string)
     error (_("Junk at end of line specification: %s"), string);
