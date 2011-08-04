@@ -10774,6 +10774,18 @@ Index: gdb/solib-svr4.c
  	{
  	  warning (_("Corrupted shared library list"));
  	  free_so (new);
+@@ -2026,7 +2026,10 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
+       xfree (buf2);
+ 
+       if (!ok)
+-	return 0;
++	{
++	  warning (_("Executable headers don't match. But continue anyway.\n"));
++	  //return 0;
++	}
+     }
+ 
+   if (info_verbose)
 Index: gdb/solib-svr4.h
 ===================================================================
 --- gdb/solib-svr4.h	(revision 551242)
