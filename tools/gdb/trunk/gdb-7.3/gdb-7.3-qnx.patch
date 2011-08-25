@@ -1539,7 +1539,7 @@ Index: gdb/arm-nto-tdep.c
 ===================================================================
 --- gdb/arm-nto-tdep.c	(revision 0)
 +++ gdb/arm-nto-tdep.c	(revision 551260)
-@@ -0,0 +1,721 @@
+@@ -0,0 +1,720 @@
 +/* ARM specific functionality for QNX Neutrino.
 +
 +   Copyright 2003, 2009 Free Software Foundation, Inc.
@@ -2124,8 +2124,7 @@ Index: gdb/arm-nto-tdep.c
 +  struct arm_nto_sigtramp_cache *info =
 +	    armnto_sigtramp_cache (this_frame, this_prologue_cache);
 +  nto_trace (0) ("%s ()\n", __func__);
-+  trad_frame_get_prev_register (this_frame, info->saved_regs, regnum);
-+  return NULL;
++  return trad_frame_get_prev_register (this_frame, info->saved_regs, regnum);
 +}
 +
 +static int
