@@ -8943,7 +8943,7 @@ Index: gdb/nto-tdep.c
 +int
 +filename_cmp (const char *s1, const char *s2)
 +{
-+  return qnx_filename_cmp (s1, s2, strlen (s1));
++  return qnx_filename_cmp (s1, s2, strlen (s1) + 1);
 +}
 +
 +int
