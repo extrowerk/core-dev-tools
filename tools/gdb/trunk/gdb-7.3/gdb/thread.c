@@ -177,6 +177,11 @@ new_thread (ptid_t ptid)
   tp = xcalloc (1, sizeof (*tp));
 
   tp->ptid = ptid;
+#ifdef __QNXTARGET__
+  tp->num = ptid_get_tid (ptid);
+  highest_thread_num = max (tp->num, highest_thread_num);
+  if (tp->num == 0)
+#endif /* !__QNXTARGET__ */
   tp->num = ++highest_thread_num;
   tp->next = thread_list;
   thread_list = tp;
@@ -290,6 +295,9 @@ delete_thread_1 (ptid_t ptid, int silent)
 
 	  /* Clear breakpoints, etc. associated with this thread.  */
 	  clear_thread_inferior_resources (tp);
+
+	  if (print_thread_events && !silent)
+	    printf_unfiltered (_("[Exited %s]\n"), target_pid_to_str (ptid));
 	}
 
        /* Will be really deleted some other time.  */
@@ -303,7 +311,12 @@ delete_thread_1 (ptid_t ptid, int silent)
 
   /* Notify thread exit, but only if we haven't already.  */
   if (tp->state_ != THREAD_EXITED)
-    observer_notify_thread_exit (tp, silent);
+    {
+      observer_notify_thread_exit (tp, silent);
+
+      if (print_thread_events && !silent)
+        printf_unfiltered (_("[Exited %s]\n"), target_pid_to_str (ptid));
+    }
 
   free_thread (tp);
 }
@@ -1001,7 +1014,8 @@ switch_to_thread (ptid_t ptid)
      internal event.  */
   if (!ptid_equal (inferior_ptid, null_ptid)
       && !is_exited (ptid)
-      && !is_executing (ptid))
+      && !is_executing (ptid)
+      && target_thread_alive (ptid))
     stop_pc = regcache_read_pc (get_thread_regcache (ptid));
   else
     stop_pc = ~(CORE_ADDR) 0;

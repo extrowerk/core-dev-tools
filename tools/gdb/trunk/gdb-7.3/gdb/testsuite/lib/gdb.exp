@@ -3419,7 +3419,8 @@ proc clean_restart { executable } {
 # Prepares for testing, by calling build_executable, and then clean_restart.
 # Please refer to build_executable for parameter description.
 proc prepare_for_testing { testname executable {sources ""} {options {debug}}} {
-
+    global testfile
+    set testfile $executable
     if {[build_executable $testname $executable $sources $options] == -1} {
         return -1
     }

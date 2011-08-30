@@ -1149,7 +1149,7 @@ svr4_current_sos (void)
 
       next_lm = LM_NEXT (new);
 
-      if (LM_PREV (new) != prev_lm)
+      if (0 && LM_PREV (new) != prev_lm)
 	{
 	  warning (_("Corrupted shared library list"));
 	  free_so (new);
@@ -2026,7 +2026,10 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
       xfree (buf2);
 
       if (!ok)
-	return 0;
+	{
+	  warning (_("Executable headers don't match. But continue anyway.\n"));
+	  //return 0;
+	}
     }
 
   if (info_verbose)

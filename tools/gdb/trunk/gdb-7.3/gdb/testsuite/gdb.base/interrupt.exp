@@ -43,6 +43,13 @@ if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable $opt
      return -1
 }
 
+if { [istarget "*-nto-*"] && [is_remote target] } {
+    # we can not send stdin to remote inferior.
+    untested interrupt.exp
+    return -1
+}
+
+
 gdb_start
 
 
@@ -58,7 +65,7 @@ if ![file exists $binfile] then {
     if [runto_main] then {
 	send_gdb "continue\n"
 	gdb_expect {
-	    -re "\r\ntalk to me baby\r\n$" {
+	    -re ".*talk to me baby.*$" {
 		pass "child process is alive"
 	    }
 	    timeout { fail "run (timeout)" }
@@ -70,7 +77,7 @@ if ![file exists $binfile] then {
 	# dejagnu has just done something to the tty modes.
 	send_gdb "a\n"
 	gdb_expect {
-	    -re "^a\r\n(|a\r\n)$" {
+	    -re "^a\n(|a\n)$" {
 		pass "child process ate our char"
 	    }
 	    timeout { fail "echo a (timeout)" }
@@ -86,6 +93,7 @@ if ![file exists $binfile] then {
 	# Cntrl-c may fail for simulator targets on slow hosts.
 	# This is because there is a race condition between entering
 	# the read and delivering the cntrl-c.
+	send_user "OK\n"
 
 	send_gdb "\003"
 	gdb_expect {

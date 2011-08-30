@@ -48,6 +48,8 @@
 #define _DEBUG_FLAG_TRACE	(_DEBUG_FLAG_TRACE_EXEC|_DEBUG_FLAG_TRACE_RD|\
 		_DEBUG_FLAG_TRACE_WR|_DEBUG_FLAG_TRACE_MODIFY)
 
+extern int nto_stopped_by_watchpoint (void);
+
 static struct target_ops procfs_ops;
 
 int ctl_fd;
@@ -60,10 +62,6 @@ static void procfs_open (char *, int);
 
 static int procfs_can_run (void);
 
-static int procfs_xfer_memory (CORE_ADDR, gdb_byte *, int, int,
-			       struct mem_attrib *attrib,
-			       struct target_ops *);
-
 static void notice_signals (void);
 
 static void init_procfs_ops (void);
@@ -72,9 +70,11 @@ static ptid_t do_attach (ptid_t ptid);
 
 static int procfs_can_use_hw_breakpoint (int, int, int);
 
-static int procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type);
+static int procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type,
+					struct expression *cond);
 
-static int procfs_remove_hw_watchpoint (CORE_ADDR addr, int len, int type);
+static int procfs_remove_hw_watchpoint (CORE_ADDR addr, int len, int type,
+					struct expression *cond);
 
 static int procfs_stopped_by_watchpoint (void);
 
@@ -131,8 +131,6 @@ procfs_open (char *arg, int from_tty)
 
   nto_procfs_node = ND_LOCAL_NODE;
   nodestr = arg ? xstrdup (arg) : arg;
-
-  init_thread_list ();
 
   if (nodestr)
     {
@@ -249,7 +247,6 @@ update_thread_private_data_name (struct thread_info *new_thread,
 				 const char *newname)
 {
   int newnamelen;
-  struct private_thread_info *pti;
 
   gdb_assert (newname != NULL);
   gdb_assert (new_thread != NULL);
@@ -665,7 +662,7 @@ do_attach (ptid_t ptid)
   snprintf (path, PATH_MAX - 1, "%s/%d/as", nto_procfs_path, PIDGET (ptid));
   ctl_fd = open (path, O_RDWR);
   if (ctl_fd == -1)
-    error (_("Couldn't open proc file %s, error %d (%s)"), path, errno,
+    error (_("couldn't open /proc file %s, error %d (%s)"), path, errno,
 	   safe_strerror (errno));
   if (devctl (ctl_fd, DCMD_PROC_STOP, &status, sizeof (status), 0) != EOK)
     error (_("Couldn't stop process"));
@@ -729,6 +726,7 @@ procfs_wait (struct target_ops *ops,
   static int exit_signo = 0;	/* To track signals that cause termination.  */
 
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
+  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -749,6 +747,8 @@ procfs_wait (struct target_ops *ops,
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
     }
+
+  nto_inferior_stopped_flags = status.flags;
 
   if (status.flags & _DEBUG_FLAG_SSTEP)
     {
@@ -788,9 +788,6 @@ procfs_wait (struct target_ops *ops,
 
 	case _DEBUG_WHY_TERMINATED:
 	  {
-	    int waitval = 0;
-
-	    waitpid (PIDGET (inferior_ptid), &waitval, WNOHANG);
 	    if (exit_signo)
 	      {
 		/* Abnormal death.  */
@@ -801,7 +798,7 @@ procfs_wait (struct target_ops *ops,
 	      {
 		/* Normal death.  */
 		ourstatus->kind = TARGET_WAITKIND_EXITED;
-		ourstatus->value.integer = WEXITSTATUS (waitval);
+		ourstatus->value.integer = status.what;
 	      }
 	    exit_signo = 0;
 	    break;
@@ -837,39 +834,78 @@ procfs_fetch_registers (struct target_ops *ops,
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset (regcache, (char *) &reg.greg);
+    nto_supply_gregset (regcache, (const gdb_byte *)&reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset (regcache, (char *) &reg.fpreg);
+    nto_supply_fpregset (regcache, (const gdb_byte *)&reg.fpreg);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset (regcache, (char *) &reg.altreg);
+    nto_supply_altregset (regcache, (const gdb_byte *)&reg.altreg);
 }
 
-/* Copy LEN bytes to/from inferior's memory starting at MEMADDR
-   from/to debugger memory starting at MYADDR.  Copy from inferior
-   if DOWRITE is zero or to inferior if DOWRITE is nonzero.
-
-   Returns the length copied, which is either the LEN argument or
-   zero.  This xfer function does not do partial moves, since procfs_ops
-   doesn't allow memory operations to cross below us in the target stack
-   anyway.  */
-static int
-procfs_xfer_memory (CORE_ADDR memaddr, gdb_byte *myaddr, int len, int dowrite,
-		    struct mem_attrib *attrib, struct target_ops *target)
+static LONGEST
+procfs_xfer_partial (struct target_ops *ops, enum target_object object,
+		     const char *annex, gdb_byte *readbuf,
+		     const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
 {
-  int nbytes = 0;
-
-  if (lseek (ctl_fd, (off_t) memaddr, SEEK_SET) == (off_t) memaddr)
+  if (object == TARGET_OBJECT_MEMORY)
     {
-      if (dowrite)
-	nbytes = write (ctl_fd, myaddr, len);
+      if (lseek (ctl_fd, (off_t) offset, SEEK_SET) == (off_t) offset)
+	{
+	  int nbytes = 0;
+
+	  if (readbuf != NULL)
+	    nbytes = read (ctl_fd, readbuf, len);
+	  else if (writebuf != NULL)
+	    nbytes = write (ctl_fd, writebuf, len);
+	  if (nbytes < 0)
+	    {
+	      nbytes = 0;
+
+	      nto_trace (0) ("read or write operation failed: addr=0x%s\n",
+			     paddress (target_gdbarch, offset));
+	    }
+	  return nbytes;
+	}
+      if (readbuf)
+	return (*ops->deprecated_xfer_memory) (offset, readbuf,
+					       len, 0, NULL, ops);
+      else if (writebuf)
+	return (*ops->deprecated_xfer_memory) (offset, (gdb_byte*) writebuf,
+					       len, 1, NULL, ops);
       else
-	nbytes = read (ctl_fd, myaddr, len);
-      if (nbytes < 0)
-	nbytes = 0;
+	return 0;
     }
-  return (nbytes);
+  else if (object == TARGET_OBJECT_AUXV && readbuf)
+    {
+      int err;
+      CORE_ADDR initial_stack;
+      debug_process_t procinfo;
+      /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
+      const unsigned int sizeof_auxv_t = 8;
+      const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
+      int tempread;
+      gdb_byte *tempbuf = alloca (sizeof_tempbuf);
+
+      if (!tempbuf)
+	return -1;
+
+      err = devctl (ctl_fd, DCMD_PROC_INFO, &procinfo, sizeof procinfo, 0);
+      if (err != EOK)
+	return 0;
+
+      /* Similar as in the case of a core file, we read auxv from
+         initial_stack.  */
+      initial_stack = procinfo.initial_stack;
+
+      /* procfs is always 'self-hosted', no byte-order manipulation. */
+      tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
+						   sizeof_tempbuf);
+      tempread = min (tempread, len) - offset;
+      memcpy (readbuf, tempbuf + offset, tempread);
+      return tempread;
+    }
+  return -1;
 }
 
 /* Take a program previously attached to and detaches it.
@@ -881,13 +917,14 @@ procfs_detach (struct target_ops *ops, char *args, int from_tty)
 {
   int siggnal = 0;
   int pid;
+  struct inferior *inf = current_inferior ();
 
   if (from_tty)
     {
       char *exec_file = get_exec_file (0);
       if (exec_file == 0)
 	exec_file = "";
-      printf_unfiltered ("Detaching from program: %s %s\n",
+      printf_unfiltered ("Detaching from program: %s, %s\n",
 			 exec_file, target_pid_to_str (inferior_ptid));
       gdb_flush (gdb_stdout);
     }
@@ -900,10 +937,9 @@ procfs_detach (struct target_ops *ops, char *args, int from_tty)
   close (ctl_fd);
   ctl_fd = -1;
 
-  pid = ptid_get_pid (inferior_ptid);
+  delete_threads_of_inferior (inf->pid);
   inferior_ptid = null_ptid;
-  detach_inferior (pid);
-  init_thread_list ();
+  detach_inferior (inf->pid);
   unpush_target (&procfs_ops);	/* Pop out of handling an inferior.  */
 }
 
@@ -941,14 +977,6 @@ procfs_insert_hw_breakpoint (struct gdbarch *gdbarch,
 {
   return procfs_breakpoint (bp_tgt->placed_address,
 			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, 0);
-}
-
-static int
-procfs_remove_hw_breakpoint (struct gdbarch *gdbarch,
-			     struct bp_target_info *bp_tgt)
-{
-  return procfs_breakpoint (bp_tgt->placed_address,
-			    _DEBUG_BREAK_EXEC | _DEBUG_BREAK_HW, -1);
 }
 
 static void
@@ -1017,15 +1045,21 @@ procfs_resume (struct target_ops *ops,
 static void
 procfs_mourn_inferior (struct target_ops *ops)
 {
+  const pid_t pid = ptid_get_pid (inferior_ptid);
+  const struct inferior *const inf = current_inferior ();
+
+  gdb_assert (inf->pid == pid);
+
   if (!ptid_equal (inferior_ptid, null_ptid))
     {
       SignalKill (nto_node (), PIDGET (inferior_ptid), 0, SIGKILL, 0, 0);
       close (ctl_fd);
+//      delete_inferior (ptid_get_pid (inferior_ptid));
     }
-  inferior_ptid = null_ptid;
-  init_thread_list ();
+  delete_threads_of_inferior (pid);
   unpush_target (&procfs_ops);
   generic_mourn_inferior ();
+  delete_inferior (pid); 
 }
 
 /* This function breaks up an argument string into an argument
@@ -1194,11 +1228,12 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
     close (fds[2]);
 
   inferior_ptid = do_attach (pid_to_ptid (pid));
-  procfs_find_new_threads (ops);
 
   inf = current_inferior ();
   inferior_appeared (inf, pid);
   inf->attach_flag = 0;
+
+  procfs_find_new_threads (ops);
 
   flags = _DEBUG_FLAG_KLC;	/* Kill-on-Last-Close flag.  */
   errn = devctl (ctl_fd, DCMD_PROC_SET_FLAG, &flags, sizeof (flags), 0);
@@ -1281,7 +1316,6 @@ procfs_store_registers (struct target_ops *ops,
   reg;
   unsigned off;
   int len, regset, regsize, dev_set, err;
-  char *data;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
@@ -1296,7 +1330,7 @@ procfs_store_registers (struct target_ops *ops,
 	  if (dev_set == -1)
 	    continue;
 
-	  if (nto_regset_fill (regcache, regset, (char *) &reg) == -1)
+	  if (nto_regset_fill (regcache, regset, (gdb_byte *)&reg) == -1)
 	    continue;
 
 	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
@@ -1360,19 +1394,12 @@ procfs_notice_signals (ptid_t ptid)
   notice_signals ();
 }
 
-static struct tidinfo *
-procfs_thread_info (pid_t pid, short tid)
-{
-/* NYI */
-  return NULL;
-}
-
+#if 0
 char *
 procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
 {
   static char buf[1024];
   int pid, tid, n;
-  struct tidinfo *tip;
 
   pid = ptid_get_pid (ptid);
   tid = ptid_get_tid (ptid);
@@ -1387,6 +1414,7 @@ procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
 
   return buf;
 }
+#endif
 
 static void
 init_procfs_ops (void)
@@ -1405,7 +1433,7 @@ init_procfs_ops (void)
   procfs_ops.to_fetch_registers = procfs_fetch_registers;
   procfs_ops.to_store_registers = procfs_store_registers;
   procfs_ops.to_prepare_to_store = procfs_prepare_to_store;
-  procfs_ops.deprecated_xfer_memory = procfs_xfer_memory;
+  procfs_ops.to_xfer_partial = procfs_xfer_partial;
   procfs_ops.to_files_info = procfs_files_info;
   procfs_ops.to_insert_breakpoint = procfs_insert_breakpoint;
   procfs_ops.to_remove_breakpoint = procfs_remove_breakpoint;
@@ -1427,7 +1455,7 @@ init_procfs_ops (void)
   procfs_ops.to_notice_signals = procfs_notice_signals;
   procfs_ops.to_thread_alive = procfs_thread_alive;
   procfs_ops.to_find_new_threads = procfs_find_new_threads;
-  procfs_ops.to_pid_to_str = procfs_pid_to_str;
+  procfs_ops.to_pid_to_str = nto_pid_to_str; //procfs_pid_to_str;
   procfs_ops.to_stop = procfs_stop;
   procfs_ops.to_stratum = process_stratum;
   procfs_ops.to_has_all_memory = default_child_has_all_memory;
@@ -1523,5 +1551,5 @@ procfs_insert_hw_watchpoint (CORE_ADDR addr, int len, int type,
 static int
 procfs_stopped_by_watchpoint (void)
 {
-  return 0;
+  return nto_stopped_by_watchpoint ();
 }

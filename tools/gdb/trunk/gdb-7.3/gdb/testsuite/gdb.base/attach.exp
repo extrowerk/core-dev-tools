@@ -241,6 +241,48 @@ proc do_attach_tests {} {
 	-re "Attaching to process $testpid.*Reading symbols from $escapedbinfile.*main.*at .*$gdb_prompt $" {
 	    pass "$test"
 	}
+	-re "Attaching to process $testpid.*$gdb_prompt $" {
+	    pass "$test"
+        }
+    }
+
+    # Detach the process.
+   
+    gdb_test "detach" \
+	"Detaching from program: .*$escapedbinfile, process $testpid" \
+	"attach1 detach"
+
+    # Wait a bit for gdb to finish detaching
+    
+    exec sleep 5
+    # QNX specific: 
+    set test "set file, after attach2"
+    gdb_test_multiple "file $binfile" "$test" {
+	-re "Load new symbol table from.*y or n. $" {
+	    gdb_test "y" "Reading symbols from $escapedbinfile\.\.\.*done." \
+		"$test (re-read)"
+	}
+	-re "Reading symbols from $escapedbinfile\.\.\.*done.*$gdb_prompt $" {
+	    pass "$test"
+	}
+    }
+
+    set test "set file, before attach3"
+    gdb_test_multiple "attach $testpid" "$test" {
+	-re "Attaching to process $testpid.*Load new symbol table from \"$escapedbinfile\.exe\".*y or n. $" {
+	    # On Cygwin, the DLL's symbol tables are loaded prior to the
+	    # executable's symbol table.  This in turn always results in
+	    # asking the user for actually loading the symbol table of the
+	    # executable.
+	    gdb_test "y" "Reading symbols from $escapedbinfile\.\.\.*done." \
+		"$test (reset file)"
+	}
+	-re "Attaching to process $testpid.*Reading symbols from $escapedbinfile.*main.*at .*$gdb_prompt $" {
+	    pass "$test"
+	}
+	-re "Attaching to process $testpid.*$gdb_prompt $" {
+	    pass "$test"
+        }
     }
 
     # Verify that we can modify the variable "should_exit" in the
