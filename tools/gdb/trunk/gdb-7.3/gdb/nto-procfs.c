@@ -324,19 +324,17 @@ procfs_find_new_threads (struct target_ops *ops)
 
   pid = ptid_get_pid (inferior_ptid);
 
-  status.tid = 1;
-
   for (tid = 1;; ++tid)
     {
-      if (status.tid == tid 
-	  && (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
-	      != EOK))
-	break;
+      status.tid = tid;
+      if (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
+	  != EOK || status.tid < tid)
+	  break;
       if (status.tid != tid)
 	/* The reason why this would not be equal is that devctl might have 
 	   returned different tid, meaning the requested tid no longer exists
 	   (e.g. thread exited).  */
-	continue;
+	  continue;
       ptid = ptid_build (pid, 0, tid);
       new_thread = find_thread_ptid (ptid);
       if (!new_thread)
@@ -746,6 +744,7 @@ procfs_wait (struct target_ops *ops,
       sigwaitinfo (&set, &info);
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
+      procfs_find_new_threads (ops);
     }
 
   nto_inferior_stopped_flags = status.flags;
