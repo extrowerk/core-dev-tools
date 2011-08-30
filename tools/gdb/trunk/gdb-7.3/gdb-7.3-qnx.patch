@@ -4512,7 +4512,7 @@ Index: gdb/remote-nto.c
 ===================================================================
 --- gdb/remote-nto.c	(revision 0)
 +++ gdb/remote-nto.c	(revision 551260)
-@@ -0,0 +1,3628 @@
+@@ -0,0 +1,3632 @@
 +/*
 + * $QNXtpLicenseC:  
 + * Copyright 2005,2007, QNX Software Systems. All Rights Reserved.
@@ -6386,7 +6386,11 @@ Index: gdb/remote-nto.c
 +	 it happens to be in a thread unknown prior to this stop.
 +	 We add new threads here to be transparent to the rest 
 +	 of the gdb.  */
-+      //nto_find_new_threads (ops);
++      if (current_session->target_proto_major == 0 &&
++	  current_session->target_proto_minor < 4)
++	{
++	  nto_find_new_threads (ops);
++	}
 +      /* Fallthrough.  */
 +    case DSMSG_NOTIFY_STEP:
 +      /* NYI: could update the CPU's IP register here.  */
