@@ -1342,7 +1342,26 @@ reload_shared_libraries_1 (int from_tty)
 	      && filename_cmp (found_pathname, so->so_name) != 0))
 	{
 	  if (so->objfile && ! (so->objfile->flags & OBJF_USERLOADED))
+#ifdef __QNXTARGET__
+	    {
+		struct so_list *pivot;
+		int found = 0;
+
+		for (pivot = so_list_head; pivot != NULL; pivot = pivot->next)
+		  {
+		    if (pivot != so && pivot->objfile == so->objfile)
+		      {
+			found = 1;
+			break;
+		      }
+		  }
+
+		if (!found)
+		  free_objfile (so->objfile);
+	    }
+#else /* ! __QNXTARGET__ */
 	    free_objfile (so->objfile);
+#endif /* ! __QNXTARGET__ */
 	  remove_target_sections (so->abfd);
 	  free_so_symbols (so);
 	}

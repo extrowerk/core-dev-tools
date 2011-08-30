@@ -647,4 +647,7 @@ extern struct inferior *add_inferior_with_spaces (void);
 
 extern void update_observer_mode (void);
 
+extern void delete_threads_of_inferior (int pid);
+
+
 #endif /* !defined (INFERIOR_H) */

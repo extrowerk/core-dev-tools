@@ -1571,6 +1571,9 @@ proc mi_send_resuming_command_raw {command test} {
             # as real failure.
 	    return 0
         }
+	-re "\\^running\r\n.*${mi_gdb_prompt}" {
+	    return 0
+	}
         -re "\\^error,msg=\"Displaced stepping is only supported in ARM mode\".*" {
             unsupported "$test (Thumb mode)"
             return -1

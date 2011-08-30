@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <fcntl.h>
 
 static volatile int done;
 

@@ -78,7 +78,7 @@ nto_reg_offset (int regnum)
 }
 
 static void
-i386nto_supply_gregset (struct regcache *regcache, char *gpregs)
+i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs)
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
@@ -93,7 +93,7 @@ i386nto_supply_gregset (struct regcache *regcache, char *gpregs)
 }
 
 static void
-i386nto_supply_fpregset (struct regcache *regcache, char *fpregs)
+i386nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
   if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
     i387_supply_fxsave (regcache, -1, fpregs);
@@ -102,7 +102,8 @@ i386nto_supply_fpregset (struct regcache *regcache, char *fpregs)
 }
 
 static void
-i386nto_supply_regset (struct regcache *regcache, int regset, char *data)
+i386nto_supply_regset (struct regcache *regcache, int regset,
+		       const gdb_byte *data)
 {
   switch (regset)
     {
@@ -135,7 +136,6 @@ i386nto_register_area (struct gdbarch *gdbarch,
 		       int regno, int regset, unsigned *off)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-  int len;
 
   *off = 0;
   if (regset == NTO_REG_GENERAL)
@@ -249,7 +249,8 @@ i386nto_register_area (struct gdbarch *gdbarch,
 }
 
 static int
-i386nto_regset_fill (const struct regcache *regcache, int regset, char *data)
+i386nto_regset_fill (const struct regcache *regcache, int regset,
+		     gdb_byte *data)
 {
   if (regset == NTO_REG_GENERAL)
     {
@@ -296,7 +297,7 @@ i386nto_sigcontext_addr (struct frame_info *this_frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (this_frame);
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  char buf[4];
+  gdb_byte buf[4];
   CORE_ADDR ptrctx;
 
   /* We store __ucontext_t addr in EDI register.  */
@@ -328,7 +329,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   static struct target_so_ops nto_svr4_so_ops;
 
   /* Deal with our strange signals.  */
-  nto_initialize_signals ();
+  nto_initialize_signals (gdbarch);
 
   /* NTO uses ELF.  */
   i386_elf_init_abi (info, gdbarch);
@@ -371,10 +372,9 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
         = nto_in_dynsym_resolve_code;
     }
   set_solib_ops (gdbarch, &nto_svr4_so_ops);
-}
 
-/* Provide a prototype to silence -Wmissing-prototypes.  */
-extern initialize_file_ftype _initialize_i386nto_tdep;
+  set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
+}
 
 void
 _initialize_i386nto_tdep (void)
