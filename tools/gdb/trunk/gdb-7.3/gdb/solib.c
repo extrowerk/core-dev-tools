@@ -669,6 +669,23 @@ solib_read_symbols (struct so_list *so, int flags)
   return 0;
 }
 
+/* Return 1 if KNOWN->objfile is used by any other so_list object in the
+   HEAD list.  Return 0 otherwise.  */
+
+static int
+used (const struct so_list *const known, const struct so_list *const head)
+{
+  const struct so_list *pivot;
+  int found = 0;
+
+  for (pivot = head; pivot != NULL && !found; pivot = pivot->next)
+    {
+      if (pivot != known && pivot->objfile == known->objfile)
+	found = 1;
+    }
+  return found;
+}
+
 /* LOCAL FUNCTION
 
    update_solib_list --- synchronize GDB's shared object list with inferior's
@@ -791,7 +808,8 @@ update_solib_list (int from_tty, struct target_ops *target)
 	  *gdb_link = gdb->next;
 
 	  /* Unless the user loaded it explicitly, free SO's objfile.  */
-	  if (gdb->objfile && ! (gdb->objfile->flags & OBJF_USERLOADED))
+	  if (gdb->objfile && ! (gdb->objfile->flags & OBJF_USERLOADED)
+	      && !used (gdb, so_list_head))
 	    free_objfile (gdb->objfile);
 
 	  /* Some targets' section tables might be referring to
@@ -1341,27 +1359,9 @@ reload_shared_libraries_1 (int from_tty)
 	  || (found_pathname != NULL
 	      && filename_cmp (found_pathname, so->so_name) != 0))
 	{
-	  if (so->objfile && ! (so->objfile->flags & OBJF_USERLOADED))
-#ifdef __QNXTARGET__
-	    {
-		struct so_list *pivot;
-		int found = 0;
-
-		for (pivot = so_list_head; pivot != NULL; pivot = pivot->next)
-		  {
-		    if (pivot != so && pivot->objfile == so->objfile)
-		      {
-			found = 1;
-			break;
-		      }
-		  }
-
-		if (!found)
-		  free_objfile (so->objfile);
-	    }
-#else /* ! __QNXTARGET__ */
+	  if (so->objfile && ! (so->objfile->flags & OBJF_USERLOADED)
+	      && !used (so, so_list_head))
 	    free_objfile (so->objfile);
-#endif /* ! __QNXTARGET__ */
 	  remove_target_sections (so->abfd);
 	  free_so_symbols (so);
 	}
