@@ -1165,6 +1165,9 @@ svr4_current_sos (void)
 	{
 	  info->main_lm_addr = new->lm_info->lm_addr;
 	  free_so (new);
+#ifdef __QNXTARGET__
+	  ldsomap = solib_svr4_r_ldsomap (info);
+#endif
 	}
       else
 	{
