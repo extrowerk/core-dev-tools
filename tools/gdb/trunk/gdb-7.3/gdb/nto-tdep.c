@@ -1069,7 +1069,7 @@ nto_stopped_by_watchpoint (void)
 
   gdb_assert (inf != NULL);
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
 
   return inf_data->stopped_flags
 	 & (_DEBUG_FLAG_TRACE_RD
@@ -1193,9 +1193,9 @@ nto_inferior_data_cleanup (struct inferior *const inf, void *const dat)
 }
 
 struct nto_inferior_data *
-nto_inferior_data (void)
+nto_inferior_data (struct inferior *const inferior)
 {
-  struct inferior *const inf = current_inferior ();
+  struct inferior *const inf = inferior ? inferior : current_inferior ();
   struct nto_inferior_data *inf_data;
 
   gdb_assert (inf != NULL);
@@ -1237,10 +1237,19 @@ for different positive values."),
 				     debugging is %s.  */
 			    &setdebuglist, &showdebuglist);
 
-  add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
- nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
- nto_is_nto_target = nto_elf_osabi_sniffer;
+  add_setshow_zinteger_cmd ("nto-stop-on-thread-events", class_support,
+			    &nto_stop_on_thread_events, _("\
+Stop on thread events ."), _("\
+Show stop on thread events setting."), _("\
+When set to 1, stop on thread created and thread destroyed events.\n"),
+			    NULL,
+			    NULL,
+			    &setlist, &showlist);
 
- observer_attach_solib_loaded (nto_solib_added_listener);
- observer_attach_architecture_changed (nto_architecture_changed_listener);
+  add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
+  nto_fetch_link_map_offsets = nto_generic_svr4_fetch_link_map_offsets;
+  nto_is_nto_target = nto_elf_osabi_sniffer;
+
+  observer_attach_solib_loaded (nto_solib_added_listener);
+  observer_attach_architecture_changed (nto_architecture_changed_listener);
 }

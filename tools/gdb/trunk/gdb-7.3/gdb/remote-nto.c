@@ -281,7 +281,7 @@ static int upload_sets_exec = 1;
 
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
-#define HOST_QNX_PROTOVER_MINOR	3
+#define HOST_QNX_PROTOVER_MINOR	4
 
 #ifdef __MINGW32__
 /* Name collision with a symbol declared in Winsock2.h.  */
@@ -903,8 +903,6 @@ set_thread (int th)
   nto_trace (0) ("set_thread(th %d pid %d, prev tid %ld)\n", th,
 	 ptid_get_pid (inferior_ptid), ptid_get_tid (inferior_ptid));
 
-  gdb_assert (ptid_get_pid (inferior_ptid) == current_inferior ()->pid);
-
   nto_send_init (DStMsg_select, DSMSG_SELECT_SET, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = ptid_get_pid (inferior_ptid);
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER ((gdb_byte*)&tran.pkt.select.pid, 4,
@@ -921,21 +919,6 @@ set_thread (int th)
   return 1;
 }
 
-#if 0
-static void
-set_exec_bfd (char *filename)
-{
-  char *scratch_pathname;
-  int scratch_chan;
-
-  scratch_chan = openp (getenv ("PATH"), 1, filename,
-			write_files ? O_RDWR | O_BINARY : O_RDONLY | O_BINARY,
-			0, &scratch_pathname);
-  if (scratch_chan >= 0)
-    exec_bfd = bfd_fdopenr (scratch_pathname, gnutarget, scratch_chan);
-}
-#endif
-
 
 /* Return nonzero if the thread TH is still alive on the remote system.  
    RECV will contain returned_tid. NOTE: Make sure this stays like that
@@ -945,6 +928,7 @@ static int
 nto_thread_alive (struct target_ops *ops, ptid_t th)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+  int alive = 0;
 
   nto_trace (0) ("nto_thread_alive -- pid %d, tid %ld \n",
 		 ptid_get_pid (th), ptid_get_tid (th));
@@ -966,7 +950,7 @@ nto_thread_alive (struct target_ops *ops, ptid_t th)
       struct tidinfo *ptidinfo = (struct tidinfo *) ptidinfoaddr;
       int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
 						 byte_order);
-      return (ptid_get_tid (th) == returned_tid) && ptidinfo->state;
+      alive = (ptid_get_tid (th) == returned_tid) && ptidinfo->state;
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
@@ -977,12 +961,13 @@ nto_thread_alive (struct target_ops *ops, ptid_t th)
       alive an well. Not completely correct.  */
       int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4,
 						 byte_order);
-      return (ptid_get_tid (th) == returned_tid);
+      alive = (ptid_get_tid (th) == returned_tid);
     }
-  
+
+  nto_trace (0) ("Thread %lu is alive = %d\n", ptid_get_tid (th), alive);
   /* In case of a failure, return 0. This will happen when requested
     thread is dead and there is no alive thread with the larger tid.  */
-  return 0;
+  return alive;
 }
 
 static ptid_t
@@ -994,15 +979,20 @@ nto_get_thread_alive (struct target_ops *ops, ptid_t th)
   /* We are not interested in the return value. What we want is 
      the side-effect of nto_thread_alive, it will leave
      first threadid of a live thread that is >= th.tid.  */
-  nto_thread_alive (ops, th);
+  (void) nto_thread_alive (ops, th);
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
       /* Data is tidinfo. 
 	Note: tid returned might not be the same as requested.
 	If it is not, then requested thread is dead.  */
-      struct tidinfo *ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
+      const struct tidinfo *const ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
       returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
 					     byte_order);
+      if (!nto_thread_alive (ops, ptid_build (PIDGET (th), 0, returned_tid)))
+	{
+	  return nto_get_thread_alive (ops, ptid_build (PIDGET (th), 0,
+				       returned_tid+1));
+	}
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
@@ -1054,7 +1044,6 @@ static int
 nto_read_procfsinfo (nto_procfs_info *pinfo)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-  gdb_assert (ptid_get_pid (inferior_ptid) == current_inferior ()->pid);
 
   gdb_assert (pinfo != NULL && !! "pinfo must not be NULL\n");
   nto_send_init (DStMsg_procfsinfo, 0, SET_CHANNEL_DEBUG);
@@ -1112,7 +1101,7 @@ nto_start_remote (char *dummy)
     }
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      error ("Connection failed: %lld.",
+      error ("Connection failed: %ld.",
 	     EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
     }
   /* NYI: need to size transmit/receive buffers to allowed size in connect response.  */
@@ -1149,7 +1138,7 @@ nto_start_remote (char *dummy)
     }
   else
     {
-      error ("Connection failed (Protocol Version Query): %lld.",
+      error ("Connection failed (Protocol Version Query): %ld.",
 	     EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4,
 				     byte_order));
     }
@@ -1394,7 +1383,7 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
   recv.pkt.notify.tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.tid, 4,
 						byte_order); 
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
   inf_data->has_execution = 1;
   inf_data->has_stack = 1;
   inf_data->has_registers = 1;
@@ -1455,7 +1444,7 @@ nto_detach (struct target_ops *ops, char *args, int from_tty)
   nto_mourn_inferior (ops);
   inferior_ptid = null_ptid;
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
   inf_data->has_execution = 0;
   inf_data->has_stack = 0;
   inf_data->has_registers = 0;
@@ -1669,10 +1658,11 @@ nto_wait (struct target_ops *ops,
 
   status->kind = TARGET_WAITKIND_STOPPED;
   status->value.sig = TARGET_SIGNAL_0;
-  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return null_ptid;
+
+  nto_inferior_data (NULL)->stopped_flags = 0;
 
   gdb_assert (ptid_get_pid (inferior_ptid) == current_inferior ()->pid);
 
@@ -1803,7 +1793,7 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
 
   gdb_assert (inf != NULL);
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
 
   gdb_assert (inf_data != NULL);
 
@@ -1854,6 +1844,8 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
 	    status->kind = TARGET_WAITKIND_SIGNALLED;	/* Abnormal death.  */
 	  else
 	    status->kind = TARGET_WAITKIND_EXITED;	/* Normal death.  */
+	  /* Current inferior is gone, switch to something else */
+
 	}
       inf_data->has_execution = 0;
       inf_data->has_stack = 0;
@@ -1861,11 +1853,12 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
       inf_data->has_memory = 0;
       break;
     case DSMSG_NOTIFY_BRK:
-      nto_inferior_stopped_flags = 
+      inf_data->stopped_flags = 
 	EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.flags, 4,
 				  byte_order);
       stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.ip,
 					     4, byte_order);
+      inf_data->stopped_pc = stopped_pc;
       /* NOTE: We do not have New thread notification. This will cause
 	 gdb to think that breakpoint stop is really a new thread event if
 	 it happens to be in a thread unknown prior to this stop.
@@ -1888,10 +1881,6 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
 	target_signal_from_nto (target_gdbarch, EXTRACT_SIGNED_INTEGER
 				 (&recv.pkt.notify.un.sigev.signo,
 				  4, byte_order));
-      if (status->value.sig == 0) {
-	nto_trace (0) ("New thread event\n");
-	nto_find_new_threads (ops);
-      }
       break;
     case DSMSG_NOTIFY_PIDLOAD:
       current_session->cputype =
@@ -1909,9 +1898,80 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
       inf_data->has_memory = 1;
       status->kind = TARGET_WAITKIND_LOADED;
       break;
-    case DSMSG_NOTIFY_DLLLOAD:
     case DSMSG_NOTIFY_TIDLOAD:
+      {
+	struct thread_info *ti;
+	nto_trace (0) ("New thread event: tid %d\n", tid);
+	status->kind = nto_stop_on_thread_events
+			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+	status->value.sig = 0;
+	tid = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.thread_event.tid,
+					2, byte_order);
+	if (!(ti = find_thread_ptid (ptid_build (pid, 0, tid))))
+	  {
+	    struct private_thread_info *priv;
+#if 0
+	    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.ip,
+						   4, byte_order);
+
+#endif
+	    ti = add_thread (ptid_build (pid, 0, tid));
+	    /* Supply regcache with new thread instruction pointer */
+	    priv = XCALLOC (1, struct private_thread_info);
+	    priv->tid = tid;
+//	    priv->starting_ip = stopped_pc;
+	    ti->private = priv;
+	  }
+	else
+	  {
+	    warning (("Created tid of an already existing thread\n"));
+	    nto_find_new_threads (ops);
+	  }
+      }
+      break;
     case DSMSG_NOTIFY_TIDUNLOAD:
+      {
+	struct thread_info *ti;
+	ptid_t cur = inferior_ptid;
+	const int tid_exited = EXTRACT_SIGNED_INTEGER
+	  (&recv.pkt.notify.un.thread_event.tid, 4, byte_order);
+
+	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited, tid);
+        delete_thread (ptid_build (pid, 0, tid_exited));
+
+	status->kind = nto_stop_on_thread_events 
+			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+	status->value.sig = 0;
+	/* Must determine an alive thread for this to work. */
+	cur = nto_get_thread_alive (NULL, ptid_build (pid, 0, 0));
+	if (!nto_thread_alive (NULL, cur))
+	  {
+	    warning (("nto_get_thread_alive returned non alive thread\n"));
+	  }
+	switch_to_thread (cur);
+	tid = ptid_get_tid (cur);
+      }
+      break;
+#ifdef _DEBUG_WHAT_VFORK
+    case DSMSG_NOTIFY_FORK:
+      {
+	nto_trace (0) ("DSMSG_NOTIFY_FORK %d\n", recv.pkt.notify.un.fork_event.pid);
+	inf_data->child_pid
+	  = EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.un.fork_event.pid, 4,
+				    byte_order);
+	nto_trace (0) ("inf data child pid: %d\n", inf_data->child_pid);
+	status->value.related_pid = ptid_build (inf_data->child_pid, 0, 1);
+	inf_data->vfork
+	  = EXTRACT_SIGNED_INTEGER (&recv.pkt.notify.un.fork_event.vfork, 4,
+				    byte_order)
+	    & _DEBUG_WHAT_VFORK;
+	status->kind = inf_data->vfork ? TARGET_WAITKIND_VFORKED
+				       : TARGET_WAITKIND_FORKED;
+	nto_trace (0) ("child_pid=%d\n", ptid_get_pid (status->value.related_pid));
+      }
+      break;
+#endif
+    case DSMSG_NOTIFY_DLLLOAD:
     case DSMSG_NOTIFY_DLLUNLOAD:
       status->kind = TARGET_WAITKIND_SPURIOUS;
       break;
@@ -2375,7 +2435,7 @@ nto_mourn_inferior (struct target_ops *ops)
 
   gdb_assert (inf != NULL);
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
 
   gdb_assert (inf_data != NULL);
 
@@ -2434,7 +2494,7 @@ nto_create_inferior (struct target_ops *ops, char *exec_file, char *args,
 
   gdb_assert (inf != NULL);
 
-  inf_data = nto_inferior_data ();
+  inf_data = nto_inferior_data (inf);
 
   gdb_assert (inf_data != NULL);
 
@@ -2442,7 +2502,7 @@ nto_create_inferior (struct target_ops *ops, char *exec_file, char *args,
 
   gdb_assert (inf_rdata != NULL);
 
-  nto_inferior_stopped_flags = 0;
+  inf_data->stopped_flags = 0;
 
   remove_breakpoints ();
 
@@ -2634,14 +2694,19 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
 
-  nto_trace (0) ("nto_insert_breakpoint(addr %s, contents_cache %p)\n", 
-                 paddress (target_gdbarch, addr), contents_cache);
+  nto_trace (0) ("nto_insert_breakpoint(addr %s, contents_cache %p) pid:%d\n", 
+                 paddress (target_gdbarch, addr), contents_cache,
+		 ptid_get_pid (inferior_ptid));
 
   nto_send_init (DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
   tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 4,
 						byte_order);
   tran.pkt.brk.size = 0;
   nto_send (sizeof (tran.pkt.brk), 0);
+  if (recv.pkt.hdr.cmd == DSrMsg_err)
+    {
+      nto_trace (0) ("FAIL\n");
+    }
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
 
@@ -2656,6 +2721,19 @@ nto_to_insert_breakpoint (struct gdbarch *gdbarch,
     {
       internal_error(__FILE__, __LINE__, _("Target info invalid."));
     }
+ 
+  /* Must select appropriate inferior.  Due to our pdebug protocol,
+     the following looks convoluted.  But in reality all we are doing is
+     making sure pdebug selects an existing thread in the inferior_ptid.
+     We need to swithc pdebug internal current prp pointer.   */
+  if (!set_thread (
+        ptid_get_tid (nto_get_thread_alive (NULL, pid_to_ptid (
+				        PIDGET (inferior_ptid))))))
+    {
+      nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n",
+		     PIDGET (inferior_ptid), ptid_get_tid (inferior_ptid));
+      return 0;
+    } 
 
   return nto_insert_breakpoint (bp_tg_inf->placed_address,
 				bp_tg_inf->shadow_contents);
@@ -2667,8 +2745,10 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
 
-  nto_trace (0)	("nto_remove_breakpoint(addr %s, contents_cache %p)\n", 
-                 paddress (target_gdbarch, addr), contents_cache);
+  nto_trace (0)	("nto_remove_breakpoint(addr %s, contents_cache %p) (pid %d)\n", 
+                 paddress (target_gdbarch, addr), contents_cache,
+		 ptid_get_pid (inferior_ptid));
+
 
   /* This got changed to send DSMSG_BRK_EXEC with a size of -1 
      nto_send_init(DStMsg_brk, DSMSG_BRK_REMOVE, SET_CHANNEL_DEBUG).  */
@@ -2679,6 +2759,10 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   tran.pkt.brk.size = EXTRACT_SIGNED_INTEGER (&tran.pkt.brk.size,
 					      4, byte_order);
   nto_send (sizeof (tran.pkt.brk), 0);
+  if (recv.pkt.hdr.cmd == DSrMsg_err)
+    {
+      nto_trace (0) ("FAIL\n");
+    }
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
 
@@ -2686,13 +2770,26 @@ static int
 nto_to_remove_breakpoint (struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tg_inf)
 {
-  nto_trace (0) ("%s ( bp_tg_inf=0x%08x )\n", __func__, (unsigned int) bp_tg_inf);
+  nto_trace (0) ("%s ( bp_tg_inf=%p )\n", __func__, bp_tg_inf);
 
   if (bp_tg_inf == 0)
     {
       internal_error (__FILE__, __LINE__, _("Target info invalid."));
     }
-  
+ 
+  /* Must select appropriate inferior.  Due to our pdebug protocol,
+     the following looks convoluted.  But in reality all we are doing is
+     making sure pdebug selects an existing thread in the inferior_ptid.
+     We need to swithc pdebug internal current prp pointer.   */
+  if (!set_thread (
+        ptid_get_tid (nto_get_thread_alive (NULL, pid_to_ptid (
+				        PIDGET (inferior_ptid))))))
+    {
+      nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n",
+		     PIDGET (inferior_ptid), ptid_get_tid (inferior_ptid));
+      return 0;
+    } 
+
   return nto_remove_breakpoint (bp_tg_inf->placed_address,
 				bp_tg_inf->shadow_contents);
 }
@@ -3014,31 +3111,226 @@ nto_can_use_hw_breakpoint (int type, int cnt, int othertype)
 static int
 nto_has_registers (struct target_ops *ops)
 {
-  return nto_inferior_data ()->has_registers;
+  struct inferior *inf;
+
+  if (!default_child_has_registers (ops)) return 0;
+  inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  if (!inf) return 0;
+
+  return nto_inferior_data (inf)->has_registers;
 }
 
 static int
 nto_has_execution (struct target_ops *ops, ptid_t ptid)
 {
-  return nto_inferior_data ()->has_execution;
+  struct inferior *inf;
+
+  if (!default_child_has_registers (ops)) return 0;
+  inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  if (!inf) return 0;
+
+  return nto_inferior_data (inf)->has_execution;
 }
 
 static int
 nto_has_memory (struct target_ops *ops)
 {
-  return nto_inferior_data ()->has_memory;
+  struct inferior *inf;
+
+  if (!default_child_has_registers (ops)) return 0;
+  inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  if (!inf) return 0;
+
+  return nto_inferior_data (inf)->has_memory;
 }
 
 static int
 nto_has_stack (struct target_ops *ops)
 {
-  return nto_inferior_data ()->has_stack;
+  struct inferior *inf;
+
+  if (!default_child_has_registers (ops)) return 0;
+  inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  if (!inf) return 0;
+
+  return nto_inferior_data (inf)->has_stack;
 }
 
 static int
 nto_has_all_memory (struct target_ops *ops)
 {
-  return nto_inferior_data ()->has_memory;
+  struct inferior *inf;
+
+  if (!default_child_has_registers (ops)) return 0;
+  inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  if (!inf) return 0;
+
+  return nto_inferior_data (inf)->has_memory;
+}
+
+
+static int
+nto_attach_only (const pid_t pid)
+{
+  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+
+  nto_send_init (DStMsg_attach, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.attach.pid = pid;
+  tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
+						byte_order);
+  nto_send (sizeof (tran.pkt.attach), 0);
+
+  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
+    {
+      error (_("Failed to attach"));
+      return 0;
+    }
+  return 1;
+}
+
+
+/* GDB makes assumption that after VFORK/FORK we are attached to both.
+   This is not the case on QNX but to make gdb behave, we do attach
+   to both anyway, regardless of the scenario. */
+static int
+nto_follow_fork (struct target_ops *ops, int follow_child)
+{
+  struct thread_info *ti = find_thread_ptid (inferior_ptid);
+  struct inferior *const inf = find_inferior_pid (ptid_get_pid (inferior_ptid));
+  int child_pid, parent_pid;
+  nto_trace (1) ("%s follow_child: %d\n", __func__, follow_child);
+
+  gdb_assert (inf != NULL);
+
+
+  child_pid = nto_inferior_data (inf)->child_pid;
+  parent_pid = ptid_get_pid (inferior_ptid);
+
+  nto_trace (0) ("Child pid: %d %cforked\n", child_pid,
+		 nto_inferior_data (inf)->vfork ? 'v' : ' ');
+
+  if (follow_child)
+    {
+      /* Attach to the child process, then detach from the parent. */
+      struct inferior *parent_inf, *child_inf;
+      struct nto_inferior_data *inf_data;
+    
+      if (!nto_attach_only (child_pid))
+	return 1;
+
+      child_inf = add_inferior (child_pid);
+      child_inf->attach_flag = 1;
+
+      parent_inf = current_inferior ();
+
+      if (nto_inferior_data (parent_inf)->vfork)
+	{
+	  child_inf->vfork_parent = parent_inf;
+	  child_inf->pending_detach = 0;
+	  parent_inf->vfork_child = child_inf;
+	  parent_inf->pending_detach = detach_fork;
+	  parent_inf->waiting_for_vfork_done = 0;
+
+	  child_inf->pspace = parent_inf->pspace;
+	  child_inf->aspace = parent_inf->pspace->aspace;
+
+	  inferior_ptid = ptid_build (child_pid, 0, 1);
+	  add_thread (inferior_ptid);
+	}
+      else
+	{
+	  if (detach_fork)
+	    {
+	      child_inf->pspace = parent_inf->pspace;
+	      child_inf->aspace = parent_inf->pspace->aspace;
+	      target_detach (NULL, 0);
+	      inferior_ptid = ptid_build (child_pid, 0, 1);
+	      add_thread (inferior_ptid);
+	    }
+	  else
+	    {
+	      inferior_ptid = ptid_build (child_pid, 0, 1);
+	      add_thread (inferior_ptid);
+
+	      child_inf->aspace = new_address_space ();
+	      child_inf->pspace = add_program_space (child_inf->aspace);
+	      child_inf->removable = 1;
+	      set_current_program_space (child_inf->pspace);
+	      clone_program_space (child_inf->pspace, parent_inf->pspace);
+	      solib_create_inferior_hook (0);
+	    }
+	}
+
+      inf_data = nto_inferior_data (child_inf);
+      inf_data->has_execution = 1;
+      inf_data->has_stack = 1;
+      inf_data->has_registers = 1;
+      inf_data->has_memory = 1;
+    }
+  else /* !follow_child */
+    {
+      struct nto_inferior_data *inf_data;
+
+      if (!detach_fork)
+	{
+	  struct inferior *parent_inf, *child_inf;
+	  const ptid_t old_inferior_ptid = inferior_ptid;
+	  struct program_space *const old_program_space
+	    = current_program_space;
+
+	  nto_trace (0)("%s: parent, attach child\n", __func__);
+	  if (nto_inferior_data (inf)->vfork)
+	    {
+	      nto_trace (0)("Can not attach to vforked child and not follow it\n");
+	      return 0;
+	    }
+
+	  if (!nto_attach_only (child_pid))
+	    {
+	      error (_("Could not attach to %d\n"), child_pid);
+	      return 0;
+	    }
+
+	  child_inf = add_inferior (child_pid);
+
+	  parent_inf = current_inferior ();
+	  child_inf->attach_flag = parent_inf->attach_flag;
+	  copy_terminal_info (child_inf, parent_inf);
+
+	  inferior_ptid = nto_get_thread_alive (ops, pid_to_ptid (child_pid));
+	  add_thread (inferior_ptid);
+
+	  if (nto_inferior_data (parent_inf)->vfork)
+	    {
+	      child_inf->vfork_parent = parent_inf;
+	      child_inf->pending_detach = 0;
+	      parent_inf->vfork_child = child_inf;
+	      parent_inf->pending_detach = 0;
+	    }
+	  else
+	    {
+	      child_inf->aspace = new_address_space ();
+	      child_inf->pspace = add_program_space (child_inf->aspace);
+	      child_inf->removable = 1;
+	      set_current_program_space (child_inf->pspace);
+	      clone_program_space (child_inf->pspace, parent_inf->pspace);
+
+	      solib_create_inferior_hook (0);
+	    }
+	  inf_data = nto_inferior_data (child_inf);
+	  inf_data->has_execution = 1;
+	  inf_data->has_stack = 1;
+	  inf_data->has_registers = 1;
+	  inf_data->has_memory = 1;
+ 
+	  /* Restore */
+	  set_current_program_space (old_program_space);
+	  inferior_ptid = old_inferior_ptid;
+	  set_thread (ptid_get_tid (inferior_ptid));
+	}
+    }
+
+  return 0;
 }
 
 static void
@@ -3092,6 +3384,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_have_continuable_watchpoint = 1;
   nto_ops.to_extra_thread_info = nto_extra_thread_info;
   nto_ops.to_read_description = nto_read_description;
+  nto_ops.to_follow_fork = nto_follow_fork;
 }
 
 static void
@@ -3292,7 +3585,7 @@ nto_pidlist (char *args, int from_tty)
 	   (void *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
 	   tip->tid != 0; tip++)
 	{
-	  printf_filtered ("%s - %lld/%lld\n", pidlist->name,
+	  printf_filtered ("%s - %ld/%ld\n", pidlist->name,
 			   EXTRACT_SIGNED_INTEGER (&pidlist->pid,
 						   4, byte_order),
 			   EXTRACT_SIGNED_INTEGER (&tip->tid, 2,
