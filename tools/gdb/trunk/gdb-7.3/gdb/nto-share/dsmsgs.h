@@ -269,7 +269,8 @@ enum
   DSMSG_NOTIFY_BRK,		/* 6 */
   DSMSG_NOTIFY_STEP,		/* 7 */
   DSMSG_NOTIFY_SIGEV,		/* 8 */
-  DSMSG_NOTIFY_STOPPED		/* 9 */
+  DSMSG_NOTIFY_STOPPED,		/* 9 */
+  DSMSG_NOTIFY_FORK		/* 10 */
 };
 
 
@@ -560,6 +561,13 @@ typedef struct
       int code;
       int value;
     } sigev;
+    struct {
+      int32_t tid;
+    } thread_event;
+    struct {
+      int32_t pid;
+      uint32_t vfork;
+    } fork_event;
   } un;
 } DShMsg_notify_t;
 

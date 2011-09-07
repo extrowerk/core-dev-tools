@@ -242,6 +242,36 @@ procfs_thread_alive (struct target_ops *ops, ptid_t ptid)
   return (status.tid == tid) && (status.state != STATE_DEAD);
 }
 
+static ptid_t
+procfs_get_thread_alive (struct target_ops *ops, const ptid_t ptid)
+{
+  pid_t tid;
+  pid_t pid;
+  procfs_status status;
+  int err;
+
+  tid = ptid_get_tid (ptid);
+  pid = ptid_get_pid (ptid);
+
+  if (kill (pid, 0) == -1)
+    return minus_one_ptid;
+
+  status.tid = tid;
+  if ((err = devctl (ctl_fd, DCMD_PROC_TIDSTATUS,
+		     &status, sizeof (status), 0)) != EOK)
+    return minus_one_ptid;
+
+  /* Thread is alive or dead but not yet joined,
+     or dead and there is an alive (or dead unjoined) thread with
+     higher tid.
+
+     If the tid is not the same as requested, requested tid is dead.  */
+  if ((status.tid == tid) && (status.state != STATE_DEAD))
+    return ptid_build (pid, 0, status.tid);
+  else
+    return procfs_get_thread_alive (ops, ptid_build (pid, 0, tid+1));
+}
+
 static void
 update_thread_private_data_name (struct thread_info *new_thread,
 				 const char *newname)
@@ -324,17 +354,19 @@ procfs_find_new_threads (struct target_ops *ops)
 
   pid = ptid_get_pid (inferior_ptid);
 
+  status.tid = 1;
+
   for (tid = 1;; ++tid)
     {
-      status.tid = tid;
-      if (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
-	  != EOK || status.tid < tid)
-	  break;
+      if (status.tid == tid 
+	  && (devctl (ctl_fd, DCMD_PROC_TIDSTATUS, &status, sizeof (status), 0)
+	      != EOK))
+	break;
       if (status.tid != tid)
 	/* The reason why this would not be equal is that devctl might have 
 	   returned different tid, meaning the requested tid no longer exists
 	   (e.g. thread exited).  */
-	  continue;
+	continue;
       ptid = ptid_build (pid, 0, tid);
       new_thread = find_thread_ptid (ptid);
       if (!new_thread)
@@ -724,7 +756,6 @@ procfs_wait (struct target_ops *ops,
   static int exit_signo = 0;	/* To track signals that cause termination.  */
 
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
-  nto_inferior_stopped_flags = 0;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -733,6 +764,8 @@ procfs_wait (struct target_ops *ops,
       exit_signo = 0;
       return null_ptid;
     }
+
+  nto_inferior_data (NULL)->stopped_flags = 0;
 
   sigemptyset (&set);
   sigaddset (&set, SIGUSR1);
@@ -744,10 +777,9 @@ procfs_wait (struct target_ops *ops,
       sigwaitinfo (&set, &info);
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
-      procfs_find_new_threads (ops);
     }
 
-  nto_inferior_stopped_flags = status.flags;
+  nto_inferior_data (NULL)->stopped_flags = status.flags;
 
   if (status.flags & _DEBUG_FLAG_SSTEP)
     {
@@ -809,6 +841,62 @@ procfs_wait (struct target_ops *ops,
 	  ourstatus->value.sig = TARGET_SIGNAL_INT;
 	  exit_signo = 0;
 	  break;
+	case _DEBUG_WHY_THREAD:
+	  warning (("Thread event\n"));
+	  /* thread event */
+	  if (status.what == 1)
+	    {
+	      /* New thread. */
+	      const ptid_t new_ptid =
+		ptid_build (status.pid, 0, status.blocked.thread_event.tid);
+
+	      ourstatus->kind = nto_stop_on_thread_events
+				  ? TARGET_WAITKIND_STOPPED
+				  : TARGET_WAITKIND_SPURIOUS;
+	      ourstatus->value.sig = 0;
+	      if (!find_thread_ptid (new_ptid))
+		{
+		  struct thread_info *const ti = add_thread (new_ptid);
+
+		  /* Switch to the new thread. */
+		  status.tid = status.blocked.thread_event.tid;
+		}
+	      else
+		{
+		  warning (("Created tid of an already existing thread\n"));
+		  procfs_find_new_threads (ops);
+		}
+	    }
+	  else
+	    {
+	      /* Thread exited */
+	      const ptid_t removed_ptid =
+		ptid_build (status.pid, 0, status.blocked.thread_event.tid);
+	      ptid_t cur = ptid_build (status.pid, 0, status.tid);
+
+	      delete_thread (removed_ptid);
+	      ourstatus->kind = nto_stop_on_thread_events
+				  ? TARGET_WAITKIND_STOPPED
+				  : TARGET_WAITKIND_SPURIOUS;
+	      ourstatus->value.sig = 0;
+	      if (!procfs_thread_alive (ops, cur))
+		{
+		  /* Ensure currently selected thread is not dead */
+		  cur = procfs_get_thread_alive (NULL, ptid_build (status.pid,
+								   0, 1));
+		  if (!ptid_equal (cur, minus_one_ptid))
+		    status.tid = ptid_get_tid (cur);
+		}
+	      if (!ptid_equal (inferior_ptid, cur))
+		{
+		  switch_to_thread (cur);
+		}
+	    }
+	  break;
+#ifdef _DEBUG_WHAT_VFORK
+	case _DEBUG_WHY_CHILD:
+	  break;
+#endif
 	}
     }
 
@@ -982,6 +1070,7 @@ static void
 procfs_resume (struct target_ops *ops,
 	       ptid_t ptid, int step, enum target_signal signo)
 {
+  static int new_dbg_events = 1;
   int signal_to_pass;
   procfs_status status;
   sigset_t *run_fault = (sigset_t *) (void *) &run.fault;
@@ -1005,6 +1094,8 @@ procfs_resume (struct target_ops *ops,
   sigaddset (run_fault, FLTIOVF);
   sigaddset (run_fault, FLTIZDIV);
   sigaddset (run_fault, FLTFPE);
+  sigaddset (run_fault, FLTACCESS);
+  sigaddset (run_fault, FLTSTACK);
   /* Peter V will be changing this at some point.  */
   sigaddset (run_fault, FLTPAGE);
 
@@ -1033,7 +1124,21 @@ procfs_resume (struct target_ops *ops,
   else
     run.flags |= _DEBUG_RUN_CLRSIG | _DEBUG_RUN_CLRFLT;
 
+  if (new_dbg_events)
+    {
+      /* Try with new flags. If that fails, fallback to the old */
+      run.flags |= _DEBUG_RUN_THREAD;
+      run.flags |= _DEBUG_RUN_CHILD;
+    }
   errno = devctl (ctl_fd, DCMD_PROC_RUN, &run, sizeof (run), 0);
+  if (errno == ENOTSUP)
+    {
+      warning (("New debug events not supported\n"));
+      new_dbg_events = 0;
+      run.flags &= ~_DEBUG_RUN_THREAD;
+      run.flags &= ~_DEBUG_RUN_CHILD;
+      errno = devctl (ctl_fd, DCMD_PROC_RUN, &run, sizeof (run), 0);
+    }
   if (errno != EOK)
     {
       perror (_("run error!\n"));

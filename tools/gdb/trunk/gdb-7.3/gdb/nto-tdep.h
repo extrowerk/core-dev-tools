@@ -35,6 +35,9 @@ struct nto_target_ops
 /* For 'maintenance debug nto-debug' command.  */
   int internal_debugging;
 
+  /* For stop-on-thread-events */
+  int stop_on_thread_events;
+
 /* The CPUINFO flags from the remote.  Currently used by
    i386 for fxsave but future proofing other hosts.
    This is initialized in procfs_attach or nto_start_remote
@@ -87,6 +90,8 @@ struct nto_target_ops
 extern struct nto_target_ops current_nto_target;
 
 #define nto_internal_debugging (current_nto_target.internal_debugging)
+
+#define nto_stop_on_thread_events (current_nto_target.stop_on_thread_events)
 
 #define nto_cpuinfo_flags (current_nto_target.cpuinfo_flags)
 
@@ -167,6 +172,7 @@ struct private_thread_info
   short tid;
   unsigned char state;
   unsigned char flags;
+  CORE_ADDR starting_ip;
   char name[1];
 };
 
@@ -188,6 +194,15 @@ struct nto_inferior_data
 
   /* Last stopped flags result from wait function */
   unsigned int stopped_flags;
+
+  /* Last known stopped PC */
+  CORE_ADDR stopped_pc;
+
+  /* In case of a fork, remember child pid. */
+  int child_pid;
+
+  /* In case of a fork, is it a vfork? */
+  int vfork;
 };
 
 
@@ -236,9 +251,7 @@ char *nto_gdbarch_core_pid_to_str (struct gdbarch *, ptid_t);
 const struct target_desc *nto_read_description (struct target_ops *ops);
 
 
-struct nto_inferior_data *nto_inferior_data (void);
-
-#define nto_inferior_stopped_flags (nto_inferior_data ()->stopped_flags)
+struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
 
 #endif

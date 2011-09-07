@@ -134,8 +134,16 @@ __BEGIN_DECLS
   _DEBUG_WHY_JOBCONTROL,
   _DEBUG_WHY_TERMINATED,
   _DEBUG_WHY_CHILD,
-  _DEBUG_WHY_EXEC
+  _DEBUG_WHY_EXEC,
+  _DEBUG_WHY_THREAD
 };
+
+/* WHAT constants are specific to WHY reason they are associated with.
+   Actual numeric value may be reused between different WHY reasons.  */
+#define _DEBUG_WHAT_DESTROYED		0x00000000U	/* WHY_THREAD */
+#define _DEBUG_WHAT_CREATED			0x00000001U	/* WHY_THREAD */
+#define _DEBUG_WHAT_FORK			0x00000000U	/* WHY_CHILD */
+#define _DEBUG_WHAT_VFORK			0x00000001U	/* WHY_CHILD */
 
 #define _DEBUG_RUN_CLRSIG			0x00000001	/* Clear pending signal */
 #define _DEBUG_RUN_CLRFLT			0x00000002	/* Clear pending fault */
