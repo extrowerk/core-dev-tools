@@ -25,7 +25,11 @@
 
 #include <fcntl.h>
 #include <spawn.h>
-#include <sys/debug.h>
+//#if _NTO_VERSION <= 650
+//#include <sys/debug.h>
+//#else
+#include "nto-share/debug.h"
+//#endif
 #include <sys/procfs.h>
 #include <sys/neutrino.h>
 #include <sys/syspage.h>
@@ -84,6 +88,14 @@ static int procfs_stopped_by_watchpoint (void);
    for the remote QNX node.  */
 static char nto_procfs_path[PATH_MAX] = { "/proc" };
 static unsigned nto_procfs_node = ND_LOCAL_NODE;
+
+/* For DEBUG_RUN_THREAD and DEBUG_RUN_FORK */
+#ifdef _DEBUG_RUN_THREAD
+static int new_dbg_events = 1;
+#else
+static int new_dbg_events = 0;
+#endif
+
 
 /* Return the current QNX Node, or error out.  This is a simple
    wrapper for the netmgr_strtond() function.  The reason this
@@ -777,6 +789,11 @@ procfs_wait (struct target_ops *ops,
       sigwaitinfo (&set, &info);
       signal (SIGINT, ofunc);
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
+      if (!new_dbg_events)
+      {
+	/* No thread events, must check for threads explicitly. */
+	procfs_find_new_threads (ops);
+      }
     }
 
   nto_inferior_data (NULL)->stopped_flags = status.flags;
@@ -841,6 +858,7 @@ procfs_wait (struct target_ops *ops,
 	  ourstatus->value.sig = TARGET_SIGNAL_INT;
 	  exit_signo = 0;
 	  break;
+#ifdef _DEBUG_RUN_THREAD
 	case _DEBUG_WHY_THREAD:
 	  warning (("Thread event\n"));
 	  /* thread event */
@@ -893,6 +911,7 @@ procfs_wait (struct target_ops *ops,
 		}
 	    }
 	  break;
+#endif
 #ifdef _DEBUG_WHAT_VFORK
 	case _DEBUG_WHY_CHILD:
 	  break;
@@ -1070,7 +1089,6 @@ static void
 procfs_resume (struct target_ops *ops,
 	       ptid_t ptid, int step, enum target_signal signo)
 {
-  static int new_dbg_events = 1;
   int signal_to_pass;
   procfs_status status;
   sigset_t *run_fault = (sigset_t *) (void *) &run.fault;
@@ -1124,13 +1142,16 @@ procfs_resume (struct target_ops *ops,
   else
     run.flags |= _DEBUG_RUN_CLRSIG | _DEBUG_RUN_CLRFLT;
 
+#ifdef _DEBUG_RUN_THREAD
   if (new_dbg_events)
     {
       /* Try with new flags. If that fails, fallback to the old */
       run.flags |= _DEBUG_RUN_THREAD;
       run.flags |= _DEBUG_RUN_CHILD;
     }
+#endif
   errno = devctl (ctl_fd, DCMD_PROC_RUN, &run, sizeof (run), 0);
+#ifdef _DEBUG_RUN_THREAD
   if (errno == ENOTSUP)
     {
       warning (("New debug events not supported\n"));
@@ -1139,6 +1160,7 @@ procfs_resume (struct target_ops *ops,
       run.flags &= ~_DEBUG_RUN_CHILD;
       errno = devctl (ctl_fd, DCMD_PROC_RUN, &run, sizeof (run), 0);
     }
+#endif
   if (errno != EOK)
     {
       perror (_("run error!\n"));
