@@ -25,11 +25,7 @@
 
 #include <fcntl.h>
 #include <spawn.h>
-//#if _NTO_VERSION <= 650
-//#include <sys/debug.h>
-//#else
-#include "nto-share/debug.h"
-//#endif
+#include <sys/debug.h>
 #include <sys/procfs.h>
 #include <sys/neutrino.h>
 #include <sys/syspage.h>
