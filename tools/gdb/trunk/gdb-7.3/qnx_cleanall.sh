@@ -43,7 +43,7 @@ if [ "$PRINT_HELP" ]; then
   echo "    -y - mandatory, here only to avoid accidental execution "
   echo "    -o - HOSTOS string. One of: linux,win32,darwin or nto "
   echo "    -h - print this help message"
-  exit 0
+  return 1
 fi
 
 echo "Executing: rm -rf ${RMARG}"
