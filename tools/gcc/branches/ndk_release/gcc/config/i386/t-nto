@@ -9,7 +9,7 @@ TARGET_LIBGCC2_CFLAGS = -fexceptions
 
 MULTILIB_OPTIONS = fpic
 MULTILIB_DIRNAMES = pic
-MULTILIB_MATCHES = fpic=shared
+MULTILIB_MATCHES = fpic=shared=pie
 
 EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
 
