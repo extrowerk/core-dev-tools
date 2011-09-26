@@ -743,6 +743,7 @@ gdbpy_initialize_parameters (void)
 {
   int i;
 
+  parmpy_object_type.tp_new = PyType_GenericNew;
   if (PyType_Ready (&parmpy_object_type) < 0)
     return;
 
@@ -808,5 +809,4 @@ static PyTypeObject parmpy_object_type =
   0,				  /* tp_dictoffset */
   parmpy_init,			  /* tp_init */
   0,				  /* tp_alloc */
-  PyType_GenericNew		  /* tp_new */
 };
