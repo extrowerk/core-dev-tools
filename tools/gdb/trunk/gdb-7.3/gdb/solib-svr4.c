@@ -2552,11 +2552,35 @@ elf_lookup_lib_symbol (const struct objfile *objfile,
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
 
-#ifdef TODO__QNXTARGET__
+#ifdef __QNXTARGET__
 CORE_ADDR
 svr4_fetch_r_debug (void)
 {
-  return locate_base ();
+  struct svr4_info *const info = get_svr4_info ();
+
+  return locate_base (info);
+}
+
+/* Fetch state of r_debug structure */
+int svr4_r_debug_state (void)
+{
+  const CORE_ADDR address = svr4_fetch_r_debug ();
+  gdb_byte myaddr[128];
+  unsigned int len = sizeof (myaddr);
+  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
+  unsigned int rt_state;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+
+  if (!lmo || address == 0)
+    return 1;
+
+  if (target_read_memory (address, myaddr, len))
+    return 1;
+
+  rt_state = extract_unsigned_integer (&myaddr[lmo->r_state_offset],
+				       lmo->r_state_size, byte_order);
+
+  return rt_state;
 }
 #endif /* __QNXTARGET__ */
 
