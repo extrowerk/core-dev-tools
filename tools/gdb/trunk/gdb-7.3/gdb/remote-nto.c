@@ -1192,7 +1192,7 @@ nto_semi_init (void)
 
 static int nto_open_interrupted = 0;
 
-static void 
+static void
 nto_open_break (int signo)
 {
   nto_trace(0)("SIGINT in serial open\n");
@@ -1228,7 +1228,7 @@ nto_open (char *name, int from_tty)
 
     if (nto_open_interrupted)
       break;
-    
+
     /* Give the target some time to come up. When we are connecting
        immediately after disconnecting from the remote, pdebug
        needs some time to start listening to the port. */
@@ -1298,6 +1298,27 @@ nto_open (char *name, int from_tty)
   immediate_quit = 0;
 }
 
+/* Perform remote attach. */
+
+static int
+nto_attach_only (const pid_t pid)
+{
+  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+
+  nto_send_init (DStMsg_attach, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.attach.pid = pid;
+  tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
+						byte_order);
+  nto_send (sizeof (tran.pkt.attach), 0);
+
+  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
+    {
+      error (_("Failed to attach"));
+      return 0;
+    }
+  return 1;
+}
+
 /* Attaches to a process on the target side.  Arguments are as passed
    to the `attach' command by the user.  This routine can be called
    when the target is not on the target-stack, if the target_can_run
@@ -1333,17 +1354,8 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
       gdb_flush (gdb_stdout);
     }
 
-  nto_send_init (DStMsg_attach, 0, SET_CHANNEL_DEBUG);
-  tran.pkt.attach.pid = PIDGET (ptid);
-  tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
-						byte_order);
-  nto_send (sizeof (tran.pkt.attach), 0);
-
-  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
-    {
-      error (_("Failed to attach"));
-      return;
-    }
+  if (!nto_attach_only (ptid_get_pid (ptid)))
+    return;
 
   /* Hack this in here, since we will bypass the notify.  */
   current_session->cputype =
@@ -1363,7 +1375,24 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
 						      byte_order));
   inf = current_inferior ();
   inf->attach_flag = 1;
+
   inferior_appeared (inf, ptid_get_pid (ptid));
+
+  if (symfile_objfile == NULL)
+    {
+      const pid_t pid = ptid_get_pid (ptid);
+      struct dspidlist *pidlist = (void *)recv.pkt.okdata.data;
+
+      /* Look for the binary executable name */
+      nto_send_init (DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC, SET_CHANNEL_DEBUG);
+      tran.pkt.pidlist.pid = EXTRACT_UNSIGNED_INTEGER (&pid, 4, byte_order);
+      tran.pkt.pidlist.tid = 0;
+      nto_send (sizeof (tran.pkt.pidlist), 0);
+      if (recv.pkt.hdr.cmd == DSrMsg_okdata)
+	{
+	  exec_file_attach (pidlist->name, from_tty);
+	}
+    }
 
   /* Initalize thread list.  */
   delete_threads_of_inferior (inf->pid);
@@ -3169,25 +3198,6 @@ nto_has_all_memory (struct target_ops *ops)
 }
 
 
-static int
-nto_attach_only (const pid_t pid)
-{
-  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-
-  nto_send_init (DStMsg_attach, 0, SET_CHANNEL_DEBUG);
-  tran.pkt.attach.pid = pid;
-  tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
-						byte_order);
-  nto_send (sizeof (tran.pkt.attach), 0);
-
-  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
-    {
-      error (_("Failed to attach"));
-      return 0;
-    }
-  return 1;
-}
-
 
 /* GDB makes assumption that after VFORK/FORK we are attached to both.
    This is not the case on QNX but to make gdb behave, we do attach
@@ -3214,7 +3224,7 @@ nto_follow_fork (struct target_ops *ops, int follow_child)
       /* Attach to the child process, then detach from the parent. */
       struct inferior *parent_inf, *child_inf;
       struct nto_inferior_data *inf_data;
-    
+
       if (!nto_attach_only (child_pid))
 	return 1;
 
@@ -3333,6 +3343,12 @@ nto_follow_fork (struct target_ops *ops, int follow_child)
   return 0;
 }
 
+static int
+nto_supports_multi_process (void)
+{
+  return 1;
+}
+
 static void
 init_nto_ops ()
 {
@@ -3348,6 +3364,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_attach = nto_attach;
   nto_ops.to_post_attach = nto_post_attach;
   nto_ops.to_detach = nto_detach;
+  //TODO: nto_ops.to_disconnect = nto_disconnect;
   nto_ops.to_resume = nto_resume;
   nto_ops.to_wait = nto_wait;
   nto_ops.to_fetch_registers = nto_fetch_registers;
@@ -3385,6 +3402,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_extra_thread_info = nto_extra_thread_info;
   nto_ops.to_read_description = nto_read_description;
   nto_ops.to_follow_fork = nto_follow_fork;
+  nto_ops.to_supports_multi_process = nto_supports_multi_process;
 }
 
 static void

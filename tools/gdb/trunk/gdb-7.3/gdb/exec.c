@@ -232,6 +232,33 @@ exec_file_attach (char *filename, int from_tty)
 	     &scratch_pathname);
 	}
 #endif
+#ifdef __QNXTARGET__
+      if (gdb_sysroot)
+	{
+#define PATH_FMT "%s/bin%c%s/usr/bin%c%s/sbin%c%s/usr/sbin"
+	    char *nto_path = alloca (strlen (PATH_FMT) + strlen (gdb_sysroot) * 4 + 1);
+	    sprintf (nto_path, PATH_FMT, gdb_sysroot, DIRNAME_SEPARATOR,
+		     gdb_sysroot, DIRNAME_SEPARATOR,
+		     gdb_sysroot, DIRNAME_SEPARATOR,
+		     gdb_sysroot);
+	    scratch_chan = openp (nto_path, OPF_TRY_CWD_FIRST, filename,
+			    write_files ? O_RDWR | O_BINARY : O_RDONLY | O_BINARY,
+			    &scratch_pathname);
+	    if (scratch_chan < 0)
+	      {
+		scratch_chan = openp (nto_path,  OPF_TRY_CWD_FIRST, basename (filename),
+			    write_files ? O_RDWR | O_BINARY : O_RDONLY | O_BINARY,
+			    &scratch_pathname);
+	      }
+	}
+      if (scratch_chan < 0)
+	{
+	  printf_unfiltered (_("No executable file now.\n"));
+	  set_gdbarch_from_file (NULL);
+	  goto all_done;
+	}
+
+#endif
       if (scratch_chan < 0)
 	perror_with_name (filename);
       exec_bfd = bfd_fopen (scratch_pathname, gnutarget,
@@ -305,6 +332,9 @@ exec_file_attach (char *filename, int from_tty)
 
       do_cleanups (cleanups);
     }
+#ifdef __QNXTARGET__
+all_done:
+#endif
   bfd_cache_close_all ();
   observer_notify_executable_changed ();
 }
