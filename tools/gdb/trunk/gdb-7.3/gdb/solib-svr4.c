@@ -1691,17 +1691,6 @@ enable_break (struct svr4_info *info, int from_tty)
 	   * IDE team.  */
 	  warning ("Host file %s does not match target file %s",
 		   interp_name, so->so_original_name);
-
-    if (!sym_addr)
-      {
-	/* One last try: try finding _r_debug.r_brk */
-
-	msymbol = lookup_minimal_symbol ("_r_debug", NULL, NULL);
-	if (msymbol != NULL)
-	  {
-	    sym_addr = SYMBOL_VALUE_ADDRESS (msymbol);
-	  }
-      }
 #endif /* __QNXTARGET__ */
 
       /* We're done with both the temporary bfd and target.  Remember,
