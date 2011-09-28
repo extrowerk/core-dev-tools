@@ -299,8 +299,8 @@ armnto_variant_directory_suffix (void)
 {
   const struct gdbarch_tdep *const tdep = gdbarch_tdep (target_gdbarch);
 
-  if (tdep->arm_abi == ARM_ABI_AAPCS
-      && tdep->fp_model == ARM_FLOAT_SOFT_VFP)
+  /* On QNX, it is always v7 variant if abi is AAPCS. */
+  if (tdep->arm_abi == ARM_ABI_AAPCS)
     {
       nto_trace(1) ("Selecting -v7 variant\n");
       return "-v7";
