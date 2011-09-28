@@ -246,7 +246,9 @@ exec_file_attach (char *filename, int from_tty)
 			    &scratch_pathname);
 	    if (scratch_chan < 0)
 	      {
-		scratch_chan = openp (nto_path,  OPF_TRY_CWD_FIRST, basename (filename),
+		/* Must use unix_basename since our target will always
+		   have unix path */
+		scratch_chan = openp (nto_path,  OPF_TRY_CWD_FIRST, unix_lbasename (filename),
 			    write_files ? O_RDWR | O_BINARY : O_RDONLY | O_BINARY,
 			    &scratch_pathname);
 	      }
