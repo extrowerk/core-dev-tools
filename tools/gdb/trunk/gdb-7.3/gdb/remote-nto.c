@@ -198,6 +198,9 @@ static int nto_remove_hw_watchpoint (CORE_ADDR addr, int len, int type,
 static int nto_insert_hw_watchpoint (CORE_ADDR addr, int len, int type,
 				     struct expression *);
 
+static void nto_remote_inferior_data_cleanup (struct inferior *inf, void *dat);
+
+
 struct nto_remote_inferior_data
 {
   /* File to be executed on remote.  */
@@ -205,6 +208,9 @@ struct nto_remote_inferior_data
 
   /* Current working directory on remote.  */
   char *remote_cwd;
+
+  /* Cached auxiliary vector */
+  gdb_byte *auxv;
 };
 
 static struct nto_remote_inferior_data *nto_remote_inferior_data (void);
@@ -2307,14 +2313,29 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 
       if (nto_read_procfsinfo (&procfs_info))
 	{
+	  struct inferior *const inf = current_inferior ();
+	  struct nto_inferior_data *inf_data;
+	  struct nto_remote_inferior_data *inf_rdata;
 	  CORE_ADDR initial_stack;
-	  
-	  initial_stack =
-	    EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
-				    sizeof_auxv_t, byte_order);
 
-	  tempread = nto_read_auxv_from_initial_stack (initial_stack, tempbuf,
-						       sizeof_tempbuf);
+	  inf_rdata = nto_remote_inferior_data ();
+
+	  if (inf_rdata->auxv == NULL)
+	    {
+	      const CORE_ADDR initial_stack
+		= EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
+					  sizeof_auxv_t, byte_order);
+
+	      inf_rdata->auxv = xcalloc (1, sizeof_tempbuf);
+	      tempread = nto_read_auxv_from_initial_stack (initial_stack,
+							   inf_rdata->auxv,
+							   sizeof_tempbuf);
+	    }
+	  else
+	    {
+	      tempread = sizeof_tempbuf;
+	    }
+	  tempbuf = inf_rdata->auxv;
 	}
       else if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
 	       && exec_bfd->tdata.elf_obj_data->phdr != NULL)
@@ -2477,6 +2498,9 @@ nto_mourn_inferior (struct target_ops *ops)
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid,
 						4, byte_order);
   nto_send (sizeof (tran.pkt.detach), 1);
+
+  nto_remote_inferior_data_cleanup (inf, nto_remote_inferior_data ());
+  set_inferior_data (inf, nto_remote_inferior_data_reg, NULL);
 
   generic_mourn_inferior ();
   delete_inferior (pid);
@@ -3835,6 +3859,10 @@ nto_thread_info (pid_t pid, short tid)
 static void
 nto_remote_inferior_data_cleanup (struct inferior *const inf, void *const dat)
 {
+  struct nto_remote_inferior_data *const inf_data = dat;
+
+  if (dat && inf_data->auxv)
+    xfree (inf_data->auxv);
   xfree (dat);
 }
 
