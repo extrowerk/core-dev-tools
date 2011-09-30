@@ -478,7 +478,7 @@ static gdb_byte *
 read_program_header (int type, int *p_sect_size, int *p_arch_size)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-  CORE_ADDR at_phdr, at_phent, at_phnum;
+  CORE_ADDR at_phdr, at_phent, at_phnum, pt_phdr;
   int arch_size, sect_size;
   CORE_ADDR sect_addr;
   gdb_byte *buf;
@@ -501,6 +501,10 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
   else
     return 0;
 
+  pt_phdr = (CORE_ADDR)-1; /* Address of the first entry. If not PIE,
+			      this will be zero.
+			      For PIE, it will be unrelocated at_phdr. */
+
   /* Find the requested segment.  */
   if (type == -1)
     {
@@ -518,6 +522,11 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
 	  if (target_read_memory (at_phdr + i * sizeof (phdr),
 				  (gdb_byte *)&phdr, sizeof (phdr)))
 	    return 0;
+
+	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type,
+					4, byte_order) == PT_PHDR)
+	    pt_phdr = extract_unsigned_integer ((gdb_byte *)phdr.p_vaddr,
+						4, byte_order);
 
 	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type,
 					4, byte_order) == type)
@@ -546,6 +555,11 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
 	    return 0;
 
 	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type,
+					4, byte_order) == PT_PHDR)
+	    pt_phdr = extract_unsigned_integer ((gdb_byte *)phdr.p_vaddr,
+						8, byte_order);
+
+	  if (extract_unsigned_integer ((gdb_byte *)phdr.p_type,
 					4, byte_order) == type)
 	    break;
 	}
@@ -558,6 +572,16 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
 					    8, byte_order);
       sect_size = extract_unsigned_integer ((gdb_byte *)phdr.p_memsz,
 					    8, byte_order);
+    }
+
+  /* at_phdr is real address in memory. pt_phdr is what pheader says it is.
+     Relocation offset is the difference between the two. */
+  if (pt_phdr != (CORE_ADDR)-1)
+    {
+      /* PT_PHDR is optional in the execution view, but we really need it
+	 for PIE to make this work in general.  However, if not found,
+	 work with what you have.  */
+      sect_addr = sect_addr + (at_phdr - pt_phdr);
     }
 
   /* Read in requested program header.  */
