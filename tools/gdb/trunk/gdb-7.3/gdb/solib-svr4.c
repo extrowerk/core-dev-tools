@@ -1675,7 +1675,7 @@ enable_break (struct svr4_info *info, int from_tty)
 	}
 
 #ifdef __QNXTARGET__
-      if (sym_addr == 0 && load_addr != 0)
+      if (sym_addr == 0 && load_addr_found)
 	{
 	  CORE_ADDR r_debug_sym_addr;
 	  const struct link_map_offsets *const lmo
@@ -1693,7 +1693,14 @@ enable_break (struct svr4_info *info, int from_tty)
 		  CORE_ADDR target_r_brk_addr
 		    = extract_unsigned_integer (r_brk_addr, 4,
 					gdbarch_byte_order (target_gdbarch));
-		  sym_addr = target_r_brk_addr;
+
+		  /* Is target_r_brk_addr in ldd text segment?
+		     If so, it's relocated already. */
+		  if (target_r_brk_addr >= info->interp_text_sect_low
+		      && target_r_brk_addr < info->interp_text_sect_high)
+		    sym_addr = target_r_brk_addr - load_addr;
+		  else
+		    sym_addr = target_r_brk_addr;
 		}
 	    }
 	}
@@ -1714,7 +1721,7 @@ enable_break (struct svr4_info *info, int from_tty)
 	   * format should not change without consultations with 
 	   * IDE team.  */
 	  warning ("Host file %s does not match target file %s",
-		   interp_name, so->so_original_name);
+		   interp_name, so ? so->so_original_name : "<?>");
 #endif /* __QNXTARGET__ */
 
       /* We're done with both the temporary bfd and target.  Remember,
