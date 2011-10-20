@@ -3573,6 +3573,26 @@ nto_find_new_threads (struct target_ops *ops)
   update_threadnames ();
 }
 
+#ifndef HAVE_RAW_DECL_STRCASESTR
+char *strcasestr(const char *const haystack, const char *const needle)
+{
+  char buff_h[1024];
+  char buff_n[1024];
+  const char *p;
+  int i;
+ 
+  p = haystack;
+  for (p = haystack, i = 0; *p && i < sizeof(buff_h)-1; ++p, ++i)
+    buff_h[i] = toupper(*p);
+  buff_h[i] = '\0';
+  for (p = needle, i = 0; *p && i < sizeof(buff_n)-1; ++p, ++i)
+    buff_n[i] = toupper(*p);
+  buff_n[i] = '\0';
+
+  return strstr(buff_h, buff_n);
+}
+#endif /* HAVE_RAW_DECL_STRCASESTR */
+
 void
 nto_pidlist (char *args, int from_tty)
 {
@@ -3627,11 +3647,13 @@ nto_pidlist (char *args, int from_tty)
 	   (void *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
 	   tip->tid != 0; tip++)
 	{
-	  printf_filtered ("%s - %ld/%ld\n", pidlist->name,
-			   EXTRACT_SIGNED_INTEGER (&pidlist->pid,
-						   4, byte_order),
-			   EXTRACT_SIGNED_INTEGER (&tip->tid, 2,
-						   byte_order));
+	  if ((args != NULL && strcasestr(pidlist->name, args) != NULL)
+	      || args == NULL)
+	    printf_filtered ("%s - %ld/%ld\n", pidlist->name,
+			     EXTRACT_SIGNED_INTEGER (&pidlist->pid,
+						     4, byte_order),
+			     EXTRACT_SIGNED_INTEGER (&tip->tid, 2,
+						     byte_order));
 	  total_tid++;
 	}
       pid = EXTRACT_SIGNED_INTEGER (&pidlist->pid, 4, byte_order);
@@ -3966,6 +3988,6 @@ If set, upload will set nto-executable. Otherwise, nto-executable \
 will not change."),
 			   NULL, NULL, &setlist, &showlist);
 
-  add_info ("pidlist", nto_pidlist, "pidlist");
+  add_info ("pidlist", nto_pidlist, _("List processes on the target.  Optional argument will filter out proces names not containing (case insensitive) argument string."));
   add_info ("meminfo", nto_meminfo, "memory information");
 }
