@@ -521,9 +521,15 @@ get_core_register_section (struct regcache *regcache,
 
   xfree (section_name);
 
+#ifdef __QNXTARGET__
+  if (ptid_get_tid (inferior_ptid))
+    section_name = xstrprintf ("%s/%ld", name,
+			       ptid_get_tid (inferior_ptid));
+#else /* ! __QNXTARGET__ */
   if (ptid_get_lwp (inferior_ptid))
     section_name = xstrprintf ("%s/%ld", name,
 			       ptid_get_lwp (inferior_ptid));
+#endif
   else
     section_name = xstrdup (name);
 
