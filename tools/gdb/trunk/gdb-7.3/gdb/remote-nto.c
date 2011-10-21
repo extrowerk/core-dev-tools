@@ -3988,6 +3988,6 @@ If set, upload will set nto-executable. Otherwise, nto-executable \
 will not change."),
 			   NULL, NULL, &setlist, &showlist);
 
-  add_info ("pidlist", nto_pidlist, _("List processes on the target.  Optional argument will filter out proces names not containing (case insensitive) argument string."));
+  add_info ("pidlist", nto_pidlist, _("List processes on the target.  Optional argument will filter out process names not containing (case insensitive) argument string."));
   add_info ("meminfo", nto_meminfo, "memory information");
 }
