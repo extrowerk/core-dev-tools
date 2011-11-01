@@ -78,6 +78,7 @@ initialize_generic_target_desc (const int vfp_present)
       tdesc_create_reg (feature, "d29", ARM_D0_REGNUM + 29, 1, NULL, 64, "float");
       tdesc_create_reg (feature, "d30", ARM_D0_REGNUM + 30, 1, NULL, 64, "float");
       tdesc_create_reg (feature, "d31", ARM_D0_REGNUM + 31, 1, NULL, 64, "float");
+      tdesc_create_reg (feature, "fpscr", 58, 1, "float", 32, "int");
     }
 
   return result;
