@@ -61,6 +61,9 @@
 #define ARM_NTO_WMMX_WCASF_OFFSET 0x84
 #define ARM_NTO_WMMX_WCGR0_OFFSET 0x88
 
+#define ALT_REGSET_SIZE (ARM_NTO_WMMX_WR_REGSIZE * 16 \
+			 + NTO_STATUS_REGISTER_SIZE * 6)
+
 
 static void
 armnto_supply_reg_gregset (struct regcache *regcache, int regno,
@@ -91,6 +94,8 @@ armnto_supply_reg_fpregset (struct regcache *regcache, int regno,
 
 	  RAW_SUPPLY_IF_NEEDED (regcache, regi, &regs[offset]);
 	}
+      regs += NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM;
+      RAW_SUPPLY_IF_NEEDED (regcache, ARM_FPSCR_REGNUM, regs);
     }
   else
     {
@@ -103,13 +108,9 @@ armnto_supply_reg_fpregset (struct regcache *regcache, int regno,
 	  RAW_SUPPLY_IF_NEEDED (regcache, regi, gdbbuf);
 	  regs += NTO_FP_REGISTER_SIZE;
 	}
+
+      RAW_SUPPLY_IF_NEEDED (regcache, ARM_FPS_REGNUM, regs);
     }
-
-  RAW_SUPPLY_IF_NEEDED (regcache, ARM_FPS_REGNUM, regs);
-
-  /* Status registers. */
-  /* FPSCR a.k.a. ARM_FPS_REGNUM (24) */
-  /* FPEXC */
 }
 
 static void
@@ -181,7 +182,8 @@ armnto_regset_id (int regno)
   else if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
     return NTO_REG_FLOAT;
   /* VFP registers are mapped into FPU registers. */
-  else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+  else if ((regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
+	   || regno == ARM_FPSCR_REGNUM)
     return NTO_REG_FLOAT;
   else if (regno >= ARM_WR0_REGNUM && regno < ARM_NUM_REGS)
     return NTO_REG_ALT;
@@ -240,11 +242,17 @@ armnto_register_area (struct gdbarch *gdbarch,
 	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM
 		   + NTO_STATUS_REGISTER_SIZE; /* fpexc */
 	    break;
+	  case ARM_FPSCR_REGNUM:
+	    regsize = NTO_STATUS_REGISTER_SIZE;
+	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM;
+	    break;
 	  }
 	return regsize;
 	break;
       }
     case NTO_REG_ALT:
+      if (regno == -1)
+	return ALT_REGSET_SIZE;
       if (regno <= ARM_WR15_REGNUM)
 	{
 	  *off = (regno - ARM_WR0_REGNUM) * ARM_NTO_WMMX_WR_REGSIZE;
@@ -359,8 +367,8 @@ init_armnto_ops ()
 {
   nto_regset_id = armnto_regset_id;
   nto_supply_gregset = armnto_supply_gregset;
-  nto_supply_fpregset = nto_dummy_supply_regset;
-  nto_supply_altregset = nto_dummy_supply_regset;
+  nto_supply_fpregset = armnto_supply_fpregset;
+  nto_supply_altregset = armnto_supply_altregset;
   nto_supply_regset = armnto_supply_regset;
   nto_register_area = armnto_register_area;
   nto_regset_fill = armnto_regset_fill;
