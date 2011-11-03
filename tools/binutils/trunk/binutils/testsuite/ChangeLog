@@ -1,39 +1,141 @@
-2011-05-29  Alan Modra  <amodra@gmail.com>
+2011-09-15  H.J. Lu  <hongjiu.lu@intel.com>
 
-	Apply from mainline
-	2011-05-18  Nick Clifton  <nickc@redhat.com>
+	PR binutils/13180
+	* binutils-all/group-6.d: New.
+	* binutils-all/group-6.s: Likewise.
+
+	* binutils-all/objcopy.exp: Run group-6 for ELF targrts.
+
+2011-07-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/elfedit.exp: Run elfedit-4.
+
+	* binutils-all/elfedit-4.d: New.
+
+2011-06-30  Bernd Schmidt  <bernds@codesourcery.com>
+
+	* binutils-all/objcopy.exp (strip_test, strip_executable):
+	On ELF targets, test that OS/ABI is preserved.
+	(copy_setup): Do test on tic6x-*-uclinux.
+
+2011-06-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/elfedit-1.d: Updated for x32.
+
+2011-05-18  Nick Clifton  <nickc@redhat.com>
+
 	PR binutils/12753
 	* lib/utils-lib.exp (run_dump_test): Allow nm as a program.
 	* binutils-all/nm.exp: Test running "nm -g" on an object file
 	containing a unique symbol.
 
-2011-02-10  Alan Modra  <amodra@gmail.com>
+2011-05-13  Alan Modra  <amodra@gmail.com>
 
-	Apply from mainline
-	2010-11-20  Richard Sandiford  <rdsandiford@googlemail.com>
+	* binutils-all/objcopy.exp objcopy_text): Remove xfails for sh-rtems
+	and tic4x.
+
+2011-05-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/12720
+	* binutils-all/ar.exp (delete_an_element): New.
+	(move_an_element): Likewise.
+	Run delete_an_element and move_an_element.
+
+2011-04-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/x86-64/compressed-1a.d: Adjust for change in output
+	format.
+
+2011-04-29  Hans-Peter Nilsson  <hp@axis.com>
+
+	* binutils-all/i386/compressed-1a.d: Adjust for change in output
+	format.
+
+2011-04-28  Tom Tromey  <tromey@redhat.com>
+
+	* binutils-all/objdump.W: Correct output.
+
+011-04-11  Kai Tietz
+
+	* binutils-all/windres/windres.exp: Add '// cpparg <option>' command
+	to rc file interpretation to specify addition pre-processor commands
+	as script option.
+	* binutils-all/windres/strtab3.rc: New.
+	* binutils-all/windres/strtab3.rsd: New.
+	* binutils-all/windres/README: Add note about cpparg script option.
+	argument
+
+2011-04-11  Nick Clifton  <nickc@redhat.com>
+
+	* binutils-all/arm/simple.s: Fix assembly problems for COFF based
+	ARM toolchaisn by removing .type and .size directives.
+
+2011-04-07  Paul Carroll<pcarroll@codesourcery.com>
+
+	* binutils-all/arm/simple.s: Demo issue with objdump with
+	multiple input files
+	* binutils-all/arm/objdump.exp: added new ARM test case code
+
+2011-04-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* binutils-all/objcopy.exp (*arm*-*-coff): Change to arm*-*-coff.
+	(xscale-*-coff, thumb*-*-coff, thumb*-*-pe): Don't handle.
+
+2011-03-31  Bernd Schmidt  <bernds@codesourcery.com>
+
+	* lib/binutils-common.exp (is_elf_format): Accept tic6x*-*-uclinux*.
+
+2011-01-03  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* lib/binutils-common.exp (regexp_diff): Use "==" instead of "eq".
+
+2010-12-31  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* binutils-all/copy-2.d: Change "hppa" to "hppa*" in not-target list.
+	* binutils-all/copy-3.d: Add hppa*-*-hpux* to not-target list.
+	* binutils-all/objcopy.exp (reverse-bytes): xfail on 32-bit hpux.
+
+2010-12-31  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* binutils-all/readelf.exp: Handle MIPS FreeBSD targets.
+
+2010-12-09  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* lib/binutils-common.exp (regexp_diff): Implement inverse
+	matching, requested by `!'.
+
+2010-11-20  Richard Sandiford  <rdsandiford@googlemail.com>
+
 	* lib/binutils-common.exp (regexp_diff): New procedure.
 	* lib/utils-lib.exp (regexp_diff): Delete.
 
-	2010-11-20  Richard Sandiford  <rdsandiford@googlemail.com>
+2010-11-20  Richard Sandiford  <rdsandiford@googlemail.com>
+
 	* lib/binutils-common.exp: New file.
 	* lib/utils-lib.exp (load_common_lib): New function.  Load
 	binutils-common.exp.
 	(is_elf_format): Delete.
 
-	2010-11-08  Thomas Schwinge  <thomas@schwinge.name>
+2010-11-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/compress.exp: Replace binutils_assemble with
+	binutils_assemble_flags for --nocompress-debug-sections.
+
+2010-11-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/compress.exp: Pass --nocompress-debug-sections to
+	assembler for uncompressed debug sections.
+
+	* binutils-all/testranges.d: Also expect .zdebug in section name.
+
+2010-11-08  Thomas Schwinge  <thomas@schwinge.name>
+
 	* lib/utils-lib.exp (is_elf_format): Consider for *-*-gnu*, too.
 	* binutils-all/elfedit-2.d (target): Likewise.
 	* binutils-all/elfedit-3.d (target): Likewise.
 	* binutils-all/i386/i386.exp: Likewise.
 	* binutils-all/objcopy.exp: Likewise.
 	* binutils-all/strip-3.d (target): Likewise.
-
-2011-02-01  Alan Modra  <amodra@gmail.com>
-
-	Backport from mainline
-	2010-11-08  Alan Modra  <amodra@gmail.com>
-	* binutils-all/objdump.W: Adjust expected result for debug section
-	rename.
 
 2010-11-08  Alan Modra  <amodra@gmail.com>
 

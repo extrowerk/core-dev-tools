@@ -1103,6 +1103,7 @@ display_rel_file (bfd *abfd, bfd *archive_bfd)
     print_size_symbols (abfd, dynamic, symsizes, symcount, archive_bfd);
 
   free (minisyms);
+  free (symsizes);
 }
 
 static void
@@ -1200,6 +1201,10 @@ display_file (char *filename)
       bfd_nonfatal (filename);
       return FALSE;
     }
+
+  /* If printing line numbers, decompress the debug sections.  */
+  if (line_numbers)
+    file->flags |= BFD_DECOMPRESS;
 
   if (bfd_check_format (file, bfd_archive))
     {

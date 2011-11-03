@@ -1,5 +1,5 @@
 /* Plugin support for BFD.
-   Copyright 2009
+   Copyright 2009, 2010, 2011
    Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -63,6 +63,7 @@
 #define bfd_plugin_bfd_final_link                     _bfd_generic_final_link
 #define bfd_plugin_bfd_link_split_section             _bfd_generic_link_split_section
 #define bfd_plugin_bfd_gc_sections                    bfd_generic_gc_sections
+#define bfd_plugin_bfd_lookup_section_flags           bfd_generic_lookup_section_flags
 #define bfd_plugin_bfd_merge_sections                 bfd_generic_merge_sections
 #define bfd_plugin_bfd_is_group_section               bfd_generic_is_group_section
 #define bfd_plugin_bfd_discard_group                  bfd_generic_discard_group
@@ -464,13 +465,6 @@ bfd_plugin_sizeof_headers (bfd *a ATTRIBUTE_UNUSED,
   return 0;
 }
 
-static bfd_boolean
-bfd_plugin_mkobject (bfd *abfd ATTRIBUTE_UNUSED)
-{
-  BFD_ASSERT (0);
-  return 0;
-}
-
 const bfd_target plugin_vec =
 {
   "plugin",			/* Name.  */
@@ -485,6 +479,7 @@ const bfd_target plugin_vec =
   0,				/* symbol_leading_char.  */
   '/',				/* ar_pad_char.  */
   15,				/* ar_max_namelen.  */
+  0,				/* match priority.  */
 
   bfd_getl64, bfd_getl_signed_64, bfd_putl64,
   bfd_getl32, bfd_getl_signed_32, bfd_putl32,
@@ -501,7 +496,7 @@ const bfd_target plugin_vec =
   },
   {				/* bfd_set_format.  */
     bfd_false,
-    bfd_plugin_mkobject,
+    bfd_false,
     _bfd_generic_mkarchive,
     bfd_false,
   },

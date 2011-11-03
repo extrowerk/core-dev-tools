@@ -8,7 +8,7 @@
 
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
    1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-   2010
+   2010, 2011
    Free Software Foundation, Inc.
 
    Written by Cygnus Support.
@@ -458,6 +458,9 @@ extern bfd_boolean _bfd_generic_set_section_contents
 #define _bfd_nolink_bfd_gc_sections \
   ((bfd_boolean (*) (bfd *, struct bfd_link_info *)) \
    bfd_false)
+#define _bfd_nolink_bfd_lookup_section_flags \
+  ((void (*) (struct bfd_link_info *, struct flag_info *)) \
+   bfd_0)
 #define _bfd_nolink_bfd_merge_sections \
   ((bfd_boolean (*) (bfd *, struct bfd_link_info *)) \
    bfd_false)
@@ -483,7 +486,8 @@ extern bfd_boolean _bfd_generic_set_section_contents
 #define _bfd_nolink_bfd_link_split_section \
   ((bfd_boolean (*) (bfd *, struct bfd_section *)) bfd_false)
 #define _bfd_nolink_section_already_linked \
-  ((void (*) (bfd *, struct bfd_section *, struct bfd_link_info *)) bfd_void)
+  ((bfd_boolean (*) (bfd *, asection *, \
+		     struct bfd_link_info *)) bfd_false)
 #define _bfd_nolink_bfd_define_common_symbol \
   ((bfd_boolean (*) (bfd *, struct bfd_link_info *, \
 		     struct bfd_link_hash_entry *)) bfd_false)
@@ -603,8 +607,8 @@ extern bfd_boolean _bfd_generic_final_link
 extern bfd_boolean _bfd_generic_link_split_section
   (bfd *, struct bfd_section *);
 
-extern void _bfd_generic_section_already_linked
-  (bfd *, struct bfd_section *, struct bfd_link_info *);
+extern bfd_boolean _bfd_generic_section_already_linked
+  (bfd *, asection *, struct bfd_link_info *);
 
 /* Generic reloc_link_order processing routine.  */
 extern bfd_boolean _bfd_generic_reloc_link_order
@@ -822,7 +826,7 @@ struct dwarf_debug_section
 /* Map of uncompressed DWARF debug section name to compressed one.  It
    is terminated by NULL uncompressed_name.  */
 
-extern struct dwarf_debug_section dwarf_debug_sections[];
+extern const struct dwarf_debug_section dwarf_debug_sections[];
 /* Extracted from init.c.  */
 /* Extracted from libbfd.c.  */
 bfd_boolean bfd_write_bigendian_4byte_int (bfd *, unsigned int);
@@ -850,9 +854,15 @@ struct bfd_iovec
   int (*bclose) (struct bfd *abfd);
   int (*bflush) (struct bfd *abfd);
   int (*bstat) (struct bfd *abfd, struct stat *sb);
-  /* Just like mmap: (void*)-1 on failure, mmapped address on success.  */
+  /* Mmap a part of the files. ADDR, LEN, PROT, FLAGS and OFFSET are the usual
+     mmap parameter, except that LEN and OFFSET do not need to be page
+     aligned.  Returns (void *)-1 on failure, mmapped address on success.
+     Also write in MAP_ADDR the address of the page aligned buffer and in
+     MAP_LEN the size mapped (a page multiple).  Use unmap with MAP_ADDR and
+     MAP_LEN to unmap.  */
   void *(*bmmap) (struct bfd *abfd, void *addr, bfd_size_type len,
-                  int prot, int flags, file_ptr offset);
+                  int prot, int flags, file_ptr offset,
+                  void **map_addr, bfd_size_type *map_len);
 };
 extern const struct bfd_iovec _bfd_memory_iovec;
 /* Extracted from bfdwin.c.  */
@@ -1062,6 +1072,7 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_ALPHA_TPREL_LO16",
   "BFD_RELOC_ALPHA_TPREL16",
   "BFD_RELOC_MIPS_JMP",
+  "BFD_RELOC_MICROMIPS_JMP",
   "BFD_RELOC_MIPS16_JMP",
   "BFD_RELOC_MIPS16_GPREL",
   "BFD_RELOC_HI16",
@@ -1076,40 +1087,69 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_MIPS16_HI16_S",
   "BFD_RELOC_MIPS16_LO16",
   "BFD_RELOC_MIPS_LITERAL",
+  "BFD_RELOC_MICROMIPS_LITERAL",
+  "BFD_RELOC_MICROMIPS_7_PCREL_S1",
+  "BFD_RELOC_MICROMIPS_10_PCREL_S1",
+  "BFD_RELOC_MICROMIPS_16_PCREL_S1",
+  "BFD_RELOC_MICROMIPS_GPREL16",
+  "BFD_RELOC_MICROMIPS_HI16",
+  "BFD_RELOC_MICROMIPS_HI16_S",
+  "BFD_RELOC_MICROMIPS_LO16",
   "BFD_RELOC_MIPS_GOT16",
+  "BFD_RELOC_MICROMIPS_GOT16",
   "BFD_RELOC_MIPS_CALL16",
+  "BFD_RELOC_MICROMIPS_CALL16",
   "BFD_RELOC_MIPS_GOT_HI16",
+  "BFD_RELOC_MICROMIPS_GOT_HI16",
   "BFD_RELOC_MIPS_GOT_LO16",
+  "BFD_RELOC_MICROMIPS_GOT_LO16",
   "BFD_RELOC_MIPS_CALL_HI16",
+  "BFD_RELOC_MICROMIPS_CALL_HI16",
   "BFD_RELOC_MIPS_CALL_LO16",
+  "BFD_RELOC_MICROMIPS_CALL_LO16",
   "BFD_RELOC_MIPS_SUB",
+  "BFD_RELOC_MICROMIPS_SUB",
   "BFD_RELOC_MIPS_GOT_PAGE",
+  "BFD_RELOC_MICROMIPS_GOT_PAGE",
   "BFD_RELOC_MIPS_GOT_OFST",
+  "BFD_RELOC_MICROMIPS_GOT_OFST",
   "BFD_RELOC_MIPS_GOT_DISP",
+  "BFD_RELOC_MICROMIPS_GOT_DISP",
   "BFD_RELOC_MIPS_SHIFT5",
   "BFD_RELOC_MIPS_SHIFT6",
   "BFD_RELOC_MIPS_INSERT_A",
   "BFD_RELOC_MIPS_INSERT_B",
   "BFD_RELOC_MIPS_DELETE",
   "BFD_RELOC_MIPS_HIGHEST",
+  "BFD_RELOC_MICROMIPS_HIGHEST",
   "BFD_RELOC_MIPS_HIGHER",
+  "BFD_RELOC_MICROMIPS_HIGHER",
   "BFD_RELOC_MIPS_SCN_DISP",
+  "BFD_RELOC_MICROMIPS_SCN_DISP",
   "BFD_RELOC_MIPS_REL16",
   "BFD_RELOC_MIPS_RELGOT",
   "BFD_RELOC_MIPS_JALR",
+  "BFD_RELOC_MICROMIPS_JALR",
   "BFD_RELOC_MIPS_TLS_DTPMOD32",
   "BFD_RELOC_MIPS_TLS_DTPREL32",
   "BFD_RELOC_MIPS_TLS_DTPMOD64",
   "BFD_RELOC_MIPS_TLS_DTPREL64",
   "BFD_RELOC_MIPS_TLS_GD",
+  "BFD_RELOC_MICROMIPS_TLS_GD",
   "BFD_RELOC_MIPS_TLS_LDM",
+  "BFD_RELOC_MICROMIPS_TLS_LDM",
   "BFD_RELOC_MIPS_TLS_DTPREL_HI16",
+  "BFD_RELOC_MICROMIPS_TLS_DTPREL_HI16",
   "BFD_RELOC_MIPS_TLS_DTPREL_LO16",
+  "BFD_RELOC_MICROMIPS_TLS_DTPREL_LO16",
   "BFD_RELOC_MIPS_TLS_GOTTPREL",
+  "BFD_RELOC_MICROMIPS_TLS_GOTTPREL",
   "BFD_RELOC_MIPS_TLS_TPREL32",
   "BFD_RELOC_MIPS_TLS_TPREL64",
   "BFD_RELOC_MIPS_TLS_TPREL_HI16",
+  "BFD_RELOC_MICROMIPS_TLS_TPREL_HI16",
   "BFD_RELOC_MIPS_TLS_TPREL_LO16",
+  "BFD_RELOC_MICROMIPS_TLS_TPREL_LO16",
 
   "BFD_RELOC_MIPS_COPY",
   "BFD_RELOC_MIPS_JUMP_SLOT",
@@ -1377,6 +1417,12 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_ARM_TLS_TPOFF32",
   "BFD_RELOC_ARM_TLS_IE32",
   "BFD_RELOC_ARM_TLS_LE32",
+  "BFD_RELOC_ARM_TLS_GOTDESC",
+  "BFD_RELOC_ARM_TLS_CALL",
+  "BFD_RELOC_ARM_THM_TLS_CALL",
+  "BFD_RELOC_ARM_TLS_DESCSEQ",
+  "BFD_RELOC_ARM_THM_TLS_DESCSEQ",
+  "BFD_RELOC_ARM_TLS_DESC",
   "BFD_RELOC_ARM_ALU_PC_G0_NC",
   "BFD_RELOC_ARM_ALU_PC_G0",
   "BFD_RELOC_ARM_ALU_PC_G1_NC",
@@ -1406,6 +1452,7 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_ARM_LDC_SB_G1",
   "BFD_RELOC_ARM_LDC_SB_G2",
   "BFD_RELOC_ARM_V4BX",
+  "BFD_RELOC_ARM_IRELATIVE",
   "BFD_RELOC_ARM_IMMEDIATE",
   "BFD_RELOC_ARM_ADRL_IMMEDIATE",
   "BFD_RELOC_ARM_T32_IMMEDIATE",
@@ -1698,6 +1745,10 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_C6000_DSBT_INDEX",
   "BFD_RELOC_C6000_PREL31",
   "BFD_RELOC_C6000_COPY",
+  "BFD_RELOC_C6000_JUMP_SLOT",
+  "BFD_RELOC_C6000_EHTYPE",
+  "BFD_RELOC_C6000_PCR_H16",
+  "BFD_RELOC_C6000_PCR_L16",
   "BFD_RELOC_C6000_ALIGN",
   "BFD_RELOC_C6000_FPHEAD",
   "BFD_RELOC_C6000_NOCMP",
@@ -1800,9 +1851,12 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_RX_GPRELL",
   "BFD_RELOC_RX_SYM",
   "BFD_RELOC_RX_OP_SUBTRACT",
+  "BFD_RELOC_RX_OP_NEG",
   "BFD_RELOC_RX_ABS8",
   "BFD_RELOC_RX_ABS16",
+  "BFD_RELOC_RX_ABS16_REV",
   "BFD_RELOC_RX_ABS32",
+  "BFD_RELOC_RX_ABS32_REV",
   "BFD_RELOC_RX_ABS16U",
   "BFD_RELOC_RX_ABS16UW",
   "BFD_RELOC_RX_ABS16UL",
@@ -2254,6 +2308,174 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_MICROBLAZE_64_GOTOFF",
   "BFD_RELOC_MICROBLAZE_32_GOTOFF",
   "BFD_RELOC_MICROBLAZE_COPY",
+  "BFD_RELOC_TILEPRO_COPY",
+  "BFD_RELOC_TILEPRO_GLOB_DAT",
+  "BFD_RELOC_TILEPRO_JMP_SLOT",
+  "BFD_RELOC_TILEPRO_RELATIVE",
+  "BFD_RELOC_TILEPRO_BROFF_X1",
+  "BFD_RELOC_TILEPRO_JOFFLONG_X1",
+  "BFD_RELOC_TILEPRO_JOFFLONG_X1_PLT",
+  "BFD_RELOC_TILEPRO_IMM8_X0",
+  "BFD_RELOC_TILEPRO_IMM8_Y0",
+  "BFD_RELOC_TILEPRO_IMM8_X1",
+  "BFD_RELOC_TILEPRO_IMM8_Y1",
+  "BFD_RELOC_TILEPRO_DEST_IMM8_X1",
+  "BFD_RELOC_TILEPRO_MT_IMM15_X1",
+  "BFD_RELOC_TILEPRO_MF_IMM15_X1",
+  "BFD_RELOC_TILEPRO_IMM16_X0",
+  "BFD_RELOC_TILEPRO_IMM16_X1",
+  "BFD_RELOC_TILEPRO_IMM16_X0_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X1_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X0_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X1_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X0_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X1_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X0_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X1_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X0_LO_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X1_LO_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X0_HI_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X1_HI_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X0_HA_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X1_HA_PCREL",
+  "BFD_RELOC_TILEPRO_IMM16_X0_GOT",
+  "BFD_RELOC_TILEPRO_IMM16_X1_GOT",
+  "BFD_RELOC_TILEPRO_IMM16_X0_GOT_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X1_GOT_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X0_GOT_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X1_GOT_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X0_GOT_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X1_GOT_HA",
+  "BFD_RELOC_TILEPRO_MMSTART_X0",
+  "BFD_RELOC_TILEPRO_MMEND_X0",
+  "BFD_RELOC_TILEPRO_MMSTART_X1",
+  "BFD_RELOC_TILEPRO_MMEND_X1",
+  "BFD_RELOC_TILEPRO_SHAMT_X0",
+  "BFD_RELOC_TILEPRO_SHAMT_X1",
+  "BFD_RELOC_TILEPRO_SHAMT_Y0",
+  "BFD_RELOC_TILEPRO_SHAMT_Y1",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_GD",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_GD",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_GD_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_GD_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_GD_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_GD_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_GD_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_GD_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_IE",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_IE",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_IE_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_IE_LO",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_IE_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_IE_HI",
+  "BFD_RELOC_TILEPRO_IMM16_X0_TLS_IE_HA",
+  "BFD_RELOC_TILEPRO_IMM16_X1_TLS_IE_HA",
+  "BFD_RELOC_TILEPRO_TLS_DTPMOD32",
+  "BFD_RELOC_TILEPRO_TLS_DTPOFF32",
+  "BFD_RELOC_TILEPRO_TLS_TPOFF32",
+  "BFD_RELOC_TILEGX_HW0",
+  "BFD_RELOC_TILEGX_HW1",
+  "BFD_RELOC_TILEGX_HW2",
+  "BFD_RELOC_TILEGX_HW3",
+  "BFD_RELOC_TILEGX_HW0_LAST",
+  "BFD_RELOC_TILEGX_HW1_LAST",
+  "BFD_RELOC_TILEGX_HW2_LAST",
+  "BFD_RELOC_TILEGX_COPY",
+  "BFD_RELOC_TILEGX_GLOB_DAT",
+  "BFD_RELOC_TILEGX_JMP_SLOT",
+  "BFD_RELOC_TILEGX_RELATIVE",
+  "BFD_RELOC_TILEGX_BROFF_X1",
+  "BFD_RELOC_TILEGX_JUMPOFF_X1",
+  "BFD_RELOC_TILEGX_JUMPOFF_X1_PLT",
+  "BFD_RELOC_TILEGX_IMM8_X0",
+  "BFD_RELOC_TILEGX_IMM8_Y0",
+  "BFD_RELOC_TILEGX_IMM8_X1",
+  "BFD_RELOC_TILEGX_IMM8_Y1",
+  "BFD_RELOC_TILEGX_DEST_IMM8_X1",
+  "BFD_RELOC_TILEGX_MT_IMM14_X1",
+  "BFD_RELOC_TILEGX_MF_IMM14_X1",
+  "BFD_RELOC_TILEGX_MMSTART_X0",
+  "BFD_RELOC_TILEGX_MMEND_X0",
+  "BFD_RELOC_TILEGX_SHAMT_X0",
+  "BFD_RELOC_TILEGX_SHAMT_X1",
+  "BFD_RELOC_TILEGX_SHAMT_Y0",
+  "BFD_RELOC_TILEGX_SHAMT_Y1",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW3",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW3",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_LAST",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW3_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW3_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_LAST_PCREL",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW3_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW3_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_LAST_GOT",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW3_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW3_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_LAST_TLS_GD",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW3_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW3_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW0_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW0_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW1_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW1_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X0_HW2_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_IMM16_X1_HW2_LAST_TLS_IE",
+  "BFD_RELOC_TILEGX_TLS_DTPMOD64",
+  "BFD_RELOC_TILEGX_TLS_DTPOFF64",
+  "BFD_RELOC_TILEGX_TLS_TPOFF64",
+  "BFD_RELOC_TILEGX_TLS_DTPMOD32",
+  "BFD_RELOC_TILEGX_TLS_DTPOFF32",
+  "BFD_RELOC_TILEGX_TLS_TPOFF32",
  "@@overflow: BFD_RELOC_UNUSED@@",
 };
 #endif
@@ -2269,6 +2491,9 @@ bfd_boolean bfd_generic_relax_section
 
 bfd_boolean bfd_generic_gc_sections
    (bfd *, struct bfd_link_info *);
+
+void bfd_generic_lookup_section_flags
+   (struct bfd_link_info *, struct flag_info *);
 
 bfd_boolean bfd_generic_merge_sections
    (bfd *, struct bfd_link_info *);

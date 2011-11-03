@@ -76,8 +76,16 @@ extern unsigned long i386_mach (void);
 #define ELF_TARGET_FORMAT64	"elf64-x86-64"
 #endif
 
+#ifndef ELF_TARGET_FORMAT32
+#define ELF_TARGET_FORMAT32	"elf32-x86-64"
+#endif
+
 #ifndef ELF_TARGET_L1OM_FORMAT
 #define ELF_TARGET_L1OM_FORMAT	"elf64-l1om"
+#endif
+
+#ifndef ELF_TARGET_K1OM_FORMAT
+#define ELF_TARGET_K1OM_FORMAT	"elf64-k1om"
 #endif
 
 #if ((defined (OBJ_MAYBE_COFF) && defined (OBJ_MAYBE_AOUT)) \
@@ -121,8 +129,8 @@ extern const char *i386_comment_chars;
 
 #if (defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)) && !defined (LEX_AT)
 #define TC_PARSE_CONS_EXPRESSION(EXP, NBYTES) x86_cons (EXP, NBYTES)
-extern void x86_cons (expressionS *, int);
 #endif
+extern void x86_cons (expressionS *, int);
 
 #define TC_CONS_FIX_NEW(FRAG,OFF,LEN,EXP) x86_cons_fix_new(FRAG, OFF, LEN, EXP)
 extern void x86_cons_fix_new
@@ -220,13 +228,14 @@ enum processor_type
   PROCESSOR_CORE2,
   PROCESSOR_COREI7,
   PROCESSOR_L1OM,
+  PROCESSOR_K1OM,
   PROCESSOR_K6,
   PROCESSOR_ATHLON,
   PROCESSOR_K8,
   PROCESSOR_GENERIC32,
   PROCESSOR_GENERIC64,
   PROCESSOR_AMDFAM10,
-  PROCESSOR_BDVER1
+  PROCESSOR_BD
 };
 
 extern enum processor_type cpu_arch_tune;
@@ -269,6 +278,9 @@ extern unsigned int x86_dwarf2_return_column;
 
 extern int x86_cie_data_alignment;
 #define DWARF2_CIE_DATA_ALIGNMENT x86_cie_data_alignment
+
+extern int x86_dwarf2_addr_size (void);
+#define DWARF2_ADDR_SIZE(bfd) x86_dwarf2_addr_size ()
 
 #define tc_parse_to_dw2regnum tc_x86_parse_to_dw2regnum
 extern void tc_x86_parse_to_dw2regnum (expressionS *);

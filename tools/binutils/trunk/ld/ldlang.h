@@ -1,6 +1,6 @@
 /* ldlang.h - linker command language support
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
@@ -240,6 +240,8 @@ typedef struct lang_input_statement_struct
 
   bfd *the_bfd;
 
+  struct flag_info *section_flag_list;
+
   /* Point to the next file - whatever it is, wanders up and down
      archives */
   union lang_statement_union *next;
@@ -268,12 +270,13 @@ typedef struct lang_input_statement_struct
   /* Whether to search for this entry as a dynamic archive.  */
   unsigned int dynamic : 1;
 
-  /* Whether DT_NEEDED tags should be added for dynamic libraries in
-     DT_NEEDED tags from this entry.  */
+  /* Set if a DT_NEEDED tag should be added not just for the dynamic library
+     explicitly given by this entry but also for any dynamic libraries in
+     this entry's needed list.  */
   unsigned int add_DT_NEEDED_for_dynamic : 1;
 
-  /* Whether this entry should cause a DT_NEEDED tag only when
-     satisfying references from regular files, or always.  */
+  /* Set if this entry should cause a DT_NEEDED tag only when some
+     regular file references its symbols (ie. --as-needed is in effect).  */
   unsigned int add_DT_NEEDED_for_regular : 1;
 
   /* Whether to include the entire contents of an archive.  */
@@ -293,6 +296,9 @@ typedef struct lang_input_statement_struct
 
   /* Set if the file was claimed from an archive.  */
   unsigned int claim_archive : 1;
+
+  /* Set if reloading an --as-needed lib.  */
+  unsigned int reload : 1;
 #endif /* ENABLE_PLUGINS */
 
 } lang_input_statement_type;
@@ -337,6 +343,7 @@ struct lang_wild_statement_struct
   walk_wild_section_handler_t walk_wild_section_handler;
   struct wildcard_list *handler_data[4];
   lang_section_bst_type *tree;
+  struct flag_info *section_flag_list;
 };
 
 typedef struct lang_address_statement_struct
@@ -624,8 +631,6 @@ extern void lang_leave_overlay_section
 extern void lang_leave_overlay
   (etree_type *, int, fill_type *, const char *,
    lang_output_section_phdr_list *, const char *);
-
-extern struct bfd_elf_version_tree *lang_elf_version_info;
 
 extern struct bfd_elf_version_expr *lang_new_vers_pattern
   (struct bfd_elf_version_expr *, const char *, const char *, bfd_boolean);

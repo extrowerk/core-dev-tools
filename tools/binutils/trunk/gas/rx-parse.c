@@ -2368,7 +2368,7 @@ yyreduce:
 	      { B2 (0x60, 0); FE ((yyvsp[(3) - (5)].exp), 8, 4); F ((yyvsp[(5) - (5)].regno), 12, 4); }
 	    else
 	      /* This is really an add, but we negate the immediate.  */
-	      { B2 (0x38, 0); F ((yyvsp[(5) - (5)].regno), 8, 4); F ((yyvsp[(5) - (5)].regno), 12, 4); NIMM ((yyvsp[(3) - (5)].exp), 6); } }
+	      { B2 (0x70, 0); F ((yyvsp[(5) - (5)].regno), 8, 4); F ((yyvsp[(5) - (5)].regno), 12, 4); NIMM ((yyvsp[(3) - (5)].exp), 6); } }
     break;
 
   case 30:

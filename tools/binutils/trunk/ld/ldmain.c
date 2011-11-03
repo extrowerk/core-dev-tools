@@ -105,7 +105,7 @@ bfd_boolean add_DT_NEEDED_for_regular;
 /* True means create DT_NEEDED entries for dynamic libraries that
    are DT_NEEDED by dynamic libraries specifically mentioned on
    the command line.  */
-bfd_boolean add_DT_NEEDED_for_dynamic = TRUE;
+bfd_boolean add_DT_NEEDED_for_dynamic;
 
 /* TRUE if we should demangle symbol names.  */
 bfd_boolean demangling;
@@ -427,11 +427,14 @@ main (int argc, char **argv)
       info_msg ("\n==================================================\n");
     }
 
+  if (command_line.print_output_format)
+    info_msg ("%s\n", lang_get_output_target ());
+
   lang_final ();
 
   if (!lang_has_input_file)
     {
-      if (version_printed)
+      if (version_printed || command_line.print_output_format)
 	xexit (0);
       einfo (_("%P%F: no input files\n"));
     }
@@ -488,7 +491,7 @@ main (int argc, char **argv)
 	einfo (_("%P: link errors found, deleting executable `%s'\n"),
 	       output_filename);
 
-      /* The file will be removed by remove_output.  */
+      /* The file will be removed by ld_cleanup.  */
       xexit (1);
     }
   else
@@ -561,7 +564,7 @@ main (int argc, char **argv)
       fflush (stderr);
     }
 
-  /* Prevent remove_output from doing anything, after a successful link.  */
+  /* Prevent ld_cleanup from doing anything, after a successful link.  */
   output_filename = NULL;
 
   xexit (0);
@@ -805,12 +808,12 @@ add_archive_element (struct bfd_link_info *info,
      BFD, but we still want to output the original BFD filename.  */
   orig_input = *input;
 #ifdef ENABLE_PLUGINS
-  if (bfd_my_archive (abfd) != NULL
-      && plugin_active_plugins_p ()
-      && !no_more_claiming)
+  if (plugin_active_plugins_p () && !no_more_claiming)
     {
       /* We must offer this archive member to the plugins to claim.  */
-      int fd = open (bfd_my_archive (abfd)->filename, O_RDONLY | O_BINARY);
+      const char *filename = (bfd_my_archive (abfd) != NULL
+			      ? bfd_my_archive (abfd)->filename : abfd->filename);
+      int fd = open (filename, O_RDONLY | O_BINARY);
       if (fd >= 0)
 	{
 	  struct ld_plugin_input_file file;
@@ -819,7 +822,7 @@ add_archive_element (struct bfd_link_info *info,
 	     member, not the whole file, and must exclude the header.
 	     Fortunately for us, that is how the data is stored in the
 	     origin field of the bfd and in the arelt_data.  */
-	  file.name = bfd_my_archive (abfd)->filename;
+	  file.name = filename;
 	  file.offset = abfd->origin;
 	  file.filesize = arelt_size (abfd);
 	  file.fd = fd;
@@ -1399,7 +1402,7 @@ reloc_overflow (struct bfd_link_info *info ATTRIBUTE_UNUSED,
   if (overflow_cutoff_limit == -1)
     return TRUE;
 
-  einfo ("%X%C:", abfd, section, address);
+  einfo ("%X%H:", abfd, section, address);
 
   if (overflow_cutoff_limit >= 0
       && overflow_cutoff_limit-- == 0)
@@ -1451,7 +1454,7 @@ reloc_dangerous (struct bfd_link_info *info ATTRIBUTE_UNUSED,
 		 asection *section,
 		 bfd_vma address)
 {
-  einfo (_("%X%C: dangerous relocation: %s\n"),
+  einfo (_("%X%H: dangerous relocation: %s\n"),
 	 abfd, section, address, message);
   return TRUE;
 }
@@ -1466,7 +1469,7 @@ unattached_reloc (struct bfd_link_info *info ATTRIBUTE_UNUSED,
 		  asection *section,
 		  bfd_vma address)
 {
-  einfo (_("%X%C: reloc refers to symbol `%T' which is not being output\n"),
+  einfo (_("%X%H: reloc refers to symbol `%T' which is not being output\n"),
 	 abfd, section, address, name);
   return TRUE;
 }

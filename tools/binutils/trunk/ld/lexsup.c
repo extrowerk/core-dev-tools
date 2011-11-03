@@ -1,6 +1,6 @@
 /* Parse options for the GNU linker.
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2011
    Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
@@ -175,6 +175,7 @@ enum option_values
   OPTION_PLUGIN_OPT,
 #endif /* ENABLE_PLUGINS */
   OPTION_DEFAULT_SCRIPT,
+  OPTION_PRINT_OUTPUT_FORMAT,
 };
 
 /* The long options.  This structure is used for both the option
@@ -356,8 +357,7 @@ static const struct ld_option ld_options[] =
 
   /* The next two options are deprecated because of their similarity to
      --as-needed and --no-as-needed.  They have been replaced by
-     --resolve-implicit-dynamic-symbols and
-     --no-resolve-implicit-dynamic-symbols.  */
+     --copy-dt-needed-entries and --no-copy-dt-needed-entries.  */
   { {"add-needed", no_argument, NULL, OPTION_ADD_DT_NEEDED_FOR_DYNAMIC},
     '\0', NULL, NULL, NO_HELP },
   { {"no-add-needed", no_argument, NULL, OPTION_NO_ADD_DT_NEEDED_FOR_DYNAMIC},
@@ -455,7 +455,7 @@ static const struct ld_option ld_options[] =
     '\0', NULL, N_("Do not allow unresolved references in object files"),
     TWO_DASHES },
   { {"allow-shlib-undefined", no_argument, NULL, OPTION_ALLOW_SHLIB_UNDEFINED},
-    '\0', NULL, N_("Allow unresolved references in shared libaries"),
+    '\0', NULL, N_("Allow unresolved references in shared libraries"),
     TWO_DASHES },
   { {"no-allow-shlib-undefined", no_argument, NULL,
      OPTION_NO_ALLOW_SHLIB_UNDEFINED},
@@ -492,6 +492,8 @@ static const struct ld_option ld_options[] =
   { {"oformat", required_argument, NULL, OPTION_OFORMAT},
     '\0', N_("TARGET"), N_("Specify target of output file"),
     EXACTLY_TWO_DASHES },
+  { {"print-output-format", no_argument, NULL, OPTION_PRINT_OUTPUT_FORMAT},
+    '\0', NULL, N_("Print default output format"), TWO_DASHES },
   { {"qmagic", no_argument, NULL, OPTION_IGNORE},
     '\0', NULL, N_("Ignored for Linux compatibility"), ONE_DASH },
   { {"reduce-memory-overheads", no_argument, NULL,
@@ -1059,6 +1061,9 @@ parse_args (unsigned argc, char **argv)
 	  break;
 	case OPTION_OFORMAT:
 	  lang_add_output_format (optarg, NULL, NULL, 0);
+	  break;
+	case OPTION_PRINT_OUTPUT_FORMAT:
+	  command_line.print_output_format = TRUE;
 	  break;
 #ifdef ENABLE_PLUGINS
 	case OPTION_PLUGIN:

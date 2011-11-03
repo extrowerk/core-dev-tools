@@ -104,7 +104,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 103 "deffilep.y"
+#line 114 "deffilep.y"
 {
   char *id;
   int number;

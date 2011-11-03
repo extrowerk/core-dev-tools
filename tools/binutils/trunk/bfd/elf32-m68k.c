@@ -1,6 +1,7 @@
 /* Motorola 68k series support for 32-bit ELF
    Copyright 1993, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+   Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -3466,9 +3467,6 @@ elf_m68k_discard_copies (h, inf)
   struct bfd_link_info *info = (struct bfd_link_info *) inf;
   struct elf_m68k_pcrel_relocs_copied *s;
 
-  if (h->root.type == bfd_link_hash_warning)
-    h = (struct elf_link_hash_entry *) h->root.u.i.link;
-
   if (!SYMBOL_CALLS_LOCAL (info, h))
     {
       if ((info->flags & DF_TEXTREL) == 0)
@@ -4390,6 +4388,11 @@ elf_m68k_finish_dynamic_symbol (output_bfd, info, h, sym)
 		  break;
 
 		case R_68K_TLS_GD32:
+		  /* The value for this relocation is actually put in
+		     the second GOT slot.  */
+		  relocation = bfd_get_signed_32 (output_bfd,
+						  (sgot->contents
+						   + got_entry_offset + 4));
 		  relocation += dtpoff_base (info);
 		  break;
 

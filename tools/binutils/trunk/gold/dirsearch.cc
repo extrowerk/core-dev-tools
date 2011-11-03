@@ -1,6 +1,6 @@
 // dirsearch.cc -- directory searching for gold
 
-// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -66,8 +66,9 @@ Dir_cache::read_files()
   DIR* d = opendir(this->dirname_);
   if (d == NULL)
     {
-      // We ignore directories which do not exist.
-      if (errno != ENOENT)
+      // We ignore directories which do not exist or are actually file
+      // names.
+      if (errno != ENOENT && errno != ENOTDIR)
 	gold::gold_error(_("%s: can not read directory: %s"),
 			 this->dirname_, strerror(errno));
       return;
@@ -241,8 +242,9 @@ Dirsearch::initialize(Workqueue* workqueue,
 // File_read::open.
 
 std::string
-Dirsearch::find(const std::string& n1, const std::string& n2,
-		bool* is_in_sysroot, int* pindex) const
+Dirsearch::find(const std::vector<std::string>& names,
+		bool* is_in_sysroot, int* pindex,
+		std::string *found_name) const
 {
   gold_assert(!this->token_.is_blocked());
   gold_assert(*pindex >= 0);
@@ -254,27 +256,20 @@ Dirsearch::find(const std::string& n1, const std::string& n2,
       const Search_directory* p = &this->directories_->at(i);
       Dir_cache* pdc = caches->lookup(p->name().c_str());
       gold_assert(pdc != NULL);
-      if (pdc->find(n1))
+      for (std::vector<std::string>::const_iterator n = names.begin();
+	   n != names.end();
+	   ++n)
 	{
-	  *is_in_sysroot = p->is_in_sysroot();
-	  *pindex = i;
-	  return p->name() + '/' + n1;
-	}
-      else
-        gold_debug(DEBUG_FILES, "Attempt to open %s/%s failed",
-                   p->name().c_str(), n1.c_str());
-
-      if (!n2.empty())
-        {
-          if (pdc->find(n2))
-            {
-              *is_in_sysroot = p->is_in_sysroot();
+	  if (pdc->find(*n))
+	    {
+	      *is_in_sysroot = p->is_in_sysroot();
 	      *pindex = i;
-              return p->name() + '/' + n2;
-            }
-          else
-            gold_debug(DEBUG_FILES, "Attempt to open %s/%s failed",
-                       p->name().c_str(), n2.c_str());
+	      *found_name = *n;
+	      return p->name() + '/' + *n;
+	    }
+	  else
+	    gold_debug(DEBUG_FILES, "Attempt to open %s/%s failed",
+		       p->name().c_str(), (*n).c_str());
 	}
     }
 

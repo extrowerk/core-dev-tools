@@ -33,7 +33,7 @@
 #include "plugin-api.h"
 #include "elf-bfd.h"
 #if !defined (HAVE_DLFCN_H) && defined (HAVE_WINDOWS_H)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 /* Report plugin symbols.  */
@@ -239,7 +239,7 @@ plugin_get_ir_dummy_bfd (const char *name, bfd *srctemplate)
 	{
 	  flagword flags;
 
-	  /* Create sections to own the symbols.  */
+	  /* Create section to own the symbols.  */
 	  flags = (SEC_CODE | SEC_HAS_CONTENTS | SEC_READONLY
 		   | SEC_ALLOC | SEC_LOAD | SEC_KEEP | SEC_EXCLUDE);
 	  if (bfd_make_section_anyway_with_flags (abfd, ".text", flags))
@@ -284,7 +284,27 @@ asymbol_from_plugin_symbol (bfd *abfd, asymbol *asym,
       /* FALLTHRU */
     case LDPK_DEF:
       flags |= BSF_GLOBAL;
-      section = bfd_get_section_by_name (abfd, ".text");
+      if (ldsym->comdat_key)
+	{
+	  char *name = concat (".gnu.linkonce.t.", ldsym->comdat_key,
+			       (const char *) NULL);
+	  section = bfd_get_section_by_name (abfd, name);
+	  if (section != NULL)
+	    free (name);
+	  else
+	    {
+	      flagword sflags;
+
+	      sflags = (SEC_CODE | SEC_HAS_CONTENTS | SEC_READONLY
+			| SEC_ALLOC | SEC_LOAD | SEC_KEEP | SEC_EXCLUDE
+			| SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD);
+	      section = bfd_make_section_anyway_with_flags (abfd, name, sflags);
+	      if (section == NULL)
+		return LDPS_ERR;
+	    }
+	}
+      else
+	section = bfd_get_section_by_name (abfd, ".text");
       break;
 
     case LDPK_WEAKUNDEF:
@@ -377,12 +397,15 @@ add_symbols (void *handle, int nsyms, const struct ld_plugin_symbol *syms)
   asymbol **symptrs;
   bfd *abfd = handle;
   int n;
+
   ASSERT (called_plugin);
   symptrs = xmalloc (nsyms * sizeof *symptrs);
   for (n = 0; n < nsyms; n++)
     {
       enum ld_plugin_status rv;
-      asymbol *bfdsym = bfd_make_empty_symbol (abfd);
+      asymbol *bfdsym;
+
+      bfdsym = bfd_make_empty_symbol (abfd);
       symptrs[n] = bfdsym;
       rv = asymbol_from_plugin_symbol (abfd, bfdsym, syms + n);
       if (rv != LDPS_OK)
@@ -428,6 +451,10 @@ is_visible_from_outside (struct ld_plugin_symbol *lsym, asection *section,
     return TRUE;
   if (link_info.export_dynamic || link_info.shared)
     {
+      /* Check if symbol is hidden by version script.  */
+      if (bfd_hide_sym_by_version (link_info.version_info,
+				   blhe->root.string))
+	return FALSE;
       /* Only ELF symbols really have visibility.  */
       if (bfd_get_flavour (link_info.output_bfd) == bfd_target_elf_flavour)
 	{

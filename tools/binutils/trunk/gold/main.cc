@@ -1,6 +1,6 @@
 // main.cc -- gold main function.
 
-// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -33,6 +33,7 @@
 
 #include "script.h"
 #include "options.h"
+#include "target-select.h"
 #include "parameters.h"
 #include "errors.h"
 #include "mapfile.h"
@@ -195,10 +196,6 @@ main(int argc, char** argv)
   if (parameters->options().relocatable())
     command_line.script_options().version_script_info()->clear();
 
-  // Load plugin libraries.
-  if (command_line.options().has_plugins())
-    command_line.options().plugins()->load_plugins();
-
   // The work queue.
   Workqueue workqueue(command_line.options());
 
@@ -214,7 +211,7 @@ main(int argc, char** argv)
   // The symbol table.  We're going to guess here how many symbols
   // we're going to see based on the number of input files.  Even when
   // this is off, it means at worst we don't quite optimize hashtable
-  // resizing as well as we could have (perhap using more memory).
+  // resizing as well as we could have (perhaps using more memory).
   Symbol_table symtab(command_line.number_of_input_files() * 1024,
                       command_line.version_script());
 
@@ -234,6 +231,10 @@ main(int argc, char** argv)
   if (parameters->options().section_ordering_file())
     layout.read_layout_from_file();
 
+  // Load plugin libraries.
+  if (command_line.options().has_plugins())
+    command_line.options().plugins()->load_plugins(&layout);
+
   // Get the search path from the -L options.
   Dirsearch search_path;
   search_path.initialize(&workqueue, &command_line.options().library_path());
@@ -245,6 +246,9 @@ main(int argc, char** argv)
 
   // Run the main task processing loop.
   workqueue.process(0);
+
+  if (command_line.options().print_output_format())
+    print_output_format();
 
   if (command_line.options().stats())
     {
@@ -269,6 +273,7 @@ main(int argc, char** argv)
 	      program_name, static_cast<long long>(layout.output_file_size()));
       symtab.print_stats();
       layout.print_stats();
+      Free_list::print_stats();
     }
 
   // Issue defined symbol report.
@@ -290,6 +295,8 @@ main(int argc, char** argv)
 
   // If the user used --noinhibit-exec, we force the exit status to be
   // successful.  This is compatible with GNU ld.
-  gold_exit(errors.error_count() == 0
-	    || parameters->options().noinhibit_exec());
+  gold_exit((errors.error_count() == 0
+	     || parameters->options().noinhibit_exec())
+	    ? GOLD_OK
+	    : GOLD_ERR);
 }
