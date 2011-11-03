@@ -91,7 +91,7 @@ SECTIONS
      on fork.  This used to be named ".data$nocopy".  The linker used
      to include this between __data_start__ and __data_end__, but that
      breaks building the cygwin32 dll.  Instead, we name the section
-     ".data_cygwin_nocopy" and explictly include it after __data_end__. */
+     ".data_cygwin_nocopy" and explicitly include it after __data_end__. */
 
   .data ${RELOCATING+BLOCK(__section_alignment__)} : 
   {
@@ -119,7 +119,7 @@ SECTIONS
 
   .eh_frame ${RELOCATING+BLOCK(__section_alignment__)} :
   {
-    *(.eh_frame)
+    *(.eh_frame*)
   }
 
   .pdata ${RELOCATING+BLOCK(__section_alignment__)} :
@@ -259,7 +259,7 @@ SECTIONS
 
   .debug_frame ${RELOCATING+BLOCK(__section_alignment__)} ${RELOCATING+(NOLOAD)} :
   {
-    *(.debug_frame)
+    *(.debug_frame*)
   }
 
   .debug_str ${RELOCATING+BLOCK(__section_alignment__)} ${RELOCATING+(NOLOAD)} :
@@ -296,6 +296,11 @@ SECTIONS
   .debug_varnames ${RELOCATING+BLOCK(__section_alignment__)} ${RELOCATING+(NOLOAD)} :
   {
     *(.debug_varnames)
+  }
+
+  .debug_macro ${RELOCATING+BLOCK(__section_alignment__)} ${RELOCATING+(NOLOAD)} :
+  {
+    *(.debug_macro)
   }
 
   /* DWARF 3.  */

@@ -925,10 +925,10 @@ group_signature (asection *group)
   return NULL;
 }
 
-/* See if a section is being removed.  */
+/* See if a non-group section is being removed.  */
 
 static bfd_boolean
-is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
+is_strip_section_1 (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
 {
   if (sections_removed || sections_copied)
     {
@@ -955,10 +955,22 @@ is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
 	return FALSE;
     }
 
+  return FALSE;
+}
+
+/* See if a section is being removed.  */
+
+static bfd_boolean
+is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
+{
+  if (is_strip_section_1 (abfd, sec))
+    return TRUE;
+
   if ((bfd_get_section_flags (abfd, sec) & SEC_GROUP) != 0)
     {
       asymbol *gsym;
       const char *gname;
+      asection *elt, *first;
 
       /* PR binutils/3181
 	 If we are going to strip the group signature symbol, then
@@ -972,6 +984,19 @@ is_strip_section (bfd *abfd ATTRIBUTE_UNUSED, asection *sec)
 	   && !is_specified_symbol (gname, keep_specific_htab))
 	  || is_specified_symbol (gname, strip_specific_htab))
 	return TRUE;
+
+      /* Remove the group section if all members are removed.  */
+      first = elt = elf_next_in_group (sec);
+      while (elt != NULL)
+	{
+	  if (!is_strip_section_1 (abfd, elt))
+	    return FALSE;
+	  elt = elf_next_in_group (elt);
+	  if (elt == first)
+	    break;
+	}
+
+      return TRUE;
     }
 
   return FALSE;
@@ -3036,7 +3061,8 @@ strip_main (int argc, char *argv[])
 	   It has already been checked in get_file_size().  */
 	stat (argv[i], &statbuf);
 
-      if (output_file == NULL || strcmp (argv[i], output_file) == 0)
+      if (output_file == NULL
+	  || filename_cmp (argv[i], output_file) == 0)
 	tmpname = make_tempname (argv[i]);
       else
 	tmpname = output_file;
@@ -3156,6 +3182,8 @@ set_pe_subsystem (const char *s)
 	pe_section_alignment = PE_DEF_SECTION_ALIGNMENT;
       break;
     }
+  if (s != subsystem)
+    free ((char *) subsystem);
 }
 
 /* Convert EFI target to PEI target.  */
@@ -3902,7 +3930,8 @@ copy_main (int argc, char *argv[])
 
   /* If there is no destination file, or the source and destination files
      are the same, then create a temp and rename the result into the input.  */
-  if (output_filename == NULL || strcmp (input_filename, output_filename) == 0)
+  if (output_filename == NULL
+      || filename_cmp (input_filename, output_filename) == 0)
     tmpname = make_tempname (input_filename);
   else
     tmpname = output_filename;

@@ -211,6 +211,17 @@
 #define yytable	 def_yytable
 #define yycheck	 def_yycheck
 
+typedef struct def_pool_str {
+  struct def_pool_str *next;
+  char data[1];
+} def_pool_str;
+
+static def_pool_str *pool_strs = NULL;
+
+static char *def_pool_alloc (size_t sz);
+static char *def_pool_strdup (const char *str);
+static void def_pool_free (void);
+
 static void def_description (const char *);
 static void def_exports (const char *, const char *, int, int, const char *);
 static void def_heapsize (int, int);
@@ -253,14 +264,14 @@ static const char *lex_parse_string_end = 0;
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 103 "deffilep.y"
+#line 114 "deffilep.y"
 {
   char *id;
   int number;
   char *digits;
 }
 /* Line 193 of yacc.c.  */
-#line 264 "deffilep.c"
+#line 275 "deffilep.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -273,7 +284,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 277 "deffilep.c"
+#line 288 "deffilep.c"
 
 #ifdef short
 # undef short
@@ -586,14 +597,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   124,   124,   125,   129,   130,   131,   132,   133,   134,
-     135,   136,   137,   138,   139,   140,   141,   142,   146,   148,
-     149,   156,   163,   164,   167,   168,   169,   170,   171,   172,
-     173,   174,   177,   178,   182,   184,   186,   188,   190,   192,
-     197,   198,   202,   203,   207,   208,   212,   213,   215,   216,
-     220,   221,   222,   223,   226,   227,   233,   239,   242,   243,
-     247,   248,   252,   253,   256,   257,   260,   261,   267,   275,
-     276,   282,   290,   291,   294,   295,   298
+       0,   135,   135,   136,   140,   141,   142,   143,   144,   145,
+     146,   147,   148,   149,   150,   151,   152,   153,   157,   159,
+     160,   167,   174,   175,   178,   179,   180,   181,   182,   183,
+     184,   185,   188,   189,   193,   195,   197,   199,   201,   203,
+     208,   209,   213,   214,   218,   219,   223,   224,   226,   227,
+     231,   232,   233,   234,   237,   238,   244,   250,   253,   254,
+     258,   259,   263,   264,   267,   268,   271,   272,   278,   286,
+     287,   293,   301,   302,   305,   306,   309
 };
 #endif
 
@@ -1579,337 +1590,337 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 129 "deffilep.y"
+#line 140 "deffilep.y"
     { def_image_name ((yyvsp[(2) - (3)].id), (yyvsp[(3) - (3)].number), 0); }
     break;
 
   case 5:
-#line 130 "deffilep.y"
+#line 141 "deffilep.y"
     { def_image_name ((yyvsp[(2) - (3)].id), (yyvsp[(3) - (3)].number), 1); }
     break;
 
   case 6:
-#line 131 "deffilep.y"
+#line 142 "deffilep.y"
     { def_description ((yyvsp[(2) - (2)].id));}
     break;
 
   case 7:
-#line 132 "deffilep.y"
+#line 143 "deffilep.y"
     { def_stacksize ((yyvsp[(2) - (3)].number), (yyvsp[(3) - (3)].number));}
     break;
 
   case 8:
-#line 133 "deffilep.y"
+#line 144 "deffilep.y"
     { def_heapsize ((yyvsp[(2) - (3)].number), (yyvsp[(3) - (3)].number));}
     break;
 
   case 9:
-#line 134 "deffilep.y"
+#line 145 "deffilep.y"
     { def_section ("CODE", (yyvsp[(2) - (2)].number));}
     break;
 
   case 10:
-#line 135 "deffilep.y"
+#line 146 "deffilep.y"
     { def_section ("DATA", (yyvsp[(2) - (2)].number));}
     break;
 
   case 14:
-#line 139 "deffilep.y"
+#line 150 "deffilep.y"
     { def_version ((yyvsp[(2) - (2)].number), 0);}
     break;
 
   case 15:
-#line 140 "deffilep.y"
+#line 151 "deffilep.y"
     { def_version ((yyvsp[(2) - (4)].number), (yyvsp[(4) - (4)].number));}
     break;
 
   case 16:
-#line 141 "deffilep.y"
+#line 152 "deffilep.y"
     { def_directive ((yyvsp[(2) - (2)].id));}
     break;
 
   case 17:
-#line 142 "deffilep.y"
+#line 153 "deffilep.y"
     { def_aligncomm ((yyvsp[(2) - (4)].id), (yyvsp[(4) - (4)].number));}
     break;
 
   case 21:
-#line 157 "deffilep.y"
+#line 168 "deffilep.y"
     { def_exports ((yyvsp[(1) - (7)].id), (yyvsp[(2) - (7)].id), (yyvsp[(3) - (7)].number), (yyvsp[(5) - (7)].number), (yyvsp[(7) - (7)].id)); }
     break;
 
   case 22:
-#line 163 "deffilep.y"
+#line 174 "deffilep.y"
     { (yyval.number) = (yyvsp[(1) - (3)].number) | (yyvsp[(3) - (3)].number); }
     break;
 
   case 23:
-#line 164 "deffilep.y"
+#line 175 "deffilep.y"
     { (yyval.number) = 0; }
     break;
 
   case 24:
-#line 167 "deffilep.y"
+#line 178 "deffilep.y"
     { (yyval.number) = 1; }
     break;
 
   case 25:
-#line 168 "deffilep.y"
+#line 179 "deffilep.y"
     { (yyval.number) = 1; }
     break;
 
   case 26:
-#line 169 "deffilep.y"
+#line 180 "deffilep.y"
     { (yyval.number) = 2; }
     break;
 
   case 27:
-#line 170 "deffilep.y"
+#line 181 "deffilep.y"
     { (yyval.number) = 2; }
     break;
 
   case 28:
-#line 171 "deffilep.y"
+#line 182 "deffilep.y"
     { (yyval.number) = 4; }
     break;
 
   case 29:
-#line 172 "deffilep.y"
+#line 183 "deffilep.y"
     { (yyval.number) = 4; }
     break;
 
   case 30:
-#line 173 "deffilep.y"
+#line 184 "deffilep.y"
     { (yyval.number) = 8; }
     break;
 
   case 31:
-#line 174 "deffilep.y"
+#line 185 "deffilep.y"
     { (yyval.number) = 8; }
     break;
 
   case 34:
-#line 183 "deffilep.y"
+#line 194 "deffilep.y"
     { def_import ((yyvsp[(1) - (8)].id), (yyvsp[(3) - (8)].id), (yyvsp[(5) - (8)].id), (yyvsp[(7) - (8)].id), -1, (yyvsp[(8) - (8)].id)); }
     break;
 
   case 35:
-#line 185 "deffilep.y"
+#line 196 "deffilep.y"
     { def_import ((yyvsp[(1) - (8)].id), (yyvsp[(3) - (8)].id), (yyvsp[(5) - (8)].id),  0, (yyvsp[(7) - (8)].number), (yyvsp[(8) - (8)].id)); }
     break;
 
   case 36:
-#line 187 "deffilep.y"
+#line 198 "deffilep.y"
     { def_import ((yyvsp[(1) - (6)].id), (yyvsp[(3) - (6)].id),  0, (yyvsp[(5) - (6)].id), -1, (yyvsp[(6) - (6)].id)); }
     break;
 
   case 37:
-#line 189 "deffilep.y"
+#line 200 "deffilep.y"
     { def_import ((yyvsp[(1) - (6)].id), (yyvsp[(3) - (6)].id),  0,  0, (yyvsp[(5) - (6)].number), (yyvsp[(6) - (6)].id)); }
     break;
 
   case 38:
-#line 191 "deffilep.y"
+#line 202 "deffilep.y"
     { def_import( 0, (yyvsp[(1) - (6)].id), (yyvsp[(3) - (6)].id), (yyvsp[(5) - (6)].id), -1, (yyvsp[(6) - (6)].id)); }
     break;
 
   case 39:
-#line 193 "deffilep.y"
+#line 204 "deffilep.y"
     { def_import ( 0, (yyvsp[(1) - (4)].id),  0, (yyvsp[(3) - (4)].id), -1, (yyvsp[(4) - (4)].id)); }
     break;
 
   case 42:
-#line 202 "deffilep.y"
+#line 213 "deffilep.y"
     { def_section ((yyvsp[(1) - (2)].id), (yyvsp[(2) - (2)].number));}
     break;
 
   case 43:
-#line 203 "deffilep.y"
+#line 214 "deffilep.y"
     { def_section_alt ((yyvsp[(1) - (2)].id), (yyvsp[(2) - (2)].id));}
     break;
 
   case 44:
-#line 207 "deffilep.y"
+#line 218 "deffilep.y"
     { (yyval.number) = (yyvsp[(1) - (3)].number) | (yyvsp[(3) - (3)].number); }
     break;
 
   case 45:
-#line 208 "deffilep.y"
+#line 219 "deffilep.y"
     { (yyval.number) = (yyvsp[(1) - (1)].number); }
     break;
 
   case 48:
-#line 215 "deffilep.y"
+#line 226 "deffilep.y"
     { (yyval.number)=(yyvsp[(2) - (2)].number);}
     break;
 
   case 49:
-#line 216 "deffilep.y"
+#line 227 "deffilep.y"
     { (yyval.number)=-1;}
     break;
 
   case 50:
-#line 220 "deffilep.y"
+#line 231 "deffilep.y"
     { (yyval.number) = 1;}
     break;
 
   case 51:
-#line 221 "deffilep.y"
+#line 232 "deffilep.y"
     { (yyval.number) = 2;}
     break;
 
   case 52:
-#line 222 "deffilep.y"
+#line 233 "deffilep.y"
     { (yyval.number)=4;}
     break;
 
   case 53:
-#line 223 "deffilep.y"
+#line 234 "deffilep.y"
     { (yyval.number)=8;}
     break;
 
   case 54:
-#line 226 "deffilep.y"
+#line 237 "deffilep.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 55:
-#line 228 "deffilep.y"
+#line 239 "deffilep.y"
     {
-	    char *name = xmalloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
+	    char *name = def_pool_alloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
 	    sprintf (name, ".%s", (yyvsp[(2) - (2)].id));
 	    (yyval.id) = name;
 	  }
     break;
 
   case 56:
-#line 234 "deffilep.y"
+#line 245 "deffilep.y"
     { 
-	    char *name = xmalloc (strlen ((yyvsp[(1) - (3)].id)) + 1 + strlen ((yyvsp[(3) - (3)].id)) + 1);
+	    char *name = def_pool_alloc (strlen ((yyvsp[(1) - (3)].id)) + 1 + strlen ((yyvsp[(3) - (3)].id)) + 1);
 	    sprintf (name, "%s.%s", (yyvsp[(1) - (3)].id), (yyvsp[(3) - (3)].id));
 	    (yyval.id) = name;
 	  }
     break;
 
   case 57:
-#line 239 "deffilep.y"
+#line 250 "deffilep.y"
     { (yyval.id) = ""; }
     break;
 
   case 58:
-#line 242 "deffilep.y"
+#line 253 "deffilep.y"
     { (yyval.id) = (yyvsp[(2) - (2)].id); }
     break;
 
   case 59:
-#line 243 "deffilep.y"
+#line 254 "deffilep.y"
     { (yyval.id) = 0; }
     break;
 
   case 60:
-#line 247 "deffilep.y"
+#line 258 "deffilep.y"
     { (yyval.number) = (yyvsp[(2) - (2)].number);}
     break;
 
   case 61:
-#line 248 "deffilep.y"
+#line 259 "deffilep.y"
     { (yyval.number) = -1;}
     break;
 
   case 62:
-#line 252 "deffilep.y"
+#line 263 "deffilep.y"
     { (yyval.id) = (yyvsp[(2) - (2)].id); }
     break;
 
   case 63:
-#line 253 "deffilep.y"
+#line 264 "deffilep.y"
     { (yyval.id) =  0; }
     break;
 
   case 64:
-#line 256 "deffilep.y"
+#line 267 "deffilep.y"
     { (yyval.number) = (yyvsp[(3) - (3)].number);}
     break;
 
   case 65:
-#line 257 "deffilep.y"
+#line 268 "deffilep.y"
     { (yyval.number) = -1;}
     break;
 
   case 66:
-#line 260 "deffilep.y"
+#line 271 "deffilep.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 67:
-#line 262 "deffilep.y"
+#line 273 "deffilep.y"
     {
-	    char *name = xmalloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
+	    char *name = def_pool_alloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
 	    sprintf (name, ".%s", (yyvsp[(2) - (2)].id));
 	    (yyval.id) = name;
 	  }
     break;
 
   case 68:
-#line 268 "deffilep.y"
+#line 279 "deffilep.y"
     { 
-	    char *name = xmalloc (strlen ((yyvsp[(1) - (3)].id)) + 1 + strlen ((yyvsp[(3) - (3)].id)) + 1);
+	    char *name = def_pool_alloc (strlen ((yyvsp[(1) - (3)].id)) + 1 + strlen ((yyvsp[(3) - (3)].id)) + 1);
 	    sprintf (name, "%s.%s", (yyvsp[(1) - (3)].id), (yyvsp[(3) - (3)].id));
 	    (yyval.id) = name;
 	  }
     break;
 
   case 69:
-#line 275 "deffilep.y"
+#line 286 "deffilep.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 70:
-#line 277 "deffilep.y"
+#line 288 "deffilep.y"
     {
-	    char *id = xmalloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
+	    char *id = def_pool_alloc (strlen ((yyvsp[(2) - (2)].id)) + 2);
 	    sprintf (id, ".%s", (yyvsp[(2) - (2)].id));
 	    (yyval.id) = id;
 	  }
     break;
 
   case 71:
-#line 283 "deffilep.y"
+#line 294 "deffilep.y"
     {
-	    char *id = xmalloc (strlen ((yyvsp[(1) - (4)].id)) + 1 + strlen ((yyvsp[(3) - (4)].digits)) + strlen ((yyvsp[(4) - (4)].id)) + 1);
+	    char *id = def_pool_alloc (strlen ((yyvsp[(1) - (4)].id)) + 1 + strlen ((yyvsp[(3) - (4)].digits)) + strlen ((yyvsp[(4) - (4)].id)) + 1);
 	    sprintf (id, "%s.%s%s", (yyvsp[(1) - (4)].id), (yyvsp[(3) - (4)].digits), (yyvsp[(4) - (4)].id));
 	    (yyval.id) = id;
 	  }
     break;
 
   case 72:
-#line 290 "deffilep.y"
+#line 301 "deffilep.y"
     { (yyval.digits) = (yyvsp[(1) - (1)].digits); }
     break;
 
   case 73:
-#line 291 "deffilep.y"
+#line 302 "deffilep.y"
     { (yyval.digits) = ""; }
     break;
 
   case 74:
-#line 294 "deffilep.y"
+#line 305 "deffilep.y"
     { (yyval.id) = (yyvsp[(1) - (1)].id); }
     break;
 
   case 75:
-#line 295 "deffilep.y"
+#line 306 "deffilep.y"
     { (yyval.id) = ""; }
     break;
 
   case 76:
-#line 298 "deffilep.y"
+#line 309 "deffilep.y"
     { (yyval.number) = strtoul ((yyvsp[(1) - (1)].digits), 0, 0); }
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1913 "deffilep.c"
+#line 1924 "deffilep.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2123,7 +2134,7 @@ yyreturn:
 }
 
 
-#line 300 "deffilep.y"
+#line 311 "deffilep.y"
 
 
 /*****************************************************************************
@@ -2185,18 +2196,23 @@ def_file_parse (const char *filename, def_file *add_to)
     {
       def_file_free (def);
       fclose (the_file);
+      def_pool_free ();
       return 0;
     }
 
   fclose (the_file);
 
-  for (d = directives; d; d = d->next)
+  while ((d = directives) != NULL)
     {
 #if TRACE
       printf ("Adding directive %08x `%s'\n", d->name, d->name);
 #endif
       def_file_add_directive (def, d->name, d->len);
+      directives = d->next;
+      free (d->name);
+      free (d);
     }
+  def_pool_free ();
 
   return def;
 }
@@ -2361,15 +2377,104 @@ def_file_print (FILE *file, def_file *fdef)
 }
 #endif
 
+/* Helper routine to check for identity of string pointers,
+   which might be NULL.  */
+
+static int
+are_names_equal (const char *s1, const char *s2)
+{
+  if (!s1 && !s2)
+    return 0;
+  if (!s1 || !s2)
+    return (!s1 ? -1 : 1);
+  return strcmp (s1, s2);
+}
+
+static int
+cmp_export_elem (const def_file_export *e, const char *ex_name,
+		 const char *in_name, const char *its_name,
+		 int ord)
+{
+  int r;
+
+  if ((r = are_names_equal (ex_name, e->name)) != 0)
+    return r;
+  if ((r = are_names_equal (in_name, e->internal_name)) != 0)
+    return r;
+  if ((r = are_names_equal (its_name, e->its_name)) != 0)
+    return r;
+  return (ord - e->ordinal);
+}
+
+/* Search the position of the identical element, or returns the position
+   of the next higher element. If last valid element is smaller, then MAX
+   is returned.  */
+
+static int
+find_export_in_list (def_file_export *b, int max,
+		     const char *ex_name, const char *in_name,
+		     const char *its_name, int ord, int *is_ident)
+{
+  int e, l, r, p;
+
+  *is_ident = 0;
+  if (!max)
+    return 0;
+  if ((e = cmp_export_elem (b, ex_name, in_name, its_name, ord)) <= 0)
+    return 0;
+  if (max == 1)
+    return 1;
+  if ((e = cmp_export_elem (b + (max - 1), ex_name, in_name, its_name, ord)) > 0)
+    return max;
+  else if (!e || max == 2)
+    return max - 1;
+  l = 0; r = max - 1;
+  while (l < r)
+    {
+      p = (l + r) / 2;
+      e = cmp_export_elem (b + p, ex_name, in_name, its_name, ord);
+      if (!e)
+        {
+          *is_ident = 1;
+          return p;
+        }
+      else if (e < 0)
+        r = p - 1;
+      else if (e > 0)
+        l = p + 1;
+    }
+  if ((e = cmp_export_elem (b + l, ex_name, in_name, its_name, ord)) > 0)
+    ++l;
+  else if (!e)
+    *is_ident = 1;
+  return l;
+}
+
 def_file_export *
 def_file_add_export (def_file *fdef,
 		     const char *external_name,
 		     const char *internal_name,
 		     int ordinal,
-		     const char *its_name)
+		     const char *its_name,
+		     int *is_dup)
 {
   def_file_export *e;
+  int pos;
   int max_exports = ROUND_UP(fdef->num_exports, 32);
+
+  if (internal_name && !external_name)
+    external_name = internal_name;
+  if (external_name && !internal_name)
+    internal_name = external_name;
+
+  /* We need to avoid duplicates.  */
+  *is_dup = 0;
+  pos = find_export_in_list (fdef->exports, fdef->num_exports,
+		     external_name, internal_name,
+		     its_name, ordinal, is_dup);
+
+  if (*is_dup != 0)
+    return (fdef->exports + pos);
 
   if (fdef->num_exports >= max_exports)
     {
@@ -2380,12 +2485,11 @@ def_file_add_export (def_file *fdef,
       else
 	fdef->exports = xmalloc (max_exports * sizeof (def_file_export));
     }
-  e = fdef->exports + fdef->num_exports;
+
+  e = fdef->exports + pos;
+  if (pos != fdef->num_exports)
+    memmove (&e[1], e, (sizeof (def_file_export) * (fdef->num_exports - pos)));
   memset (e, 0, sizeof (def_file_export));
-  if (internal_name && !external_name)
-    external_name = internal_name;
-  if (external_name && !internal_name)
-    internal_name = external_name;
   e->name = xstrdup (external_name);
   e->internal_name = xstrdup (internal_name);
   e->its_name = (its_name ? xstrdup (its_name) : NULL);
@@ -2421,16 +2525,87 @@ def_stash_module (def_file *fdef, const char *name)
   return s;
 }
 
+static int
+cmp_import_elem (const def_file_import *e, const char *ex_name,
+		 const char *in_name, const char *module,
+		 int ord)
+{
+  int r;
+
+  if ((r = are_names_equal (ex_name, e->name)) != 0)
+    return r;
+  if ((r = are_names_equal (in_name, e->internal_name)) != 0)
+    return r;
+  if (ord != e->ordinal)
+    return (ord < e->ordinal ? -1 : 1);
+  return are_names_equal (module, (e->module ? e->module->name : NULL));
+}
+
+/* Search the position of the identical element, or returns the position
+   of the next higher element. If last valid element is smaller, then MAX
+   is returned.  */
+
+static int
+find_import_in_list (def_file_import *b, int max,
+		     const char *ex_name, const char *in_name,
+		     const char *module, int ord, int *is_ident)
+{
+  int e, l, r, p;
+
+  *is_ident = 0;
+  if (!max)
+    return 0;
+  if ((e = cmp_import_elem (b, ex_name, in_name, module, ord)) <= 0)
+    return 0;
+  if (max == 1)
+    return 1;
+  if ((e = cmp_import_elem (b + (max - 1), ex_name, in_name, module, ord)) > 0)
+    return max;
+  else if (!e || max == 2)
+    return max - 1;
+  l = 0; r = max - 1;
+  while (l < r)
+    {
+      p = (l + r) / 2;
+      e = cmp_import_elem (b + p, ex_name, in_name, module, ord);
+      if (!e)
+        {
+          *is_ident = 1;
+          return p;
+        }
+      else if (e < 0)
+        r = p - 1;
+      else if (e > 0)
+        l = p + 1;
+    }
+  if ((e = cmp_import_elem (b + l, ex_name, in_name, module, ord)) > 0)
+    ++l;
+  else if (!e)
+    *is_ident = 1;
+  return l;
+}
+
 def_file_import *
 def_file_add_import (def_file *fdef,
 		     const char *name,
 		     const char *module,
 		     int ordinal,
 		     const char *internal_name,
-		     const char *its_name)
+		     const char *its_name,
+		     int *is_dup)
 {
   def_file_import *i;
+  int pos;
   int max_imports = ROUND_UP (fdef->num_imports, 16);
+
+  /* We need to avoid here duplicates.  */
+  *is_dup = 0;
+  pos = find_import_in_list (fdef->imports, fdef->num_imports,
+			     name,
+			     (!internal_name ? name : internal_name),
+			     module, ordinal, is_dup);
+  if (*is_dup != 0)
+    return fdef->imports + pos;
 
   if (fdef->num_imports >= max_imports)
     {
@@ -2442,7 +2617,9 @@ def_file_add_import (def_file *fdef,
       else
 	fdef->imports = xmalloc (max_imports * sizeof (def_file_import));
     }
-  i = fdef->imports + fdef->num_imports;
+  i = fdef->imports + pos;
+  if (pos != fdef->num_imports)
+    memmove (&i[1], i, (sizeof (def_file_import) * (fdef->num_imports - pos)));
   memset (i, 0, sizeof (def_file_import));
   if (name)
     i->name = xstrdup (name);
@@ -2539,6 +2716,7 @@ def_file_add_directive (def_file *my_def, const char *param, int len)
     }
 
   def = save_def;
+  def_pool_free ();
 }
 
 /* Parser Callbacks.  */
@@ -2676,6 +2854,7 @@ def_exports (const char *external_name,
 	     const char *its_name)
 {
   def_file_export *dfe;
+  int is_dup = 0;
 
   if (!internal_name && external_name)
     internal_name = external_name;
@@ -2684,7 +2863,13 @@ def_exports (const char *external_name,
 #endif
 
   dfe = def_file_add_export (def, external_name, internal_name, ordinal,
-  							 its_name);
+			     its_name, &is_dup);
+
+  /* We might check here for flag redefinition and warn.  For now we
+     ignore duplicates silently.  */
+  if (is_dup)
+    return;
+
   if (flags & 1)
     dfe->flag_noname = 1;
   if (flags & 2)
@@ -2704,15 +2889,16 @@ def_import (const char *internal_name,
 	    const char *its_name)
 {
   char *buf = 0;
-  const char *ext = dllext ? dllext : "dll";    
+  const char *ext = dllext ? dllext : "dll";
+  int is_dup = 0;
    
   buf = xmalloc (strlen (module) + strlen (ext) + 2);
   sprintf (buf, "%s.%s", module, ext);
   module = buf;
 
-  def_file_add_import (def, name, module, ordinal, internal_name, its_name);
-  if (buf)
-    free (buf);
+  def_file_add_import (def, name, module, ordinal, internal_name, its_name,
+		       &is_dup);
+  free (buf);
 }
 
 static void
@@ -2736,13 +2922,39 @@ def_directive (char *str)
 static void
 def_aligncomm (char *str, int align)
 {
-  def_file_aligncomm *c = xmalloc (sizeof (def_file_aligncomm));
+  def_file_aligncomm *c, *p;
+  
+  p = NULL;
+  c = def->aligncomms;
+  while (c != NULL)
+    {
+      int e = strcmp (c->symbol_name, str);
+      if (!e)
+	{
+	  /* Not sure if we want to allow here duplicates with
+	     different alignments, but for now we keep them.  */
+	  e = (int) c->alignment - align;
+	  if (!e)
+	    return;
+	}
+      if (e > 0)
+        break;
+      c = (p = c)->next;
+    }
 
+  c = xmalloc (sizeof (def_file_aligncomm));
   c->symbol_name = xstrdup (str);
   c->alignment = (unsigned int) align;
-
-  c->next = def->aligncomms;
-  def->aligncomms = c;
+  if (!p)
+    {
+      c->next = def->aligncomms;
+      def->aligncomms = c;
+    }
+  else
+    {
+      c->next = p->next;
+      p->next = c;
+    }
 }
 
 static int
@@ -2901,7 +3113,7 @@ def_lex (void)
 	}
       if (c != EOF)
 	def_ungetc (c);
-      yylval.digits = xstrdup (buffer);
+      yylval.digits = def_pool_strdup (buffer);
 #if TRACE
       printf ("lex: `%s' returns DIGITS\n", buffer);
 #endif
@@ -2950,7 +3162,7 @@ def_lex (void)
 #if TRACE
       printf ("lex: `%s' returns ID\n", buffer);
 #endif
-      yylval.id = xstrdup (buffer);
+      yylval.id = def_pool_strdup (buffer);
       return ID;
     }
 
@@ -2965,7 +3177,7 @@ def_lex (void)
 	  put_buf (c);
 	  c = def_getc ();
 	}
-      yylval.id = xstrdup (buffer);
+      yylval.id = def_pool_strdup (buffer);
 #if TRACE
       printf ("lex: `%s' returns ID\n", buffer);
 #endif
@@ -3004,5 +3216,40 @@ def_lex (void)
 
   /*printf ("lex: 0x%02x ignored\n", c); */
   return def_lex ();
+}
+
+static char *
+def_pool_alloc (size_t sz)
+{
+  def_pool_str *e;
+
+  e = (def_pool_str *) xmalloc (sizeof (def_pool_str) + sz);
+  e->next = pool_strs;
+  pool_strs = e;
+  return e->data;
+}
+
+static char *
+def_pool_strdup (const char *str)
+{
+  char *s;
+  size_t len;
+  if (!str)
+    return NULL;
+  len = strlen (str) + 1;
+  s = def_pool_alloc (len);
+  memcpy (s, str, len);
+  return s;
+}
+
+static void
+def_pool_free (void)
+{
+  def_pool_str *p;
+  while ((p = pool_strs) != NULL)
+    {
+      pool_strs = p->next;
+      free (p);
+    }
 }
 

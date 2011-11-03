@@ -1,7 +1,10 @@
 -*- text -*-
 
-Changes in 2.21:
+Changes in 2.22:
 
+* Add support for the Tilera TILEPRO and TILE-Gx architectures.
+
+Changes in 2.21:
 
 * Gas no longer requires doubling of ampersands in macros.
 

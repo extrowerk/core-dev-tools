@@ -23,6 +23,7 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "libiberty.h"
+#include "filenames.h"
 #include "safe-ctype.h"
 #include "obstack.h"
 #include "bfdlink.h"
@@ -55,7 +56,6 @@ static struct obstack map_obstack;
 
 #define obstack_chunk_alloc xmalloc
 #define obstack_chunk_free free
-static const char *startup_file;
 static const char *entry_symbol_default = "start";
 static bfd_boolean placed_commons = FALSE;
 static bfd_boolean stripped_excluded_sections = FALSE;
@@ -237,6 +237,9 @@ walk_wild_consider_section (lang_wild_statement_type *ptr,
 {
   struct name_list *list_tmp;
 
+  /* Propagate the section_flag_info from the wild statement to the section.  */
+  s->section_flag_info = ptr->section_flag_list;
+
   /* Don't process sections from files which were excluded.  */
   for (list_tmp = sec->spec.exclude_name_list;
        list_tmp;
@@ -371,17 +374,69 @@ match_simple_wild (const char *pattern, const char *name)
   return TRUE;
 }
 
+/* Return the numerical value of the init_priority attribute from
+   section name NAME.  */
+
+static unsigned long
+get_init_priority (const char *name)
+{
+  char *end;
+  unsigned long init_priority;
+
+  /* GCC uses the following section names for the init_priority
+     attribute with numerical values 101 and 65535 inclusive. A
+     lower value means a higher priority.
+
+     1: .init_array.NNNN/.fini_array.NNNN: Where NNNN is the
+	decimal numerical value of the init_priority attribute.
+	The order of execution in .init_array is forward and
+	.fini_array is backward.
+     2: .ctors.NNNN/.ctors.NNNN: Where NNNN is 65535 minus the
+	decimal numerical value of the init_priority attribute.
+	The order of execution in .ctors is backward and .dtors
+	is forward.
+   */
+  if (strncmp (name, ".init_array.", 12) == 0
+      || strncmp (name, ".fini_array.", 12) == 0)
+    {
+      init_priority = strtoul (name + 12, &end, 10);
+      return *end ? 0 : init_priority;
+    }
+  else if (strncmp (name, ".ctors.", 7) == 0
+	   || strncmp (name, ".dtors.", 7) == 0)
+    {
+      init_priority = strtoul (name + 7, &end, 10);
+      return *end ? 0 : 65535 - init_priority;
+    }
+
+  return 0;
+}
+
 /* Compare sections ASEC and BSEC according to SORT.  */
 
 static int
 compare_section (sort_type sort, asection *asec, asection *bsec)
 {
   int ret;
+  unsigned long ainit_priority, binit_priority;
 
   switch (sort)
     {
     default:
       abort ();
+
+    case by_init_priority:
+      ainit_priority
+	= get_init_priority (bfd_get_section_name (asec->owner, asec));
+      binit_priority
+	= get_init_priority (bfd_get_section_name (bsec->owner, bsec));
+      if (ainit_priority == 0 || binit_priority == 0)
+	goto sort_by_name;
+      ret = ainit_priority - binit_priority;
+      if (ret)
+	break;
+      else
+	goto sort_by_name;
 
     case by_alignment_name:
       ret = (bfd_section_alignment (bsec->owner, bsec)
@@ -391,6 +446,7 @@ compare_section (sort_type sort, asection *asec, asection *bsec)
       /* Fall through.  */
 
     case by_name:
+sort_by_name:
       ret = strcmp (bfd_get_section_name (asec->owner, asec),
 		    bfd_get_section_name (bsec->owner, bsec));
       break;
@@ -1077,6 +1133,7 @@ new_afile (const char *name,
 #ifdef ENABLE_PLUGINS
   p->claimed = FALSE;
   p->claim_archive = FALSE;
+  p->reload = FALSE;
 #endif /* ENABLE_PLUGINS */
 
   lang_statement_append (&input_file_chain,
@@ -2047,9 +2104,6 @@ static bfd_boolean
 sort_def_symbol (struct bfd_link_hash_entry *hash_entry,
 		 void *info ATTRIBUTE_UNUSED)
 {
-  if (hash_entry->type == bfd_link_hash_warning)
-    hash_entry = (struct bfd_link_hash_entry *) hash_entry->u.i.link;
-
   if (hash_entry->type == bfd_link_hash_defined
       || hash_entry->type == bfd_link_hash_defweak)
     {
@@ -2206,8 +2260,11 @@ lang_add_section (lang_statement_list_type *ptr,
 		  lang_output_section_statement_type *output)
 {
   flagword flags = section->flags;
+  struct flag_info *sflag_info = section->section_flag_info;
+
   bfd_boolean discard;
   lang_input_section_type *new_section;
+  bfd *abfd = link_info.output_bfd;
 
   /* Discard sections marked with SEC_EXCLUDE.  */
   discard = (flags & SEC_EXCLUDE) != 0;
@@ -2231,6 +2288,28 @@ lang_add_section (lang_statement_list_type *ptr,
 	  section->output_section = bfd_abs_section_ptr;
 	}
       return;
+    }
+
+  if (sflag_info)
+    {
+      if (sflag_info->flags_initialized == FALSE)
+	bfd_lookup_section_flags (&link_info, sflag_info);
+
+      if (sflag_info->only_with_flags != 0
+	  && sflag_info->not_with_flags != 0
+          && ((sflag_info->not_with_flags & flags) != 0
+	       || (sflag_info->only_with_flags & flags)
+                   != sflag_info->only_with_flags))
+	return;
+
+      if (sflag_info->only_with_flags != 0
+	  && (sflag_info->only_with_flags & flags)
+              != sflag_info->only_with_flags)
+	return;
+
+      if (sflag_info->not_with_flags != 0
+          && (sflag_info->not_with_flags & flags) != 0)
+	return;
     }
 
   if (section->output_section != NULL)
@@ -2404,7 +2483,7 @@ wild_sort (lang_wild_statement_type *wild,
 	      la = FALSE;
 	    }
 
-	  i = strcmp (fn, ln);
+	  i = filename_cmp (fn, ln);
 	  if (i > 0)
 	    continue;
 	  else if (i < 0)
@@ -2417,7 +2496,7 @@ wild_sort (lang_wild_statement_type *wild,
 	      if (la)
 		ln = ls->section->owner->filename;
 
-	      i = strcmp (fn, ln);
+	      i = filename_cmp (fn, ln);
 	      if (i > 0)
 		continue;
 	      else if (i < 0)
@@ -2530,7 +2609,7 @@ lookup_name (const char *name)
       const char *filename = search->local_sym_name;
 
       if (filename != NULL
-	  && strcmp (filename, name) == 0)
+	  && filename_cmp (filename, name) == 0)
 	break;
     }
 
@@ -2597,7 +2676,7 @@ check_excluded_libs (bfd *abfd)
 	  return;
 	}
 
-      if (strncmp (lib->name, filename, len) == 0
+      if (filename_ncmp (lib->name, filename, len) == 0
 	  && (filename[len] == '\0'
 	      || (filename[len] == '.' && filename[len + 1] == 'a'
 		  && filename[len + 2] == '\0')))
@@ -2702,7 +2781,10 @@ load_symbols (lang_input_statement_type *entry,
       break;
 
     case bfd_object:
-      ldlang_add_file (entry);
+#ifdef ENABLE_PLUGINS
+      if (!entry->reload)
+#endif
+	ldlang_add_file (entry);
       if (trace_files || trace_file_tries)
 	info_msg ("%I\n", entry);
       break;
@@ -2969,7 +3051,7 @@ lang_get_output_target (void)
 
   /* No - has the current target been set to something other than
      the default?  */
-  if (current_target != default_target)
+  if (current_target != default_target && current_target != NULL)
     return current_target;
 
   /* No - can we determine the format of the first input file?  */
@@ -3194,6 +3276,18 @@ open_input_bfds (lang_statement_union_type *s, enum open_bfd_mode mode)
 		  && bfd_check_format (s->input_statement.the_bfd,
 				       bfd_archive))
 		s->input_statement.loaded = FALSE;
+#ifdef ENABLE_PLUGINS
+	      /* When rescanning, reload --as-needed shared libs.  */
+	      else if ((mode & OPEN_BFD_RESCAN) != 0
+		       && plugin_insert == NULL
+		       && s->input_statement.loaded
+		       && s->input_statement.add_DT_NEEDED_for_regular
+		       && ((s->input_statement.the_bfd->flags) & DYNAMIC) != 0)
+		{
+		  s->input_statement.loaded = FALSE;
+		  s->input_statement.reload = TRUE;
+		}
+#endif
 
 	      os_tail = lang_output_section_statement.tail;
 	      lang_list_init (&add);
@@ -6494,6 +6588,7 @@ lang_process (void)
 	einfo (_("%P%F: %s: plugin reported error after all symbols read\n"),
 	       plugin_error_plugin ());
       /* Open any newly added files, updating the file chains.  */
+      link_info.loading_lto_outputs = TRUE;
       open_input_bfds (added.head, OPEN_BFD_NORMAL);
       /* Restore the global list pointer now they have all been added.  */
       lang_list_remove_tail (stat_ptr, &added);
@@ -6663,10 +6758,12 @@ lang_add_wild (struct wildcard_spec *filespec,
   new_stmt = new_stat (lang_wild_statement, stat_ptr);
   new_stmt->filename = NULL;
   new_stmt->filenames_sorted = FALSE;
+  new_stmt->section_flag_list = NULL;
   if (filespec != NULL)
     {
       new_stmt->filename = filespec->name;
       new_stmt->filenames_sorted = filespec->sorted == by_name;
+      new_stmt->section_flag_list = filespec->section_flag_list;
     }
   new_stmt->section_list = section_list;
   new_stmt->keep_sections = keep_sections;
@@ -6802,15 +6899,13 @@ lang_add_attribute (enum statement_enum attribute)
 void
 lang_startup (const char *name)
 {
-  if (startup_file != NULL)
+  if (first_file->filename != NULL)
     {
       einfo (_("%P%F: multiple STARTUP files\n"));
     }
   first_file->filename = name;
   first_file->local_sym_name = name;
   first_file->real = TRUE;
-
-  startup_file = name;
 }
 
 void
@@ -7379,10 +7474,6 @@ lang_leave_overlay (etree_type *lma_expr,
 
 /* Version handling.  This is only useful for ELF.  */
 
-/* This global variable holds the version tree that we build.  */
-
-struct bfd_elf_version_tree *lang_elf_version_info;
-
 /* If PREV is NULL, return first version pattern matching particular symbol.
    If PREV is non-NULL, return first version pattern matching particular
    symbol after PREV (previously returned by lang_vers_match).  */
@@ -7724,8 +7815,8 @@ lang_register_vers_node (const char *name,
   if (name == NULL)
     name = "";
 
-  if ((name[0] == '\0' && lang_elf_version_info != NULL)
-      || (lang_elf_version_info && lang_elf_version_info->name[0] == '\0'))
+  if (link_info.version_info != NULL
+      && (name[0] == '\0' || link_info.version_info->name[0] == '\0'))
     {
       einfo (_("%X%P: anonymous version tag cannot be combined"
 	       " with other version tags\n"));
@@ -7734,7 +7825,7 @@ lang_register_vers_node (const char *name,
     }
 
   /* Make sure this node has a unique name.  */
-  for (t = lang_elf_version_info; t != NULL; t = t->next)
+  for (t = link_info.version_info; t != NULL; t = t->next)
     if (strcmp (t->name, name) == 0)
       einfo (_("%X%P: duplicate version tag `%s'\n"), name);
 
@@ -7746,7 +7837,7 @@ lang_register_vers_node (const char *name,
 
   for (e1 = version->globals.list; e1 != NULL; e1 = e1->next)
     {
-      for (t = lang_elf_version_info; t != NULL; t = t->next)
+      for (t = link_info.version_info; t != NULL; t = t->next)
 	{
 	  struct bfd_elf_version_expr *e2;
 
@@ -7773,7 +7864,7 @@ lang_register_vers_node (const char *name,
 
   for (e1 = version->locals.list; e1 != NULL; e1 = e1->next)
     {
-      for (t = lang_elf_version_info; t != NULL; t = t->next)
+      for (t = link_info.version_info; t != NULL; t = t->next)
 	{
 	  struct bfd_elf_version_expr *e2;
 
@@ -7809,7 +7900,7 @@ lang_register_vers_node (const char *name,
   else
     version->vernum = 0;
 
-  for (pp = &lang_elf_version_info; *pp != NULL; pp = &(*pp)->next)
+  for (pp = &link_info.version_info; *pp != NULL; pp = &(*pp)->next)
     ;
   *pp = version;
 }
@@ -7825,7 +7916,7 @@ lang_add_vers_depend (struct bfd_elf_version_deps *list, const char *name)
   ret = (struct bfd_elf_version_deps *) xmalloc (sizeof *ret);
   ret->next = list;
 
-  for (t = lang_elf_version_info; t != NULL; t = t->next)
+  for (t = link_info.version_info; t != NULL; t = t->next)
     {
       if (strcmp (t->name, name) == 0)
 	{

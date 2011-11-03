@@ -238,6 +238,8 @@ AC_DEFINE_UNQUOTED(GOLD_DEFAULT_BIG_ENDIAN, $default_big_endian,
 AC_DEFINE_UNQUOTED(GOLD_DEFAULT_OSABI, $default_osabi,
 		   [Default OSABI code])
 
+AC_CHECK_TOOL(NM, nm)
+
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_YACC
@@ -260,6 +262,18 @@ AM_CONDITIONAL(GCC, test "$GCC" = yes)
 
 AM_CONDITIONAL(NATIVE_OR_CROSS_LINKER,
   test "x$target_alias" = "x" -o "x$host_alias" = "x$target_alias" -o "x$host_alias" = "x$build_alias")
+
+dnl Test for whether static linking is supported.  Some systems do not
+dnl install static libraries.  This only affects the set of tests that
+dnl we run.
+AC_CACHE_CHECK([whether static linking works], [gold_cv_lib_static],
+[LDFLAGS_hold=$LDFLAGS
+LDFLAGS="$LDFLAGS -static"
+AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[void f() { }]])],
+[gold_cv_lib_static=yes], [gold_cv_lib_static=no])
+LDFLAGS=$LDFLAGS_hold])
+AM_CONDITIONAL(HAVE_STATIC, test "$gold_cv_lib_static" = "yes")
 
 dnl Some architectures do not support taking pointers of functions
 dnl defined in shared libraries except in -fPIC mode.  We need to
@@ -346,14 +360,6 @@ error
 
 AM_CONDITIONAL(TLS_DESCRIPTORS, test "$gold_cv_lib_glibc29" = "yes")
 
-dnl Check whether the compiler supports constructor priorities in
-dnl attributes, which were added in gcc 4.3.
-AC_CACHE_CHECK([for constructor priorities], [gold_cv_c_conprio],
-[AC_COMPILE_IFELSE([void f() __attribute__ ((constructor (1)));],
-[gold_cv_c_conprio=yes], [gold_cv_c_conprio=no])])
-
-AM_CONDITIONAL(CONSTRUCTOR_PRIORITY, test "$gold_cv_c_conprio" = "yes")
-
 dnl Test for the -frandom-seed option.
 AC_CACHE_CHECK([for -frandom-seed support], [gold_cv_c_random_seed],
 [save_CFLAGS="$CFLAGS"
@@ -370,18 +376,33 @@ AC_SUBST(RANDOM_SEED_CFLAGS)
 
 dnl On GNU/Linux ifunc is supported by the dynamic linker in glibc
 dnl 2.11 or later, and by binutils 2.20.1 or later.
-AC_CACHE_CHECK([for glibc >= 2.11], [gold_cv_lib_glibc2_11],
-[AC_COMPILE_IFELSE([
+AC_CACHE_CHECK([for glibc ifunc support], [gold_cv_lib_glibc_ifunc],
+[save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -static"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <features.h>
 #if !defined __GLIBC__
 error
 #elif __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 11)
 error
 #endif
-__asm__(".type foo, %gnu_indirect_function");
-], [gold_cv_lib_glibc2_11=yes], [gold_cv_lib_glibc2_11=no])])
+void func (void) { }
+void invoke (void);
+__asm__(".type invoke, %gnu_indirect_function");
+typedef void (*funcptr) (void);
+funcptr dispatch (void) __asm__ ("invoke");
+funcptr dispatch (void) { return &func; }]],
+[[invoke();]])
+], [
+if ${NM} conftest$EXEEXT | grep "__rela\?_iplt_start" >/dev/null 2>&1; then
+  gold_cv_lib_glibc_ifunc=both
+else
+  gold_cv_lib_glibc_ifunc=dyn
+fi], [gold_cv_lib_glibc_ifunc=no])
+LDFLAGS="$save_LDFLAGS"])
 
-AM_CONDITIONAL(IFUNC, test "$gold_cv_lib_glibc2_11" = "yes")
+AM_CONDITIONAL(IFUNC, test "$gold_cv_lib_glibc_ifunc" != "no")
+AM_CONDITIONAL(IFUNC_STATIC, test "$gold_cv_lib_glibc_ifunc" = "both")
 
 AM_BINUTILS_WARNINGS
 
@@ -393,8 +414,22 @@ dnl host dependent.  If build == host, we can check getconf LFS_CFLAGS.
 LFS_CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 AC_SUBST(LFS_CFLAGS)
 
-AC_CHECK_FUNCS(chsize)
-AC_REPLACE_FUNCS(pread ftruncate mremap ffsll)
+AC_CHECK_HEADERS(sys/mman.h)
+AC_CHECK_FUNCS(chsize mmap)
+AC_REPLACE_FUNCS(pread ftruncate ffsll)
+
+AC_CACHE_CHECK([mremap with MREMAP_MAYMOVE], [gold_cv_lib_mremap_maymove],
+[AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+void f() { mremap (0, 0, 0, MREMAP_MAYMOVE); }
+]])], [gold_cv_lib_mremap_maymove=yes], [gold_cv_lib_mremap_maymove=no])])
+if test "$gold_cv_lib_mremap_maymove" = "yes"; then
+  AC_DEFINE(HAVE_MREMAP, 1,
+    [Define to 1 if you have the mremap function with MREMAP_MAYMOVE support])
+else
+  AC_LIBOBJ(mremap)
+fi
 
 # Link in zlib if we can.  This allows us to write compressed sections.
 AC_SEARCH_LIBS(zlibVersion, z, [AC_CHECK_HEADERS(zlib.h)])

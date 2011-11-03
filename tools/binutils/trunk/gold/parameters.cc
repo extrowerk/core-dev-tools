@@ -1,6 +1,6 @@
 // parameters.cc -- general parameters for a link using gold
 
-// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -211,6 +211,20 @@ Parameters::check_target_endianness()
     }
 }
 
+// Return the name of the entry symbol.
+
+const char*
+Parameters::entry() const
+{
+  const char* ret = this->options().entry();
+  if (ret == NULL)
+    {
+      // FIXME: Need to support target specific entry symbol.
+      ret = "_start";
+    }
+  return ret;
+}
+
 // Set the incremental linking mode to INCREMENTAL_FULL.  Used when
 // the linker determines that an incremental update is not possible.
 // Returns false if the incremental mode was INCREMENTAL_UPDATE,
@@ -232,6 +246,14 @@ bool
 Parameters::incremental() const
 {
   return this->incremental_mode_ != General_options::INCREMENTAL_OFF;
+}
+
+// Return true if we are doing a full incremental link.
+
+bool
+Parameters::incremental_full() const
+{
+  return this->incremental_mode_ == General_options::INCREMENTAL_FULL;
 }
 
 // Return true if we are doing an incremental update.
@@ -285,15 +307,28 @@ parameters_force_valid_target()
   gold_assert(parameters->options_valid());
   if (parameters->options().user_set_oformat())
     {
-      Target* target = select_target_by_name(parameters->options().oformat());
+      const char* bfd_name = parameters->options().oformat();
+      Target* target = select_target_by_bfd_name(bfd_name);
       if (target != NULL)
 	{
 	  set_parameters_target(target);
 	  return;
 	}
 
-      gold_error(_("unrecognized output format %s"),
-                 parameters->options().oformat());
+      gold_error(_("unrecognized output format %s"), bfd_name);
+    }
+
+  if (parameters->options().user_set_m())
+    {
+      const char* emulation = parameters->options().m();
+      Target* target = select_target_by_emulation(emulation);
+      if (target != NULL)
+	{
+	  set_parameters_target(target);
+	  return;
+	}
+
+      gold_error(_("unrecognized emulation %s"), emulation);
     }
 
   // The GOLD_DEFAULT_xx macros are defined by the configure script.
@@ -311,7 +346,13 @@ parameters_force_valid_target()
 				 is_big_endian,
 				 elfcpp::GOLD_DEFAULT_OSABI,
 				 0);
-  gold_assert(target != NULL);
+
+  if (target == NULL)
+    {
+      gold_assert(is_big_endian != GOLD_DEFAULT_BIG_ENDIAN);
+      gold_fatal(_("no supported target for -EB/-EL option"));
+    }
+
   set_parameters_target(target);
 }
 

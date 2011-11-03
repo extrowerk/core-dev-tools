@@ -1,6 +1,6 @@
 // testfile.cc -- Dummy ELF objects for testing purposes.
 
-// Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -44,13 +44,14 @@ class Target_test : public Sized_target<size, big_endian>
   { }
 
   void
-  gc_process_relocs(Symbol_table*, Layout*, Sized_relobj<size, big_endian>*,
+  gc_process_relocs(Symbol_table*, Layout*,
+		    Sized_relobj_file<size, big_endian>*,
 		    unsigned int, unsigned int, const unsigned char*, size_t,
 		    Output_section*, bool, size_t, const unsigned char*)
   { ERROR("call to Target_test::gc_process_relocs"); }
 
   void
-  scan_relocs(Symbol_table*, Layout*, Sized_relobj<size, big_endian>*,
+  scan_relocs(Symbol_table*, Layout*, Sized_relobj_file<size, big_endian>*,
 	      unsigned int, unsigned int, const unsigned char*, size_t,
 	      Output_section*, bool, size_t, const unsigned char*)
   { ERROR("call to Target_test::scan_relocs"); }
@@ -64,7 +65,7 @@ class Target_test : public Sized_target<size, big_endian>
 
   void
   scan_relocatable_relocs(Symbol_table*, Layout*,
-			  Sized_relobj<size, big_endian>*, unsigned int,
+			  Sized_relobj_file<size, big_endian>*, unsigned int,
 			  unsigned int, const unsigned char*,
 			  size_t, Output_section*, bool, size_t,
 			  const unsigned char*, Relocatable_relocs*)
@@ -93,6 +94,7 @@ const Target::Target_info Target_test<size, big_endian>::test_target_info =
   false,				// has_resolve
   false,				// has_code_fill
   false,				// is_default_stack_executable
+  false,				// can_icf_inline_merge_sections
   '\0',					// wrap_char
   "/dummy",				// dynamic_linker
   0x08000000,				// default_text_segment_address
@@ -149,7 +151,7 @@ class Target_selector_test : public Target_selector
 {
  public:
   Target_selector_test()
-    : Target_selector(0xffff, size, big_endian, NULL)
+    : Target_selector(0xffff, size, big_endian, NULL, NULL)
   { }
 
   Target*

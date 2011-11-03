@@ -42,6 +42,7 @@ static int no_enum_size_warning = 0;
 static int no_wchar_size_warning = 0;
 static int pic_veneer = 0;
 static int merge_exidx_entries = -1;
+static int fix_arm1176 = 1;
 
 static void
 gld${EMULATION_NAME}_before_parse (void)
@@ -67,7 +68,7 @@ arm_elf_before_allocation (void)
 
   /* We should be able to set the size of the interworking stub section.  We
      can't do it until later if we have dynamic sections, though.  */
-  if (! elf_hash_table (&link_info)->dynamic_sections_created)
+  if (elf_hash_table (&link_info)->dynobj == NULL)
     {
       /* Here we rummage through the found bfds to collect glue information.  */
       LANG_FOR_EACH_INPUT_STATEMENT (is)
@@ -404,7 +405,7 @@ gld${EMULATION_NAME}_finish (void)
       h = bfd_link_hash_lookup (link_info.hash, entry_symbol.name,
 				FALSE, FALSE, TRUE);
       eh = (struct elf_link_hash_entry *)h;
-      if (!h || ELF_ST_TYPE(eh->type) != STT_ARM_TFUNC)
+      if (!h || eh->target_internal != ST_BRANCH_TO_THUMB)
 	return;
     }
 
@@ -464,7 +465,8 @@ arm_elf_create_output_section_statements (void)
 				   target2_type, fix_v4bx, use_blx,
 				   vfp11_denorm_fix, no_enum_size_warning,
 				   no_wchar_size_warning,
-				   pic_veneer, fix_cortex_a8);
+				   pic_veneer, fix_cortex_a8, 
+				   fix_arm1176);
 
   stub_file = lang_add_input_file ("linker stubs",
  				   lang_input_file_is_fake_enum,
@@ -529,6 +531,8 @@ PARSE_AND_LIST_PROLOGUE='
 #define OPTION_FIX_CORTEX_A8		314
 #define OPTION_NO_FIX_CORTEX_A8		315
 #define OPTION_NO_MERGE_EXIDX_ENTRIES   316
+#define OPTION_FIX_ARM1176		317
+#define OPTION_NO_FIX_ARM1176		318
 '
 
 PARSE_AND_LIST_SHORTOPTS=p
@@ -551,6 +555,8 @@ PARSE_AND_LIST_LONGOPTS='
   { "fix-cortex-a8", no_argument, NULL, OPTION_FIX_CORTEX_A8 },
   { "no-fix-cortex-a8", no_argument, NULL, OPTION_NO_FIX_CORTEX_A8 },
   { "no-merge-exidx-entries", no_argument, NULL, OPTION_NO_MERGE_EXIDX_ENTRIES },
+  { "fix-arm1176", no_argument, NULL, OPTION_FIX_ARM1176 },
+  { "no-fix-arm1176", no_argument, NULL, OPTION_NO_FIX_ARM1176 },
 '
 
 PARSE_AND_LIST_OPTIONS='
@@ -579,7 +585,7 @@ PARSE_AND_LIST_OPTIONS='
  		   ));
   fprintf (file, _("  --[no-]fix-cortex-a8        Disable/enable Cortex-A8 Thumb-2 branch erratum fix\n"));
   fprintf (file, _("  --no-merge-exidx-entries    Disable merging exidx entries\n"));
- 
+  fprintf (file, _("  --[no-]fix-arm1176          Disable/enable ARM1176 BLX immediate erratum fix\n"));
 '
 
 PARSE_AND_LIST_ARGS_CASES='
@@ -662,7 +668,15 @@ PARSE_AND_LIST_ARGS_CASES='
 
    case OPTION_NO_MERGE_EXIDX_ENTRIES:
       merge_exidx_entries = 0;
+      break;
 
+   case OPTION_FIX_ARM1176:
+      fix_arm1176 = 1;
+      break;
+
+   case OPTION_NO_FIX_ARM1176:
+      fix_arm1176 = 0;
+      break;
 '
 
 # We have our own before_allocation etc. functions, but they call

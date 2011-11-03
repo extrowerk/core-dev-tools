@@ -1,6 +1,6 @@
 /* Support for the generic parts of most COFF variants, for BFD.
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
    Written by Cygnus Support.
 
@@ -585,6 +585,17 @@ sec_to_styp_flags (const char *sec_name, flagword sec_flags)
     {
       styp_flags = STYP_TYPCHK;
     }
+  else if (sec_flags & SEC_DEBUGGING)
+    {
+      int i;
+
+      for (i = 0; i < XCOFF_DWSECT_NBR_NAMES; i++)
+        if (!strcmp (sec_name, xcoff_dwsect_names[i].name))
+          {
+            styp_flags = STYP_DWARF | xcoff_dwsect_names[i].flag;
+            break;
+          }
+    }
 #endif
   /* Try and figure out what it should be */
   else if (sec_flags & SEC_CODE)
@@ -662,7 +673,10 @@ sec_to_styp_flags (const char *sec_name, flagword sec_flags)
 
   /* FIXME: There is no gas syntax to specify the debug section flag.  */
   if (is_dbg)
-      sec_flags = SEC_DEBUGGING | SEC_READONLY;
+    {
+      sec_flags &= (SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD);
+      sec_flags |= SEC_DEBUGGING | SEC_READONLY;
+    }
 
   /* skip LOAD */
   /* READONLY later */
@@ -777,6 +791,10 @@ styp_to_sec_flags (bfd *abfd ATTRIBUTE_UNUSED,
     }
   else if (styp_flags & STYP_PAD)
     sec_flags = 0;
+#ifdef RS6000COFF_C
+  else if (styp_flags & STYP_DWARF)
+    sec_flags |= SEC_DEBUGGING;
+#endif
   else if (strcmp (name, _TEXT) == 0)
     {
       if (sec_flags & SEC_NEVER_LOAD)
@@ -1718,6 +1736,7 @@ coff_new_section_hook (bfd * abfd, asection * section)
 {
   combined_entry_type *native;
   bfd_size_type amt;
+  unsigned char sclass = C_STAT;
 
   section->alignment_power = COFF_DEFAULT_SECTION_ALIGNMENT_POWER;
 
@@ -1725,9 +1744,22 @@ coff_new_section_hook (bfd * abfd, asection * section)
   if (bfd_xcoff_text_align_power (abfd) != 0
       && strcmp (bfd_get_section_name (abfd, section), ".text") == 0)
     section->alignment_power = bfd_xcoff_text_align_power (abfd);
-  if (bfd_xcoff_data_align_power (abfd) != 0
+  else if (bfd_xcoff_data_align_power (abfd) != 0
       && strcmp (bfd_get_section_name (abfd, section), ".data") == 0)
     section->alignment_power = bfd_xcoff_data_align_power (abfd);
+  else
+    {
+      int i;
+
+      for (i = 0; i < XCOFF_DWSECT_NBR_NAMES; i++)
+        if (strcmp (bfd_get_section_name (abfd, section),
+                    xcoff_dwsect_names[i].name) == 0)
+          {
+            section->alignment_power = 0;
+            sclass = C_DWARF;
+            break;
+          }
+    }
 #endif
 
   /* Set up the section symbol.  */
@@ -1751,7 +1783,7 @@ coff_new_section_hook (bfd * abfd, asection * section)
      for n_numaux is already correct.  */
 
   native->u.syment.n_type = T_NULL;
-  native->u.syment.n_sclass = C_STAT;
+  native->u.syment.n_sclass = sclass;
 
   coffsymbol (section->symbol)->native = native;
 
@@ -1864,12 +1896,14 @@ coff_set_alignment_hook (bfd * abfd ATTRIBUTE_UNUSED,
       file_ptr oldpos = bfd_tell (abfd);
       bfd_size_type relsz = bfd_coff_relsz (abfd);
 
-      bfd_seek (abfd, (file_ptr) hdr->s_relptr, 0);
+      if (bfd_seek (abfd, (file_ptr) hdr->s_relptr, 0) != 0)
+	return;
       if (bfd_bread (& dst, relsz, abfd) != relsz)
 	return;
 
       coff_swap_reloc_in (abfd, &dst, &n);
-      bfd_seek (abfd, oldpos, 0);
+      if (bfd_seek (abfd, oldpos, 0) != 0)
+	return;
       section->reloc_count = hdr->s_nreloc = n.r_vaddr - 1;
       section->rel_filepos += relsz;
     }
@@ -4754,6 +4788,10 @@ coff_slurp_symbol_table (bfd * abfd)
 	    case C_THUMBLABEL:   /* Thumb label.  */
 	    case C_THUMBSTATFUNC:/* Thumb static function.  */
 #endif
+#ifdef RS6000COFF_C
+            case C_DWARF:	 /* A label in a dwarf section.  */
+            case C_INFO:	 /* A label in a comment section.  */
+#endif
 	    case C_LABEL:	 /* Label.  */
 	      if (src->u.syment.n_scnum == N_DEBUG)
 		dst->symbol.flags = BSF_DEBUGGING;
@@ -4900,6 +4938,11 @@ coff_slurp_symbol_table (bfd * abfd)
 		  && src->u.syment.n_value == 0
 		  && src->u.syment.n_scnum == 0)
 		break;
+#ifdef RS6000COFF_C
+              /* XCOFF specific: deleted entry.  */
+              if (src->u.syment.n_value == C_NULL_VALUE)
+                break;
+#endif
 	      /* Fall through.  */
 	    case C_EXTDEF:	/* External definition.  */
 	    case C_ULABEL:	/* Undefined label.  */
@@ -5613,6 +5656,10 @@ static bfd_coff_backend_data ticoff1_swap_table =
 #define coff_bfd_gc_sections		    bfd_generic_gc_sections
 #endif
 
+#ifndef coff_bfd_lookup_section_flags
+#define coff_bfd_lookup_section_flags	    bfd_generic_lookup_section_flags
+#endif
+
 #ifndef coff_bfd_merge_sections
 #define coff_bfd_merge_sections		    bfd_generic_merge_sections
 #endif
@@ -5627,7 +5674,7 @@ static bfd_coff_backend_data ticoff1_swap_table =
 
 #ifndef coff_section_already_linked
 #define coff_section_already_linked \
-  _bfd_generic_section_already_linked
+  _bfd_coff_section_already_linked
 #endif
 
 #ifndef coff_bfd_define_common_symbol
@@ -5649,6 +5696,7 @@ const bfd_target VAR =							\
   UNDER,			/* Leading symbol underscore.  */	\
   '/',				/* AR_pad_char.  */			\
   15,				/* AR_max_namelen.  */			\
+  0,				/* match priority.  */			\
 									\
   /* Data conversion functions.  */					\
   bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
@@ -5699,6 +5747,7 @@ const bfd_target VAR =							\
   UNDER,			/* Leading symbol underscore.  */	\
   '/',				/* AR_pad_char.  */			\
   15,				/* AR_max_namelen.  */			\
+  0,				/* match priority.  */			\
 									\
   /* Data conversion functions.  */					\
   bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
@@ -5749,6 +5798,7 @@ const bfd_target VAR =							\
   UNDER,			/* Leading symbol underscore.  */	\
   '/',				/* AR_pad_char.  */			\
   15,				/* AR_max_namelen.  */			\
+  0,				/* match priority.  */			\
 									\
   /* Data conversion functions.  */					\
   bfd_getl64, bfd_getl_signed_64, bfd_putl64,				\
