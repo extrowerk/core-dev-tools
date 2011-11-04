@@ -2482,6 +2482,7 @@ nto_mourn_inferior (struct target_ops *ops)
   const pid_t pid = PIDGET (inferior_ptid);
   struct inferior *inf = current_inferior ();
   struct nto_inferior_data *inf_data;
+  struct nto_remote_inferior_data *inf_rdata;
 
   gdb_assert (inf != NULL);
 
@@ -2489,18 +2490,20 @@ nto_mourn_inferior (struct target_ops *ops)
 
   gdb_assert (inf_data != NULL);
 
+  inf_rdata = nto_remote_inferior_data ();
+
   nto_trace (0) ("nto_mourn_inferior()\n");
 
   delete_threads_of_inferior (pid);
+
+  xfree (inf_rdata->auxv);
+  inf_rdata->auxv = NULL;
 
   nto_send_init (DStMsg_detach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.detach.pid = PIDGET (inferior_ptid);
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid,
 						4, byte_order);
   nto_send (sizeof (tran.pkt.detach), 1);
-
-  nto_remote_inferior_data_cleanup (inf, nto_remote_inferior_data ());
-  set_inferior_data (inf, nto_remote_inferior_data_reg, NULL);
 
   generic_mourn_inferior ();
   delete_inferior (pid);
@@ -2763,7 +2766,7 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
 
-/* To be called from breakpoint.c through 
+/* To be called from breakpoint.c through
   current_target.to_insert_breakpoint.  */
 
 static int 
@@ -2957,6 +2960,8 @@ upload_command (char *args, int fromtty)
     {
       xfree (inf_rdata->remote_exe);
       inf_rdata->remote_exe = xstrdup (to);
+      if (only_session.remote_exe == NULL)
+	only_session.remote_exe = xstrdup (to);
     }
 
 exit:
@@ -3881,10 +3886,17 @@ nto_thread_info (pid_t pid, short tid)
 static void
 nto_remote_inferior_data_cleanup (struct inferior *const inf, void *const dat)
 {
-  struct nto_remote_inferior_data *const inf_data = dat;
+  struct nto_remote_inferior_data *const inf_rdata = dat;
 
-  if (dat && inf_data->auxv)
-    xfree (inf_data->auxv);
+  if (dat)
+    {
+      xfree (inf_rdata->auxv);
+      inf_rdata->auxv = NULL;
+      xfree (inf_rdata->remote_exe);
+      inf_rdata->remote_exe = NULL;
+      xfree (inf_rdata->remote_cwd);
+      inf_rdata->remote_cwd = NULL;
+    }
   xfree (dat);
 }
 
@@ -3912,31 +3924,45 @@ set_nto_exe (char *args, int from_tty,
 	     struct cmd_list_element *c)
 {
   struct inferior *const inf = current_inferior ();
-  struct nto_remote_inferior_data *const inf_dat
+  struct nto_remote_inferior_data *const inf_rdat
     = nto_remote_inferior_data ();
 
-  if (inf_dat->remote_exe) {
-    xfree (inf_dat->remote_exe);
-  }
+  xfree (inf_rdat->remote_exe);
+  inf_rdat->remote_exe = xstrdup (current_session->remote_exe);
+}
 
-  inf_dat->remote_exe = xstrdup (current_session->remote_exe);
+static void
+show_nto_exe (struct ui_file *file, int from_tty,
+              struct cmd_list_element *c, const char *value)
+{
+  struct inferior *const inf = current_inferior ();
+  struct nto_remote_inferior_data *const inf_rdat
+    = nto_remote_inferior_data ();
+
+  deprecated_show_value_hack (file, from_tty, c, inf_rdat->remote_exe);
 }
 
 static void
 set_nto_cwd (char *args, int from_tty, struct cmd_list_element *c)
 {
   struct inferior *const inf = current_inferior ();
-  struct nto_remote_inferior_data *const inf_dat
+  struct nto_remote_inferior_data *const inf_rdat
     = nto_remote_inferior_data ();
 
-  if (inf_dat->remote_cwd) {
-    xfree (inf_dat->remote_cwd);
-  }
-
-  inf_dat->remote_cwd = xstrdup (current_session->remote_cwd);
+  xfree (inf_rdat->remote_cwd);
+  inf_rdat->remote_cwd = xstrdup (current_session->remote_cwd);
 }
 
+static void
+show_nto_cwd (struct ui_file *file, int from_tty,
+              struct cmd_list_element *c, const char *value)
+{
+  struct inferior *const inf = current_inferior ();
+  struct nto_remote_inferior_data *const inf_rdat
+    = nto_remote_inferior_data ();
 
+  deprecated_show_value_hack (file, from_tty, c, inf_rdat->remote_cwd);
+}
 
 void
 _initialize_nto ()
@@ -3969,7 +3995,7 @@ Set the working directory for the remote process."), _("\
 Show current working directory for the remote process."), _("\
 Working directory for the remote process. This directory must be \
 specified before remote process is run."), 
-			  &set_nto_cwd, NULL, &setlist, &showlist);
+			  &set_nto_cwd, &show_nto_cwd, &setlist, &showlist);
 
   add_setshow_string_cmd ("nto-executable", class_files, 
 			  &only_session.remote_exe, _("\
@@ -3978,7 +4004,7 @@ Show currently set binary to be executed on the remote QNX Neutrino target."),
 			_("\
 Binary to be executed on the remote QNX Neutrino target when "\
 "'run' command is used."), 
-			  &set_nto_exe, NULL, &setlist, &showlist);
+			  &set_nto_exe, &show_nto_exe, &setlist, &showlist);
 
   add_setshow_boolean_cmd ("upload-sets-exec", class_files,
 			   &upload_sets_exec, _("\
