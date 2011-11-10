@@ -1,0 +1,1795 @@
+diff -uprN -xCVS -x.svn python/lib/gdb/command/pretty_printers.py ../../gdb-7-HEAD/src/gdb/python//lib/gdb/command/pretty_printers.py
+--- python/lib/gdb/command/pretty_printers.py	2011-08-30 13:31:25.209094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//lib/gdb/command/pretty_printers.py	2011-08-23 16:16:04.020367769 -0400
+@@ -368,3 +368,5 @@ def register_pretty_printer_commands():
+     InfoPrettyPrinter()
+     EnablePrettyPrinter()
+     DisablePrettyPrinter()
++
++register_pretty_printer_commands()
+diff -uprN -xCVS -x.svn python/lib/gdb/command/prompt.py ../../gdb-7-HEAD/src/gdb/python//lib/gdb/command/prompt.py
+--- python/lib/gdb/command/prompt.py	1969-12-31 19:00:00.000000000 -0500
++++ ../../gdb-7-HEAD/src/gdb/python//lib/gdb/command/prompt.py	2011-08-17 06:41:21.000000000 -0400
+@@ -0,0 +1,66 @@
++# Extended prompt.
++# Copyright (C) 2011 Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <http://www.gnu.org/licenses/>.
++
++"""GDB command for working with extended prompts."""
++
++import gdb
++import gdb.prompt
++
++class _ExtendedPrompt(gdb.Parameter):
++
++    """Set the extended prompt.
++
++Usage: set extended-prompt VALUE
++
++Substitutions are applied to VALUE to compute the real prompt.
++
++The currently defined substitutions are:
++
++"""
++    # Add the prompt library's dynamically generated help to the
++    # __doc__ string.
++    __doc__ = __doc__ + gdb.prompt.prompt_help()
++
++    set_doc = "Set the extended prompt."
++    show_doc = "Show the extended prompt."
++
++    def __init__(self):
++        super(_ExtendedPrompt, self).__init__("extended-prompt",
++                                              gdb.COMMAND_SUPPORT,
++                                              gdb.PARAM_STRING_NOESCAPE)
++        self.value = ''
++        self.hook_set = False
++
++    def get_show_string (self, pvalue):
++        if self.value is not '':
++           return "The extended prompt is: " + self.value
++        else:
++           return "The extended prompt is not set."
++
++    def get_set_string (self):
++        if self.hook_set == False:
++           gdb.prompt_hook = self.before_prompt_hook
++           self.hook_set = True
++        return ""
++
++    def before_prompt_hook(self, current):
++        if self.value is not '':
++            newprompt = gdb.prompt.substitute_prompt(self.value)
++            return newprompt.replace('\\', '\\\\')
++        else:
++            return None
++
++_ExtendedPrompt()
+diff -uprN -xCVS -x.svn python/lib/gdb/__init__.py ../../gdb-7-HEAD/src/gdb/python//lib/gdb/__init__.py
+--- python/lib/gdb/__init__.py	2011-08-30 13:31:25.219094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//lib/gdb/__init__.py	2011-08-23 16:16:03.860367769 -0400
+@@ -13,6 +13,29 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+-import gdb.command.pretty_printers
++import traceback
+ 
+-gdb.command.pretty_printers.register_pretty_printer_commands()
++# Auto-load all functions/commands.
++
++# Modules to auto-load, and the paths where those modules exist.
++
++module_dict = {
++  'gdb.function': os.path.join(gdb.PYTHONDIR, 'gdb', 'function'),
++  'gdb.command': os.path.join(gdb.PYTHONDIR, 'gdb', 'command')
++}
++
++# Iterate the dictionary, collating the Python files in each module
++# path.  Construct the module name, and import.
++
++for module, location in module_dict.iteritems():
++  if os.path.exists(location):
++     py_files = filter(lambda x: x.endswith('.py') and x != '__init__.py',
++                       os.listdir(location))
++
++     for py_file in py_files:
++       # Construct from foo.py, gdb.module.foo
++       py_file = module + '.' + py_file[:-3]
++       try:
++         exec('import ' + py_file)
++       except:
++         print >> sys.stderr, traceback.format_exc()
+diff -uprN -xCVS -x.svn python/lib/gdb/printing.py ../../gdb-7-HEAD/src/gdb/python//lib/gdb/printing.py
+--- python/lib/gdb/printing.py	2011-08-30 13:31:25.219094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//lib/gdb/printing.py	2011-05-23 13:38:06.000000000 -0400
+@@ -86,6 +86,7 @@ def register_pretty_printer(obj, printer
+     Raises:
+         TypeError: A problem with the type of the printer.
+         ValueError: The printer's name contains a semicolon ";".
++        RuntimeError: A printer with the same name is already registered.
+ 
+     If the caller wants the printer to be listable and disableable, it must
+     follow the PrettyPrinter API.  This applies to the old way (functions) too.
+diff -uprN -xCVS -x.svn python/lib/gdb/prompt.py ../../gdb-7-HEAD/src/gdb/python//lib/gdb/prompt.py
+--- python/lib/gdb/prompt.py	1969-12-31 19:00:00.000000000 -0500
++++ ../../gdb-7-HEAD/src/gdb/python//lib/gdb/prompt.py	2011-08-17 06:41:21.000000000 -0400
+@@ -0,0 +1,149 @@
++# Extended prompt utilities.
++# Copyright (C) 2011 Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <http://www.gnu.org/licenses/>.
++
++""" Extended prompt library functions."""
++
++import gdb
++import os
++
++def _prompt_pwd(ignore):
++    "The current working directory."
++    return os.getcwdu()
++
++def _prompt_object_attr(func, what, attr, nattr):
++    """Internal worker for fetching GDB attributes."""
++    if attr is None:
++        attr = nattr
++    try:
++        obj = func()
++    except gdb.error:
++        return '<no %s>' % what
++    if hasattr(obj, attr):
++        result = getattr(obj, attr)
++        if callable(result):
++            result = result()
++        return result
++    else:
++        return '<no attribute %s on current %s>' % (attr, what)
++
++def _prompt_frame(attr):
++    "The selected frame; an argument names a frame parameter."
++    return _prompt_object_attr(gdb.selected_frame, 'frame', attr, 'name')
++
++def _prompt_thread(attr):
++    "The selected thread; an argument names a thread parameter."
++    return _prompt_object_attr(gdb.selected_thread, 'thread', attr, 'num')
++
++def _prompt_version(attr):
++    "The version of GDB."
++    return gdb.VERSION
++
++def _prompt_esc(attr):
++    "The ESC character."
++    return '\033'
++
++def _prompt_bs(attr):
++    "A backslash."
++    return '\\'
++
++def _prompt_n(attr):
++    "A newline."
++    return '\n'
++
++def _prompt_r(attr):
++    "A carriage return."
++    return '\r'
++
++def _prompt_param(attr):
++    "A parameter's value; the argument names the parameter."
++    return gdb.parameter(attr)
++
++def _prompt_noprint_begin(attr):
++    "Begins a sequence of non-printing characters."
++    return '\001'
++
++def _prompt_noprint_end(attr):
++     "Ends a sequence of non-printing characters."
++     return '\002'
++
++prompt_substitutions = {
++    'e': _prompt_esc,
++    '\\': _prompt_bs,
++    'n': _prompt_n,
++    'r': _prompt_r,
++    'v': _prompt_version,
++    'w': _prompt_pwd,
++    'f': _prompt_frame,
++    't': _prompt_thread,
++    'p': _prompt_param,
++    '[': _prompt_noprint_begin,
++    ']': _prompt_noprint_end
++}
++
++def prompt_help():
++    """Generate help dynamically from the __doc__ strings of attribute
++    functions."""
++
++    result = ''
++    keys = prompt_substitutions.keys()
++    keys.sort()
++    for key in keys:
++        result += '  \\%s\t%s\n' % (key, prompt_substitutions[key].__doc__)
++    result += """
++A substitution can be used in a simple form, like "\\f".
++An argument can also be passed to it, like "\\f{name}".
++The meaning of the argument depends on the particular substitution."""
++    return result
++
++def substitute_prompt(prompt):
++    "Perform substitutions on PROMPT."
++
++    result = ''
++    plen = len(prompt)
++    i = 0
++    while i < plen:
++        if prompt[i] == '\\':
++            i = i + 1
++            if i >= plen:
++                break
++            cmdch = prompt[i]
++
++            if cmdch in prompt_substitutions:
++                cmd = prompt_substitutions[cmdch]
++
++                if i + 1 < plen and prompt[i + 1] == '{':
++                    j = i + 1
++                    while j < plen and prompt[j] != '}':
++                        j = j + 1
++                    # Just ignore formatting errors.
++                    if j >= plen or prompt[j] != '}':
++                        arg = None
++                    else:
++                        arg = prompt[i + 2 : j]
++                        i = j
++                else:
++                    arg = None
++                result += str(cmd(arg))
++            else:
++                # Unrecognized escapes are turned into the escaped
++                # character itself.
++                result += prompt[i]
++        else:
++            result += prompt[i]
++
++        i = i + 1
++
++    return result
+diff -uprN -xCVS -x.svn python/py-auto-load.c ../../gdb-7-HEAD/src/gdb/python//py-auto-load.c
+--- python/py-auto-load.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-auto-load.c	2011-08-23 16:16:03.680367767 -0400
+@@ -18,6 +18,7 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include "defs.h"
++#include "filenames.h"
+ #include "gdb_string.h"
+ #include "gdb_regex.h"
+ #include "top.h"
+@@ -68,11 +69,15 @@ struct auto_load_pspace_info
+ {
+   /* For each program space we keep track of loaded scripts.  */
+   struct htab *loaded_scripts;
++
++  /* Non-zero if we've issued the warning about an auto-load script not being
++     found.  We only want to issue this warning once.  */
++  int script_not_found_warning_printed;
+ };
+ 
+ /* Objects of this type are stored in the loaded script hash table.  */
+ 
+-struct loaded_script_entry
++struct loaded_script
+ {
+   /* Name as provided by the objfile.  */
+   const char *name;
+@@ -132,7 +137,7 @@ get_auto_load_pspace_data (struct progra
+ static hashval_t
+ hash_loaded_script_entry (const void *data)
+ {
+-  const struct loaded_script_entry *e = data;
++  const struct loaded_script *e = data;
+ 
+   return htab_hash_string (e->name);
+ }
+@@ -142,17 +147,17 @@ hash_loaded_script_entry (const void *da
+ static int
+ eq_loaded_script_entry (const void *a, const void *b)
+ {
+-  const struct loaded_script_entry *ea = a;
+-  const struct loaded_script_entry *eb = b;
++  const struct loaded_script *ea = a;
++  const struct loaded_script *eb = b;
+ 
+   return strcmp (ea->name, eb->name) == 0;
+ }
+ 
+-/* Create the hash table used for loaded scripts.
++/* Initialize the table to track loaded scripts.
+    Each entry is hashed by the full path name.  */
+ 
+ static void
+-create_loaded_scripts_hash (struct auto_load_pspace_info *pspace_info)
++init_loaded_scripts_info (struct auto_load_pspace_info *pspace_info)
+ {
+   /* Choose 31 as the starting size of the hash table, somewhat arbitrarily.
+      Space for each entry is obtained with one malloc so we can free them
+@@ -162,6 +167,64 @@ create_loaded_scripts_hash (struct auto_
+ 					     hash_loaded_script_entry,
+ 					     eq_loaded_script_entry,
+ 					     xfree);
++
++  pspace_info->script_not_found_warning_printed = FALSE;
++}
++
++/* Wrapper on get_auto_load_pspace_data to also allocate the hash table
++   for loading scripts.  */
++
++static struct auto_load_pspace_info *
++get_auto_load_pspace_data_for_loading (struct program_space *pspace)
++{
++  struct auto_load_pspace_info *info;
++
++  info = get_auto_load_pspace_data (pspace);
++  if (info->loaded_scripts == NULL)
++    init_loaded_scripts_info (info);
++
++  return info;
++}
++
++/* Add script NAME to hash table HTAB.
++   FULL_PATH is NULL if the script wasn't found.
++   The result is true if the script was already in the hash table.  */
++
++static int
++maybe_add_script (struct htab *htab, const char *name, const char *full_path)
++{
++  struct loaded_script **slot, entry;
++  int in_hash_table;
++
++  entry.name = name;
++  entry.full_path = full_path;
++  slot = (struct loaded_script **) htab_find_slot (htab, &entry, INSERT);
++  in_hash_table = *slot != NULL;
++
++  /* If this script is not in the hash table, add it.  */
++
++  if (! in_hash_table)
++    {
++      char *p;
++
++      /* Allocate all space in one chunk so it's easier to free.  */
++      *slot = xmalloc (sizeof (**slot)
++		       + strlen (name) + 1
++		       + (full_path != NULL ? (strlen (full_path) + 1) : 0));
++      p = ((char*) *slot) + sizeof (**slot);
++      strcpy (p, name);
++      (*slot)->name = p;
++      if (full_path != NULL)
++	{
++	  p += strlen (p) + 1;
++	  strcpy (p, full_path);
++	  (*slot)->full_path = p;
++	}
++      else
++	(*slot)->full_path = NULL;
++    }
++
++  return in_hash_table;
+ }
+ 
+ /* Load scripts specified in OBJFILE.
+@@ -182,11 +245,8 @@ source_section_scripts (struct objfile *
+ {
+   const char *p;
+   struct auto_load_pspace_info *pspace_info;
+-  struct loaded_script_entry **slot, entry;
+ 
+-  pspace_info = get_auto_load_pspace_data (current_program_space);
+-  if (pspace_info->loaded_scripts == NULL)
+-    create_loaded_scripts_hash (pspace_info);
++  pspace_info = get_auto_load_pspace_data_for_loading (current_program_space);
+ 
+   for (p = start; p < end; ++p)
+     {
+@@ -226,51 +286,30 @@ source_section_scripts (struct objfile *
+       opened = find_and_open_script (file, 1 /*search_path*/,
+ 				     &stream, &full_path);
+ 
+-      /* If the file is not found, we still record the file in the hash table,
+-	 we only want to print an error message once.
+-	 IWBN if complaints.c were more general-purpose.  */
++      /* If one script isn't found it's not uncommon for more to not be
++	 found either.  We don't want to print an error message for each
++	 script, too much noise.  Instead, we print the warning once and tell
++	 the user how to find the list of scripts that weren't loaded.
+ 
+-      entry.name = file;
+-      if (opened)
+-	entry.full_path = full_path;
+-      else
+-	entry.full_path = NULL;
+-      slot = ((struct loaded_script_entry **)
+-	      htab_find_slot (pspace_info->loaded_scripts,
+-			      &entry, INSERT));
+-      in_hash_table = *slot != NULL;
+-
+-      /* If this file is not in the hash table, add it.  */
+-      if (! in_hash_table)
+-	{
+-	  char *p;
++	 IWBN if complaints.c were more general-purpose.  */
+ 
+-	  *slot = xmalloc (sizeof (**slot)
+-			   + strlen (file) + 1
+-			   + (opened ? (strlen (full_path) + 1) : 0));
+-	  p = ((char*) *slot) + sizeof (**slot);
+-	  strcpy (p, file);
+-	  (*slot)->name = p;
+-	  if (opened)
+-	    {
+-	      p += strlen (p) + 1;
+-	      strcpy (p, full_path);
+-	      (*slot)->full_path = p;
+-	    }
+-	  else
+-	    (*slot)->full_path = NULL;
+-	}
++      in_hash_table = maybe_add_script (pspace_info->loaded_scripts, file,
++					opened ? full_path : NULL);
+ 
+       if (opened)
+ 	free (full_path);
+ 
+       if (! opened)
+ 	{
+-	  /* We don't throw an error, the program is still debuggable.
+-	     Check in_hash_table to only print the warning once.  */
+-	  if (! in_hash_table)
+-	    warning (_("%s (referenced in %s): %s"),
+-		     file, GDBPY_AUTO_SECTION_NAME, safe_strerror (errno));
++	  /* We don't throw an error, the program is still debuggable.  */
++	  if (! pspace_info->script_not_found_warning_printed)
++	    {
++	      warning (_("Missing auto-load scripts referenced in section %s\n\
++of file %s\n\
++Use `info auto-load-scripts [REGEXP]' to list them."),
++		       GDBPY_AUTO_SECTION_NAME, objfile->name);
++	      pspace_info->script_not_found_warning_printed = TRUE;
++	    }
+ 	  continue;
+ 	}
+ 
+@@ -322,6 +361,7 @@ clear_section_scripts (void)
+     {
+       htab_delete (info->loaded_scripts);
+       info->loaded_scripts = NULL;
++      info->script_not_found_warning_printed = FALSE;
+     }
+ }
+ 
+@@ -378,6 +418,19 @@ auto_load_objfile_script (struct objfile
+ 
+   if (input)
+     {
++      struct auto_load_pspace_info *pspace_info;
++
++      /* Add this script to the hash table too so "info auto-load-scripts"
++	 can print it.  */
++      pspace_info =
++	get_auto_load_pspace_data_for_loading (current_program_space);
++      maybe_add_script (pspace_info->loaded_scripts, debugfile, debugfile);
++
++      /* To preserve existing behaviour we don't check for whether the
++	 script was already in the table, and always load it.
++	 It's highly unlikely that we'd ever load it twice,
++	 and these scripts are required to be idempotent under multiple
++	 loads anyway.  */
+       source_python_script_for_objfile (objfile, input, debugfile);
+       fclose (input);
+     }
+@@ -416,56 +469,135 @@ load_auto_scripts_for_objfile (struct ob
+     }
+ }
+ 
++/* Collect scripts to be printed in a vec.  */
++
++typedef struct loaded_script *loaded_script_ptr;
++DEF_VEC_P (loaded_script_ptr);
++
+ /* Traversal function for htab_traverse.
+-   Print the entry if specified in the regex.  */
++   Collect the entry if it matches the regexp.  */
+ 
+ static int
+-maybe_print_section_script (void **slot, void *info)
++collect_matching_scripts (void **slot, void *info)
++{
++  struct loaded_script *script = *slot;
++  VEC (loaded_script_ptr) *scripts = info;
++
++  if (re_exec (script->name))
++    VEC_safe_push (loaded_script_ptr, scripts, script);
++
++  return 1;
++}
++
++/* Print SCRIPT.  */
++
++static void
++print_script (struct loaded_script *script)
+ {
+-  struct loaded_script_entry *entry = *slot;
++  struct ui_out *uiout = current_uiout;
++  struct cleanup *chain;
++
++  chain = make_cleanup_ui_out_tuple_begin_end (uiout, NULL);
+ 
+-  if (re_exec (entry->name))
++  ui_out_field_string (uiout, "loaded", script->full_path ? "Yes" : "Missing");
++  ui_out_field_string (uiout, "script", script->name);
++  ui_out_text (uiout, "\n");
++
++  /* If the name isn't the full path, print it too.  */
++  if (script->full_path != NULL
++      && strcmp (script->name, script->full_path) != 0)
+     {
+-      printf_filtered (_("Script name: %s\n"), entry->name);
+-      printf_filtered (_("  Full name: %s\n"),
+-		       entry->full_path ? entry->full_path : _("unknown"));
++      ui_out_text (uiout, "\tfull name: ");
++      ui_out_field_string (uiout, "full_path", script->full_path);
++      ui_out_text (uiout, "\n");
+     }
+ 
+-  return 1;
++  do_cleanups (chain);
+ }
+ 
+-/* "maint print section-scripts" command.  */
++/* Helper for info_auto_load_scripts to sort the scripts by name.  */
++
++static int
++sort_scripts_by_name (const void *ap, const void *bp)
++{
++  const struct loaded_script *a = *(const struct loaded_script **) ap;
++  const struct loaded_script *b = *(const struct loaded_script **) bp;
++
++  return FILENAME_CMP (a->name, b->name);
++}
++
++/* "info auto-load-scripts" command.  */
+ 
+ static void
+-maintenance_print_section_scripts (char *pattern, int from_tty)
++info_auto_load_scripts (char *pattern, int from_tty)
+ {
++  struct ui_out *uiout = current_uiout;
+   struct auto_load_pspace_info *pspace_info;
++  struct cleanup *script_chain;
++  VEC (loaded_script_ptr) *scripts;
++  int nr_scripts;
+ 
+   dont_repeat ();
+ 
++  pspace_info = get_auto_load_pspace_data (current_program_space);
++
+   if (pattern && *pattern)
+     {
+       char *re_err = re_comp (pattern);
+ 
+       if (re_err)
+ 	error (_("Invalid regexp: %s"), re_err);
+-
+-      printf_filtered (_("Objfile scripts matching %s:\n"), pattern);
+     }
+   else
+     {
+       re_comp ("");
+-      printf_filtered (_("Objfile scripts:\n"));
+     }
+ 
+-  pspace_info = get_auto_load_pspace_data (current_program_space);
+-  if (pspace_info == NULL || pspace_info->loaded_scripts == NULL)
+-    return;
++  /* We need to know the number of rows before we build the table.
++     Plus we want to sort the scripts by name.
++     So first traverse the hash table collecting the matching scripts.  */
++
++  scripts = VEC_alloc (loaded_script_ptr, 10);
++  script_chain = make_cleanup (VEC_cleanup (loaded_script_ptr), &scripts);
++
++  if (pspace_info != NULL && pspace_info->loaded_scripts != NULL)
++    {
++      immediate_quit++;
++      htab_traverse_noresize (pspace_info->loaded_scripts,
++			      collect_matching_scripts, scripts);
++      immediate_quit--;
++    }
++
++  nr_scripts = VEC_length (loaded_script_ptr, scripts);
++  make_cleanup_ui_out_table_begin_end (uiout, 2, nr_scripts,
++				       "AutoLoadedScriptsTable");
+ 
+-  immediate_quit++;
+-  htab_traverse_noresize (pspace_info->loaded_scripts,
+-			  maybe_print_section_script, NULL);
+-  immediate_quit--;
++  ui_out_table_header (uiout, 7, ui_left, "loaded", "Loaded");
++  ui_out_table_header (uiout, 70, ui_left, "script", "Script");
++  ui_out_table_body (uiout);
++
++  if (nr_scripts > 0)
++    {
++      int i;
++      loaded_script_ptr script;
++
++      qsort (VEC_address (loaded_script_ptr, scripts),
++	     VEC_length (loaded_script_ptr, scripts),
++	     sizeof (loaded_script_ptr), sort_scripts_by_name);
++      for (i = 0; VEC_iterate (loaded_script_ptr, scripts, i, script); ++i)
++	print_script (script);
++    }
++
++  do_cleanups (script_chain);
++
++  if (nr_scripts == 0)
++    {
++      if (pattern && *pattern)
++	ui_out_message (uiout, 0, "No auto-load scripts matching %s.\n",
++			pattern);
++      else
++	ui_out_message (uiout, 0, "No auto-load scripts.\n");
++    }
+ }
+ 
+ void
+@@ -486,10 +618,10 @@ an executable or shared library."),
+ 			   &setlist,
+ 			   &showlist);
+ 
+-  add_cmd ("section-scripts", class_maintenance,
+-	   maintenance_print_section_scripts,
+-	   _("Print dump of auto-loaded section scripts matching REGEXP."),
+-	   &maintenanceprintlist);
++  add_info ("auto-load-scripts",
++	    info_auto_load_scripts,
++	    _("Print the list of automatically loaded scripts.\n\
++Usage: info auto-load-scripts [REGEXP]"));
+ }
+ 
+ #else /* ! HAVE_PYTHON */
+diff -uprN -xCVS -x.svn python/py-breakpoint.c ../../gdb-7-HEAD/src/gdb/python//py-breakpoint.c
+--- python/py-breakpoint.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-breakpoint.c	2011-08-23 16:16:03.680367767 -0400
+@@ -399,16 +399,16 @@ bppy_get_expression (PyObject *self, voi
+ {
+   char *str;
+   breakpoint_object *obj = (breakpoint_object *) self;
++  struct watchpoint *wp;
+ 
+   BPPY_REQUIRE_VALID (obj);
+ 
+-  if (obj->bp->type != bp_watchpoint
+-      && obj->bp->type != bp_hardware_watchpoint  
+-      && obj->bp->type != bp_read_watchpoint
+-      && obj->bp->type != bp_access_watchpoint)
++  if (!is_watchpoint (obj->bp))
+     Py_RETURN_NONE;
+ 
+-  str = obj->bp->exp_string;
++  wp = (struct watchpoint *) obj->bp;
++
++  str = wp->exp_string;
+   if (! str)
+     str = "";
+ 
+@@ -492,12 +492,12 @@ bppy_get_commands (PyObject *self, void
+   string_file = mem_fileopen ();
+   chain = make_cleanup_ui_file_delete (string_file);
+ 
+-  ui_out_redirect (uiout, string_file);
++  ui_out_redirect (current_uiout, string_file);
+   TRY_CATCH (except, RETURN_MASK_ALL)
+     {
+-      print_command_lines (uiout, breakpoint_commands (bp), 0);
++      print_command_lines (current_uiout, breakpoint_commands (bp), 0);
+     }
+-  ui_out_redirect (uiout, NULL);
++  ui_out_redirect (current_uiout, NULL);
+   GDB_PY_HANDLE_EXCEPTION (except);
+ 
+   cmdstr = ui_file_xstrdup (string_file, &length);
+@@ -599,7 +599,7 @@ static int
+ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
+ {
+   static char *keywords[] = { "spec", "type", "wp_class", "internal", NULL };
+-  char *spec;
++  const char *spec;
+   int type = bp_breakpoint;
+   int access_type = hw_write;
+   PyObject *internal = NULL;
+@@ -623,27 +623,31 @@ bppy_init (PyObject *self, PyObject *arg
+   
+   TRY_CATCH (except, RETURN_MASK_ALL)
+     {
++      char *copy = xstrdup (spec);
++      struct cleanup *cleanup = make_cleanup (xfree, copy);
++
+       switch (type)
+ 	{
+ 	case bp_breakpoint:
+ 	  {
+ 	    create_breakpoint (python_gdbarch,
+-			       spec, NULL, -1,
++			       copy, NULL, -1,
+ 			       0,
+ 			       0, bp_breakpoint,
+ 			       0,
+ 			       AUTO_BOOLEAN_TRUE,
+-			       NULL, 0, 1, internal_bp);
++			       &bkpt_breakpoint_ops,
++			       0, 1, internal_bp);
+ 	    break;
+ 	  }
+         case bp_watchpoint:
+ 	  {
+ 	    if (access_type == hw_write)
+-	      watch_command_wrapper (spec, 0, internal_bp);
++	      watch_command_wrapper (copy, 0, internal_bp);
+ 	    else if (access_type == hw_access)
+-	      awatch_command_wrapper (spec, 0, internal_bp);
++	      awatch_command_wrapper (copy, 0, internal_bp);
+ 	    else if (access_type == hw_read)
+-	      rwatch_command_wrapper (spec, 0, internal_bp);
++	      rwatch_command_wrapper (copy, 0, internal_bp);
+ 	    else
+ 	      error(_("Cannot understand watchpoint access type."));
+ 	    break;
+@@ -651,6 +655,8 @@ bppy_init (PyObject *self, PyObject *arg
+ 	default:
+ 	  error(_("Do not understand breakpoint type to set."));
+ 	}
++
++      do_cleanups (cleanup);
+     }
+   if (except.reason < 0)
+     {
+@@ -766,10 +772,9 @@ gdbpy_breakpoint_has_py_cond (struct bre
+     get_current_arch ();
+   struct cleanup *cleanup = ensure_python_env (garch, current_language);
+   
+-  if (py_bp == NULL)
+-    return 0;
++  if (py_bp != NULL)
++    has_func = PyObject_HasAttrString (py_bp, stop_func);
+ 
+-  has_func = PyObject_HasAttrString (py_bp, stop_func);
+   do_cleanups (cleanup);
+ 
+   return has_func;
+@@ -782,17 +787,12 @@ gdbpy_breakpoint_has_py_cond (struct bre
+ /* Callback that is used when a breakpoint is created.  This function
+    will create a new Python breakpoint object.  */
+ static void
+-gdbpy_breakpoint_created (int num)
++gdbpy_breakpoint_created (struct breakpoint *bp)
+ {
+   breakpoint_object *newbp;
+-  struct breakpoint *bp = NULL;
+   PyGILState_STATE state;
+ 
+-  bp = get_breakpoint (num);
+-  if (! bp)
+-    return;
+-
+-  if (num < 0 && bppy_pending_object == NULL)
++  if (bp->number < 0 && bppy_pending_object == NULL)
+     return;
+ 
+   if (bp->type != bp_breakpoint 
+@@ -813,7 +813,7 @@ gdbpy_breakpoint_created (int num)
+     newbp = PyObject_New (breakpoint_object, &breakpoint_object_type);
+   if (newbp)
+     {
+-      newbp->number = num;
++      newbp->number = bp->number;
+       newbp->bp = bp;
+       newbp->bp->py_bp_object = newbp;
+       Py_INCREF (newbp);
+@@ -832,8 +832,9 @@ gdbpy_breakpoint_created (int num)
+ /* Callback that is used when a breakpoint is deleted.  This will
+    invalidate the corresponding Python object.  */
+ static void
+-gdbpy_breakpoint_deleted (int num)
++gdbpy_breakpoint_deleted (struct breakpoint *b)
+ {
++  int num = b->number;
+   PyGILState_STATE state;
+   struct breakpoint *bp = NULL;
+   breakpoint_object *bp_obj;
+@@ -861,6 +862,7 @@ gdbpy_initialize_breakpoints (void)
+ {
+   int i;
+ 
++  breakpoint_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&breakpoint_object_type) < 0)
+     return;
+ 
+@@ -1015,5 +1017,4 @@ static PyTypeObject breakpoint_object_ty
+   0,				  /* tp_dictoffset */
+   bppy_init,			  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+diff -uprN -xCVS -x.svn python/py-cmd.c ../../gdb-7-HEAD/src/gdb/python//py-cmd.c
+--- python/py-cmd.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-cmd.c	2011-09-09 16:18:19.770526330 -0400
+@@ -70,7 +70,6 @@ typedef struct cmdpy_object cmdpy_object
+ 
+ static PyTypeObject cmdpy_object_type;
+ 
+-
+ /* Constants used by this module.  */
+ static PyObject *invoke_cst;
+ static PyObject *complete_cst;
+@@ -206,6 +205,7 @@ cmdpy_function (struct cmd_list_element
+ }
+ 
+ /* Called by gdb for command completion.  */
++
+ static char **
+ cmdpy_completer (struct cmd_list_element *command, char *text, char *word)
+ {
+@@ -300,7 +300,7 @@ cmdpy_completer (struct cmd_list_element
+ /* Helper for cmdpy_init which locates the command list to use and
+    pulls out the command name.
+    
+-   TEXT is the command name list.  The final word in the list is the
++   NAME is the command name list.  The final word in the list is the
+    name of the new command.  All earlier words must be existing prefix
+    commands.
+ 
+@@ -311,19 +311,20 @@ cmdpy_completer (struct cmd_list_element
+ 
+    This function returns the xmalloc()d name of the new command.  On
+    error sets the Python error and returns NULL.  */
++
+ char *
+-gdbpy_parse_command_name (char *text,
++gdbpy_parse_command_name (const char *name,
+ 			  struct cmd_list_element ***base_list,
+ 			  struct cmd_list_element **start_list)
+ {
+   struct cmd_list_element *elt;
+-  int len = strlen (text);
++  int len = strlen (name);
+   int i, lastchar;
+-  char *prefix_text;
++  char *prefix_text, *prefix_text2;
+   char *result;
+ 
+   /* Skip trailing whitespace.  */
+-  for (i = len - 1; i >= 0 && (text[i] == ' ' || text[i] == '\t'); --i)
++  for (i = len - 1; i >= 0 && (name[i] == ' ' || name[i] == '\t'); --i)
+     ;
+   if (i < 0)
+     {
+@@ -333,17 +334,17 @@ gdbpy_parse_command_name (char *text,
+   lastchar = i;
+ 
+   /* Find first character of the final word.  */
+-  for (; i > 0 && (isalnum (text[i - 1])
+-		   || text[i - 1] == '-'
+-		   || text[i - 1] == '_');
++  for (; i > 0 && (isalnum (name[i - 1])
++		   || name[i - 1] == '-'
++		   || name[i - 1] == '_');
+        --i)
+     ;
+   result = xmalloc (lastchar - i + 2);
+-  memcpy (result, &text[i], lastchar - i + 1);
++  memcpy (result, &name[i], lastchar - i + 1);
+   result[lastchar - i + 1] = '\0';
+ 
+   /* Skip whitespace again.  */
+-  for (--i; i >= 0 && (text[i] == ' ' || text[i] == '\t'); --i)
++  for (--i; i >= 0 && (name[i] == ' ' || name[i] == '\t'); --i)
+     ;
+   if (i < 0)
+     {
+@@ -352,11 +353,11 @@ gdbpy_parse_command_name (char *text,
+     }
+ 
+   prefix_text = xmalloc (i + 2);
+-  memcpy (prefix_text, text, i + 1);
++  memcpy (prefix_text, name, i + 1);
+   prefix_text[i + 1] = '\0';
+ 
+-  text = prefix_text;
+-  elt = lookup_cmd_1 (&text, *start_list, NULL, 1);
++  prefix_text2 = prefix_text;
++  elt = lookup_cmd_1 (&prefix_text2, *start_list, NULL, 1);
+   if (!elt || elt == (struct cmd_list_element *) -1)
+     {
+       PyErr_Format (PyExc_RuntimeError, _("Could not find command prefix %s."),
+@@ -398,14 +399,13 @@ gdbpy_parse_command_name (char *text,
+    If PREFIX is True, then this command is a prefix command.
+ 
+    The documentation for the command is taken from the doc string for
+-   the python class.
+-   
+-*/
++   the python class.  */
++
+ static int
+ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
+ {
+   cmdpy_object *obj = (cmdpy_object *) self;
+-  char *name;
++  const char *name;
+   int cmdtype;
+   int completetype = -1;
+   char *docstring = NULL;
+@@ -551,11 +551,13 @@ cmdpy_init (PyObject *self, PyObject *ar
+ 
+ 
+ /* Initialize the 'commands' code.  */
++
+ void
+ gdbpy_initialize_commands (void)
+ {
+   int i;
+ 
++  cmdpy_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&cmdpy_object_type) < 0)
+     return;
+ 
+@@ -643,7 +645,6 @@ static PyTypeObject cmdpy_object_type =
+   0,				  /* tp_dictoffset */
+   cmdpy_init,			  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+ 
+ 
+@@ -659,7 +660,7 @@ PyObject *
+ gdbpy_string_to_argv (PyObject *self, PyObject *args)
+ {
+   PyObject *py_argv;
+-  char *input;
++  const char *input;
+ 
+   if (!PyArg_ParseTuple (args, "s", &input))
+     return NULL;
+diff -uprN -xCVS -x.svn python/py-events.h ../../gdb-7-HEAD/src/gdb/python//py-events.h
+--- python/py-events.h	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-events.h	2011-08-23 16:16:03.690367767 -0400
+@@ -51,7 +51,7 @@ typedef struct
+ } events_object;
+ 
+ /* Python events singleton.  */
+-events_object gdb_py_events;
++extern events_object gdb_py_events;
+ 
+ extern eventregistry_object *create_eventregistry_object (void);
+ extern int evregpy_no_listeners_p (eventregistry_object *registry);
+diff -uprN -xCVS -x.svn python/py-evtregistry.c ../../gdb-7-HEAD/src/gdb/python//py-evtregistry.c
+--- python/py-evtregistry.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-evtregistry.c	2011-08-23 16:16:03.700367767 -0400
+@@ -21,6 +21,8 @@
+ #include "command.h"
+ #include "py-events.h"
+ 
++events_object gdb_py_events;
++
+ static PyTypeObject eventregistry_object_type;
+ 
+ /* Implementation of EventRegistry.connect () -> NULL.
+diff -uprN -xCVS -x.svn python/py-frame.c ../../gdb-7-HEAD/src/gdb/python//py-frame.c
+--- python/py-frame.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-frame.c	2011-09-09 16:18:19.850526330 -0400
+@@ -467,14 +467,6 @@ frapy_read_var (PyObject *self, PyObject
+     }
+   GDB_PY_HANDLE_EXCEPTION (except);
+ 
+-  if (!val)
+-    {
+-      PyErr_Format (PyExc_ValueError,
+-		    _("Variable cannot be found for symbol '%s'."),
+-		    SYMBOL_NATURAL_NAME (var));
+-      return NULL;
+-    }
+-
+   return value_to_value_object (val);
+ }
+ 
+@@ -593,6 +585,7 @@ frapy_richcompare (PyObject *self, PyObj
+ void
+ gdbpy_initialize_frames (void)
+ {
++  frame_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&frame_object_type) < 0)
+     return;
+ 
+@@ -702,5 +695,4 @@ static PyTypeObject frame_object_type =
+   0,				  /* tp_dictoffset */
+   0,				  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+diff -uprN -xCVS -x.svn python/py-function.c ../../gdb-7-HEAD/src/gdb/python//py-function.c
+--- python/py-function.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-function.c	2011-08-23 16:16:03.710367767 -0400
+@@ -150,7 +150,8 @@ fnpy_call (struct gdbarch *gdbarch, cons
+ static int
+ fnpy_init (PyObject *self, PyObject *args, PyObject *kwds)
+ {
+-  char *name, *docstring = NULL;
++  const char *name;
++  char *docstring = NULL;
+ 
+   if (! PyArg_ParseTuple (args, "s", &name))
+     return -1;
+@@ -181,6 +182,7 @@ fnpy_init (PyObject *self, PyObject *arg
+ void
+ gdbpy_initialize_functions (void)
+ {
++  fnpy_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&fnpy_object_type) < 0)
+     return;
+ 
+@@ -230,5 +232,4 @@ static PyTypeObject fnpy_object_type =
+   0,				  /* tp_dictoffset */
+   fnpy_init,			  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+diff -uprN -xCVS -x.svn python/py-inferior.c ../../gdb-7-HEAD/src/gdb/python//py-inferior.c
+--- python/py-inferior.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-inferior.c	2011-08-23 16:16:03.710367767 -0400
+@@ -125,9 +125,10 @@ python_inferior_exit (struct inferior *i
+   do_cleanups (cleanup);
+ }
+ 
+-/* Return a borrowed reference to the Python object of type Inferior
++/* Return a reference to the Python object of type Inferior
+    representing INFERIOR.  If the object has already been created,
+-   return it,  otherwise, create it.  Return NULL on failure.  */
++   return it and increment the reference count,  otherwise, create it.
++   Return NULL on failure.  */
+ PyObject *
+ inferior_to_inferior_object (struct inferior *inferior)
+ {
+@@ -154,13 +155,14 @@ inferior_to_inferior_object (struct infe
+ 
+       do_cleanups (cleanup);
+     }
++  else
++    Py_INCREF ((PyObject *)inf_obj);
+ 
+   return (PyObject *) inf_obj;
+ }
+ 
+ /* Finds the Python Inferior object for the given PID.  Returns a
+-   borrowed reference, or NULL if PID does not match any inferior
+-   object.  */
++   reference, or NULL if PID does not match any inferior object. */
+ 
+ PyObject *
+ find_inferior_object (int pid)
+@@ -180,6 +182,7 @@ find_thread_object (ptid_t ptid)
+   int pid;
+   struct threadlist_entry *thread;
+   PyObject *inf_obj;
++  thread_object *found = NULL;
+ 
+   pid = PIDGET (ptid);
+   if (pid == 0)
+@@ -187,11 +190,21 @@ find_thread_object (ptid_t ptid)
+ 
+   inf_obj = find_inferior_object (pid);
+ 
+-  if (inf_obj)
+-    for (thread = ((inferior_object *)inf_obj)->threads; thread;
+-	 thread = thread->next)
+-      if (ptid_equal (thread->thread_obj->thread->ptid, ptid))
+-	return thread->thread_obj;
++  if (! inf_obj)
++    return NULL;
++
++  for (thread = ((inferior_object *)inf_obj)->threads; thread;
++       thread = thread->next)
++    if (ptid_equal (thread->thread_obj->thread->ptid, ptid))
++      {
++	found = thread->thread_obj;
++	break;
++      }
++
++  Py_DECREF (inf_obj);
++
++  if (found)
++    return found;
+ 
+   return NULL;
+ }
+@@ -245,7 +258,10 @@ delete_thread_object (struct thread_info
+       break;
+ 
+   if (!*entry)
+-    return;
++    {
++      Py_DECREF (inf_obj);
++      return;
++    }
+ 
+   cleanup = ensure_python_env (python_gdbarch, python_language);
+ 
+@@ -256,6 +272,7 @@ delete_thread_object (struct thread_info
+   inf_obj->nthreads--;
+ 
+   Py_DECREF (tmp->thread_obj);
++  Py_DECREF (inf_obj);
+   xfree (tmp);
+ 
+   do_cleanups (cleanup);
+@@ -321,8 +338,15 @@ build_inferior_list (struct inferior *in
+ {
+   PyObject *list = arg;
+   PyObject *inferior = inferior_to_inferior_object (inf);
++  int success = 0;
+ 
+-  if (PyList_Append (list, inferior))
++  if (! inferior)
++    return 0;
++
++  success = PyList_Append (list, inferior);
++  Py_DECREF (inferior);
++
++  if (success)
+     return 1;
+ 
+   return 0;
+@@ -428,7 +452,8 @@ infpy_read_memory (PyObject *self, PyObj
+ static PyObject *
+ infpy_write_memory (PyObject *self, PyObject *args, PyObject *kw)
+ {
+-  int buf_len, error = 0;
++  Py_ssize_t buf_len;
++  int error = 0;
+   const char *buffer;
+   CORE_ADDR addr, length;
+   PyObject *addr_obj, *length_obj = NULL;
+@@ -616,6 +641,17 @@ infpy_is_valid (PyObject *self, PyObject
+   Py_RETURN_TRUE;
+ }
+ 
++static void
++infpy_dealloc (PyObject *obj)
++{
++  inferior_object *inf_obj = (inferior_object *) obj;
++  struct inferior *inf = inf_obj->inferior;
++
++  if (! inf)
++    return;
++
++  set_inferior_data (inf, infpy_inf_data_key, NULL);
++}
+ 
+ /* Clear the INFERIOR pointer in an Inferior object and clear the
+    thread list.  */
+@@ -666,6 +702,7 @@ gdbpy_initialize_inferior (void)
+   observer_attach_target_resumed (python_on_resume);
+   observer_attach_inferior_exit (python_inferior_exit);
+ 
++  membuf_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&membuf_object_type) < 0)
+     return;
+ 
+@@ -713,7 +750,7 @@ static PyTypeObject inferior_object_type
+   "gdb.Inferior",		  /* tp_name */
+   sizeof (inferior_object),	  /* tp_basicsize */
+   0,				  /* tp_itemsize */
+-  0,				  /* tp_dealloc */
++  infpy_dealloc,		  /* tp_dealloc */
+   0,				  /* tp_print */
+   0,				  /* tp_getattr */
+   0,				  /* tp_setattr */
+@@ -803,5 +840,4 @@ static PyTypeObject membuf_object_type =
+   0,				  /* tp_dictoffset */
+   0,				  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+diff -uprN -xCVS -x.svn python/py-infthread.c ../../gdb-7-HEAD/src/gdb/python//py-infthread.c
+--- python/py-infthread.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-infthread.c	2011-08-23 16:16:03.720367767 -0400
+@@ -49,7 +49,6 @@ create_thread_object (struct thread_info
+ 
+   thread_obj->thread = tp;
+   thread_obj->inf_obj = find_inferior_object (PIDGET (tp->ptid));
+-  Py_INCREF (thread_obj->inf_obj);
+ 
+   return thread_obj;
+ }
+diff -uprN -xCVS -x.svn python/py-param.c ../../gdb-7-HEAD/src/gdb/python//py-param.c
+--- python/py-param.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-param.c	2011-09-09 16:18:19.860526330 -0400
+@@ -645,7 +645,7 @@ static int
+ parmpy_init (PyObject *self, PyObject *args, PyObject *kwds)
+ {
+   parmpy_object *obj = (parmpy_object *) self;
+-  char *name;
++  const char *name;
+   char *set_doc, *show_doc, *doc;
+   char *cmd_name;
+   int parmclass, cmdtype;
+@@ -743,6 +743,7 @@ gdbpy_initialize_parameters (void)
+ {
+   int i;
+ 
++  parmpy_object_type.tp_new = PyType_GenericNew;
+   if (PyType_Ready (&parmpy_object_type) < 0)
+     return;
+ 
+@@ -808,5 +809,4 @@ static PyTypeObject parmpy_object_type =
+   0,				  /* tp_dictoffset */
+   parmpy_init,			  /* tp_init */
+   0,				  /* tp_alloc */
+-  PyType_GenericNew		  /* tp_new */
+ };
+diff -uprN -xCVS -x.svn python/py-prettyprint.c ../../gdb-7-HEAD/src/gdb/python//py-prettyprint.c
+--- python/py-prettyprint.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-prettyprint.c	2011-08-23 16:16:03.730367768 -0400
+@@ -526,7 +526,7 @@ print_children (PyObject *printer, const
+   for (i = 0; i < options->print_max; ++i)
+     {
+       PyObject *py_v, *item = PyIter_Next (iter);
+-      char *name;
++      const char *name;
+       struct cleanup *inner_cleanup;
+ 
+       if (! item)
+diff -uprN -xCVS -x.svn python/py-symbol.c ../../gdb-7-HEAD/src/gdb/python//py-symbol.c
+--- python/py-symbol.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-symbol.c	2011-08-23 16:16:03.750367769 -0400
+@@ -66,6 +66,22 @@ sympy_str (PyObject *self)
+ }
+ 
+ static PyObject *
++sympy_get_type (PyObject *self, void *closure)
++{
++  struct symbol *symbol = NULL;
++
++  SYMPY_REQUIRE_VALID (self, symbol);
++
++  if (SYMBOL_TYPE (symbol) == NULL)
++    {
++      Py_INCREF (Py_None);
++      return Py_None;
++    }
++
++  return type_to_type_object (SYMBOL_TYPE (symbol));
++}
++
++static PyObject *
+ sympy_get_symtab (PyObject *self, void *closure)
+ {
+   struct symbol *symbol = NULL;
+@@ -412,6 +428,8 @@ gdbpy_initialize_symbols (void)
+ 
+ 
+ static PyGetSetDef symbol_object_getset[] = {
++  { "type", sympy_get_type, NULL,
++    "Type of the symbol.", NULL },
+   { "symtab", sympy_get_symtab, NULL,
+     "Symbol table in which the symbol appears.", NULL },
+   { "name", sympy_get_name, NULL,
+diff -uprN -xCVS -x.svn python/python.c ../../gdb-7-HEAD/src/gdb/python//python.c
+--- python/python.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//python.c	2011-09-09 16:18:19.940526330 -0400
+@@ -36,7 +36,7 @@
+ 
+ /* True if we should print the stack when catching a Python error,
+    false otherwise.  */
+-static int gdbpy_should_print_stack = 1;
++static int gdbpy_should_print_stack = 0;
+ 
+ #ifdef HAVE_PYTHON
+ 
+@@ -51,6 +51,8 @@ static int gdbpy_should_print_stack = 1;
+ #include "version.h"
+ #include "target.h"
+ #include "gdbthread.h"
++#include "observer.h"
++#include "interps.h"
+ 
+ static PyMethodDef GdbMethods[];
+ 
+@@ -198,6 +200,10 @@ python_command (char *arg, int from_tty)
+   struct cleanup *cleanup;
+ 
+   cleanup = ensure_python_env (get_current_arch (), current_language);
++
++  make_cleanup_restore_integer (&interpreter_async);
++  interpreter_async = 0;
++
+   while (arg && *arg && isspace (*arg))
+     ++arg;
+   if (arg && *arg)
+@@ -290,7 +296,8 @@ PyObject *
+ gdbpy_parameter (PyObject *self, PyObject *args)
+ {
+   struct cmd_list_element *alias, *prefix, *cmd;
+-  char *arg, *newarg;
++  const char *arg;
++  char *newarg;
+   int found = -1;
+   volatile struct gdb_exception except;
+ 
+@@ -340,7 +347,7 @@ gdbpy_target_wide_charset (PyObject *sel
+ static PyObject *
+ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
+ {
+-  char *arg;
++  const char *arg;
+   PyObject *from_tty_obj = NULL, *to_string_obj = NULL;
+   int from_tty, to_string;
+   volatile struct gdb_exception except;
+@@ -376,6 +383,9 @@ execute_gdb_command (PyObject *self, PyO
+       char *copy = xstrdup (arg);
+       struct cleanup *cleanup = make_cleanup (xfree, copy);
+ 
++      make_cleanup_restore_integer (&interpreter_async);
++      interpreter_async = 0;
++
+       prevent_dont_repeat ();
+       if (to_string)
+ 	result = execute_command_to_string (copy, from_tty);
+@@ -434,7 +444,7 @@ gdbpy_decode_line (PyObject *self, PyObj
+   struct symtabs_and_lines sals = { NULL, 0 }; /* Initialize to
+ 						  appease gcc.  */
+   struct symtab_and_line sal;
+-  char *arg = NULL;
++  const char *arg = NULL;
+   char *copy = NULL;
+   struct cleanup *cleanups;
+   PyObject *result = NULL;
+@@ -451,9 +461,8 @@ gdbpy_decode_line (PyObject *self, PyObj
+     {
+       if (arg)
+ 	{
+-	  arg = xstrdup (arg);
+-	  make_cleanup (xfree, arg);
+-	  copy = arg;
++	  copy = xstrdup (arg);
++	  make_cleanup (xfree, copy);
+ 	  sals = decode_line_1 (&copy, 0, 0, 0, 0);
+ 	  make_cleanup (xfree, sals.sals);
+ 	}
+@@ -531,7 +540,7 @@ gdbpy_decode_line (PyObject *self, PyObj
+ static PyObject *
+ gdbpy_parse_and_eval (PyObject *self, PyObject *args)
+ {
+-  char *expr_str;
++  const char *expr_str;
+   struct value *result = NULL;
+   volatile struct gdb_exception except;
+ 
+@@ -540,7 +549,11 @@ gdbpy_parse_and_eval (PyObject *self, Py
+ 
+   TRY_CATCH (except, RETURN_MASK_ALL)
+     {
+-      result = parse_and_eval (expr_str);
++      char *copy = xstrdup (expr_str);
++      struct cleanup *cleanup = make_cleanup (xfree, copy);
++
++      result = parse_and_eval (copy);
++      do_cleanups (cleanup);
+     }
+   GDB_PY_HANDLE_EXCEPTION (except);
+ 
+@@ -678,6 +691,81 @@ gdbpy_initialize_events (void)
+     }
+ }
+ 
++
++
++static void
++before_prompt_hook (const char *current_gdb_prompt)
++{
++  struct cleanup *cleanup;
++  char *prompt = NULL;
++
++  cleanup = ensure_python_env (get_current_arch (), current_language);
++
++  if (PyObject_HasAttrString (gdb_module, "prompt_hook"))
++    {
++      PyObject *hook;
++
++      hook = PyObject_GetAttrString (gdb_module, "prompt_hook");
++      if (hook == NULL)
++	goto fail;
++
++      if (PyCallable_Check (hook))
++	{
++	  PyObject *result;
++	  PyObject *current_prompt;
++
++	  current_prompt = PyString_FromString (current_gdb_prompt);
++	  if (current_prompt == NULL)
++	    goto fail;
++
++	  result = PyObject_CallFunctionObjArgs (hook, current_prompt, NULL);
++
++	  Py_DECREF (current_prompt);
++
++	  if (result == NULL)
++	    goto fail;
++
++	  make_cleanup_py_decref (result);
++
++	  /* Return type should be None, or a String.  If it is None,
++	     fall through, we will not set a prompt.  If it is a
++	     string, set  PROMPT.  Anything else, set an exception.  */
++	  if (result != Py_None && ! PyString_Check (result))
++	    {
++	      PyErr_Format (PyExc_RuntimeError,
++			    _("Return from prompt_hook must " \
++			      "be either a Python string, or None"));
++	      goto fail;
++	    }
++
++	  if (result != Py_None)
++	    {
++	      prompt = python_string_to_host_string (result);
++
++	      if (prompt == NULL)
++		goto fail;
++	      else
++		make_cleanup (xfree, prompt);
++	    }
++	}
++    }
++
++  /* If a prompt has been set, PROMPT will not be NULL.  If it is
++     NULL, do not set the prompt.  */
++  if (prompt != NULL)
++    set_prompt (prompt);
++
++  do_cleanups (cleanup);
++  return;
++
++ fail:
++  gdbpy_print_stack ();
++  do_cleanups (cleanup);
++  return;
++}
++
++
++
+ /* Printing.  */
+ 
+ /* A python function to write a single string using gdb's filtered
+@@ -687,7 +775,7 @@ gdbpy_initialize_events (void)
+ static PyObject *
+ gdbpy_write (PyObject *self, PyObject *args, PyObject *kw)
+ {
+-  char *arg;
++  const char *arg;
+   static char *keywords[] = {"text", "stream", NULL };
+   int stream_type = 0;
+   
+@@ -932,23 +1020,46 @@ gdbpy_breakpoint_has_py_cond (struct bre
+ 
+ /* Lists for 'maint set python' commands.  */
+ 
+-struct cmd_list_element *set_python_list;
+-struct cmd_list_element *show_python_list;
++static struct cmd_list_element *maint_set_python_list;
++static struct cmd_list_element *maint_show_python_list;
++
++/* Lists for 'set python' commands.  */
++
++static struct cmd_list_element *user_set_python_list;
++static struct cmd_list_element *user_show_python_list;
+ 
+ /* Function for use by 'maint set python' prefix command.  */
+ 
+ static void
+-set_python (char *args, int from_tty)
++maint_set_python (char *args, int from_tty)
+ {
+-  help_list (set_python_list, "maintenance set python ", -1, gdb_stdout);
++  help_list (maint_set_python_list, "maintenance set python ",
++	     class_deprecated, gdb_stdout);
+ }
+ 
+ /* Function for use by 'maint show python' prefix command.  */
+ 
+ static void
+-show_python (char *args, int from_tty)
++maint_show_python (char *args, int from_tty)
+ {
+-  cmd_show_list (show_python_list, from_tty, "");
++  cmd_show_list (maint_show_python_list, from_tty, "");
++}
++
++/* Function for use by 'set python' prefix command.  */
++
++static void
++user_set_python (char *args, int from_tty)
++{
++  help_list (user_set_python_list, "set python ", all_commands,
++	     gdb_stdout);
++}
++
++/* Function for use by 'show python' prefix command.  */
++
++static void
++user_show_python (char *args, int from_tty)
++{
++  cmd_show_list (user_show_python_list, from_tty, "");
+ }
+ 
+ /* Initialize the Python code.  */
+@@ -959,6 +1070,9 @@ extern initialize_file_ftype _initialize
+ void
+ _initialize_python (void)
+ {
++  char *cmd_name;
++  struct cmd_list_element *cmd;
++
+   add_com ("python", class_obscure, python_command,
+ #ifdef HAVE_PYTHON
+ 	   _("\
+@@ -980,13 +1094,13 @@ This command is only a placeholder.")
+ #endif /* HAVE_PYTHON */
+ 	   );
+ 
+-  add_prefix_cmd ("python", no_class, show_python,
++  add_prefix_cmd ("python", no_class, maint_show_python,
+ 		  _("Prefix command for python maintenance settings."),
+-		  &show_python_list, "maintenance show python ", 0,
++		  &maint_show_python_list, "maintenance show python ", 0,
+ 		  &maintenance_show_cmdlist);
+-  add_prefix_cmd ("python", no_class, set_python,
++  add_prefix_cmd ("python", no_class, maint_set_python,
+ 		  _("Prefix command for python maintenance settings."),
+-		  &set_python_list, "maintenance set python ", 0,
++		  &maint_set_python_list, "maintenance set python ", 0,
+ 		  &maintenance_set_cmdlist);
+ 
+   add_setshow_boolean_cmd ("print-stack", class_maintenance,
+@@ -995,8 +1109,37 @@ Enable or disable printing of Python sta
+ Show whether Python stack will be printed on error."), _("\
+ Enables or disables printing of Python stack traces."),
+ 			   NULL, NULL,
+-			   &set_python_list,
+-			   &show_python_list);
++			   &maint_set_python_list,
++			   &maint_show_python_list);
++
++  /* Deprecate maint set/show python print-stack in favour of
++     non-maintenance alternatives.  */
++  cmd_name = "print-stack";
++  cmd = lookup_cmd (&cmd_name, maint_set_python_list, "", -1, 0);
++  deprecate_cmd (cmd, "set python print-stack");
++  cmd_name = "print-stack"; /* Reset name.  */
++  cmd = lookup_cmd (&cmd_name, maint_show_python_list, "", -1, 0);
++  deprecate_cmd (cmd, "show python print-stack");
++
++  /* Add set/show python print-stack.  */
++  add_prefix_cmd ("python", no_class, user_show_python,
++		  _("Prefix command for python preference settings."),
++		  &user_show_python_list, "show python ", 0,
++		  &showlist);
++
++  add_prefix_cmd ("python", no_class, user_set_python,
++		  _("Prefix command for python preference settings."),
++		  &user_set_python_list, "set python ", 0,
++		  &setlist);
++
++  add_setshow_boolean_cmd ("print-stack", no_class,
++			   &gdbpy_should_print_stack, _("\
++Enable or disable printing of Python stack dump on error."), _("\
++Show whether Python stack will be printed on error."), _("\
++Enables or disables printing of Python stack traces."),
++			   NULL, NULL,
++			   &user_set_python_list,
++			   &user_show_python_list);
+ 
+ #ifdef HAVE_PYTHON
+ #ifdef WITH_PYTHON_PATH
+@@ -1075,6 +1218,8 @@ Enables or disables printing of Python s
+   gdbpy_initialize_exited_event ();
+   gdbpy_initialize_thread_event ();
+ 
++  observer_attach_before_prompt (before_prompt_hook);
++
+   PyRun_SimpleString ("import gdb");
+   PyRun_SimpleString ("gdb.pretty_printers = []");
+ 
+@@ -1165,18 +1310,20 @@ def GdbSetPythonDirectory (dir):\n\
+   sys.path.insert (0, gdb.PYTHONDIR)\n\
+ \n\
+   # Tell python where to find submodules of gdb.\n\
+-  gdb.__path__ = [gdb.PYTHONDIR + '/gdb']\n\
++  gdb.__path__ = [os.path.join (gdb.PYTHONDIR, 'gdb')]\n\
+ \n\
+   # The gdb module is implemented in C rather than in Python.  As a result,\n\
+   # the associated __init.py__ script is not not executed by default when\n\
+   # the gdb module gets imported.  Execute that script manually if it\n\
+   # exists.\n\
+-  ipy = gdb.PYTHONDIR + '/gdb/__init__.py'\n\
++  ipy = os.path.join (gdb.PYTHONDIR, 'gdb', '__init__.py')\n\
+   if os.path.exists (ipy):\n\
+     execfile (ipy)\n\
+ \n\
+ # Install the default gdb.PYTHONDIR.\n\
+ GdbSetPythonDirectory (gdb.PYTHONDIR)\n\
++# Default prompt hook does nothing.\n\
++prompt_hook = None\n\
+ ");
+ 
+   do_cleanups (cleanup);
+diff -uprN -xCVS -x.svn python/python-internal.h ../../gdb-7-HEAD/src/gdb/python//python-internal.h
+--- python/python-internal.h	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//python-internal.h	2011-09-09 16:18:19.860526330 -0400
+@@ -41,6 +41,9 @@
+    around technique as above.  */
+ #undef _FILE_OFFSET_BITS
+ 
++/* Request clean size types from Python.  */
++#define PY_SSIZE_T_CLEAN
++
+ /* Include the Python header files using angle brackets rather than
+    double quotes.  On case-insensitive filesystems, this prevents us
+    from including our python/python.h header file.  */
+@@ -106,6 +109,7 @@ struct value;
+ struct language_defn;
+ struct program_space;
+ struct bpstats;
++struct inferior;
+ 
+ extern PyObject *gdb_module;
+ extern PyTypeObject value_object_type;
+@@ -150,7 +154,7 @@ PyObject *gdbpy_selected_thread (PyObjec
+ PyObject *gdbpy_string_to_argv (PyObject *self, PyObject *args);
+ PyObject *gdbpy_parameter (PyObject *self, PyObject *args);
+ PyObject *gdbpy_parameter_value (enum var_types type, void *var);
+-char *gdbpy_parse_command_name (char *text,
++char *gdbpy_parse_command_name (const char *name,
+ 				struct cmd_list_element ***base_list,
+ 				struct cmd_list_element **start_list);
+ 
+diff -uprN -xCVS -x.svn python/py-type.c ../../gdb-7-HEAD/src/gdb/python//py-type.c
+--- python/py-type.c	2011-08-30 13:31:25.259094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-type.c	2011-08-23 16:16:03.760367769 -0400
+@@ -497,7 +497,7 @@ typy_get_sizeof (PyObject *self, void *c
+ }
+ 
+ static struct type *
+-typy_lookup_typename (char *type_name, struct block *block)
++typy_lookup_typename (const char *type_name, struct block *block)
+ {
+   struct type *type = NULL;
+   volatile struct gdb_exception except;
+@@ -577,8 +577,10 @@ typy_legacy_template_argument (struct ty
+ {
+   int i;
+   struct demangle_component *demangled;
++  struct demangle_parse_info *info;
+   const char *err;
+   struct type *argtype;
++  struct cleanup *cleanup;
+ 
+   if (TYPE_NAME (type) == NULL)
+     {
+@@ -587,12 +589,14 @@ typy_legacy_template_argument (struct ty
+     }
+ 
+   /* Note -- this is not thread-safe.  */
+-  demangled = cp_demangled_name_to_comp (TYPE_NAME (type), &err);
+-  if (! demangled)
++  info = cp_demangled_name_to_comp (TYPE_NAME (type), &err);
++  if (! info)
+     {
+       PyErr_SetString (PyExc_RuntimeError, err);
+       return NULL;
+     }
++  demangled = info->tree;
++  cleanup = make_cleanup_cp_demangled_name_parse_free (info);
+ 
+   /* Strip off component names.  */
+   while (demangled->type == DEMANGLE_COMPONENT_QUAL_NAME
+@@ -601,6 +605,7 @@ typy_legacy_template_argument (struct ty
+ 
+   if (demangled->type != DEMANGLE_COMPONENT_TEMPLATE)
+     {
++      do_cleanups (cleanup);
+       PyErr_SetString (PyExc_RuntimeError, _("Type is not a template."));
+       return NULL;
+     }
+@@ -613,12 +618,14 @@ typy_legacy_template_argument (struct ty
+ 
+   if (! demangled)
+     {
++      do_cleanups (cleanup);
+       PyErr_Format (PyExc_RuntimeError, _("No argument %d in template."),
+ 		    argno);
+       return NULL;
+     }
+ 
+   argtype = typy_lookup_type (demangled->u.s_binary.left, block);
++  do_cleanups (cleanup);
+   if (! argtype)
+     return NULL;
+ 
+@@ -1020,7 +1027,7 @@ PyObject *
+ gdbpy_lookup_type (PyObject *self, PyObject *args, PyObject *kw)
+ {
+   static char *keywords[] = { "name", "block", NULL };
+-  char *type_name = NULL;
++  const char *type_name = NULL;
+   struct type *type = NULL;
+   PyObject *block_obj = NULL;
+   struct block *block = NULL;
+diff -uprN -xCVS -x.svn python/py-value.c ../../gdb-7-HEAD/src/gdb/python//py-value.c
+--- python/py-value.c	2011-08-30 13:31:25.269094870 -0400
++++ ../../gdb-7-HEAD/src/gdb/python//py-value.c	2011-08-23 16:16:03.760367769 -0400
+@@ -553,8 +553,6 @@ static PyObject *
+ valpy_str (PyObject *self)
+ {
+   char *s = NULL;
+-  struct ui_file *stb;
+-  struct cleanup *old_chain;
+   PyObject *result;
+   struct value_print_options opts;
+   volatile struct gdb_exception except;
+@@ -562,19 +560,19 @@ valpy_str (PyObject *self)
+   get_user_print_options (&opts);
+   opts.deref_ref = 0;
+ 
+-  stb = mem_fileopen ();
+-  old_chain = make_cleanup_ui_file_delete (stb);
+-
+   TRY_CATCH (except, RETURN_MASK_ALL)
+     {
++      struct ui_file *stb = mem_fileopen ();
++      struct cleanup *old_chain = make_cleanup_ui_file_delete (stb);
++
+       common_val_print (((value_object *) self)->value, stb, 0,
+ 			&opts, python_language);
+       s = ui_file_xstrdup (stb, NULL);
++
++      do_cleanups (old_chain);
+     }
+   GDB_PY_HANDLE_EXCEPTION (except);
+ 
+-  do_cleanups (old_chain);
+-
+   result = PyUnicode_Decode (s, strlen (s), host_charset (), NULL);
+   xfree (s);
+ 
