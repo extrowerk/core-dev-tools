@@ -1302,4 +1302,6 @@ void fixup_section (struct general_symbol_info *ginfo,
 
 struct objfile *lookup_objfile_from_block (const struct block *block);
 
+extern int basenames_may_differ;
+
 #endif /* !defined(SYMTAB_H) */
