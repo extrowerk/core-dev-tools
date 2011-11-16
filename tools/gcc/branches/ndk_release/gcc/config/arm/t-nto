@@ -19,7 +19,9 @@ LIB1ASMFUNCS += _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_nto _bb_init_func \
 
 MULTILIB_OPTIONS = fpic 
 MULTILIB_DIRNAMES = pic 
-MULTILIB_MATCHES = fpic=shared=pie
+MULTILIB_MATCHES += fpic=fPIC
+MULTILIB_MATCHES += fpic=shared
+MULTILIB_MATCHES += fpic=pie
 
 EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
 
