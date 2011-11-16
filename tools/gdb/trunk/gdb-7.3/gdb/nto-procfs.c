@@ -1242,6 +1242,49 @@ breakup_args (char *scratch, char **argv)
   *argv = NULL;
 }
 
+/* Determine if this process is run with ASLR. If so, return 1.
+   Return 0 otherwise.  */
+static int
+i_am_aslr(void)
+{
+  static int aslr = -1;
+
+  if (aslr < 0)
+    {
+#ifdef POSIX_SPAWN_ASLR_INVERT
+      int self;
+
+      if ((self = open("/proc/self/as", O_RDWR)) == -1)
+	{
+	  aslr = 0; /* Can not determine */
+	}
+      else
+	{
+	  procfs_info procinfo;
+	  const int res = devctl(self, DCMD_PROC_INFO, &procinfo,
+				 sizeof procinfo, 0);
+
+	  close(self);
+
+	  if (res == EOK)
+	    {
+	      if (procinfo.flags & _NTO_PF_ASLR)
+		aslr = 1;
+	      else
+		aslr = 0;
+	    }
+	  else
+	    {
+	      aslr = 0;
+	    }
+	}
+#else
+      aslr = 0;
+#endif
+    }
+  return aslr;
+}
+
 static void
 procfs_create_inferior (struct target_ops *ops, char *exec_file,
 			char *allargs, char **env, int from_tty)
@@ -1330,6 +1373,12 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
     }
   inherit.flags |= SPAWN_SETGROUP | SPAWN_HOLD;
   inherit.pgroup = SPAWN_NEWPGROUP;
+  if (i_am_aslr())
+    {
+#ifdef POSIX_SPAWN_ASLR_INVERT
+      inherit.flags |= SPAWN_ASLR_INVERT;
+#endif
+    }
   pid = spawnp (argv[0], 3, fds, &inherit, argv,
 		ND_NODE_CMP (nto_procfs_node, ND_LOCAL_NODE) == 0 ? env : 0);
   xfree (args);
