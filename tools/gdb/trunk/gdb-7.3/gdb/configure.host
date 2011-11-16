@@ -73,6 +73,7 @@ alpha*-*-netbsd* | alpha*-*-knetbsd*-gnu)
 alpha*-*-openbsd*)	gdb_host=nbsd ;;
 
 arm*-*-linux*)		gdb_host=linux ;;
+arm-*-nto*)			gdb_host=nto ;;
 arm*-*-netbsdelf* | arm*-*-knetbsd*-gnu)
 			gdb_host=nbsdelf ;;
 arm*-*-netbsd*)		gdb_host=nbsdaout ;;
