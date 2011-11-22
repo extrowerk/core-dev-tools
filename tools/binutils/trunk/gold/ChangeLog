@@ -1,3 +1,93 @@
+2011-11-11  Doug Kwan  <dougkwan@google.com>
+
+	* arm.cc (Target_arm::do_make_elf_object): Allow executable also
+	if --just-symbols is given.
+
+2011-11-10  Doug Kwan  <dougkwan@google.com>
+
+	PR gold/13362
+	* arm.cc (Target_arm::Relocate::relocate_tls): Do unaligned accesses
+	when processing data relocs.
+	* reloc.h (Relocate_functions::rel_unaligned): New method.
+	(Relocate_functions::pcrel_unaligned): Ditto.
+	(Relocate_functions::rel32_unaligned): Ditto.
+	(Relocate_functions::pcrel32_unaligned): Ditto.
+
+2011-11-15  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	Apply mainline patches.
+	2011-11-02  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+	* arm.cc (Target_arm::may_use_v5t_interworking): Check whether
+	we are working around the ARM1176 Erratum.
+	* options.h (General_options::fix_arm1176): Add option.
+	* testsuite/Makefile.am: Add testcases, and keep current ones
+	working.
+	* testsuite/Makefile.in: Regenerate.
+	* testsuite/arm_fix_1176.s: New file.
+	* testsuite/arm_fix_1176.sh: Likewise.
+	2011-11-02  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+	* arm.cc (Target_arm::Target_arm): Remove initialisation of
+	may_use_blx_.
+	(Target_arm::may_use_blx): Remove method.
+	(Target_arm::set_may_use_blx): Likewise.
+	(Target_arm::may_use_v4t_interworking): New method.
+	(Target_arm::may_use_v5t_interworking): Likewise.
+	(Target_arm::may_use_blx_): Remove member variable.
+	(Arm_relocate_functions::arm_branch_common): Check for v5T
+	interworking.
+	(Arm_relocate_functions::thumb_branch_common): Likewise.
+	(Reloc_stub::stub_type_for_reloc): Likewise.
+	(Target_arm::do_finalize_sections): Correct interworking checks.
+	* testsuite/Makefile.am: Add new tests.
+	* testsuite/Makefile.in: Regenerate.
+	* testsuite/arm_farcall_arm_arm.s: New test.
+	* testsuite/arm_farcall_arm_arm.sh: Likewise.
+	* testsuite/arm_farcall_arm_thumb.s: Likewise.
+	* testsuite/arm_farcall_arm_thumb.sh: Likewise.
+	* testsuite/arm_farcall_thumb_arm.s: Likewise.
+	* testsuite/arm_farcall_thumb_arm.sh: Likewise.
+	* testsuite/arm_farcall_thumb_thumb.s: Likewise.
+	* testsuite/arm_farcall_thumb_thumb.sh: Likewise.
+
+2011-10-25  Alan Modra  <amodra@gmail.com>
+
+	Apply mainline patches.
+	2011-09-26  Cary Coutant  <ccoutant@google.com>
+	gcc PR lto/47247
+	* plugin.cc (get_symbols_v2): New function.
+	(Plugin::load): Add LDPT_GET_SYMBOLS_V2.
+	(is_referenced_from_outside): New function.
+	(Pluginobj::get_symbol_resolution_info): Add version parameter, return
+	LDPR_PREVAILING_DEF_IRONLY_EXP when using new version.
+	(get_symbols): Pass version parameter.
+	(get_symbols_v2): New function.
+	* plugin.h (Pluginobj::get_symbol_resolution_info): Add version
+	parameter.
+	* testsuite/plugin_test.c (get_symbols_v2): New static variable.
+	(onload): Add LDPT_GET_SYMBOLS_V2.
+	(all_symbols_read_hook): Use get_symbols_v2; check for
+	LDPR_PREVAILING_DEF_IRONLY_EXP.
+	* testsuite/plugin_test_3.sh: Update expected results.
+
+2011-10-18  David S. Miller  <davem@davemloft.net>
+
+	PR binutils/13301
+	* sparc.cc (Target_sparc::Relocate::reloc_adjust_addr_): New
+	member to track relocation locations that have moved during TLS
+	reloc optimizations.
+	(Target_sparc::Relocate::Relocate): Initialize to NULL.
+	(Target_sparc::Relocate::relocate): Adjust view down by 4
+	bytes if it matches reloc_adjust_addr_.
+	(Target_sparc::Relocate::relocate_tls): Always move the
+	__tls_get_addr call delay slot instruction forward 4 bytes when
+	performing relaxation.
+
+2011-09-27  Viktor Kutuzov  <vkutuzov@accesssoftek.com>
+	    Ian Lance Taylor  <iant@google.com>
+
+	* symtab.cc (Symbol_table::define_special_symbol): Always
+	canonicalize version string.
+
 2011-09-19  Sriraman Tallam  <tmsriram@google.com>
 
 	* plugin.h (should_defer_layout): Modify to check for any_claimed_.

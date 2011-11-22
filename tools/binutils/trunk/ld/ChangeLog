@@ -1,3 +1,56 @@
+2011-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2011-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.tgt (x86_64-*-solaris2*): Use $targ_extra_emuls for
+	targ_extra_libpath.
+
+2011-10-25  Alan Modra  <amodra@gmail.com>
+
+	Apply mainline patches
+	2011-10-20  Alan Modra  <amodra@gmail.com>
+	PR ld/13287
+	* plugin.c (plugin_should_reload): New function.
+	* plugin.h (plugin_should_reload): Declare.
+	* ldlang.c (open_input_bfds): Use above function.
+
+	2011-10-19  Alan Modra  <amodra@gmail.com>
+	PR ld/13254
+	* emultempl/elf32.em (gld${EMULATION_NAME}_handle_option): Add
+	-z text, -z notext, -z textoff options for all targets having
+	shared lib support.
+
+	2011-10-15  Alan Modra  <amodra@gmail.com>
+	* emultempl/ppc64elf.em (gld${EMULATION_NAME}_finish): Remove toc check.
+
+	2011-10-10  Alan Modra  <amodra@gmail.com>
+	* ldmain.c (main): Move code twiddling various config and link_info
+	bits to..
+	* lexsup.c (parse_args): ..here.  Move plugin_load_plugins call
+	into main.
+	* plugin.c (set_tv_header): Test link_info.executable, not
+	link_info.shared.
+	(is_visible_from_outside): Likewise.  Delete redundant
+	is_ir_dummy_bfd check and "section" parameter.
+
+	2011-10-10  Alan Modra  <amodra@gmail.com>
+	* emultempl/ppc64elf.em (ppc_add_stub_section): Align to 32 bytes.
+
+	2011-10-06  Alan Modra  <amodra@gmail.com>
+	PR ld/13229
+	* plugin.c (tv_header_tags): Add LDPT_GET_SYMBOLS_V2.
+	(set_tv_header): Handle it.  Adjust LDPT_GET_SYMBOLS.  Return void.
+	(get_symbols): Add def_ironly_exp param.  Return that value for
+	syms exported from shared libs.
+	(get_symbols_v1, get_symbols_v2): New wrapper functions.
+	* testplug.c: Update for above changes.
+
+2011-10-13  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* pe-dll.c (generate_reloc): Don't emit a base reloc for an
+	underlying BFD reloc that will be discarded in eh_frame data.
+
 2011-09-22  Tristan Gingold  <gingold@adacore.com>
 
 	* NEWS: Add marker for 2.22.
