@@ -1,3 +1,74 @@
+2011-11-10  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	Apply mainline patches.
+	2011-11-09  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+	* ld-arm/jump-reloc-veneers.s: Update for changes to assembler output.
+
+2011-11-08  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/powerpc.exp: Expect ld warnings for tocopt test.
+	* ld-powerpc/tocopt.out: New file.
+
+2011-10-25  Alan Modra  <amodra@gmail.com>
+
+	Apply mainline patches
+	2011-10-10  Alan Modra  <amodra@gmail.com>
+	* ld-powerpc/relbrlt.d: Update for stub alignment change.
+	* ld-powerpc/tlsexe.g: Likewise.
+	* ld-powerpc/tlsexe.r: Likewise.
+	* ld-powerpc/tlsexetoc.g: Likewise.
+	* ld-powerpc/tlsexetoc.r: Likewise.
+	* ld-powerpc/tlsso.g: Likewise.
+	* ld-powerpc/tlsso.r: Likewise.
+
+	2011-10-08  H.J. Lu  <hongjiu.lu@intel.com>
+	PR ld/13250
+	* ld-elf/shared.exp (build_tests): Add tests for PR ld/13250.
+	(run_tests): Likewise.
+	* ld-elf/pr13250-1.c: New.
+	* ld-elf/pr13250-2.c: Likewise.
+	* ld-elf/pr13250-3.c: Likewise.
+
+	2011-10-06  Alan Modra  <amodra@gmail.com>
+	* ld-plugin/plugin-1.d, * ld-plugin/plugin-2.d, * ld-plugin/plugin-3.d,
+	* ld-plugin/plugin-4.d, * ld-plugin/plugin-5.d, * ld-plugin/plugin-6.d,
+	* ld-plugin/plugin-7.d, * ld-plugin/plugin-8.d, * ld-plugin/plugin-9.d,
+	* ld-plugin/plugin-10.d, * ld-plugin/plugin-11.d: Update.
+
+	2011-09-30  Alan Modra  <amodra@gmail.com>
+	* ld-powerpc/tocopt.d: Update.
+	* ld-powerpc/tocopt5.d, * ld-powerpc/tocopt5.s: New test.
+	* ld-powerpc/powerpc.exp: Run new test.
+
+2011-10-18  David S. Miller  <davem@davemloft.net>
+
+	* ld-sparc/tlssunbin32.dd: Update for TLS call relaxation fix
+	for PR 13301.
+	* ld-sparc/tlssunbin64.dd: Likewise.
+	* ld-sparc/tlssunpic32.dd: Likewise.
+	* ld-sparc/tlssunpic64.dd: Likewise.
+
+2011-10-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/13177
+	* ld-elf/pr13177.d: Removed.
+	* ld-elf/pr13177.s: Likewise.
+
+2011-10-14  Hans-Peter Nilsson  <hp@axis.com>
+
+	* ld-cris/pic-gc-72.d: Adjust for dropping unused undefined
+	dynamic symbol "dsofn".
+
+2011-09-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/13195
+	* ld-elf/elf.exp: Add a C link testcase for PR ld/13195.
+
+	* ld-elf/pr13195.c: New.
+	* ld-elf/pr13195.d: Likewise.
+	* ld-elf/pr13195.s: Likewise.
+	* ld-elf/pr13195.t: Likewise.
+
 2011-09-16  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* ld-elf/pr12975.d: Only run for *-*-linux* and *-*-gnu*

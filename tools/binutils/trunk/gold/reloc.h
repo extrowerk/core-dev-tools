@@ -247,6 +247,8 @@ class Relocatable_relocs
     RELOC_ADJUST_FOR_SECTION_2,
     RELOC_ADJUST_FOR_SECTION_4,
     RELOC_ADJUST_FOR_SECTION_8,
+    // Like RELOC_ADJUST_FOR_SECTION_4 but for unaligned relocs.
+    RELOC_ADJUST_FOR_SECTION_4_UNALIGNED,
     // Discard the input reloc--process it completely when relocating
     // the data section contents.
     RELOC_DISCARD,
@@ -331,6 +333,18 @@ private:
     elfcpp::Swap<valsize, big_endian>::writeval(wv, x + value);
   }
 
+  // Like the above but for relocs at unaligned addresses.
+  template<int valsize>
+  static inline void
+  rel_unaligned(unsigned char* view,
+	        typename elfcpp::Swap<valsize, big_endian>::Valtype value)
+  {
+    typedef typename elfcpp::Swap_unaligned<valsize, big_endian>::Valtype
+	Valtype;
+    Valtype x = elfcpp::Swap_unaligned<valsize, big_endian>::readval(view);
+    elfcpp::Swap_unaligned<valsize, big_endian>::writeval(view, x + value);
+  }
+
   // Do a simple relocation using a Symbol_value with the addend in
   // the section contents.  VALSIZE is the size of the value to
   // relocate.
@@ -345,6 +359,20 @@ private:
     Valtype x = elfcpp::Swap<valsize, big_endian>::readval(wv);
     x = psymval->value(object, x);
     elfcpp::Swap<valsize, big_endian>::writeval(wv, x);
+  }
+
+  // Like the above but for relocs at unaligned addresses.
+  template<int valsize>
+  static inline void
+  rel_unaligned(unsigned char* view,
+                const Sized_relobj_file<size, big_endian>* object,
+                const Symbol_value<size>* psymval)
+  {
+    typedef typename elfcpp::Swap_unaligned<valsize, big_endian>::Valtype
+        Valtype;
+    Valtype x = elfcpp::Swap_unaligned<valsize, big_endian>::readval(view);
+    x = psymval->value(object, x);
+    elfcpp::Swap_unaligned<valsize, big_endian>::writeval(view, x);
   }
 
   // Do a simple relocation with the addend in the relocation.
@@ -387,6 +415,19 @@ private:
     Valtype* wv = reinterpret_cast<Valtype*>(view);
     Valtype x = elfcpp::Swap<valsize, big_endian>::readval(wv);
     elfcpp::Swap<valsize, big_endian>::writeval(wv, x + value - address);
+  }
+
+  // Like the above but for relocs at unaligned addresses.
+  template<int valsize>
+  static inline void
+  pcrel_unaligned(unsigned char* view,
+		  typename elfcpp::Swap<valsize, big_endian>::Valtype value,
+		  typename elfcpp::Elf_types<size>::Elf_Addr address)
+  {
+    typedef typename elfcpp::Swap<valsize, big_endian>::Valtype Valtype;
+    Valtype x = elfcpp::Swap_unaligned<valsize, big_endian>::readval(view);
+    elfcpp::Swap_unaligned<valsize, big_endian>::writeval(view,
+							  x + value - address);
   }
 
   // Do a simple PC relative relocation with a Symbol_value with the
@@ -552,11 +593,23 @@ public:
   rel32(unsigned char* view, elfcpp::Elf_Word value)
   { This::template rel<32>(view, value); }
 
+  // Like above but for relocs at unaligned addresses.
+  static inline void
+  rel32_unaligned(unsigned char* view, elfcpp::Elf_Word value)
+  { This::template rel_unaligned<32>(view, value); }
+
   static inline void
   rel32(unsigned char* view,
 	const Sized_relobj_file<size, big_endian>* object,
 	const Symbol_value<size>* psymval)
   { This::template rel<32>(view, object, psymval); }
+
+  // Like above but for relocs at unaligned addresses.
+  static inline void
+  rel32_unaligned(unsigned char* view,
+	          const Sized_relobj_file<size, big_endian>* object,
+	          const Symbol_value<size>* psymval)
+  { This::template rel_unaligned<32>(view, object, psymval); }
 
   // Do an 32-bit RELA relocation with the addend in the relocation.
   static inline void
@@ -576,6 +629,12 @@ public:
   pcrel32(unsigned char* view, elfcpp::Elf_Word value,
 	  typename elfcpp::Elf_types<size>::Elf_Addr address)
   { This::template pcrel<32>(view, value, address); }
+
+  // Unaligned version of the above.
+  static inline void
+  pcrel32_unaligned(unsigned char* view, elfcpp::Elf_Word value,
+		    typename elfcpp::Elf_types<size>::Elf_Addr address)
+  { This::template pcrel_unaligned<32>(view, value, address); }
 
   static inline void
   pcrel32(unsigned char* view,
