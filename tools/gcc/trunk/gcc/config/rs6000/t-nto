@@ -36,5 +36,27 @@ INSTALL_LIBGCC = install-multilib
 
 LIB2FUNCS_EXTRA=tramp.S
 
+LIB2FUNCS_STATIC_EXTRA = crtsavfpr.S crtresfpr.S \
+  crtsavgpr.S crtresgpr.S \
+  crtresxfpr.S crtresxgpr.S \
+
 tramp.S: $(srcdir)/config/rs6000/tramp.asm
 	cat $(srcdir)/config/rs6000/tramp.asm > tramp.S
+
+crtsavfpr.S: $(srcdir)/config/rs6000/crtsavfpr.asm
+	cat $(srcdir)/config/rs6000/crtsavfpr.asm >crtsavfpr.S
+
+crtresfpr.S: $(srcdir)/config/rs6000/crtresfpr.asm
+	cat $(srcdir)/config/rs6000/crtresfpr.asm >crtresfpr.S
+
+crtsavgpr.S: $(srcdir)/config/rs6000/crtsavgpr.asm
+	cat $(srcdir)/config/rs6000/crtsavgpr.asm >crtsavgpr.S
+
+crtresgpr.S: $(srcdir)/config/rs6000/crtresgpr.asm
+	cat $(srcdir)/config/rs6000/crtresgpr.asm >crtresgpr.S
+
+crtresxfpr.S: $(srcdir)/config/rs6000/crtresxfpr.asm
+	cat $(srcdir)/config/rs6000/crtresxfpr.asm >crtresxfpr.S
+
+crtresxgpr.S: $(srcdir)/config/rs6000/crtresxgpr.asm
+	cat $(srcdir)/config/rs6000/crtresxgpr.asm >crtresxgpr.S
