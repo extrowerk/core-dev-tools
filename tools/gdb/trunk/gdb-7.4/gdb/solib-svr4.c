@@ -47,6 +47,11 @@
 #include "auxv.h"
 #include "exceptions.h"
 
+#ifdef TODO__QNXTARGET__
+/* Allow using core_bfd if exec_bfd is not present.  */
+#define exec_bfd ((exec_bfd != NULL) ? exec_bfd : core_bfd)
+#endif
+
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);
 static void svr4_relocate_main_executable (void);
@@ -130,6 +135,12 @@ svr4_same_1 (const char *gdb_so_name, const char *inferior_so_name)
   if (strcmp (gdb_so_name, "/usr/lib/sparcv9/ld.so.1") == 0
       && strcmp (inferior_so_name, "/lib/sparcv9/ld.so.1") == 0)
     return 1;
+
+#ifdef __QNXTARGET__
+  if (strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0
+      && strcmp (inferior_so_name, "libc.so.3") == 0)
+    return 1;
+#endif /* __QNXTARGET__ */
 
   return 0;
 }
@@ -387,6 +398,10 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
   else
     return 0;
 
+  pt_phdr = (CORE_ADDR)-1; /* Address of the first entry. If not PIE,
+			      this will be zero.
+			      For PIE, it will be unrelocated at_phdr. */
+
   /* Find the requested segment.  */
   if (type == -1)
     {
@@ -478,6 +493,16 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
       sect_addr = sect_addr + (at_phdr - pt_phdr);
     }
 
+  /* at_phdr is real address in memory. pt_phdr is what pheader says it is.
+     Relocation offset is the difference between the two. */
+  if (pt_phdr != (CORE_ADDR)-1)
+    {
+      /* PT_PHDR is optional in the execution view, but we really need it
+	 for PIE to make this work in general.  However, if not found,
+	 work with what you have.  */
+      sect_addr = sect_addr + (at_phdr - pt_phdr);
+    }
+
   /* Read in requested program header.  */
   buf = xmalloc (sect_size);
   if (target_read_memory (sect_addr, buf, sect_size))
@@ -528,8 +553,21 @@ find_program_interpreter (void)
 /* Scan for DYNTAG in .dynamic section of ABFD.  If DYNTAG is found 1 is
    returned and the corresponding PTR is set.  */
 
+#ifndef __QNXTARGET__
 static int
 scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
+#else /* __QNXTARGET__ */
+static int scan_dyntag_2 (int, bfd *, CORE_ADDR *, CORE_ADDR *);
+
+static int
+scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
+{
+    return scan_dyntag_2 (dyntag, abfd, ptr, NULL);
+}
+
+static int
+scan_dyntag_2 (int dyntag, bfd *abfd, CORE_ADDR *ptr, CORE_ADDR *bfd_dyn_ptr)
+#endif /* __QNXTARGET__ */
 {
   int arch_size, step, sect_size;
   long dyn_tag;
@@ -552,7 +590,7 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
 
   /* Find the start address of the .dynamic section.  */
   sect = bfd_get_section_by_name (abfd, ".dynamic");
-  if (sect == NULL)
+  //if (sect == NULL)
     return 0;
 
   for (target_section = current_target_sections->sections;
@@ -603,6 +641,10 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
        return 0;
      if (dyn_tag == dyntag)
        {
+#ifdef __QNXTARGET__
+	 if (bfd_dyn_ptr)
+	   *bfd_dyn_ptr = dyn_ptr;
+#endif /* __QNXTARGET__ */
 	 /* If requested, try to read the runtime value of this .dynamic
 	    entry.  */
 	 if (ptr)
@@ -623,6 +665,32 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
 
   return 0;
 }
+
+#ifdef __QNXTARGET__
+static char *
+get_soname (bfd *abfd)
+{
+  CORE_ADDR strtab, stroffs;
+  char buff[SO_NAME_MAX_PATH_SIZE];
+  int read;
+
+  if (!scan_dyntag_2 (DT_STRTAB, abfd, NULL, &strtab)
+      || !scan_dyntag_2 (DT_SONAME, abfd, NULL, &stroffs))
+    return NULL;
+
+  if (bfd_seek (abfd, strtab + stroffs, SEEK_SET))
+    return 0;
+
+  read = bfd_bread (buff, SO_NAME_MAX_PATH_SIZE - 1, abfd);
+  buff[SO_NAME_MAX_PATH_SIZE-1] = '\0';
+
+  if (read == 0 || buff[0] == '\0')
+    return 0;
+
+  return xstrdup (buff);
+}
+#endif /* __QNXTARGET__ */
+
 
 /* Scan for DYNTAG in .dynamic section of the target's main executable,
    found by consulting the OS auxillary vector.  If DYNTAG is found 1 is
@@ -723,7 +791,11 @@ elf_locate_base (void)
   /* Find DT_DEBUG.  */
   if (scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr)
       || scan_dyntag_auxv (DT_DEBUG, &dyn_ptr))
+#ifdef __QNXTARGET__
+    if (dyn_ptr != 0) return dyn_ptr;
+#else /* ! __QNXTARGET__ */
     return dyn_ptr;
+#endif
 
   /* This may be a static executable.  Look for the symbol
      conventionally named _r_debug, as a last resort.  */
@@ -1282,12 +1354,16 @@ svr4_current_sos (void)
   if (! info->debug_base)
     return svr4_default_sos ();
 
+#ifndef __QNXTARGET__
   /* Assume that everything is a library if the dynamic loader was loaded
      late by a static executable.  */
   if (exec_bfd && bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
     ignore_first = 0;
   else
     ignore_first = 1;
+#else
+    ignore_first = 1;
+#endif /* !__QNXTARGET__ */
 
   back_to = make_cleanup (svr4_free_library_list, &head);
 
@@ -1392,6 +1468,23 @@ exec_entry_point (struct bfd *abfd, struct target_ops *targ)
 					     targ);
 }
 
+#ifdef __QNXTARGET__
+static int
+cmp_host_to_target_word (bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr)
+{
+  unsigned host_word, target_word;
+
+  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0
+      || bfd_bread ((char*)&host_word, sizeof (host_word), abfd)
+	 != sizeof (host_word))
+    return -1;
+  if (target_read_memory(target_addr, (char*)&target_word,
+			 sizeof (target_word)))
+    return -1;
+  return (host_word-target_word);
+}
+#endif /* __QNXTARGET__ */
+
 /* Helper function for gdb_bfd_lookup_symbol.  */
 
 static int
@@ -1440,6 +1533,7 @@ enable_break (struct svr4_info *info, int from_tty)
   asection *interp_sect;
   gdb_byte *interp_name;
   CORE_ADDR sym_addr;
+
 
   info->interp_text_sect_low = info->interp_text_sect_high = 0;
   info->interp_plt_sect_low = info->interp_plt_sect_high = 0;
@@ -1532,6 +1626,12 @@ enable_break (struct svr4_info *info, int from_tty)
       volatile struct gdb_exception ex;
 
       sym_addr = 0;
+
+    solib_add (NULL, from_tty, &current_target, auto_solib_add);
+  sym_addr = 0;
+  if (info->debug_base && solib_svr4_r_map (info) != 0)
+    sym_addr = solib_svr4_r_brk (info);
+
 
       /* Now we need to figure out where the dynamic linker was
          loaded so that we can load its symbols and place a breakpoint
@@ -1654,6 +1754,40 @@ enable_break (struct svr4_info *info, int from_tty)
 	    break;
 	}
 
+#ifdef __QNXTARGET__
+      if (sym_addr == 0 && load_addr_found)
+	{
+	  CORE_ADDR r_debug_sym_addr;
+	  const struct link_map_offsets *const lmo
+	    = svr4_fetch_link_map_offsets ();
+
+	  /* Unrelocated: */
+	  r_debug_sym_addr = gdb_bfd_lookup_symbol (tmp_bfd,
+						    cmp_name_and_sec_flags,
+						    (void *) "_r_debug");
+	  if (r_debug_sym_addr != 0)
+	    {
+	      gdb_byte r_brk_addr[4]; /* 32-bit system */
+
+	      if (target_read_memory (load_addr + r_debug_sym_addr + lmo->r_brk_offset,
+				      r_brk_addr, sizeof (r_brk_addr)) == 0)
+		{
+		  CORE_ADDR target_r_brk_addr
+		    = extract_unsigned_integer (r_brk_addr, 4,
+					gdbarch_byte_order (target_gdbarch));
+
+		  /* Is target_r_brk_addr in ldd text segment?
+		     If so, it's relocated already. */
+		  if (target_r_brk_addr >= info->interp_text_sect_low
+		      && target_r_brk_addr < info->interp_text_sect_high)
+		    sym_addr = target_r_brk_addr - load_addr;
+		  else
+		    sym_addr = target_r_brk_addr;
+		}
+	    }
+	}
+#endif /* __QNXTARGET__ */
+
       if (sym_addr != 0)
 	/* Convert 'sym_addr' from a function pointer to an address.
 	   Because we pass tmp_bfd_target instead of the current
@@ -1661,6 +1795,16 @@ enable_break (struct svr4_info *info, int from_tty)
 	sym_addr = gdbarch_convert_from_func_ptr_addr (target_gdbarch,
 						       sym_addr,
 						       tmp_bfd_target);
+#ifdef __QNXTARGET__
+	if (sym_addr != 0
+	    && cmp_host_to_target_word (tmp_bfd, sym_addr,
+					sym_addr+load_addr) != 0)
+	  /* This warning is being parsed by the IDE, the 
+	   * format should not change without consultations with 
+	   * IDE team.  */
+	  warning ("Host file %s does not match target file %s",
+		   interp_name, so ? so->so_original_name : "<?>");
+#endif /* __QNXTARGET__ */
 
       /* We're done with both the temporary bfd and target.  Remember,
          closing the target closes the underlying bfd.  */
@@ -2095,7 +2239,10 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
       xfree (buf2);
 
       if (!ok)
-	return 0;
+	{
+	  warning (_("Executable headers don't match. But continue anyway.\n"));
+	  //return 0;
+	}
     }
 
   if (info_verbose)
@@ -2464,6 +2611,38 @@ elf_lookup_lib_symbol (const struct objfile *objfile,
 
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
+
+#ifdef __QNXTARGET__
+CORE_ADDR
+svr4_fetch_r_debug (void)
+{
+  struct svr4_info *const info = get_svr4_info ();
+
+  return locate_base (info);
+}
+
+/* Fetch state of r_debug structure */
+int svr4_r_debug_state (void)
+{
+  const CORE_ADDR address = svr4_fetch_r_debug ();
+  gdb_byte myaddr[128];
+  unsigned int len = sizeof (myaddr);
+  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
+  unsigned int rt_state;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+
+  if (!lmo || address == 0)
+    return 1;
+
+  if (target_read_memory (address, myaddr, len))
+    return 1;
+
+  rt_state = extract_unsigned_integer (&myaddr[lmo->r_state_offset],
+				       lmo->r_state_size, byte_order);
+
+  return rt_state;
+}
+#endif /* __QNXTARGET__ */
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 

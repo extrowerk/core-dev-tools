@@ -4290,6 +4290,19 @@ handle_jit_event (void)
   target_terminal_inferior ();
 }
 
+#ifdef __QNXTARGET__
+extern CORE_ADDR svr4_r_debug_state (void);
+/* Return 1 if r_rdevent is RT_CONSISTENT */
+static int
+stop_on_this_shlib_event (void)
+{
+  const int state = svr4_r_debug_state ();
+
+  /* Stop only if debug state is consistent */
+  return state == 0;
+}
+#endif /* __QNXTARGET__ */
+
 /* Prepare WHAT final decision for infrun.  */
 
 /* Decide what infrun needs to do with this bpstat.  */
@@ -4472,6 +4485,11 @@ bpstat_what (bpstat bs_head)
       if (debug_infrun)
 	fprintf_unfiltered (gdb_stdlog, "bpstat_what: bp_shlib_event\n");
 
+#ifdef __QNXTARGET__
+	if (stop_on_this_shlib_event ())
+	  {
+#endif /* __QNXTARGET__ */
+
       /* Check for any newly added shared libraries if we're supposed
 	 to be adding them automatically.  */
 
@@ -4486,6 +4504,9 @@ bpstat_what (bpstat bs_head)
 #endif
 
       target_terminal_inferior ();
+#ifdef __QNXTARGET__
+      }
+#endif /* __QNXTARGET__ */
     }
 
   if (jit_event)
