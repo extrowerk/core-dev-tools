@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if { [is_remote target] || ![isnative] } then {
-    continue
-}
+# if { [is_remote target] || ![isnative] } then {
+#   continue
+# }
 
 set testfile "bkpt-multi-exec"
 
@@ -36,9 +36,9 @@ if { [prepare_for_testing ${testfile}.exp ${exec2} "${srcfile2}" {debug nowarnin
 }
 # Until "catch exec" is implemented on other targets...
 #
-if {![istarget "hppa*-hp-hpux*"] && ![istarget "*-linux*"]} then {
-    continue
-}
+#if {![istarget "hppa*-hp-hpux*"] && ![istarget "*-linux*"]} then {
+#    continue
+#}
 
 # Start with a fresh gdb
 

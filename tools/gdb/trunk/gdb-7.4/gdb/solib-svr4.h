@@ -34,6 +34,14 @@ struct link_map_offsets
     /* Offset and size of r_debug.r_version.  */
     int r_version_offset, r_version_size;
 
+#ifdef __QNXTARGET__
+    /* Offset and size of r_debug.r_state.  */
+    int r_state_offset, r_state_size;
+    
+    /* Offset and size of r_debug.r_rdevent.  */
+    int r_rdevent_offset, r_rdevent_size;
+#endif
+
     /* Offset of r_debug.r_map.  */
     int r_map_offset;
 

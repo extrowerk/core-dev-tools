@@ -546,9 +546,9 @@ pex_unix_exec_child (struct pex_obj *obj ATTRIBUTE_UNUSED,
       typedef const char * const *cc_cp;
 
       if (flags & PEX_SEARCH)
-	pid = spawnvpe (_P_NOWAITO, executable, (cc_cp)argv, (cc_cp)env);
+	pid = spawnvpe (P_NOWAITO, executable, (cc_cp)argv, (cc_cp)env);
       else
-	pid = spawnve (_P_NOWAITO, executable, (cc_cp)argv, (cc_cp)env);
+	pid = spawnve (P_NOWAITO, executable, (cc_cp)argv, (cc_cp)env);
 
       if (pid > 0)
 	break;
