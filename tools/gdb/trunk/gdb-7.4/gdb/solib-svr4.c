@@ -493,16 +493,6 @@ read_program_header (int type, int *p_sect_size, int *p_arch_size)
       sect_addr = sect_addr + (at_phdr - pt_phdr);
     }
 
-  /* at_phdr is real address in memory. pt_phdr is what pheader says it is.
-     Relocation offset is the difference between the two. */
-  if (pt_phdr != (CORE_ADDR)-1)
-    {
-      /* PT_PHDR is optional in the execution view, but we really need it
-	 for PIE to make this work in general.  However, if not found,
-	 work with what you have.  */
-      sect_addr = sect_addr + (at_phdr - pt_phdr);
-    }
-
   /* Read in requested program header.  */
   buf = xmalloc (sect_size);
   if (target_read_memory (sect_addr, buf, sect_size))
