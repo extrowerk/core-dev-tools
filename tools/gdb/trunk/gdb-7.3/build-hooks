@@ -25,6 +25,37 @@ case ${host_target} in
   ;;
 esac
 
+
+# determine if no python support is desired
+case ${TARGET_SYSNAME} in
+win32*)
+  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+  ;;
+nto*)
+# For now, do not build python support.
+  with_python_opt="--with-python=no"
+  ;;
+darwin*)
+# For now, do not build python support.
+  with_python_opt="--with-python=no"
+  ;;
+  *)
+#all others, rely on distro's python
+  with_python_opt="--with-python=yes"
+  ;;
+esac
+
+# executable prefix is appended with 'nopython' if nopython is desired
+nopython_program_prefix=
+
+# nopython in directory name says "no python support desired"
+case ${PWD} in
+*-nopython-*)
+  with_python_opt="--with-python=no"
+  nopython_program_prefix="nopython-"
+  ;;
+esac
+
 function hook_preconfigure {
 	configure_opts="${configure_opts} --without-expat"
 	case ${SYSNAME} in
@@ -80,6 +111,8 @@ function hook_preconfigure {
 	  root_dir="/opt"
 	  ;;
 	esac
+
+    configure_opts="${configure_opts} ${with_python_opt}"
 	
 	# INSTALL_ROOT can override build-hooks setting. 
 	if [ x$INSTALL_ROOT = x ]; then
@@ -105,7 +138,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --exec-prefix=${basedir}"
 	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
-	configure_opts="${configure_opts} --program-prefix=${host_target##*-}-"
+	configure_opts="${configure_opts} --program-prefix=${host_target##*-}-${nopython_program_prefix}"
 	# This setting of --includedir is so that the readline compiles don't
 	# get things from the wrong place - we'd prefer not to have to say
 	# anything at all and let the qcc/gcc get the system headers on their
