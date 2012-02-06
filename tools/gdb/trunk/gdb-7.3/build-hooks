@@ -37,7 +37,7 @@ nto*)
   ;;
 darwin*)
 # For now, do not build python support.
-  with_python_opt="--with-python=no"
+  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
   ;;
   *)
 #all others, rely on distro's python
@@ -163,6 +163,7 @@ function hook_preconfigure {
 	    #CFLAGS="-D__QNXTARGET__ -g3 -O0 -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
 	  ;;
 	esac
+	export TARGET_SYSNAME # need to export TARGET_SYSNAME for python-config-cross.sh 
 }
 
 function hook_premake {
@@ -193,5 +194,5 @@ function hook_postmake {
 
 function hook_pinfo {
 	cd gdb
-	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.1"
+	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.3"
 }
