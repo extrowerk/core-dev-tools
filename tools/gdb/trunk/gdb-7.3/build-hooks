@@ -36,8 +36,11 @@ nto*)
   with_python_opt="--with-python=no"
   ;;
 darwin*)
-# For now, do not build python support.
   with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+  ;;
+linux*)
+# TODO: TEMPORARY: do not build with python support.
+  with_python_opt="--with-python=no"
   ;;
   *)
 #all others, rely on distro's python
