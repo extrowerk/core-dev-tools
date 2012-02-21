@@ -609,7 +609,7 @@ proper position among the other output files.  */
 
 #ifndef LINK_PIE_SPEC
 #ifdef HAVE_LD_PIE
-#define LINK_PIE_SPEC "%{pie:-pie} "
+#define LINK_PIE_SPEC "%{pie:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
 #else
 #define LINK_PIE_SPEC "%{pie:} "
 #endif
@@ -771,6 +771,7 @@ static const char *cc1_options =
  %{-version:--version}\
  %{-help=*:--help=%*}\
  %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}}\
+ %{static:%{pie:%e-static and -pie are incompatible}}\
  %{fsyntax-only:-o %j} %{-param*}\
  %{fmudflap|fmudflapth:-fno-builtin -fno-merge-constants}\
  %{coverage:-fprofile-arcs -ftest-coverage}";
