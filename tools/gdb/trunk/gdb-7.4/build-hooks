@@ -39,14 +39,25 @@ darwin*)
   with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
   ;;
 linux*)
-# TODO: TEMPORARY: do not build with python support.
-  with_python_opt="--with-python=no"
+  # rpath must be reserved so it can be changed with chrpath
+  if [ "${OFFICIAL_BUILD}" != "" ]; then
+    # For official builds, we provide python install for building
+    with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+    CFLAGS=-m32
+    LDFLAGS="-m32 -Wl,-rpath=_ORIGIN/../python27/lib"
+  else
+    # Let configure decide; if there is python available, then
+    # it will use it.
+    with_python_opt=
+  fi
   ;;
   *)
 #all others, rely on distro's python
   with_python_opt="--with-python=yes"
   ;;
 esac
+
+export TARGET_SYSNAME
 
 # executable prefix is appended with 'nopython' if nopython is desired
 nopython_program_prefix=
@@ -115,7 +126,7 @@ function hook_preconfigure {
 	  ;;
 	esac
 
-    configure_opts="${configure_opts} ${with_python_opt}"
+    configure_opts="${configure_opts} ${with_python_opt} TARGET_SYSNAME=${TARGET_SYSNAME}"
 	
 	# INSTALL_ROOT can override build-hooks setting. 
 	if [ x$INSTALL_ROOT = x ]; then
@@ -162,7 +173,7 @@ function hook_preconfigure {
 
 	case ${target} in 
 	  *-nto-*)
-	    CFLAGS="-D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
+	    CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
 	    #CFLAGS="-D__QNXTARGET__ -g3 -O0 -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
 	  ;;
 	esac
@@ -191,8 +202,14 @@ function hook_postmake {
 			echo "Setting stack limit to 4M..."
 			ldrel -L -S 4M gdb/gdb
 		;;
+		linux*)
+			if [ "${OFFICIAL_BUILD}" != "" ]; then
+              # Build machine must have chrpath and make it
+              # available in $PATH
+			  chrpath -r \$ORIGIN/../python27/lib gdb/gdb
+			fi
+		;;
 	esac;
-         
 }
 
 function hook_pinfo {

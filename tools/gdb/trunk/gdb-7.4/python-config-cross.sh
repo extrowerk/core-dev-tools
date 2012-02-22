@@ -21,6 +21,13 @@ darwin*)
 	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver}"
 	py_libs="-lpython2.6"
 	;;
+linux*)
+	gdb_prereq_dir=${PWD}/../../../gdb-prereq/linux
+	python_root=${gdb_prereq_dir}/python27
+	python_ver=2.7
+	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver}"
+	py_libs="-L${python_root}/lib -lpython${python_ver}"
+	;;
 *)
 	echo "Not configured for python"
 	exit 1
