@@ -14,12 +14,18 @@ win32*)
 	python_ver=2.7
 	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver} -DWINVER=0x0500 "
 	py_libs="-L${python_root}/libs  -lpython27"
+	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
+	# This is needed to automatically setup PYTHONHOME env. var.
+	py_exec_prefix=""
 	;;
 darwin*)
 	python_ver=2.6
 	python_root=/usr/darwin/x86_64-apple-darwin/x86_64-apple-darwin/
 	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver}"
 	py_libs="-lpython2.6"
+	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
+	# This is needed to automatically setup PYTHONHOME env. var.
+	py_exec_prefix="${python_root}"
 	;;
 linux*)
 	gdb_prereq_dir=${PWD}/../../../gdb-prereq/linux
@@ -27,6 +33,9 @@ linux*)
 	python_ver=2.7
 	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver}"
 	py_libs="-L${python_root}/lib -lpython${python_ver}"
+	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
+	# This is needed to automatically setup PYTHONHOME env. var.
+	py_exec_prefix="../python27"
 	;;
 *)
 	echo "Not configured for python"
@@ -40,7 +49,7 @@ if [ $2 == --includes ] ; then
 elif [ $2 == --ldflags ] ; then
   echo "${py_libs}" 
 elif [ $2 == --exec-prefix ] ; then
-  echo "${python_root}"
+  echo "${py_exec_prefix}"
 else
   exit 1
 fi
