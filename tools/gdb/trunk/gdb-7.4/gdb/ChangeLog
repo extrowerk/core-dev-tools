@@ -1,3 +1,9 @@
+2012-02-23  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	PR backtrace/13716
+	* infcmd.c (finish_forward): New variable frame_id, initialize it, use
+	it after set_momentary_breakpoint.
+
 2012-01-24  Joel Brobecker  <brobecker@adacore.com>
 
 	* NEWS: Change "since GDB 7.3.1" into "in GDB 7.4".
