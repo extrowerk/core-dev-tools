@@ -154,76 +154,29 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   const char *arch;
   int ret;
 #define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
-		 "%s/usr/photon/dll%c%s/lib/dll"
+		 "%s/usr/photon/dll%c%s/lib/dll%c%s"
 
   arch_path = nto_build_arch_path ();
-  buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
+  buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 6 + 1);
   sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
-	   arch_path, DIRNAME_SEPARATOR, arch_path);
+	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
+	   arch_path);
   free (arch_path);
 
-  /* Don't assume basename() isn't destructive.  */
-  base = strrchr (solib, '/');
-  if (!base)
-    base = solib;
-  else
-    base++;			/* Skip over '/'.  */
-
-  ret = openp (buf, 1, base, o_flags, temp_pathname);
-  if (ret < 0 && base != solib)
+  ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, solib, o_flags, temp_pathname);
+  if (ret < 0)
     {
-      sprintf (buf, "/%s", solib);
-      ret = open (buf, o_flags, 0);
-      if (temp_pathname)
-	{
-	  if (ret >= 0)
-	    *temp_pathname = gdb_realpath (buf);
-	  else
-	    *temp_pathname = NULL;
-	}
+      /* Don't assume basename() isn't destructive.  */
+      base = strrchr (solib, '/');
+      if (!base)
+	base = solib;
+      else
+	base++;			/* Skip over '/'.  */
+      if (base != solib)
+	ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, base, o_flags, temp_pathname);
     }
   return ret;
-}
-
-/* The following two variables are defined in solib.c.  */
-extern char *gdb_sysroot; /* a.k.a solib-absolute-prefix  */
-
-void
-nto_init_solib_absolute_prefix (void)
-{
-  /* If it was nto_init_solib_absolute_prefix that set the path,
-     the following variable will be set to 1.  */
-  static char *nto_gdb_sysroot;
-
-  char *buf, *arch_path;
-
-  arch_path = nto_build_arch_path ();
-
-  nto_trace (0) ("nto_init_solib_absolute_prefix\n");
-
-  /* Do not change it if already set.  */
-  if ((!gdb_sysroot
-      || strlen (gdb_sysroot) == 0)
-      || (nto_gdb_sysroot == gdb_sysroot))
-    {
-      buf = alloca (26 /* set solib-absolute-prefix */ 
-		    + strlen (arch_path) + 1);
-      if (gdb_sysroot == NULL || gdb_sysroot[0] == '\0')
-	{
-	  /* Initially, only set the string. We don't want any side effects. */
-	  xfree (gdb_sysroot);
-	  gdb_sysroot = xstrdup (arch_path);
-	}
-      else
-	{
-	  sprintf (buf, "set solib-absolute-prefix %s", arch_path);
-	  nto_gdb_sysroot = arch_path;
-	  execute_command (buf, 0);
-	}
-      nto_gdb_sysroot = gdb_sysroot;
-    }
-  free (arch_path);
 }
 
 char **
@@ -303,7 +256,7 @@ nto_generic_svr4_fetch_link_map_offsets (void)
 				    show up twice.  */
 
       /* Link map.  */
-      lmo.link_map_size = 20;	/* The actual size is 552 bytes, but
+      lmo.link_map_size = 32;	/* The actual size is 552 bytes, but
 				   this is all we need.  */
       lmo.l_addr_offset = 0;
 
@@ -314,6 +267,7 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo.l_next_offset = 12;
 
       lmo.l_prev_offset = 16;
+      //lmo.l_path_offset = 28;
     }
 
   return lmp;
@@ -341,19 +295,6 @@ struct lm_info
     CORE_ADDR l_addr;
   };
 
-
-static CORE_ADDR
-lm_addr (struct so_list *so)
-{
-  struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
-
-  if (so->lm_info->l_addr == (CORE_ADDR)-1)
-    so->lm_info->l_addr = extract_typed_address (so->lm_info->lm
-						 + lmo->l_addr_offset,
-						 builtin_type (target_gdbarch)
-						    ->builtin_data_ptr);
-  return so->lm_info->l_addr;
-}
 
 static CORE_ADDR
 nto_truncate_ptr (CORE_ADDR addr)
@@ -392,7 +333,7 @@ find_load_phdr_2 (bfd *abfd, unsigned int p_filesz,
   Elf_Internal_Phdr *phdr;
   unsigned int i;
 
-  if (!elf_tdata (abfd))
+  if (!abfd || !elf_tdata (abfd))
     return NULL;
 
   phdr = elf_tdata (abfd)->phdr;
@@ -412,19 +353,27 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
   /* Neutrino treats the l_addr base address field in link.h as different than
      the base address in the System V ABI and so the offset needs to be
      calculated and applied to relocations.  */
+  if (sec != NULL) {
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->bfd);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
   sec->addr = nto_truncate_ptr (sec->addr 
-			        + lm_addr (so)
+			        + lm_addr_check (so, sec->bfd)
 				- vaddr);
   sec->endaddr = nto_truncate_ptr (sec->endaddr 
-				   + lm_addr (so)
+				   + lm_addr_check (so, sec->bfd)
 				   - vaddr);
   if (so->addr_low == 0)
-    so->addr_low = lm_addr (so);
+    so->addr_low = lm_addr_check (so, sec->bfd);
   if (so->addr_high < sec->endaddr)
     so->addr_high = sec->endaddr;
+
+  }
+  /* Still can determine low. */
+  if (so->addr_low == 0) {
+    so->addr_low = lm_addr_check (so, sec->bfd); /* Load base */
+    so->addr_high = so->addr_low; /* at a minimum */
+  }
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -1138,6 +1087,7 @@ nto_solib_added_listener (struct so_list *solib)
 	  p_align = extract_unsigned_integer (&phdr_buf[28], sizeofElf32_Word,
 					      byte_order);
 
+	  if (solib->symbols_loaded) {
 	  file_phdr = find_load_phdr_2 (solib->abfd, 
 					p_filesz, p_memsz, p_flags, p_align); 
 	  if (file_phdr == NULL)
@@ -1149,6 +1099,7 @@ nto_solib_added_listener (struct so_list *solib)
 		       solib->so_name, solib->so_original_name);
 	      break;
 	    }
+	  }
 	}
 
       if (p_type == PT_NULL)
@@ -1156,13 +1107,6 @@ nto_solib_added_listener (struct so_list *solib)
 
       mem_phdr_addr += sizeof (phdr_buf);
     }
-}
-
-static void
-nto_architecture_changed_listener (struct gdbarch *newarch)
-{
-  nto_trace (0) ("%s\n", __func__);
-  nto_init_solib_absolute_prefix ();
 }
 
 const struct target_desc *
@@ -1253,5 +1197,4 @@ When set to 1, stop on thread created and thread destroyed events.\n"),
   nto_is_nto_target = nto_elf_osabi_sniffer;
 
   observer_attach_solib_loaded (nto_solib_added_listener);
-  observer_attach_architecture_changed (nto_architecture_changed_listener);
 }

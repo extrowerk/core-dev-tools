@@ -199,7 +199,11 @@ has_lm_dynamic_from_link_map (void)
   return lmo->l_ld_offset >= 0;
 }
 
+#ifndef __QNXTARGET__
 static CORE_ADDR
+#else
+CORE_ADDR
+#endif
 lm_addr_check (struct so_list *so, bfd *abfd)
 {
   if (!so->lm_info->l_addr_p)
