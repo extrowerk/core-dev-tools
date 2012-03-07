@@ -5477,6 +5477,14 @@ set_default_breakpoint (int valid, struct program_space *pspace,
   default_breakpoint_address = addr;
   default_breakpoint_symtab = symtab;
   default_breakpoint_line = line;
+  if (valid && pspace == NULL)
+    {
+      warning(_("Tried to set NULL pspace."));
+      default_breakpoint_valid = 0;
+      default_breakpoint_address = 0;
+      default_breakpoint_symtab = NULL;
+      default_breakpoint_line = -1;
+    }
 }
 
 /* Return true iff it is meaningful to use the address member of

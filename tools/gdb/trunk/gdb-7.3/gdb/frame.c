@@ -2091,6 +2091,8 @@ find_frame_sal (struct frame_info *frame, struct symtab_and_line *sal)
 	   we can't do much better.  */
 	sal->pc = get_frame_pc (frame);
 
+      sal->pspace = get_frame_program_space (frame);
+
       return;
     }
 
