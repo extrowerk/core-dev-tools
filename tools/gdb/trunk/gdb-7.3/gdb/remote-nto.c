@@ -1117,8 +1117,6 @@ nto_start_remote (char *dummy)
 		     (gdbarch_byte_order (target_gdbarch) ==
 		      BFD_ENDIAN_BIG) ? "big" : "little");
 
-//  nto_init_solib_absolute_prefix ();
-
   /* Try to query pdebug for their version of the protocol.  */
   nto_send_init (DStMsg_protover, 0, SET_CHANNEL_DEBUG);
   tran.pkt.protover.major = HOST_QNX_PROTOVER_MAJOR;
@@ -1172,8 +1170,6 @@ nto_start_remote (char *dummy)
       nto_cpuinfo_flags = EXTRACT_SIGNED_INTEGER (&foo.cpuflags, 4, byte_order);
       nto_cpuinfo_valid = 1;
     }
-
-  //nto_init_solib_absolute_prefix ();
 
   return 1;
 }
@@ -1403,8 +1399,6 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
   /* Initalize thread list.  */
   delete_threads_of_inferior (inf->pid);
   nto_find_new_threads (ops);
-
-  nto_init_solib_absolute_prefix ();
 
  /* NYI: add symbol information for process.  */
   /* Turn the PIDLOAD into a STOPPED notification so that when gdb

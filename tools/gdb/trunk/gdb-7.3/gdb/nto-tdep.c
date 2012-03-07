@@ -155,76 +155,29 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
   const char *arch;
   int ret;
 #define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
-		 "%s/usr/photon/dll%c%s/lib/dll"
+		 "%s/usr/photon/dll%c%s/lib/dll%c%s"
 
   arch_path = nto_build_arch_path ();
-  buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 5 + 1);
+  buf = alloca (strlen (PATH_FMT) + strlen (arch_path) * 6 + 1);
   sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
 	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
-	   arch_path, DIRNAME_SEPARATOR, arch_path);
+	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
+	   arch_path);
   free (arch_path);
 
-  /* Don't assume basename() isn't destructive.  */
-  base = strrchr (solib, '/');
-  if (!base)
-    base = solib;
-  else
-    base++;			/* Skip over '/'.  */
-
-  ret = openp (buf, 1, base, o_flags, temp_pathname);
-  if (ret < 0 && base != solib)
+  ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, solib, o_flags, temp_pathname);
+  if (ret < 0)
     {
-      sprintf (buf, "/%s", solib);
-      ret = open (buf, o_flags, 0);
-      if (temp_pathname)
-	{
-	  if (ret >= 0)
-	    *temp_pathname = gdb_realpath (buf);
-	  else
-	    *temp_pathname = NULL;
-	}
+      /* Don't assume basename() isn't destructive.  */
+      base = strrchr (solib, '/');
+      if (!base)
+	base = solib;
+      else
+	base++;			/* Skip over '/'.  */
+      if (base != solib)
+	ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, base, o_flags, temp_pathname);
     }
   return ret;
-}
-
-/* The following two variables are defined in solib.c.  */
-extern char *gdb_sysroot; /* a.k.a solib-absolute-prefix  */
-
-void
-nto_init_solib_absolute_prefix (void)
-{
-  /* If it was nto_init_solib_absolute_prefix that set the path,
-     the following variable will be set to 1.  */
-  static char *nto_gdb_sysroot;
-
-  char *buf, *arch_path;
-
-  arch_path = nto_build_arch_path ();
-
-  nto_trace (0) ("nto_init_solib_absolute_prefix\n");
-
-  /* Do not change it if already set.  */
-  if ((!gdb_sysroot
-      || strlen (gdb_sysroot) == 0)
-      || (nto_gdb_sysroot == gdb_sysroot))
-    {
-      buf = alloca (26 /* set solib-absolute-prefix */ 
-		    + strlen (arch_path) + 1);
-      if (gdb_sysroot == NULL || gdb_sysroot[0] == '\0')
-	{
-	  /* Initially, only set the string. We don't want any side effects. */
-	  xfree (gdb_sysroot);
-	  gdb_sysroot = xstrdup (arch_path);
-	}
-      else
-	{
-	  sprintf (buf, "set solib-absolute-prefix %s", arch_path);
-	  nto_gdb_sysroot = arch_path;
-	  execute_command (buf, 0);
-	}
-      nto_gdb_sysroot = gdb_sysroot;
-    }
-  free (arch_path);
 }
 
 char **
@@ -423,6 +376,12 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
     so->addr_low = LM_ADDR_FROM_LINK_MAP (so);
   if (so->addr_high < sec->endaddr)
     so->addr_high = sec->endaddr;
+
+  /* Still can determine low. */
+  if (so->addr_low == 0) {
+    so->addr_low = LM_ADDR_FROM_LINK_MAP (so); /* Load base */
+    so->addr_high = so->addr_low; /* at a minimum */
+  }
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -1156,13 +1115,6 @@ nto_solib_added_listener (struct so_list *solib)
     }
 }
 
-static void
-nto_architecture_changed_listener (struct gdbarch *newarch)
-{
-  nto_trace (0) ("%s\n", __func__);
-  nto_init_solib_absolute_prefix ();
-}
-
 const struct target_desc *
 nto_read_description (struct target_ops *ops)
 {
@@ -1251,5 +1203,4 @@ When set to 1, stop on thread created and thread destroyed events.\n"),
   nto_is_nto_target = nto_elf_osabi_sniffer;
 
   observer_attach_solib_loaded (nto_solib_added_listener);
-  observer_attach_architecture_changed (nto_architecture_changed_listener);
 }
