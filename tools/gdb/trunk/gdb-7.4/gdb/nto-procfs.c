@@ -711,7 +711,6 @@ do_attach (ptid_t ptid)
   if (devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0) == EOK
       && status.flags & _DEBUG_FLAG_STOPPED)
     SignalKill (nto_node (), PIDGET (ptid), 0, SIGCONT, 0, 0);
-  nto_init_solib_absolute_prefix ();
   return ptid_build (PIDGET (ptid), 0, status.tid);
 }
 
