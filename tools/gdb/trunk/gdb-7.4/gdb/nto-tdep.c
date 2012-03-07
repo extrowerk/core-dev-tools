@@ -353,7 +353,6 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
   /* Neutrino treats the l_addr base address field in link.h as different than
      the base address in the System V ABI and so the offset needs to be
      calculated and applied to relocations.  */
-  if (sec != NULL) {
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->bfd);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
@@ -368,7 +367,6 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
   if (so->addr_high < sec->endaddr)
     so->addr_high = sec->endaddr;
 
-  }
   /* Still can determine low. */
   if (so->addr_low == 0) {
     so->addr_low = lm_addr_check (so, sec->bfd); /* Load base */
