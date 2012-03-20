@@ -76,7 +76,7 @@ do {                                            \
  %{symbolic:-Bsymbolic} \
  %{G:-G} %{MAP:-Map mapfile} \
  %{!shared:-dynamic-linker /usr/lib/ldqnx.so.2} \
- -m armnto -X \
+ -m armnto -X --hash-style=gnu \
  %{EB:-EB} %{!EB:-EL} %{EL:-EL}"
 
 #undef CPP_APCS_PC_DEFAULT_SPEC

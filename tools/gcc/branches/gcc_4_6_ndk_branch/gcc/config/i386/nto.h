@@ -79,7 +79,7 @@ QNX_SYSTEM_INCLUDES \
    %{!YP,*:%{p:-Y P,%R/lib} \
     %{!p:-Y P,%R/lib}} \
    %{Qy:} %{!Qn:-Qy} \
-   -m i386nto \
+   -m i386nto --hash-style=gnu \
    %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef SIZE_TYPE
