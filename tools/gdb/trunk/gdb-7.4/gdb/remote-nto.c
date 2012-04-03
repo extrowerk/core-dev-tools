@@ -2748,10 +2748,10 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
                  paddress (target_gdbarch, addr), contents_cache,
 		 ptid_get_pid (inferior_ptid));
 
+  tran.pkt.brk.size = nto_breakpoint_size (addr);
   nto_send_init (DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
   tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 4,
 						byte_order);
-  tran.pkt.brk.size = 0;
   nto_send (sizeof (tran.pkt.brk), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {

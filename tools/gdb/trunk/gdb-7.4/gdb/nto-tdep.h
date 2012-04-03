@@ -252,5 +252,6 @@ const struct target_desc *nto_read_description (struct target_ops *ops);
 
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
+int nto_breakpoint_size (CORE_ADDR addr);
 
 #endif

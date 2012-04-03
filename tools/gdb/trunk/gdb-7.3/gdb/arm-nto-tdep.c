@@ -726,3 +726,21 @@ _initialize_armnto_tdep (void)
   gdbarch_register_osabi_sniffer (bfd_arch_arm, bfd_target_elf_flavour,
 		  		  nto_elf_osabi_sniffer);
 }
+
+int nto_breakpoint_size (CORE_ADDR addr)
+{
+  unsigned short inst;
+  int size;
+  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+  inst = read_memory_unsigned_integer (addr, 2, byte_order);
+  if (arm_pc_is_thumb (target_gdbarch, addr)) { 
+     if ((inst & 0xe000) == 0xe000 && (inst & 0x1800) != 0) {
+       size = 4;
+     } else {
+       size = 2;
+     }
+  } else {
+       size = 0;
+  }
+  return size;
+}

@@ -560,3 +560,8 @@ _initialize_shnto_tdep (void)
   gdbarch_register_osabi_sniffer (bfd_arch_sh, bfd_target_elf_flavour,
 		  		  nto_elf_osabi_sniffer);
 }
+
+int nto_breakpoint_size (CORE_ADDR addr)
+{
+  return 0;
+}
