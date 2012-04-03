@@ -1060,7 +1060,8 @@ static int
 procfs_insert_breakpoint (struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tgt)
 {
-  return procfs_breakpoint (bp_tgt->placed_address, _DEBUG_BREAK_EXEC, 0);
+  return procfs_breakpoint (bp_tgt->placed_address, _DEBUG_BREAK_EXEC, 
+			    nto_breakpoint_size (bp_tgt->placed_address));
 }
 
 static int
