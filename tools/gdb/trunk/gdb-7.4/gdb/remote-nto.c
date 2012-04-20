@@ -60,6 +60,8 @@
 #include "elf-bfd.h"
 #include "elf/common.h"
 
+#include "environ.h"
+
 #include <time.h>
 
 #include "nto-share/dsmsgs.h"
@@ -1377,6 +1379,11 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
 						      byte_order));
   inf = current_inferior ();
   inf->attach_flag = 1;
+
+  /* Remove LD_LIBRARY_PATH. In the future, we should fetch
+   * it from the target and setup correctly prepended with
+   * QNX_TARGET/<CPU> */
+  set_in_environ (inf->environment, "LD_LIBRARY_PATH", "");
 
   inferior_appeared (inf, ptid_get_pid (ptid));
 
