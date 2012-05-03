@@ -2713,7 +2713,8 @@ freeargs:
       inferior_ptid  = nto_parse_notify (ops, &status);
       inf = current_inferior ();
       inferior_appeared (inf, ptid_get_pid (inferior_ptid));
-      add_thread (inferior_ptid);
+      add_thread_silent (inferior_ptid);
+      inf->attach_flag = 1;
     }
 
   /* NYI: add the symbol info somewhere?  */
