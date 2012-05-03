@@ -7269,7 +7269,8 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
 		     enum bptype type, enum bpdisp disposition,
 		     int thread, int task, int ignore_count,
 		     const struct breakpoint_ops *ops, int from_tty,
-		     int enabled, int internal, int display_canonical)
+		     int enabled, int internal,	unsigned flags,
+		     int display_canonical)
 {
   int i;
 
@@ -7315,6 +7316,9 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
 	  b->enable_state = enabled ? bp_enabled : bp_disabled;
 	  b->disposition = disposition;
 
+	  if ((flags & CREATE_BREAKPOINT_FLAGS_INSERTED) != 0)
+	    b->loc->inserted = 1;
+
 	  if (type == bp_static_tracepoint)
 	    {
 	      struct tracepoint *t = (struct tracepoint *) b;
@@ -7358,6 +7362,8 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
       else
 	{
 	  loc = add_location_to_breakpoint (b, &sal);
+	  if ((flags & CREATE_BREAKPOINT_FLAGS_INSERTED) != 0)
+	    loc->inserted = 1;
 	}
 
       if (bp_loc_is_permanent (loc))
@@ -7390,7 +7396,8 @@ create_breakpoint_sal (struct gdbarch *gdbarch,
 		       enum bptype type, enum bpdisp disposition,
 		       int thread, int task, int ignore_count,
 		       const struct breakpoint_ops *ops, int from_tty,
-		       int enabled, int internal, int display_canonical)
+		       int enabled, int internal, unsigned flags,
+		       int display_canonical)
 {
   struct breakpoint *b;
   struct cleanup *old_chain;
@@ -7413,7 +7420,8 @@ create_breakpoint_sal (struct gdbarch *gdbarch,
 		       type, disposition,
 		       thread, task, ignore_count,
 		       ops, from_tty,
-		       enabled, internal, display_canonical);
+		       enabled, internal, flags,
+		       display_canonical);
   discard_cleanups (old_chain);
 
   install_breakpoint (internal, b, 0);
@@ -7441,7 +7449,7 @@ create_breakpoints_sal (struct gdbarch *gdbarch,
 			enum bptype type, enum bpdisp disposition,
 			int thread, int task, int ignore_count,
 			const struct breakpoint_ops *ops, int from_tty,
-			int enabled, int internal)
+			int enabled, int internal, unsigned flags)
 {
   int i;
   struct linespec_sals *lsal;
@@ -7465,7 +7473,7 @@ create_breakpoints_sal (struct gdbarch *gdbarch,
 			     filter_string,
 			     cond_string, type, disposition,
 			     thread, task, ignore_count, ops,
-			     from_tty, enabled, internal,
+			     from_tty, enabled, internal, flags,
 			     canonical->special_display);
       discard_cleanups (inner);
     }
@@ -7725,7 +7733,8 @@ create_breakpoint (struct gdbarch *gdbarch,
 		   int ignore_count,
 		   enum auto_boolean pending_break_support,
 		   const struct breakpoint_ops *ops,
-		   int from_tty, int enabled, int internal)
+		   int from_tty, int enabled, int internal,
+		   unsigned flags)
 {
   volatile struct gdb_exception e;
   char *copy_arg = NULL;
@@ -7907,7 +7916,7 @@ create_breakpoint (struct gdbarch *gdbarch,
 				   cond_string, type_wanted,
 				   tempflag ? disp_del : disp_donttouch,
 				   thread, task, ignore_count, ops,
-				   from_tty, enabled, internal,
+				   from_tty, enabled, internal, flags,
 				   canonical.special_display);
 	      /* Given that its possible to have multiple markers with
 		 the same string id, if the user is creating a static
@@ -7927,7 +7936,7 @@ create_breakpoint (struct gdbarch *gdbarch,
 				type_wanted,
 				tempflag ? disp_del : disp_donttouch,
 				thread, task, ignore_count, ops, from_tty,
-				enabled, internal);
+				enabled, internal, flags);
     }
   else
     {
@@ -8003,7 +8012,8 @@ break_command_1 (char *arg, int flag, int from_tty)
 		     &bkpt_breakpoint_ops,
 		     from_tty,
 		     1 /* enabled */,
-		     0 /* internal */);
+		     0 /* internal */,
+		     0);
 }
 
 /* Helper function for break_command_1 and disassemble_command.  */
@@ -9859,7 +9869,8 @@ handle_gnu_v3_exceptions (int tempflag, char *cond_string,
 		     AUTO_BOOLEAN_TRUE /* pending */,
 		     &gnu_v3_exception_catchpoint_ops, from_tty,
 		     1 /* enabled */,
-		     0 /* internal */);
+		     0 /* internal */,
+		     0);
 
   return 1;
 }
@@ -12790,7 +12801,7 @@ trace_command (char *arg, int from_tty)
 			 &tracepoint_breakpoint_ops,
 			 from_tty,
 			 1 /* enabled */,
-			 0 /* internal */))
+			 0 /* internal */, 0))
     set_tracepoint_count (breakpoint_count);
 }
 
@@ -12807,7 +12818,7 @@ ftrace_command (char *arg, int from_tty)
 			 &tracepoint_breakpoint_ops,
 			 from_tty,
 			 1 /* enabled */,
-			 0 /* internal */))
+			 0 /* internal */, 0))
     set_tracepoint_count (breakpoint_count);
 }
 
@@ -12826,7 +12837,7 @@ strace_command (char *arg, int from_tty)
 			 &tracepoint_breakpoint_ops,
 			 from_tty,
 			 1 /* enabled */,
-			 0 /* internal */))
+			 0 /* internal */, 0))
     set_tracepoint_count (breakpoint_count);
 }
 
@@ -12891,7 +12902,8 @@ create_tracepoint_from_upload (struct uploaded_tp *utp)
 			  &tracepoint_breakpoint_ops,
 			  0 /* from_tty */,
 			  utp->enabled /* enabled */,
-			  0 /* internal */))
+			  0 /* internal */,
+			  CREATE_BREAKPOINT_FLAGS_INSERTED))
     return NULL;
 
   set_tracepoint_count (breakpoint_count);
