@@ -2091,31 +2091,8 @@ nto_fetch_registers (struct target_ops *ops,
     }
   else
     {
-      int len, rlen;
-      unsigned int off;
-      /* Only getting one register.  */
       regset = nto_regset_id (regno);
-      len = nto_register_area (target_gdbarch, regno, regset, &off);
-      if (len < 1) /* Don't know about this register.  */
-	return; 
-
-      nto_send_init (DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
-      tran.pkt.regrd.offset = EXTRACT_SIGNED_INTEGER (&off, 2,
-						      byte_order);
-      tran.pkt.regrd.size = EXTRACT_SIGNED_INTEGER (&len, 2,
-						    byte_order);
-      rlen = nto_send (sizeof (tran.pkt.regrd), 1);
-      /* Sometimes, for some reason, this gdb_assert fails.  However,
-	 it seems to be happening only when we are setting up a fake
-	 stack, i.e. when gdb calls an inferior function.  Commented out
-	 but left as a comment as a reminder (should be looked at).  */
-      if (rlen > 0)
-	regcache_raw_supply (regcache, regno, recv.pkt.okdata.data);
-      else
-	{
-	  nto_trace (0) ("Could not read register %d (rlen: %d len: %d)\n", 
-			 regno, rlen, len);
-	}
+      fetch_regs (regcache, regset, 1);
     }
 }
 
