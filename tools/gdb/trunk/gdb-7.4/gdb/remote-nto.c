@@ -1937,55 +1937,46 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
     case DSMSG_NOTIFY_TIDLOAD:
       {
 	struct thread_info *ti;
-	nto_trace (0) ("New thread event: tid %d\n", tid);
+	struct private_thread_info *priv;
+
 	status->kind = nto_stop_on_thread_events
 			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
 	status->value.sig = 0;
 	tid = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.thread_event.tid,
 					2, byte_order);
-	if (!(ti = find_thread_ptid (ptid_build (pid, 0, tid))))
-	  {
-	    struct private_thread_info *priv;
+	nto_trace (0) ("New thread event: tid %d\n", tid);
+
 #if 0
 	    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv.pkt.notify.un.brk.ip,
 						   4, byte_order);
 
 #endif
-	    ti = add_thread (ptid_build (pid, 0, tid));
-	    /* Supply regcache with new thread instruction pointer */
-	    priv = XCALLOC (1, struct private_thread_info);
-	    priv->tid = tid;
-//	    priv->starting_ip = stopped_pc;
-	    ti->private = priv;
-	  }
-	else
-	  {
-	    warning (("Created tid of an already existing thread\n"));
-	    nto_find_new_threads (ops);
-	  }
+
+	priv = XCALLOC (1, struct private_thread_info);
+	priv->tid = tid;
+//    priv->starting_ip = stopped_pc;
+	ti = add_thread_with_info (ptid_build (pid, 0, tid), priv);
       }
       break;
     case DSMSG_NOTIFY_TIDUNLOAD:
       {
 	struct thread_info *ti;
-	ptid_t cur = inferior_ptid;
+	ptid_t cur = ptid_build (pid, 0, tid);
 	const int tid_exited = EXTRACT_SIGNED_INTEGER
 	  (&recv.pkt.notify.un.thread_event.tid, 4, byte_order);
 
-	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited, tid);
+	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
+		       tid);
         delete_thread (ptid_build (pid, 0, tid_exited));
 
 	status->kind = nto_stop_on_thread_events 
 			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
 	status->value.sig = 0;
 	/* Must determine an alive thread for this to work. */
-	cur = nto_get_thread_alive (NULL, ptid_build (pid, 0, 0));
-	if (!nto_thread_alive (NULL, cur))
+	if (!ptid_equal (inferior_ptid, cur))
 	  {
-	    warning (("nto_get_thread_alive returned non alive thread\n"));
+	    switch_to_thread (cur);
 	  }
-	switch_to_thread (cur);
-	tid = ptid_get_tid (cur);
       }
       break;
 #ifdef _DEBUG_WHAT_VFORK
