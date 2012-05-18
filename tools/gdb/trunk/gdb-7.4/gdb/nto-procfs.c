@@ -857,23 +857,21 @@ procfs_wait (struct target_ops *ops,
 	      /* New thread. */
 	      const ptid_t new_ptid =
 		ptid_build (status.pid, 0, status.blocked.thread_event.tid);
+	      struct thread_info *ti;
+	      struct private_thread_info *priv;
+
 
 	      ourstatus->kind = nto_stop_on_thread_events
 				  ? TARGET_WAITKIND_STOPPED
 				  : TARGET_WAITKIND_SPURIOUS;
 	      ourstatus->value.sig = 0;
-	      if (!find_thread_ptid (new_ptid))
-		{
-		  struct thread_info *const ti = add_thread (new_ptid);
+	      priv = XCALLOC (1, struct private_thread_info);
+	      priv->tid = tid;
+//    priv->starting_ip = stopped_pc;
+	      ti = add_thread_with_info (ptid_build (pid, 0, tid), priv);
 
-		  /* Switch to the new thread. */
-		  status.tid = status.blocked.thread_event.tid;
-		}
-	      else
-		{
-		  warning (("Created tid of an already existing thread\n"));
-		  procfs_find_new_threads (ops);
-		}
+	      /* Switch to the new thread. */
+	      status.tid = status.blocked.thread_event.tid;
 	    }
 	  else
 	    {
