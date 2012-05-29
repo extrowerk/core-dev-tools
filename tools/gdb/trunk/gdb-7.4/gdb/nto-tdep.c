@@ -379,7 +379,25 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
 int
 nto_in_dynsym_resolve_code (CORE_ADDR pc)
 {
-  if (in_plt_section (pc, NULL))
+  struct nto_inferior_data *inf_data;
+  struct inferior *inf;
+  int in_resolv = 0;
+
+  inf = current_inferior ();
+  inf_data = nto_inferior_data (inf);
+
+  if (inf_data->bind_func_p != 0)
+    {
+      const size_t bind_func_sz = inf_data->bind_func_sz ?
+				  inf_data->bind_func_sz : 80;
+      if (inf_data->bind_func_addr != 0)
+	in_resolv = (pc >= inf_data->bind_func_addr
+		     && pc < (inf_data->bind_func_addr + bind_func_sz));
+      if (!in_resolv && inf_data->resolve_func_addr != 0)
+	in_resolv = (pc == inf_data->resolve_func_addr);
+    }
+
+  if (in_resolv || in_plt_section (pc, NULL))
     return 1;
   return 0;
 }
@@ -516,11 +534,55 @@ nto_extra_thread_info (struct thread_info *ti)
   return "";
 }
 
+
+static CORE_ADDR
+nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
+{
+  struct nto_inferior_data *const inf_data
+    = nto_inferior_data (current_inferior ());
+
+  // TODO: Proper cleanup of inf. data 
+
+  if (inf_data->bind_func_p == 0)
+    {
+      /* On Neutrino with libc 6.5.0 and later, lazy binding is performed
+       * by a function called */
+      struct objfile *objfile;
+      struct minimal_symbol *const resolver
+	= lookup_minimal_symbol_and_objfile ("__resolve_func", &objfile);
+
+      if (resolver && objfile)
+	{
+	  struct minimal_symbol *const bind_f
+	    = lookup_minimal_symbol ("__bind_func", NULL, objfile);
+
+	  if (bind_f)
+	    {
+	      inf_data->bind_func_p = 1;
+	      inf_data->bind_func_addr = SYMBOL_VALUE_ADDRESS (bind_f);
+	      inf_data->bind_func_sz = MSYMBOL_SIZE (bind_f);
+	      inf_data->resolve_func_addr = SYMBOL_VALUE_ADDRESS (resolver);
+	    }
+	}
+    }
+
+  if (inf_data->bind_func_p)
+    {
+      if (inf_data->resolve_func_addr == pc)
+	return frame_unwind_caller_pc (get_current_frame ());
+    }
+
+  return 0;
+}
+
+
 void
 nto_initialize_signals (struct gdbarch *gdbarch)
 {
   set_gdbarch_target_signal_from_host (gdbarch, target_signal_from_nto);
   set_gdbarch_target_signal_to_host (gdbarch, target_signal_to_nto);
+
+  set_gdbarch_skip_solib_resolver (gdbarch, nto_ldqnx2_skip_solib_resolver);
 
   /* We use SIG45 for pulses, or something, so nostop, noprint
      and pass them.  */

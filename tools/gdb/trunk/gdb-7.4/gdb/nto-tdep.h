@@ -202,6 +202,24 @@ struct nto_inferior_data
 
   /* In case of a fork, is it a vfork? */
   int vfork;
+
+  /* bind_func address needed to determine if we are in
+   * dynsym code */
+  CORE_ADDR bind_func_addr;
+
+  /* Size of __bind_func symbol */
+  size_t bind_func_sz;
+
+  /* Similar to bind_func, we want to look it up only once */
+  CORE_ADDR resolve_func_addr;
+
+  /* To avoid repeatedly looking up symbols, mark here
+   * that the lookup has been done.  If it is done,
+   * then bind_func_ptr will not be re-calculated,
+   * even if it is still zero (meaning original attempt
+   * failed).
+   */
+  int bind_func_p;
 };
 
 
