@@ -688,6 +688,8 @@ static struct tramp_frame armbe_nto_sighandler_tramp_frame = {
 static void
 armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
+  struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
+
   /* Deal with our strange signals.  */
   nto_initialize_signals(gdbarch);
 
@@ -717,6 +719,13 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_software_single_step (gdbarch, arm_software_single_step);
 
   set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
+
+  if (tdep->arm_abi == ARM_ABI_AAPCS)
+    {
+      tdep->thumb2_breakpoint = 0x01;
+      tdep->lowest_pc = 0x1000;
+      tdep->thumb2_breakpoint_size = 4;
+    }
 }
 
 void
