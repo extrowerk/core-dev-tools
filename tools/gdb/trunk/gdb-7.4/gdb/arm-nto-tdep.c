@@ -685,6 +685,9 @@ static struct tramp_frame armbe_nto_sighandler_tramp_frame = {
 };
 #endif
 
+static const char arm_nto_thumb2_le_breakpoint[] = { 0xfe, 0xde, 0xff, 0xe7 };
+static const char arm_nto_thumb_le_breakpoint[] = { 0xfe, 0xde };
+
 static void
 armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
@@ -722,9 +725,14 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   if (tdep->arm_abi == ARM_ABI_AAPCS)
     {
-      tdep->thumb2_breakpoint = 0x01;
-      tdep->lowest_pc = 0x1000;
+      tdep->arm_breakpoint = arm_nto_thumb2_le_breakpoint;
+      tdep->thumb2_breakpoint = arm_nto_thumb2_le_breakpoint;
+      tdep->thumb_breakpoint = arm_nto_thumb_le_breakpoint;
+      tdep->arm_breakpoint_size = 4;
       tdep->thumb2_breakpoint_size = 4;
+      tdep->thumb_breakpoint_size = 2;
+
+      tdep->lowest_pc = 0x1000;
     }
 }
 
