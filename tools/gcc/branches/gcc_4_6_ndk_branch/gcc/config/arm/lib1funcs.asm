@@ -1304,10 +1304,10 @@ LSYM(Lover12):
         WEAK aeabi_ldiv0
         ARM_FUNC_START aeabi_idiv0
         ARM_FUNC_START aeabi_ldiv0
+	FUNC_ALIAS div0 aeabi_ldiv0
 #else
         ARM_FUNC_START div0
 #endif
-
 
         ldr     lr, [sp], #4
         .word   0xe7fffffe
@@ -1316,6 +1316,7 @@ LSYM(Lover12):
 #ifdef __ARM_EABI__
         FUNC_END aeabi_ldiv0
         FUNC_END aeabi_idiv0
+        FUNC_END div0
 #else
         FUNC_END div0
 #endif
