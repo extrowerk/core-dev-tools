@@ -201,9 +201,13 @@ phony_iconv (iconv_t utf_flag, const char **inbuf, size_t *inbytesleft,
 #define GDB_DEFAULT_TARGET_CHARSET "ISO-8859-1"
 #endif
 
+#ifndef __QNXTARGET__
 #ifndef GDB_DEFAULT_TARGET_WIDE_CHARSET
 #define GDB_DEFAULT_TARGET_WIDE_CHARSET "UTF-32"
 #endif
+#else /* __QNXTARGET__ */
+#define GDB_DEFAULT_TARGET_WIDE_CHARSET "ASCII"
+#endif /* __QNXTARGET__ */
 
 static const char *auto_host_charset_name = GDB_DEFAULT_HOST_CHARSET;
 static const char *host_charset_name = "auto";
@@ -1018,6 +1022,7 @@ _initialize_charset (void)
 
 #ifndef PHONY_ICONV
 #ifdef HAVE_LANGINFO_CODESET
+#ifndef __QNXTARGET__
   /* The result of nl_langinfo may be overwritten later.  This may
      leak a little memory, if the user later changes the host charset,
      but that doesn't matter much.  */
@@ -1027,6 +1032,9 @@ _initialize_charset (void)
      which GNU libiconv doesn't like (infinite loop).  */
   if (!strcmp (auto_host_charset_name, "646") || !*auto_host_charset_name)
     auto_host_charset_name = "ASCII";
+#else /* __QNXTARGET__ */
+  auto_host_charset_name = "ASCII";
+#endif /* __QNXTARGET__ */
   auto_target_charset_name = auto_host_charset_name;
 #elif defined (USE_WIN32API)
   {
