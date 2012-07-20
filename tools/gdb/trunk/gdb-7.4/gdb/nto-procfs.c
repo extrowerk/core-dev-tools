@@ -859,7 +859,8 @@ procfs_wait (struct target_ops *ops,
 		ptid_build (status.pid, 0, status.blocked.thread_event.tid);
 	      struct thread_info *ti;
 	      struct private_thread_info *priv;
-
+	      const int tid = status.blocked.thread_event.tid;
+	      const pid_t pid = status.pid;
 
 	      ourstatus->kind = nto_stop_on_thread_events
 				  ? TARGET_WAITKIND_STOPPED
