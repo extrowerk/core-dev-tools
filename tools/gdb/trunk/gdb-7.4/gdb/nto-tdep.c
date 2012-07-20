@@ -47,6 +47,7 @@
 #include <sys/debug.h>
 #include <sys/elf_notes.h>
 #define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
+#define Elf32_Phdr Elf32_External_Phdr
 #include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
 typedef debug_process_t nto_procfs_info;
