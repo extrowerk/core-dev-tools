@@ -28,11 +28,11 @@ do { \
     char *qnx_host = getenv ("QNX_HOST"); \
     char *qnx_target = getenv ("QNX_TARGET"); \
     if (qnx_host == NULL && qnx_target == NULL) \
-      fatal_error ("error: environment variables QNX_HOST and QNX_TARGET not defined"); \
+      fatal_error ("environment variables QNX_HOST and QNX_TARGET not defined"); \
     if (qnx_host == NULL) \
-      fatal_error ("error: environment variable QNX_HOST not defined"); \
+      fatal_error ("environment variable QNX_HOST not defined"); \
     if (qnx_target == NULL) \
-      fatal_error ("error: environment variable QNX_TARGET not defined"); \
+      fatal_error ("environment variable QNX_TARGET not defined"); \
     standard_libexec_prefix = concat (qnx_host, "/usr/lib/gcc/", NULL); \
     standard_exec_prefix = concat (qnx_host, "/usr/lib/gcc/", NULL); \
     standard_startfile_prefix = concat (qnx_host, "/usr/lib/", NULL); \
