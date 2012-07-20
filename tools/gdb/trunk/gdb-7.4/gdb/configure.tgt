@@ -207,7 +207,7 @@ i[34567]86-*-nto*)
 	gdb_target_obs="i386-tdep.o i387-tdep.o corelow.o solib.o solib-svr4.o \
 			i386-nto-tdep.o nto-tdep.o nto-signals.o \
 			remote-nto.o"
-	if [ gdb_host == nto ] ; then
+	if [ $gdb_host == nto ] ; then
 	    build_gdbserver=yes
 	fi
 	;;
@@ -683,7 +683,7 @@ xtensa*)
 esac
 
 if [ $gdb_host == nto ] ; then
-	build_gdbserver=yes
+	# If building for nto host, add native debugging support
 	gdb_target_obs="${gdb_target_obs} nto-procfs.o"
 fi
 
