@@ -5,75 +5,30 @@
 package parser
 
 import (
+	"fmt"
+	"go/ast"
 	"go/token"
 	"os"
 	"testing"
 )
 
-
 var fset = token.NewFileSet()
-
-var illegalInputs = []interface{}{
-	nil,
-	3.14,
-	[]byte(nil),
-	"foo!",
-}
-
-
-func TestParseIllegalInputs(t *testing.T) {
-	for _, src := range illegalInputs {
-		_, err := ParseFile(fset, "", src, 0)
-		if err == nil {
-			t.Errorf("ParseFile(%v) should have failed", src)
-		}
-	}
-}
-
-
-var validPrograms = []interface{}{
-	"package main\n",
-	`package main;`,
-	`package main; import "fmt"; func main() { fmt.Println("Hello, World!") };`,
-	`package main; func main() { if f(T{}) {} };`,
-	`package main; func main() { _ = (<-chan int)(x) };`,
-	`package main; func main() { _ = (<-chan <-chan int)(x) };`,
-	`package main; func f(func() func() func());`,
-	`package main; func f(...T);`,
-	`package main; func f(float, ...int);`,
-	`package main; func f(x int, a ...int) { f(0, a...); f(1, a...,) };`,
-	`package main; type T []int; var a []bool; func f() { if a[T{42}[0]] {} };`,
-	`package main; type T []int; func g(int) bool { return true }; func f() { if g(T{42}[0]) {} };`,
-	`package main; type T []int; func f() { for _ = range []int{T{42}[0]} {} };`,
-	`package main; var a = T{{1, 2}, {3, 4}}`,
-}
-
-
-func TestParseValidPrograms(t *testing.T) {
-	for _, src := range validPrograms {
-		_, err := ParseFile(fset, "", src, 0)
-		if err != nil {
-			t.Errorf("ParseFile(%q): %v", src, err)
-		}
-	}
-}
-
 
 var validFiles = []string{
 	"parser.go",
 	"parser_test.go",
+	"error_test.go",
+	"short_test.go",
 }
 
-
-func TestParse3(t *testing.T) {
+func TestParse(t *testing.T) {
 	for _, filename := range validFiles {
-		_, err := ParseFile(fset, filename, nil, 0)
+		_, err := ParseFile(fset, filename, nil, DeclarationErrors)
 		if err != nil {
 			t.Errorf("ParseFile(%s): %v", filename, err)
 		}
 	}
 }
-
 
 func nameFilter(filename string) bool {
 	switch filename {
@@ -86,11 +41,9 @@ func nameFilter(filename string) bool {
 	return true
 }
 
+func dirFilter(f os.FileInfo) bool { return nameFilter(f.Name()) }
 
-func dirFilter(f *os.FileInfo) bool { return nameFilter(f.Name) }
-
-
-func TestParse4(t *testing.T) {
+func TestParseDir(t *testing.T) {
 	path := "."
 	pkgs, err := ParseDir(fset, path, dirFilter, 0)
 	if err != nil {
@@ -107,6 +60,120 @@ func TestParse4(t *testing.T) {
 	for filename := range pkg.Files {
 		if !nameFilter(filename) {
 			t.Errorf("unexpected package file: %s", filename)
+		}
+	}
+}
+
+func TestParseExpr(t *testing.T) {
+	// just kicking the tires:
+	// a valid expression
+	src := "a + b"
+	x, err := ParseExpr(src)
+	if err != nil {
+		t.Errorf("ParseExpr(%s): %v", src, err)
+	}
+	// sanity check
+	if _, ok := x.(*ast.BinaryExpr); !ok {
+		t.Errorf("ParseExpr(%s): got %T, expected *ast.BinaryExpr", src, x)
+	}
+
+	// an invalid expression
+	src = "a + *"
+	_, err = ParseExpr(src)
+	if err == nil {
+		t.Errorf("ParseExpr(%s): %v", src, err)
+	}
+
+	// it must not crash
+	for _, src := range valids {
+		ParseExpr(src)
+	}
+}
+
+func TestColonEqualsScope(t *testing.T) {
+	f, err := ParseFile(fset, "", `package p; func f() { x, y, z := x, y, z }`, 0)
+	if err != nil {
+		t.Errorf("parse: %s", err)
+	}
+
+	// RHS refers to undefined globals; LHS does not.
+	as := f.Decls[0].(*ast.FuncDecl).Body.List[0].(*ast.AssignStmt)
+	for _, v := range as.Rhs {
+		id := v.(*ast.Ident)
+		if id.Obj != nil {
+			t.Errorf("rhs %s has Obj, should not", id.Name)
+		}
+	}
+	for _, v := range as.Lhs {
+		id := v.(*ast.Ident)
+		if id.Obj == nil {
+			t.Errorf("lhs %s does not have Obj, should", id.Name)
+		}
+	}
+}
+
+func TestVarScope(t *testing.T) {
+	f, err := ParseFile(fset, "", `package p; func f() { var x, y, z = x, y, z }`, 0)
+	if err != nil {
+		t.Errorf("parse: %s", err)
+	}
+
+	// RHS refers to undefined globals; LHS does not.
+	as := f.Decls[0].(*ast.FuncDecl).Body.List[0].(*ast.DeclStmt).Decl.(*ast.GenDecl).Specs[0].(*ast.ValueSpec)
+	for _, v := range as.Values {
+		id := v.(*ast.Ident)
+		if id.Obj != nil {
+			t.Errorf("rhs %s has Obj, should not", id.Name)
+		}
+	}
+	for _, id := range as.Names {
+		if id.Obj == nil {
+			t.Errorf("lhs %s does not have Obj, should", id.Name)
+		}
+	}
+}
+
+var imports = map[string]bool{
+	`"a"`:        true,
+	"`a`":        true,
+	`"a/b"`:      true,
+	`"a.b"`:      true,
+	`"m\x61th"`:  true,
+	`"greek/αβ"`: true,
+	`""`:         false,
+
+	// Each of these pairs tests both `` vs "" strings
+	// and also use of invalid characters spelled out as
+	// escape sequences and written directly.
+	// For example `"\x00"` tests import "\x00"
+	// while "`\x00`" tests import `<actual-NUL-byte>`.
+	`"\x00"`:     false,
+	"`\x00`":     false,
+	`"\x7f"`:     false,
+	"`\x7f`":     false,
+	`"a!"`:       false,
+	"`a!`":       false,
+	`"a b"`:      false,
+	"`a b`":      false,
+	`"a\\b"`:     false,
+	"`a\\b`":     false,
+	"\"`a`\"":    false,
+	"`\"a\"`":    false,
+	`"\x80\x80"`: false,
+	"`\x80\x80`": false,
+	`"\xFFFD"`:   false,
+	"`\xFFFD`":   false,
+}
+
+func TestImports(t *testing.T) {
+	for path, isValid := range imports {
+		src := fmt.Sprintf("package p; import %s", path)
+		_, err := ParseFile(fset, "", src, 0)
+		switch {
+		case err != nil && isValid:
+			t.Errorf("ParseFile(%s): got %v; expected no error", src, err)
+		case err == nil && !isValid:
+			t.Errorf("ParseFile(%s): got no error; expected one", src)
 		}
 	}
 }

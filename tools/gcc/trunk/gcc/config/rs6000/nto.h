@@ -20,9 +20,6 @@ Boston, MA 02111-1307, USA.  */
 
 #define HAVE_ATEXIT
 
-#undef TARGET_VERSION
-#define TARGET_VERSION fprintf (stderr, " (QNX/Neutrino/PowerPC ELF)");
-
 #undef TARGET_64BIT
 #define TARGET_64BIT 0
 

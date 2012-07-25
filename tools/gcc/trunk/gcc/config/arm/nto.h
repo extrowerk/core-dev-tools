@@ -9,9 +9,6 @@
 #undef DEFAULT_SIGNED_CHAR
 #define DEFAULT_SIGNED_CHAR  1 
 
-#undef	TARGET_VERSION
-#define	TARGET_VERSION fprintf(stderr, " (QNX/Neutrino/ARM ELF)");
-
 #define	OBJECT_FORMAT_ELF
 #define	HAS_INIT_SECTION
 
