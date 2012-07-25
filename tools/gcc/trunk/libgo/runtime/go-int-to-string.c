@@ -6,6 +6,7 @@
 
 #include "go-string.h"
 #include "runtime.h"
+#include "arch.h"
 #include "malloc.h"
 
 struct __go_string
@@ -51,7 +52,7 @@ __go_int_to_string (int v)
 	}
     }
 
-  retdata = runtime_mallocgc (len, RefNoPointers, 1, 0);
+  retdata = runtime_mallocgc (len, FlagNoPointers, 1, 0);
   __builtin_memcpy (retdata, buf, len);
   ret.__data = retdata;
   ret.__length = len;

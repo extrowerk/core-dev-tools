@@ -19,12 +19,6 @@ along with GNU CC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-/* Run-time Target Specification.  */
-#undef TARGET_VERSION
-#define TARGET_VERSION  fputs (" (QNX/Neutrino/SH ELF)", stderr);
-
-/* For now force sjlj exception handling, for compatibility with 
-   older Dinkum libs. */
 #define DWARF2_UNWIND_INFO 1 
 
 #undef TARGET_DEFAULT 
