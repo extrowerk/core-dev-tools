@@ -78,7 +78,9 @@ do {                                            \
         builtin_assert ("system=qnx");          \
         builtin_assert ("system=nto");          \
         builtin_assert ("system=qnxnto");       \
-	builtin_define ("__PRAGMA_PACK_PUSH_POP__"); \
+	builtin_define ("__PRAGMA_PACK_PUSH_POP__");		\
+	if (HAVE_GNU_INDIRECT_FUNCTION)				\
+	   builtin_define ("__GNU_INDIRECT_FUNCTION__");	\
     } while (0)
 
 /* Determine whether the entire c99 runtime
