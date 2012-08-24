@@ -92,9 +92,6 @@ do {                                            \
 
 #undef	CC1_SPEC
 #define	CC1_SPEC " \
-%{!mfloat-abi=*: -mfloat-abi=softfp} \
-%{!march=*: -march=armv7-a} \
-%{!mfpu=*: -mfpu=vfpv3-d16}  \
 %{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
 /* Call the function profiler with a given profile label. 
