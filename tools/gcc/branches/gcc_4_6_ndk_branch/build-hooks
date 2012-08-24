@@ -118,6 +118,14 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
 	configure_opts="${configure_opts} --enable-gnu-indirect-function"
+
+	if [ $cpu_string = armeabi ]; then
+		configure_opts="${configure_opts} --with-arch=armv7-a"
+		configure_opts="${configure_opts} --with-float=softfp"
+		configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+		configure_opts="${configure_opts} --with-mode=thumb"
+	fi
+
 	if test "${target}" = "mips-unknown-nto-qnx6.5.0"; then
 		configure_opts="${configure_opts} --disable-shared"
 		configure_opts="${configure_opts} --disable-fixed-point"
