@@ -201,7 +201,7 @@ typedef struct _debug_thread_info
   qnx_64 ip;
   qnx_64 sp;
   qnx_64 stkbase;
-  int tls;
+  qnx_64 tls;
   unsigned stksize;
   unsigned tid_flags;
   unsigned char priority;
