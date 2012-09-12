@@ -71,6 +71,7 @@
 #include <sys/debug.h>
 #include <sys/elf_notes.h>
 #define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
+#define Elf32_Phdr Elf32_External_Phdr
 #include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
 typedef debug_process_t nto_procfs_info;
@@ -692,15 +693,18 @@ nto_incoming_text (int len)
 {
   int textlen;
   TSMsg_text_t *text;
-  char buf[TS_TEXT_MAX_SIZE];
+  const size_t buf_sz = TS_TEXT_MAX_SIZE + 1;
+  char buf[buf_sz];
 
   text = &recv.text;
   textlen = len - offsetof (TSMsg_text_t, text);
+  if (textlen <= 0)
+    return 0;
 
   switch (text->hdr.cmd)
     {
     case TSMsg_text:
-      snprintf (buf, TS_TEXT_MAX_SIZE, "%s", text->text);
+      snprintf (buf, buf_sz, "%s", text->text);
       buf[textlen] = '\0';
       //ui_file_write (gdb_stdtarg, buf, textlen);
       fputs_unfiltered (buf, gdb_stdtarg);
@@ -1967,7 +1971,7 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
 
 	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
 		       tid);
-        delete_thread (ptid_build (pid, 0, tid_exited));
+	delete_thread (ptid_build (pid, 0, tid_exited));
 
 	status->kind = nto_stop_on_thread_events 
 			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
