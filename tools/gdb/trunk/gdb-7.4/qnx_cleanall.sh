@@ -44,8 +44,8 @@ if [ "$PRINT_HELP" ]; then
   echo "    -o - HOSTOS string. One of: linux,win32,darwin or nto "
   echo "    -h - print this help message"
   return 1
+else
+  echo "Executing: rm -rf ${RMARG}"
+  rm -rf ${RMARG}
 fi
-
-echo "Executing: rm -rf ${RMARG}"
-rm -rf ${RMARG}
 
