@@ -37,7 +37,7 @@ struct link_map_offsets
 #ifdef __QNXTARGET__
     /* Offset and size of r_debug.r_state.  */
     int r_state_offset, r_state_size;
-    
+
     /* Offset and size of r_debug.r_rdevent.  */
     int r_rdevent_offset, r_rdevent_size;
 #endif
@@ -69,6 +69,11 @@ struct link_map_offsets
 
     /* Offset to l_name field in struct link_map.  */
     int l_name_offset;
+
+#ifdef __QNXTARGET__
+    /* Offset of l_path field of struct link_map.  */
+    int l_path_offset;
+#endif
   };
 
 /* set_solib_svr4_fetch_link_map_offsets() is intended to be called by
