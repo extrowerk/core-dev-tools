@@ -268,7 +268,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo.l_next_offset = 12;
 
       lmo.l_prev_offset = 16;
-      //lmo.l_path_offset = 28;
+
+      lmo.l_path_offset = 28;
     }
 
   return lmp;
