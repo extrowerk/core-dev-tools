@@ -6,24 +6,26 @@ see ONEWS.
 
 ======================================================================
 http://gcc.gnu.org/gcc-4.7/index.html
-
                              GCC 4.7 Release Series
 
-   June 14, 2012
+   September 20, 2012
 
    The [1]GNU project and the GCC developers are pleased to announce the
-   release of GCC 4.7.1.
+   release of GCC 4.7.2.
 
    This release is a bug-fix release, containing fixes for regressions in
-   GCC 4.7.0 relative to previous releases of GCC.
+   GCC 4.7.1 relative to previous releases of GCC.
 
 Release History
 
+   GCC 4.7.2
+          September 20, 2012 ([2]changes)
+
    GCC 4.7.1
-          June 14, 2012 ([2]changes)
+          June 14, 2012 ([3]changes)
 
    GCC 4.7.0
-          March 22, 2012 ([3]changes)
+          March 22, 2012 ([4]changes)
 
 References and Acknowledgements
 
@@ -31,55 +33,55 @@ References and Acknowledgements
    supports several other languages aside from C, it now stands for the
    GNU Compiler Collection.
 
-   A list of [4]successful builds is updated as new information becomes
+   A list of [5]successful builds is updated as new information becomes
    available.
 
    The GCC developers would like to thank the numerous people that have
    contributed new features, improvements, bug fixes, and other changes as
-   well as test results to GCC. This [5]amazing group of volunteers is
+   well as test results to GCC. This [6]amazing group of volunteers is
    what makes GCC successful.
 
-   For additional information about GCC please refer to the [6]GCC project
-   web site or contact the [7]GCC development mailing list.
+   For additional information about GCC please refer to the [7]GCC project
+   web site or contact the [8]GCC development mailing list.
 
-   To obtain GCC please use [8]our mirror sites or [9]our SVN server.
+   To obtain GCC please use [9]our mirror sites or [10]our SVN server.
 
 
     For questions related to the use of GCC, please consult these web
-    pages and the [10]GCC manuals. If that fails, the
-    [11]gcc-help@gcc.gnu.org mailing list might help. Comments on these
+    pages and the [11]GCC manuals. If that fails, the
+    [12]gcc-help@gcc.gnu.org mailing list might help. Comments on these
     web pages and the development of GCC are welcome on our developer
-    list at [12]gcc@gcc.gnu.org. All of [13]our lists have public
+    list at [13]gcc@gcc.gnu.org. All of [14]our lists have public
     archives.
 
-   Copyright (C) [14]Free Software Foundation, Inc. Verbatim copying and
+   Copyright (C) [15]Free Software Foundation, Inc. Verbatim copying and
    distribution of this entire article is permitted in any medium,
    provided this notice is preserved.
 
-   These pages are [15]maintained by the GCC team. Last modified
-   2012-06-14[16].
+   These pages are [16]maintained by the GCC team. Last modified
+   2012-09-20[17].
 
 References
 
    1. http://www.gnu.org/
    2. http://gcc.gnu.org/gcc-4.7/changes.html
    3. http://gcc.gnu.org/gcc-4.7/changes.html
-   4. http://gcc.gnu.org/gcc-4.7/buildstat.html
-   5. http://gcc.gnu.org/onlinedocs/gcc/Contributors.html
-   6. http://gcc.gnu.org/index.html
-   7. mailto:gcc@gcc.gnu.org
-   8. http://gcc.gnu.org/mirrors.html
-   9. http://gcc.gnu.org/svn.html
-  10. http://gcc.gnu.org/onlinedocs/
-  11. mailto:gcc-help@gcc.gnu.org
-  12. mailto:gcc@gcc.gnu.org
-  13. http://gcc.gnu.org/lists.html
-  14. http://www.fsf.org/
-  15. http://gcc.gnu.org/about.html
-  16. http://validator.w3.org/check/referer
+   4. http://gcc.gnu.org/gcc-4.7/changes.html
+   5. http://gcc.gnu.org/gcc-4.7/buildstat.html
+   6. http://gcc.gnu.org/onlinedocs/gcc/Contributors.html
+   7. http://gcc.gnu.org/index.html
+   8. mailto:gcc@gcc.gnu.org
+   9. http://gcc.gnu.org/mirrors.html
+  10. http://gcc.gnu.org/svn.html
+  11. http://gcc.gnu.org/onlinedocs/
+  12. mailto:gcc-help@gcc.gnu.org
+  13. mailto:gcc@gcc.gnu.org
+  14. http://gcc.gnu.org/lists.html
+  15. http://www.fsf.org/
+  16. http://gcc.gnu.org/about.html
+  17. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.7/changes.html
-
                              GCC 4.7 Release Series
                         Changes, New Features, and Fixes
 
@@ -95,6 +97,9 @@ Caveats
        untested target ports of GCC has been declared obsolete in GCC 4.7.
        Unless there is activity to revive them, the next release of GCC
        will have their sources permanently removed.
+       All GCC ports for the following processor architectures have been
+       declared obsolete:
+          + picoChip (picochip-*)
        The following ports for individual systems on particular
        architectures have been obsoleted:
           + IRIX 6.5 (mips-sgi-irix6.5)
@@ -102,6 +107,17 @@ Caveats
           + Solaris 8 (*-*-solaris2.8). Details can be found in the
             [1]announcement.
           + Tru64 UNIX V5.1 (alpha*-dec-osf5.1*)
+     * On ARM, when compiling for ARMv6 (but not ARMv6-M), ARMv7-A,
+       ARMv7-R, or ARMv7-M, the new option -munaligned-access is active by
+       default, which for some source codes generates code that accesses
+       memory on unaligned addresses. This will require the kernel of
+       those systems to enable such accesses (controlled by CP15 register
+       c1, refer to ARM documentation). Alternatively or for compatibility
+       with kernels where unaligned accesses are not supported, all code
+       has to be compiled with -mno-unaligned-access. Linux/ARM in
+       official releases has automatically and unconditionally supported
+       unaligned accesses as emitted by GCC due to this option being
+       active, since Linux version 2.6.28.
      * Support on ARM for the legacy floating-point accelerator (FPA) and
        the mixed-endian floating-point format that it used has been
        obsoleted. The ports that still use this format have been obsoleted
@@ -142,6 +158,24 @@ Caveats
        obsoleted in GCC 4.6.
      * It is no longer possible to use the "l" constraint in MIPS16 asm
        statements.
+     * GCC versions 4.7.0 and 4.7.1 had changes to the C++ standard
+       library which affected the ABI in C++11 mode: a data member was
+       added to std::list changing its size and altering the definitions
+       of some member functions, and std::pair's move constructor was
+       non-trivial which altered the calling convention for functions with
+       std::pair arguments or return types. The ABI incompatibilities have
+       been fixed for GCC version 4.7.2 but as a result C++11 code
+       compiled with GCC 4.7.0 or 4.7.1 may be incompatible with C++11
+       code compiled with different GCC versions and with C++98/C++03 code
+       compiled with any version.
+     * On ARM, a bug has been fixed in GCC's implementation of the AAPCS
+       rules for the layout of vectors that could lead to wrong code being
+       generated. Vectors larger than 8 bytes in size are now by default
+       aligned to an 8-byte boundary. This is an ABI change: code that
+       makes explicit use of vector types may be incompatible with binary
+       objects built with older versions of GCC. Auto-vectorized code is
+       not affected by this change. (This change affects GCC versions
+       4.7.2 and later.)
      * More information on porting to GCC 4.7 from previous versions of
        GCC can be found in the [2]porting guide for this release.
 
@@ -538,7 +572,8 @@ const int &y = f(2);
 
      * GCC 4.7 implements the [33]Go 1 language standard. The library
        support in 4.7.0 is not quite complete, due to release timing.
-       Release 4.7.1 is expected to include complete support.
+       Release 4.7.1 includes complete support for Go 1. The Go library is
+       from the Go 1.0.1 release.
      * Go has been tested on GNU/Linux and Solaris platforms. It may work
        on other platforms as well.
 
@@ -571,7 +606,14 @@ int add_values (const __flash int *p, int i)
     return values[i] + *p;
 }
 
-     * Support for AVR-specific [35]built-in functions has been added.
+     * Support has been added for a new AVR-specific configure option
+       --with-avrlibc=yes in order to arrange for better integration of
+       [35]AVR-Libc. This configure option is supported in avr-gcc 4.7.2
+       and newer and will only take effect in non-RTEMS configurations. If
+       avr-gcc is configured for RTEMS, the option will be ignored which
+       is the same as specifying --with-avrlibc=no. See [36]PR54461 for
+       more technical details.
+     * Support for AVR-specific [37]built-in functions has been added.
      * Support has been added for the signed and unsigned 24-bit scalar
        integer types __int24 and __uint24.
      * New command-line options -maccumulate-args, -mbranch-cost=cost and
@@ -653,7 +695,7 @@ void set_portb (uint8_t value)
        FMA, BMI, BMI2, LZCNT is available through -march=core-avx2.
      * Support for new AMD family 15h processors (Piledriver core) is now
        available through -march=bdver2 and -mtune=bdver2 options.
-     * Support for [36]the x32 psABI is now available through the -mx32
+     * Support for [38]the x32 psABI is now available through the -mx32
        option.
      * Windows mingw targets are using the -mms-bitfields option by
        default.
@@ -703,7 +745,7 @@ void set_portb (uint8_t value)
      * The PowerPC port will now enable machine-specific built-in
        functions when the user switches the target machine using the
        #pragma GCC target or __attribute__ ((__target__ ("target"))) code
-       sequences. In additon, the target macros are updated. However, due
+       sequences. In addition, the target macros are updated. However, due
        to the way the -save-temps switch is implemented, you won't see the
        effect of these additional macros being defined in preprocessor
        output.
@@ -766,33 +808,43 @@ Other significant improvements
        the DW_AT_producer attribute string in the DWARF debugging
        information.
      * GCC now supports various new GNU extensions to the DWARF debugging
-       information format, like [37]entry value and [38]call site
-       information, [39]typed DWARF stack or [40]a more compact macro
+       information format, like [39]entry value and [40]call site
+       information, [41]typed DWARF stack or [42]a more compact macro
        representation. Support for these extensions has been added to GDB
        7.4. They can be disabled through the -gstrict-dwarf command-line
        option.
 
 GCC 4.7.1
 
-   This is the [41]list of problem reports (PRs) from GCC's bug tracking
+   This is the [43]list of problem reports (PRs) from GCC's bug tracking
    system that are known to be fixed in the 4.7.1 release. This list might
+   not be complete (that is, it is possible that some PRs that have been
+   fixed are not listed here).
+
+   The Go frontend in the 4.7.1 release fully supports the [44]Go 1
+   language standard.
+
+GCC 4.7.2
+
+   This is the [45]list of problem reports (PRs) from GCC's bug tracking
+   system that are known to be fixed in the 4.7.2 release. This list might
    not be complete (that is, it is possible that some PRs that have been
    fixed are not listed here).
 
 
     For questions related to the use of GCC, please consult these web
-    pages and the [42]GCC manuals. If that fails, the
-    [43]gcc-help@gcc.gnu.org mailing list might help. Comments on these
+    pages and the [46]GCC manuals. If that fails, the
+    [47]gcc-help@gcc.gnu.org mailing list might help. Comments on these
     web pages and the development of GCC are welcome on our developer
-    list at [44]gcc@gcc.gnu.org. All of [45]our lists have public
+    list at [48]gcc@gcc.gnu.org. All of [49]our lists have public
     archives.
 
-   Copyright (C) [46]Free Software Foundation, Inc. Verbatim copying and
+   Copyright (C) [50]Free Software Foundation, Inc. Verbatim copying and
    distribution of this entire article is permitted in any medium,
    provided this notice is preserved.
 
-   These pages are [47]maintained by the GCC team. Last modified
-   2012-06-14[48].
+   These pages are [51]maintained by the GCC team. Last modified
+   2012-09-20[52].
 
 References
 
@@ -809,44 +861,47 @@ References
   11. http://gcc.gnu.org/gcc-4.7/cxx0x_status.html
   12. http://gcc.gnu.org/PR14258
   13. http://gcc.gnu.org/PR35688
-  14. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/libstdc++/manual/manual/status.html#status.iso.2011
-  15. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfstack-arrays_007d-254
-  16. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gcc/Optimize-Options.html#index-Ofast-689
-  17. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfno-protect-parens_007d-270
-  18. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfstack-arrays_007d-254
-  19. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfrontend-optimize_007d-275
-  20. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Error-and-Warning-Options.html#index-g_t_0040code_007bWfunction-elimination_007d-170
-  21. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfaggressive-function-elimination_007d-270
-  22. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Error-and-Warning-Options.html#index-g_t_0040code_007bWreal-q-constant_007d-149
-  23. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/SELECTED_005fREAL_005fKIND.html
+  14. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/libstdc++/manual/manual/status.html#status.iso.2011
+  15. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfstack-arrays_007d-254
+  16. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gcc/Optimize-Options.html#index-Ofast-689
+  17. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfno-protect-parens_007d-270
+  18. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfstack-arrays_007d-254
+  19. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfrontend-optimize_007d-275
+  20. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Error-and-Warning-Options.html#index-g_t_0040code_007bWfunction-elimination_007d-170
+  21. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Code-Gen-Options.html#index-g_t_0040code_007bfaggressive-function-elimination_007d-270
+  22. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Error-and-Warning-Options.html#index-g_t_0040code_007bWreal-q-constant_007d-149
+  23. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/SELECTED_005fREAL_005fKIND.html
   24. http://msdn.microsoft.com/en-us/library/bb787181%28v=vs.85%29.aspx
-  25. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Debugging-Options.html#index-g_t_0040code_007bfno-backtrace_007d-183
+  25. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Debugging-Options.html#index-g_t_0040code_007bfno-backtrace_007d-183
   26. http://gcc.gnu.org/wiki/Fortran2003Status
   27. http://gcc.gnu.org/wiki/OOP
   28. http://gcc.gnu.org/wiki/Fortran2008Status
   29. http://gcc.gnu.org/wiki/Coarray
   30. http://gcc.gnu.org/wiki/CoarrayLib
   31. http://gcc.gnu.org/wiki/TS29113Status
-  32. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gfortran/Fortran-Dialect-Options.html#index-g_t_0040code_007bstd_003d_007d_0040var_007bstd_007d-option-53
+  32. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gfortran/Fortran-Dialect-Options.html#index-g_t_0040code_007bstd_003d_007d_0040var_007bstd_007d-option-53
   33. http://weekly.golang.org/doc/go1.html
-  34. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gcc/Named-Address-Spaces.html
-  35. http://gcc.gnu.org/onlinedocs/gcc-4.7.0/gcc/AVR-Built%5f002din-Functions.html
-  36. http://sites.google.com/site/x32abi/
-  37. http://www.dwarfstd.org/ShowIssue.php?issue=100909.1
-  38. http://www.dwarfstd.org/ShowIssue.php?issue=100909.2
-  39. http://www.dwarfstd.org/doc/040408.1.html
-  40. http://www.dwarfstd.org/ShowIssue.php?issue=110722.1
-  41. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.7.1
-  42. http://gcc.gnu.org/onlinedocs/
-  43. mailto:gcc-help@gcc.gnu.org
-  44. mailto:gcc@gcc.gnu.org
-  45. http://gcc.gnu.org/lists.html
-  46. http://www.fsf.org/
-  47. http://gcc.gnu.org/about.html
-  48. http://validator.w3.org/check/referer
+  34. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gcc/Named-Address-Spaces.html
+  35. http://nongnu.org/avr-libc/
+  36. http://gcc.gnu.org/PR54461
+  37. http://gcc.gnu.org/onlinedocs/gcc-4.7.1/gcc/AVR-Built%5f002din-Functions.html
+  38. http://sites.google.com/site/x32abi/
+  39. http://www.dwarfstd.org/ShowIssue.php?issue=100909.1
+  40. http://www.dwarfstd.org/ShowIssue.php?issue=100909.2
+  41. http://www.dwarfstd.org/doc/040408.1.html
+  42. http://www.dwarfstd.org/ShowIssue.php?issue=110722.1
+  43. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.7.1
+  44. http://weekly.golang.org/doc/go1.html
+  45. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.7.2
+  46. http://gcc.gnu.org/onlinedocs/
+  47. mailto:gcc-help@gcc.gnu.org
+  48. mailto:gcc@gcc.gnu.org
+  49. http://gcc.gnu.org/lists.html
+  50. http://www.fsf.org/
+  51. http://gcc.gnu.org/about.html
+  52. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.6/index.html
-
                              GCC 4.6 Release Series
 
    March 1, 2012
@@ -927,7 +982,6 @@ References
   18. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.6/changes.html
-
                              GCC 4.6 Release Series
                         Changes, New Features, and Fixes
 
@@ -971,6 +1025,16 @@ Caveats
        computed needlessly, sometimes expensively. The
        -Wunused-but-set-variable warning is enabled by default by -Wall
        flag and -Wunused-but-set-parameter by -Wall -Wextra flags.
+     * On ARM, a bug has been fixed in GCC's implementation of the AAPCS
+       rules for the layout of vectors that could lead to wrong code being
+       generated. Vectors larger than 8 bytes in size are now by default
+       aligned to an 8-byte boundary. This is an ABI change: code that
+       makes explicit use of vector types may be incompatible with binary
+       objects built with older versions of GCC. Auto-vectorized code is
+       not affected by this change. (This change affects GCC versions
+       4.6.4 and later, with the exception of versions 4.7.0 and 4.7.1.)
+     * On AVR, variables with the progmem attribute to locate data in
+       flash memory must be qualified as const.
      * Support for a number of older systems and recently unmaintained or
        untested target ports of GCC has been declared obsolete in GCC 4.6.
        Unless there is activity to revive them, the next release of GCC
@@ -1508,11 +1572,6 @@ New Targets and Target Specific Improvements
      * GCC for AAPCS configurations now more closely adheres to the AAPCS
        specification by enabling -fstrict-volatile-bitfields by default.
 
-  AVR
-
-     * Variables with the progmem attribute to locate data in flash memory
-       must be qualified as const.
-
   IA-32/x86-64
 
      * The new -fsplit-stack option permits programs to use a
@@ -1803,7 +1862,7 @@ GCC 4.6.3
    provided this notice is preserved.
 
    These pages are [28]maintained by the GCC team. Last modified
-   2012-06-12[29].
+   2012-09-19[29].
 
 References
 
@@ -1838,30 +1897,32 @@ References
   29. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.5/index.html
-
                              GCC 4.5 Release Series
 
-   Apr 28, 2011
+   Jul 2, 2012
 
    The [1]GNU project and the GCC developers are pleased to announce the
-   release of GCC 4.5.3.
+   release of GCC 4.5.4.
 
    This release is a bug-fix release, containing fixes for regressions in
-   GCC 4.5.2 relative to previous releases of GCC.
+   GCC 4.5.3 relative to previous releases of GCC.
 
 Release History
 
+   GCC 4.5.4
+          Jul 2, 2012 ([2]changes)
+
    GCC 4.5.3
-          Apr 28, 2011 ([2]changes)
+          Apr 28, 2011 ([3]changes)
 
    GCC 4.5.2
-          Dec 16, 2010 ([3]changes)
+          Dec 16, 2010 ([4]changes)
 
    GCC 4.5.1
-          Jul 31, 2010 ([4]changes)
+          Jul 31, 2010 ([5]changes)
 
    GCC 4.5.0
-          April 14, 2010 ([5]changes)
+          April 14, 2010 ([6]changes)
 
 References and Acknowledgements
 
@@ -1869,33 +1930,33 @@ References and Acknowledgements
    supports several other languages aside from C, it now stands for the
    GNU Compiler Collection.
 
-   A list of [6]successful builds is updated as new information becomes
+   A list of [7]successful builds is updated as new information becomes
    available.
 
    The GCC developers would like to thank the numerous people that have
    contributed new features, improvements, bug fixes, and other changes as
-   well as test results to GCC. This [7]amazing group of volunteers is
+   well as test results to GCC. This [8]amazing group of volunteers is
    what makes GCC successful.
 
-   For additional information about GCC please refer to the [8]GCC project
-   web site or contact the [9]GCC development mailing list.
+   For additional information about GCC please refer to the [9]GCC project
+   web site or contact the [10]GCC development mailing list.
 
-   To obtain GCC please use [10]our mirror sites or [11]our SVN server.
+   To obtain GCC please use [11]our mirror sites or [12]our SVN server.
 
 
     For questions related to the use of GCC, please consult these web
-    pages and the [12]GCC manuals. If that fails, the
-    [13]gcc-help@gcc.gnu.org mailing list might help. Comments on these
+    pages and the [13]GCC manuals. If that fails, the
+    [14]gcc-help@gcc.gnu.org mailing list might help. Comments on these
     web pages and the development of GCC are welcome on our developer
-    list at [14]gcc@gcc.gnu.org. All of [15]our lists have public
+    list at [15]gcc@gcc.gnu.org. All of [16]our lists have public
     archives.
 
-   Copyright (C) [16]Free Software Foundation, Inc. Verbatim copying and
+   Copyright (C) [17]Free Software Foundation, Inc. Verbatim copying and
    distribution of this entire article is permitted in any medium,
    provided this notice is preserved.
 
-   These pages are [17]maintained by the GCC team. Last modified
-   2011-04-28[18].
+   These pages are [18]maintained by the GCC team. Last modified
+   2012-07-02[19].
 
 References
 
@@ -1904,22 +1965,22 @@ References
    3. http://gcc.gnu.org/gcc-4.5/changes.html
    4. http://gcc.gnu.org/gcc-4.5/changes.html
    5. http://gcc.gnu.org/gcc-4.5/changes.html
-   6. http://gcc.gnu.org/gcc-4.5/buildstat.html
-   7. http://gcc.gnu.org/onlinedocs/gcc/Contributors.html
-   8. http://gcc.gnu.org/index.html
-   9. mailto:gcc@gcc.gnu.org
-  10. http://gcc.gnu.org/mirrors.html
-  11. http://gcc.gnu.org/svn.html
-  12. http://gcc.gnu.org/onlinedocs/
-  13. mailto:gcc-help@gcc.gnu.org
-  14. mailto:gcc@gcc.gnu.org
-  15. http://gcc.gnu.org/lists.html
-  16. http://www.fsf.org/
-  17. http://gcc.gnu.org/about.html
-  18. http://validator.w3.org/check/referer
+   6. http://gcc.gnu.org/gcc-4.5/changes.html
+   7. http://gcc.gnu.org/gcc-4.5/buildstat.html
+   8. http://gcc.gnu.org/onlinedocs/gcc/Contributors.html
+   9. http://gcc.gnu.org/index.html
+  10. mailto:gcc@gcc.gnu.org
+  11. http://gcc.gnu.org/mirrors.html
+  12. http://gcc.gnu.org/svn.html
+  13. http://gcc.gnu.org/onlinedocs/
+  14. mailto:gcc-help@gcc.gnu.org
+  15. mailto:gcc@gcc.gnu.org
+  16. http://gcc.gnu.org/lists.html
+  17. http://www.fsf.org/
+  18. http://gcc.gnu.org/about.html
+  19. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.5/changes.html
-
                              GCC 4.5 Release Series
                         Changes, New Features, and Fixes
 
@@ -2532,7 +2593,7 @@ GCC 4.5.2
 GCC 4.5.3
 
    This is the [27]list of problem reports (PRs) from GCC's bug tracking
-   system that are known to be fixed in the 4.5.2 release. This list might
+   system that are known to be fixed in the 4.5.3 release. This list might
    not be complete (that is, it is possible that some PRs that have been
    fixed are not listed here).
 
@@ -2546,20 +2607,27 @@ GCC 4.5.3
    vec_vsx_ld and vec_vsx_st which always generates the VSX memory
    instructions.
 
+GCC 4.5.4
+
+   This is the [28]list of problem reports (PRs) from GCC's bug tracking
+   system that are known to be fixed in the 4.5.4 release. This list might
+   not be complete (that is, it is possible that some PRs that have been
+   fixed are not listed here).
+
 
     For questions related to the use of GCC, please consult these web
-    pages and the [28]GCC manuals. If that fails, the
-    [29]gcc-help@gcc.gnu.org mailing list might help. Comments on these
+    pages and the [29]GCC manuals. If that fails, the
+    [30]gcc-help@gcc.gnu.org mailing list might help. Comments on these
     web pages and the development of GCC are welcome on our developer
-    list at [30]gcc@gcc.gnu.org. All of [31]our lists have public
+    list at [31]gcc@gcc.gnu.org. All of [32]our lists have public
     archives.
 
-   Copyright (C) [32]Free Software Foundation, Inc. Verbatim copying and
+   Copyright (C) [33]Free Software Foundation, Inc. Verbatim copying and
    distribution of this entire article is permitted in any medium,
    provided this notice is preserved.
 
-   These pages are [33]maintained by the GCC team. Last modified
-   2011-10-30[34].
+   These pages are [34]maintained by the GCC team. Last modified
+   2012-08-04[35].
 
 References
 
@@ -2569,7 +2637,7 @@ References
    4. http://gcc.gnu.org/gcc-4.4/changes.html#obsoleted
    5. http://gcc.gnu.org/gcc-4.5/changes.html#x86
    6. http://www.multiprecision.org/
-   7. http://gcc.gnu.org/bugzilla/show_bug.cgi?id=30789
+   7. http://gcc.gnu.org/PR30789
    8. http://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-flto-801
    9. http://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-fwhopr-802
   10. http://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-fwhole-program-800
@@ -2590,16 +2658,16 @@ References
   25. http://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-flto-801
   26. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.5.2
   27. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.5.3
-  28. http://gcc.gnu.org/onlinedocs/
-  29. mailto:gcc-help@gcc.gnu.org
-  30. mailto:gcc@gcc.gnu.org
-  31. http://gcc.gnu.org/lists.html
-  32. http://www.fsf.org/
-  33. http://gcc.gnu.org/about.html
-  34. http://validator.w3.org/check/referer
+  28. http://gcc.gnu.org/bugzilla/buglist.cgi?bug_status=RESOLVED&resolution=FIXED&target_milestone=4.5.4
+  29. http://gcc.gnu.org/onlinedocs/
+  30. mailto:gcc-help@gcc.gnu.org
+  31. mailto:gcc@gcc.gnu.org
+  32. http://gcc.gnu.org/lists.html
+  33. http://www.fsf.org/
+  34. http://gcc.gnu.org/about.html
+  35. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.4/index.html
-
                              GCC 4.4 Release Series
 
    March 13, 2012
@@ -2696,7 +2764,6 @@ References
   22. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.4/changes.html
-
                              GCC 4.4 Release Series
                         Changes, New Features, and Fixes
 
@@ -3331,7 +3398,6 @@ References
   26. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.3/index.html
-
                              GCC 4.3 Release Series
 
    Jun 27, 2011
@@ -3424,7 +3490,6 @@ References
   21. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.3/changes.html
-
                              GCC 4.3 Release Series
                         Changes, New Features, and Fixes
 
@@ -4246,7 +4311,6 @@ References
   37. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.2/index.html
-
                              GCC 4.2 Release Series
 
    May 19, 2008
@@ -4331,7 +4395,6 @@ References
   19. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.2/changes.html
-
                              GCC 4.2 Release Series
                         Changes, New Features, and Fixes
 
@@ -4655,7 +4718,6 @@ References
   13. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.1/index.html
-
                              GCC 4.1 Release Series
 
    February 13, 2007
@@ -4732,7 +4794,6 @@ References
   17. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.1/changes.html
-
                              GCC 4.1 Release Series
                         Changes, New Features, and Fixes
 
@@ -5292,7 +5353,6 @@ References
   13. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.0/index.html
-
                              GCC 4.0 Release Series
 
    January 31, 2007
@@ -5377,7 +5437,6 @@ References
   19. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-4.0/changes.html
-
                              GCC 4.0 Release Series
                         Changes, New Features, and Fixes
 
@@ -5879,7 +5938,7 @@ GCC 4.0.4
    provided this notice is preserved.
 
    These pages are [21]maintained by the GCC team. Last modified
-   2012-02-20[22].
+   2012-08-26[22].
 
 References
 
@@ -5890,7 +5949,7 @@ References
    5. http://gcc.gnu.org/news/sms.html
    6. http://www.akkadia.org/drepper/dsohowto.pdf
    7. http://gcc.gnu.org/gcc-4.0/changes.html#visibility
-   8. http://sourcery.mentor.com/public/cxx-abi/
+   8. http://mentorembedded.github.com/cxx-abi/
    9. http://gcc.gnu.org/fortran/
   10. http://gcc.gnu.org/install/
   11. http://gcc.gnu.org/wiki/Visibility
@@ -5907,7 +5966,6 @@ References
   22. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.4/index.html
-
                              GCC 3.4 Release Series
 
    May 26, 2006
@@ -6007,7 +6065,6 @@ References
   23. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.4/changes.html
-
                              GCC 3.4 Release Series
                         Changes, New Features, and Fixes
 
@@ -8191,7 +8248,6 @@ References
  418. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.3/index.html
-
                              GCC 3.3 Release Series
 
    May 03, 2005
@@ -8291,7 +8347,6 @@ References
   22. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.3/changes.html
-
                              GCC 3.3 Release Series
                         Changes, New Features, and Fixes
 
@@ -10204,7 +10259,6 @@ References
  559. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.2/index.html
-
                              GCC 3.2 Release Series
 
    April 25, 2003
@@ -10294,7 +10348,6 @@ References
   18. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.2/changes.html
-
                              GCC 3.2 Release Series
                         Changes, New Features, and Fixes
 
@@ -11152,7 +11205,6 @@ References
  252. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.1/index.html
-
                                     GCC 3.1
 
    July 27, 2002
@@ -11219,7 +11271,6 @@ References
   15. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.1/changes.html
-
                              GCC 3.1 Release Series
                         Changes, New Features, and Fixes
 
@@ -11554,7 +11605,7 @@ Documentation improvements
    provided this notice is preserved.
 
    These pages are [18]maintained by the GCC team. Last modified
-   2011-04-25[19].
+   2012-09-09[19].
 
 References
 
@@ -11564,7 +11615,7 @@ References
    4. http://gcc.gnu.org/gcc-3.1/c99status.html
    5. http://gcc.gnu.org/onlinedocs/libstdc++/faq.html
    6. http://gcc.gnu.org/onlinedocs/gcc-3.1.1/g77/News.html
-   7. http://www.adacore.com/home/
+   7. http://www.adacore.com/
    8. http://www-cs-faculty.stanford.edu/~knuth/mmix.html
    9. http://www.axis.com/
   10. http://developer.axis.com/
@@ -11579,7 +11630,6 @@ References
   19. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.0/gcc-3.0.html
-
                                    GCC 3.0.4
 
    February 20, 2002
@@ -11653,7 +11703,6 @@ References
   15. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.0/features.html
-
                               GCC 3.0 New Features
 
 Additional changes in GCC 3.0.4
@@ -11850,7 +11899,6 @@ References
   20. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-3.0/caveats.html
-
                                 GCC 3.0 Caveats
 
      * -fstrict-aliasing is now part of -O2 and higher optimization
@@ -11911,7 +11959,6 @@ References
    8. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-2.95/index.html
-
                                     GCC 2.95
 
    March 16, 2001: The GNU project and the GCC developers are pleased to
@@ -12001,7 +12048,6 @@ References
   17. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-2.95/features.html
-
                              GCC 2.95 New Features
 
      * General Optimizer Improvements:
@@ -12274,7 +12320,6 @@ References
   23. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/gcc-2.95/caveats.html
-
                                 GCC 2.95 Caveats
 
      * GCC 2.95 will issue an error for invalid asm statements that had
@@ -12343,7 +12388,6 @@ References
    8. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.1/index.html
-
                                     EGCS 1.1
 
    September 3, 1998: We are pleased to announce the release of EGCS 1.1.
@@ -12574,7 +12618,6 @@ References
   17. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.1/features.html
-
                              EGCS 1.1 new features
 
      * Integrated GNU Fortran (g77) compiler and runtime library with
@@ -12669,7 +12712,6 @@ References
   11. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.1/caveats.html
-
                                 EGCS 1.1 Caveats
 
      * EGCS has an integrated libstdc++, but does not have an integrated
@@ -12720,7 +12762,6 @@ References
    7. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.0/index.html
-
                                     EGCS 1.0
 
    December 3, 1997: We are pleased to announce the release of EGCS 1.0.
@@ -12922,7 +12963,6 @@ References
   12. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.0/features.html
-
                                EGCS 1.0 features
 
      * Core compiler is based on the gcc2 development tree from Aug 2,
@@ -12987,7 +13027,6 @@ References
    9. http://validator.w3.org/check/referer
 ======================================================================
 http://gcc.gnu.org/egcs-1.0/caveats.html
-
                                 EGCS 1.0 Caveats
 
      * EGCS has an integrated libstdc++, but does not have an integrated
