@@ -146,6 +146,7 @@ enum
   DStMsg_cpuinfo,		/* 25  0x19 */
   DStMsg_tidnames,		/* 26  0x1A */
   DStMsg_procfsinfo,		/* 27  0x1B */
+  DStMsg_procfsstatus,		/* 28  0x1C */
   /* Room for new codes here.  */
   DSrMsg_err = 32,		/* 32  0x20 */
   DSrMsg_ok,			/* 33  0x21 */
@@ -331,6 +332,7 @@ typedef struct
 } DStMsg_attach_t;
 
 typedef DStMsg_attach_t DStMsg_procfsinfo_t;
+typedef DStMsg_attach_t DStMsg_procfsstatus_t;
 
 /* Detach from a running process which was attached to or loaded.  */
 typedef struct
@@ -673,6 +675,7 @@ typedef union
   DStMsg_load_t load;
   DStMsg_attach_t attach;
   DStMsg_procfsinfo_t procfsinfo;
+  DStMsg_procfsstatus_t procfsstatus;
   DStMsg_detach_t detach;
   DStMsg_kill_t kill;
   DStMsg_stop_t stop;

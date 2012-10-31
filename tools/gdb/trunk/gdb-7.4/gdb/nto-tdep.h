@@ -172,6 +172,7 @@ struct private_thread_info
   unsigned char state;
   unsigned char flags;
   CORE_ADDR starting_ip;
+  void *siginfo; // cached from core file read
   char name[1];
 };
 
@@ -271,5 +272,9 @@ const struct target_desc *nto_read_description (struct target_ops *ops);
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
 int nto_breakpoint_size (CORE_ADDR addr);
+
+struct type *nto_get_siginfo_type (struct gdbarch *);
+
+void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
 
 #endif
