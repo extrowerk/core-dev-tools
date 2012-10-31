@@ -64,49 +64,61 @@ enum Elf_nto_note_types
 
 typedef struct
 {
-  long bits[2];
+  int bits[2];
 } nto_sigset_t;
 
 union nto_sigval
 {
   int sival_int;
-  void *sival_ptr;
+  unsigned sival_ptr; // void *
 };
 
 typedef struct nto_siginfo
 {
   int si_signo;
   int si_code;
-  void (*si_handler) ();
+  int si_errno;
   union
   {
-    int _pad[6];
+    int __pad[7];
     struct
     {
-      pid_t _pid;
+      pid_t __pid;
       union
       {
 	struct
 	{
-	  union nto_sigval _value;
-	  uid_t _uid;
-	} _kill;
+	  uid_t __uid;
+	  union nto_sigval __value;
+	} __kill;
 	struct
 	{
-	  int _status;
-	  clock_t _utime;
-	  clock_t _stime;
-	} _chld;
-      } _pdata;
-    } _proc;
+	  clock_t __utime;
+	  int __status;
+	  clock_t __stime;
+	} __chld;
+      } __pdata;
+    } __proc;
     struct
     {
-      int _fltno;
-      void *_addr;
-      void *_fltip;
-    } _fault;
-  } _data;
+      int __fltno;
+      unsigned __fltip; // void *
+      unsigned __addr; // void *
+      int __bdslot;
+    } __fault;
+  } __data;
 } nto_siginfo_t;
+#define nto_si_pid	__data.__proc.__pid
+#define nto_si_value	__data.__proc.__pdata.__kill.__value
+#define nto_si_uid	__data.__proc.__pdata.__kill.__uid
+#define nto_si_status	__data.__proc.__pdata.__chld.__status
+#define nto_si_utime	__data.__proc.__pdata.__chld.__utime
+#define nto_si_stime	__data.__proc.__pdata.__chld.__stime
+#define nto_si_fltno	__data.__fault.__fltno
+#define nto_si_trapno	nto_si_fltno
+#define nto_si_addr	__data.__fault.__addr
+#define nto_si_fltip	__data.__fault.__fltip
+#define nto_si_bdslot	__data.__fault.__bdslot
 
 #ifdef __QNX__
 __BEGIN_DECLS

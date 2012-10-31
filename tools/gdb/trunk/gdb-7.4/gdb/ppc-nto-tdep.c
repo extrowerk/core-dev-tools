@@ -912,6 +912,8 @@ ppcnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_regset_from_core_section
     (gdbarch, ppcnto_regset_from_core_section);
 
+  set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
+
   init_ppcnto_ops ();
   set_gdbarch_have_nonsteppable_watchpoint (gdbarch, 0);
 }

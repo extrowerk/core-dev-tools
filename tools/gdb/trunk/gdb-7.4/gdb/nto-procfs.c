@@ -1000,6 +1000,26 @@ procfs_xfer_partial (struct target_ops *ops, enum target_object object,
       memcpy (readbuf, tempbuf + offset, tempread);
       return tempread;
     }
+  else if (object == TARGET_OBJECT_SIGNAL_INFO && readbuf)
+    {
+      int err;
+      procfs_status status;
+
+      err = devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
+      if (err != EOK)
+	return 0;
+
+      if ((offset + len) > sizeof (status.info))
+	{
+	  if (offset <= sizeof (status.info))
+	    len = sizeof (status.info) - offset;
+	  else
+	    len = 0;
+	}
+
+      memcpy (readbuf, (char *)&status.info + offset, len);
+      return len;
+    }
   return -1;
 }
 

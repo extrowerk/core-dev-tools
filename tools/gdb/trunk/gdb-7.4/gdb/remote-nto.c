@@ -75,6 +75,7 @@
 #include <sys/link.h>
 typedef debug_thread_t nto_procfs_status;
 typedef debug_process_t nto_procfs_info;
+typedef siginfo_t nto_siginfo_t;
 #else
 #include "nto-share/debug.h"
 #endif
@@ -1071,6 +1072,34 @@ nto_read_procfsinfo (nto_procfs_info *pinfo)
   else
     {
       nto_trace (0) ("DStMsg_procfsinfo not supported by the target.\n");
+    }
+  return 0;
+}
+
+
+/* Reads procfs_status structure for the given process.
+   
+   Returns 1 on success, 0 otherwise.  */
+
+static int
+nto_read_procfsstatus (nto_procfs_status *pstatus)
+{
+  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
+
+  gdb_assert (pstatus != NULL && !! "pstatus must not be NULL\n");
+  nto_send_init (DStMsg_procfsstatus, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.procfsstatus.pid = ptid_get_pid (inferior_ptid);
+  tran.pkt.procfsstatus.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.procfsstatus.pid,
+						    4, byte_order);
+  nto_send (sizeof (tran.pkt.procfsstatus), 0);
+  if (recv.pkt.hdr.cmd == DSrMsg_okdata)
+    {
+      memcpy (pstatus, recv.pkt.okdata.data, sizeof (*pstatus));
+      return 1;
+    }
+  else
+    {
+      nto_trace (0) ("DStMsg_procfsstatus not supported by the target.\n");
     }
   return 0;
 }
@@ -2357,11 +2386,33 @@ nto_xfer_partial (struct target_ops *ops, enum target_object object,
 	  buff += 4;
 	  tempread = (int)(buff - readbuf);
 	}
-	tempread = min (tempread, len) - offset;
-	memcpy (readbuf, tempbuf + offset, tempread);
-	return tempread;
+      tempread = min (tempread, len) - offset;
+      memcpy (readbuf, tempbuf + offset, tempread);
+      return tempread;
     }  /* TARGET_OBJECT_AUXV */
-  
+  else if (object == TARGET_OBJECT_SIGNAL_INFO
+	   && readbuf)
+    {
+      nto_procfs_status status;
+      nto_siginfo_t siginfo;
+      LONGEST mylen = len;
+
+      if ((offset + mylen) > sizeof (nto_siginfo_t))
+	{
+	  if (offset < sizeof (nto_siginfo_t))
+	    mylen = sizeof (nto_siginfo_t) - offset;
+	  else
+	    return 0;
+	}
+
+      if (!nto_read_procfsstatus (&status))
+	return 0;
+
+      // does byte order translation
+      nto_get_siginfo_from_procfs_status (&status, &siginfo);
+      memcpy (readbuf, (gdb_byte *)&siginfo + offset, mylen);
+      return len;
+    }
   if (ops->beneath && ops->beneath->to_xfer_partial)
     return ops->beneath->to_xfer_partial (ops, object, annex, readbuf,
 					  writebuf, offset, len);
