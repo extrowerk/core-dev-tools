@@ -1,0 +1,16 @@
+load_generic_config "unix"
+load_lib mi-support.exp
+load_lib libqnx.exp
+
+process_multilib_options ""
+
+global qnx_target_host
+global qnx_target_port
+set qnx_target_host 169.254.0.1
+set qnx_target_port 8000
+
+# set CC_FOR_TARGET "arm-unknown-nto-qnx6.5.0eabi-gcc -mthumb"
+
+global ignoretests
+set ignoretests { call-sc.exp sigall.exp structs.exp sigbpt.exp signull.exp watch-cond.exp watch-read.exp call-strs.exp call-ar-st.exp }
+

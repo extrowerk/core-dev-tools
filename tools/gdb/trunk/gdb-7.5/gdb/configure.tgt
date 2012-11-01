@@ -83,6 +83,12 @@ arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
 	# Target: NetBSD/arm
 	gdb_target_obs="arm-tdep.o armnbsd-tdep.o solib-svr4.o"
 	;;
+arm*-*-nto*)
+	# Target: nto/arm
+	gdb_target_obs="arm-tdep.o solib-svr4.o \
+			arm-nto-tdep.o nto-tdep.o nto-signals.o \
+			remote-nto.o"
+	;;
 arm*-*-openbsd*)
 	# Target: OpenBSD/arm
 	gdb_target_obs="arm-tdep.o armbsd-tdep.o armobsd-tdep.o obsd-tdep.o \
@@ -191,8 +197,11 @@ i[34567]86-*-openbsd*)
 i[34567]86-*-nto*)
 	# Target: Intel 386 running qnx6.
 	gdb_target_obs="i386-tdep.o i387-tdep.o solib-svr4.o \
-			i386-nto-tdep.o nto-tdep.o"
-	build_gdbserver=yes
+			i386-nto-tdep.o nto-tdep.o nto-signals.o \
+			remote-nto.o"
+	if [ $gdb_host == nto ] ; then
+	  build_gdbserver=yes
+	fi
 	;;
 i[34567]86-*-solaris2.1[0-9]* | x86_64-*-solaris2.1[0-9]*)
 	# Target: Solaris x86_64
@@ -357,6 +366,12 @@ mips*-*-netbsd* | mips*-*-knetbsd*-gnu)
 	gdb_target_obs="mips-tdep.o mipsnbsd-tdep.o solib-svr4.o nbsd-tdep.o"
 	gdb_sim=../sim/mips/libsim.a
 	;;
+mips*-*-nto*)
+	# Target: nto/mips
+	gdb_target_obs="mips-tdep.o solib-svr4.o \
+			mips-nto-tdep.o nto-tdep.o nto-signals.o \
+			remote-nto.o"
+	;;
 mips64*-*-openbsd*)
 	# Target: OpenBSD/mips64
 	gdb_target_obs="mips-tdep.o mips64obsd-tdep.o solib-svr4.o"
@@ -388,6 +403,13 @@ powerpc-*-netbsd* | powerpc-*-knetbsd*-gnu)
 	gdb_target_obs="rs6000-tdep.o ppc-sysv-tdep.o ppcnbsd-tdep.o \
 			solib-svr4.o"
 	gdb_sim=../sim/ppc/libsim.a
+	;;
+powerpc*-*-nto*)
+	# Target: nto/powerpc
+	gdb_target_obs="rs6000-tdep.o ppc-sysv-tdep.o \
+			solib-svr4.o \
+			ppc-nto-tdep.o nto-tdep.o nto-signals.o \
+			remote-nto.o"
 	;;
 powerpc-*-openbsd*)
 	# Target: OpenBSD/powerpc
@@ -455,6 +477,13 @@ sh*-*-netbsdelf* | sh*-*-knetbsd*-gnu)
 	# Target: NetBSD/sh
 	gdb_target_obs="sh-tdep.o shnbsd-tdep.o solib-svr4.o"
 	gdb_sim=../sim/sh/libsim.a
+	;;
+sh*-*-nto*)
+	# Target: nto/sh
+	gdb_target_obs="sh-tdep.o sh64-tdep.o \
+			solib-svr4.o \
+			sh-nto-tdep.o nto-tdep.o nto-signals.o \
+			remote-nto.o"
 	;;
 sh*-*-openbsd*)
 	# Target: OpenBSD/sh
@@ -636,8 +665,18 @@ xtensa*)
 	# Target: Tensilica Xtensa processors
 	gdb_target_obs="xtensa-tdep.o xtensa-config.o solib-svr4.o"
 	;;
+*-ntoall*)
+	gdb_target_obs="arm-tdep.o corelow.o solib.o solib-svr4.o \
+			arm-nto-tdep.o nto-tdep.o nto-signals.o remote-nto.o \
+			i386-tdep.o i387-tdep.o i386-nto-tdep.o "
+	;;
 
 esac
+
+if [ $gdb_host == nto ] ; then
+	# If building for nto host, add native debugging support
+	gdb_target_obs="${gdb_target_obs} "
+fi
 
 # map target onto default OS ABI
 

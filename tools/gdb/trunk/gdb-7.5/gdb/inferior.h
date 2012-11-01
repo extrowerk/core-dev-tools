@@ -648,4 +648,5 @@ extern void update_signals_program_target (void);
 
 enum gdb_signal gdb_signal_from_command (int num);
 
+
 #endif /* !defined (INFERIOR_H) */
