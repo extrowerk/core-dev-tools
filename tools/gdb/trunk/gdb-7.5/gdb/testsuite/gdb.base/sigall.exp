@@ -11,8 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.  
 if [target_info exists gdb,nosignals] {
     verbose "Skipping sigall.exp because of nosignals."
     continue
@@ -51,6 +50,10 @@ proc test_one_sig {nextsig} {
     if $this_sig_supported then {
 	if { $thissig == "IO" } {
 	    setup_xfail "i*86-pc-linuxoldld-gnu" "i*86-pc-linuxaout-gnu"
+	    if [ is_remote target ] {
+		# on QNX remote target IO won't work
+		setup_xfail "i*86-pc-nto-qnx*"
+	    }
 	}
 	gdb_test "continue" \
 	    "Continuing.*Program received signal SIG$thissig.*" \
@@ -65,6 +68,18 @@ proc test_one_sig {nextsig} {
 	    setup_xfail "alpha-dec-osf3*"
 	    fail "cannot continue from signal $thissig"
 	    set need_another_continue 0
+	}
+    }
+
+    if [ istarget "*-nto-*" ] then {
+	if { $thissig == "CONT" } {
+	    set need_another_continue 0
+	}
+	if [ is_remote target ] {
+	    if { $thissig == "IO" } {
+		# on QNX remote target IO won't work
+		setup_xfail "i*86-pc-nto-qnx*"
+	    }
 	}
     }
 

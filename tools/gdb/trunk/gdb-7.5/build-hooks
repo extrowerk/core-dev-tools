@@ -1,0 +1,252 @@
+target=${PWD##*-}
+target_cpu=${target#nto*}
+srcdir=${PWD}/..
+qnx_target_version=8.0.0
+qnx_install_version=qnx800
+host_target=${PWD##*/}
+host_cpu=${host_target#*-}
+host_cpu=${host_cpu%%-*}
+
+if [ $target_cpu = x86 ]; then
+   case ${qnx_target_version} in
+     6.[234].*) target_cpu=i386 ;;
+     *) target_cpu=i486 ;;
+   esac
+fi
+
+qnx_abiext=""
+case $target_cpu in
+  arm*)
+    case $target_cpu in
+      *v7*)
+        qnx_abiext=eabi
+	;;
+    esac
+    target_cpu=arm
+  ;;
+esac
+
+# Unset CC/CXX; our makefiles set them but they should not 
+unset CC
+unset CXX
+
+if [ ${TARGET_SYSNAME} = nto ]; then
+  # For nto hosted, do the host_cpu transformation as above
+  if [ $host_cpu = x86 ] ; then
+    host_cpu=i486
+  fi
+
+  # Set --host configure option
+  case $host_cpu in
+    i486*)
+      configure_opts="${configure_opts} --host=${host_cpu}-pc-nto-qnx${qnx_target_version}"
+      ;;
+    arm*)
+      configure_opts="${configure_opts} --host=${HOST_STRING}"
+    ;;
+  *)
+    ;;
+  esac
+fi
+
+case ${host_target} in
+  *-nto*)
+    tmpstring=${target_cpu}-nto-qnx${qnx_target_version}${qnx_abiext}
+    target=`${srcdir}/config.sub ${tmpstring}`
+  ;;
+  *)
+    target=""
+    echo Configuring for native target.
+  ;;
+esac
+
+
+# determine if no python support is desired
+case ${TARGET_SYSNAME} in
+win32*)
+  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+  ;;
+nto*)
+# For now, do not build python support.
+  with_python_opt="--with-python=no"
+  ;;
+darwin*)
+  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+  ;;
+linux*)
+  # rpath must be reserved so it can be changed with chrpath
+  if [ "${OFFICIAL_BUILD}" != "" ]; then
+    # For official builds, we provide python install for building
+    with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+    CFLAGS=-m32
+    LDFLAGS="-m32 -Wl,-rpath=_ORIGIN/../python27/lib"
+  else
+    # Let configure decide; if there is python available, then
+    # it will use it.
+    with_python_opt=
+  fi
+  ;;
+  *)
+#all others, rely on distro's python
+  with_python_opt="--with-python=yes"
+  ;;
+esac
+
+export TARGET_SYSNAME
+
+# executable prefix is appended with 'nopython' if nopython is desired
+nopython_program_prefix=
+
+# nopython in directory name says "no python support desired"
+case ${PWD} in
+*-nopython-*)
+  with_python_opt="--with-python=no"
+  nopython_program_prefix="nopython-"
+  ;;
+esac
+
+function hook_preconfigure {
+	configure_opts="${configure_opts} --without-expat"
+	case ${SYSNAME} in
+	nto)
+		host_cpu=$(uname -p)
+		if [ $host_cpu = x86 ]; then
+		  host_cpu=i486
+		fi
+
+		case ${TARGET_SYSNAME} in
+		nto*)   basedir=/usr
+			if [ ${host_cpu} = ${target_cpu} ]; then
+				configure_opts="${configure_opts} --host=${target}"
+			fi
+			;;
+		*)      basedir=/opt/QNXsdk/host/qnx6/x86/usr ;;
+		esac
+		;;
+	solaris)
+		host_cpu=$(uname -p)
+		case ${host_cpu} in
+        		i[34567]86) host_cpu=x86 ;;
+		esac
+		basedir=/opt/QNXsdk/host/solaris/${host_cpu}/usr
+		;;
+	linux)
+		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
+		;;
+	win32)
+		basedir=/cygdrive/c/QNXsdk/host/win32/x86/usr
+		;;
+	darwin)
+		basedir=/Developer/SDKs/qnx650/host/darwin/x86/usr
+		;;
+	*)
+		echo "Don't have config for ${SYSNAME}"
+		exit 1
+		;;
+	esac
+
+	# Setup install dirs.
+	case ${TARGET_SYSNAME} in
+	nto*)
+	  root_dir="/usr"
+	  ;;
+	win32*)
+	  root_dir="/c"
+	  ;;
+	darwin*)
+	  root_dir="/Developer/SDKs/"
+	  ;;
+	*)
+	  root_dir="/opt"
+	  ;;
+	esac
+
+    configure_opts="${configure_opts} ${with_python_opt} TARGET_SYSNAME=${TARGET_SYSNAME}"
+	
+	# INSTALL_ROOT can override build-hooks setting. 
+	if [ x$INSTALL_ROOT = x ]; then
+	  INSTALL_ROOT=$root_dir/$qnx_install_version/host
+	fi
+
+	case ${host_cpu} in
+           i[34567]86) 
+		host_cpu=x86 
+		;;
+	esac
+
+	case ${TARGET_SYSNAME} in
+	nto*)
+	  basedir=${INSTALL_ROOT}/qnx6/${host_cpu}/usr
+	  ;;
+	*)
+	  basedir=${INSTALL_ROOT}/${TARGET_SYSNAME}/${host_cpu}/usr
+	  ;;
+	esac
+
+	configure_opts="${configure_opts} --target=${target}"
+	configure_opts="${configure_opts} --prefix=${basedir}"
+	configure_opts="${configure_opts} --exec-prefix=${basedir}"
+	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
+	configure_opts="${configure_opts} --program-prefix=${host_target##*-}-${nopython_program_prefix}"
+	# This setting of --includedir is so that the readline compiles don't
+	# get things from the wrong place - we'd prefer not to have to say
+	# anything at all and let the qcc/gcc get the system headers on their
+	# own, but the only thing we can do is point it at a safe place.
+	#configure_opts="${configure_opts} --includedir=."
+	configure_opts="${configure_opts} --enable-gdbmi"
+#	configure_opts="${configure_opts} --enable-build-warnings=-Wall"
+	configure_opts="${configure_opts} --disable-nls"
+	configure_opts="${configure_opts} --disable-tui"
+	configure_opts="${configure_opts} --disable-sim --without-sim"
+	configure_opts="${configure_opts} --with-expat=no"
+	configure_opts="${configure_opts} --disable-werror"
+        if [ ${GDB_SUFFIX} ]; then
+           configure_opts="${configure_opts} --program-suffix=${GDB_SUFFIX}"
+        fi
+	configure_opts="${configure_opts} --verbose"
+
+	case ${target} in 
+	  *-nto-*)
+	    CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
+	    #CFLAGS="-D__QNXTARGET__ -g3 -O0 -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
+	  ;;
+	esac
+	export TARGET_SYSNAME # need to export TARGET_SYSNAME for python-config-cross.sh 
+}
+
+function hook_premake {
+	export TERMCAP="-lncurses"
+	strip_r_switch
+}
+
+function hook_postconfigure {
+	if test ${target} = ntomips -a ${SYSNAME} = nto; then
+		for i in Makefile sim/Makefile sim/igen/Makefile; do 
+			cp $i $i.bak
+			sed -e '/^CC_FOR_BUILD =/s/= .*$/= unset QNX_TARGET; \/usr\/bin\/cc/' <$i.bak >$i
+			rm $i.bak
+		done
+	fi
+}
+
+function hook_postmake {
+	# Modify stack limit for selfhosted gdb
+	case $host_target in
+		nto*)
+			echo "Setting stack limit to 4M..."
+			ldrel -L -S 4M gdb/gdb
+		;;
+		linux*)
+			if [ "${OFFICIAL_BUILD}" != "" ]; then
+              # Build machine must have chrpath and make it
+              # available in $PATH
+			  chrpath -r \$ORIGIN/../python27/lib gdb/gdb
+			fi
+		;;
+	esac;
+}
+
+function hook_pinfo {
+	cd gdb
+	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.4"
+}
