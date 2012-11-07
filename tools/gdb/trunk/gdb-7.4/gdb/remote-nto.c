@@ -2000,7 +2000,6 @@ nto_parse_notify (struct target_ops *ops, struct target_waitstatus *status)
 
 	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
 		       tid);
-	delete_thread (ptid_build (pid, 0, tid_exited));
 
 	status->kind = nto_stop_on_thread_events 
 			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
@@ -3556,44 +3555,46 @@ nto_find_new_threads (struct target_ops *ops)
     tran.pkt.pidlist.tid = EXTRACT_UNSIGNED_INTEGER (&start_tid, 4,
 						     byte_order);
     nto_send(sizeof(tran.pkt.pidlist), 0);
-    if (recv.pkt.hdr.cmd == DSrMsg_err) 
+    if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       errno = errnoconvert (EXTRACT_SIGNED_INTEGER
 			      (&recv.pkt.err.err, 4, byte_order));
       return;
     }
-    if (recv.pkt.hdr.cmd != DSrMsg_okdata) 
+    if (recv.pkt.hdr.cmd != DSrMsg_okdata)
     {
       errno = EOK;
       nto_trace (1) ("msg not DSrMsg_okdata!\n");
       return;
     }
     num_tids = EXTRACT_UNSIGNED_INTEGER (&pidlist->num_tids, 4,
-					 byte_order); 
+					 byte_order);
     for (tip = (void *) &pidlist->name[(strlen(pidlist->name) + 1 + 3) & ~3];
-	 tip->tid != 0; tip++ ) 
+	 tip->tid != 0; tip++ )
     {
       struct thread_info *new_thread;
-      ptid_t ptid;      
-      
+      ptid_t ptid;
+
       tip->tid =  EXTRACT_UNSIGNED_INTEGER (&tip->tid, 2,
 					    byte_order);
       ptid = ptid_build(cur_pid, 0, tip->tid);
 
       if (tip->tid < 0)
-	{ 
+	{
 	  //warning ("TID < 0\n");
 	  continue;
 	}
 
       new_thread = find_thread_ptid (ptid);
-      if(!new_thread)
-        new_thread = add_thread (ptid);
-      if(!new_thread->private){
-        new_thread->private = xmalloc(sizeof(struct private_thread_info));
-        new_thread->private->name[0] = '\0';
-      }
-      memcpy(new_thread->private, tip, sizeof(*tip));
+      if(!new_thread && tip->state != 0)
+	new_thread = add_thread (ptid);
+      if (new_thread && !new_thread->private)
+	{
+	  new_thread->private = xmalloc(sizeof(struct private_thread_info));
+	  new_thread->private->name[0] = '\0';
+	}
+      if (new_thread && new_thread->private)
+	memcpy(new_thread->private, tip, sizeof(*tip));
       total_tids++;
     }
     subcmd = DSMSG_PIDLIST_SPECIFIC_TID;
