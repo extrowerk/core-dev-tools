@@ -196,10 +196,12 @@ function hook_preconfigure {
   configure_opts="${configure_host} ${configure_target}"
   configure_opts="${configure_opts} --without-expat"
 
+  install_sysname=${TARGET_SYSNAME}
   # Setup install dirs.
   case ${TARGET_SYSNAME} in
     nto*)
       root_dir="/usr"
+      install_sysname="qnx6"
       # Our makefiles hard code 6.5.0 CC
       unset CC
       ;;
@@ -216,7 +218,7 @@ function hook_preconfigure {
 
   configure_opts="${configure_opts} ${with_python_opt} TARGET_SYSNAME=${TARGET_SYSNAME}"
 
-  basedir=${root_dir}/${qnx_install_version}/host/${TARGET_SYSNAME}/${host_cpu}/usr
+  basedir=${root_dir}/${qnx_install_version}/host/${install_sysname}/${host_cpu}/usr
 
   configure_opts="${configure_opts} --prefix=${basedir}"
   configure_opts="${configure_opts} --exec-prefix=${basedir}"
