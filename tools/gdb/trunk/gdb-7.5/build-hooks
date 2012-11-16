@@ -31,33 +31,33 @@ echo "qnx_install_version=${qnx_install_version}"
 # Setup host_cpu and platform
 case ${TARGET_SYSNAME} in
   nto)
-	qnx_abiext_host=""
-	host_platform="unknown"
-	case ${host_cpu}${host_cpu_variant} in
-	  arm*v7*)
-		qnx_abiext_host=eabi
-		host_cpu_canonical=arm
-		;;
-	  arm*)
-		host_cpu_canonical=arm
-		;;
-	  x86*)
-		case ${qnx_sdp_version} in
-		  qnx6.[234].*)
-			host_cpu_canonical=i386
-			;;
-		  qnx*)
-			host_cpu_canonical=i486
-			;;
-		  *) echo "Uknown sdp version: ${qnx_sdp_version}"
-			;;
-		esac
-		host_platform="pc"
-		;;
-	esac
+    qnx_abiext_host=""
+    host_platform="unknown"
+    case ${host_cpu}${host_cpu_variant} in
+      arm*v7*)
+	    qnx_abiext_host=eabi
+	    host_cpu_canonical=arm
+	    ;;
+      arm*)
+	    host_cpu_canonical=arm
+	    ;;
+      x86*)
+	    case ${qnx_sdp_version} in
+	      qnx6.[234].*)
+		    host_cpu_canonical=i386
+		    ;;
+	      qnx*)
+		    host_cpu_canonical=i486
+		    ;;
+	      *) echo "Uknown sdp version: ${qnx_sdp_version}"
+		    ;;
+	    esac
+	    host_platform="pc"
+	    ;;
+    esac
     ;;
   linux)
-	host=linux
+    host=linux
     ;;
   darwin)
     host=darwin
@@ -67,7 +67,8 @@ case ${TARGET_SYSNAME} in
     ;;
   *)
     echo "Could not recognize host: ${host_os}"
-	return 1
+    Error 1
+    ;;
 esac
 
 # setup target
@@ -77,49 +78,49 @@ target_cpu=""
 target_os="nto"
 case ${target_os_cpu_variant} in
   ntoarm*v7*)
-	target_cpu="arm"
+    target_cpu="arm"
     qnx_abiext_target="eabi"
-	target_platform="unknown"
-	;;
+    target_platform="unknown"
+    ;;
   ntoarm*)
-	target_cpu="arm"
-	target_platform="unknown"
-	;;
+    target_cpu="arm"
+    target_platform="unknown"
+    ;;
   ntox86*)
-	case ${qnx_sdp_version} in
-	  6.[234].*) target_cpu=i386 ;;
-	  *) target_cpu=i486 ;;
-	esac
-	target_platform="pc"
-	;;
+    case ${qnx_sdp_version} in
+      6.[234].*) target_cpu=i386 ;;
+      *) target_cpu=i486 ;;
+    esac
+    target_platform="pc"
+    ;;
   ntoppc*)
-	target_cpu="powerpc"
-	target_platform="unknown"
-	;;
+    target_cpu="powerpc"
+    target_platform="unknown"
+    ;;
   ntosh*)
     target_cpu="sh"
-	target_platform="unknown"
-	;;
+    target_platform="unknown"
+    ;;
   ntomips*)
     target_cpu="mips"
-	target_platform="unknown"
-	;;
+    target_platform="unknown"
+    ;;
   *)
-	echo "Don't have special settings for target_os_cpu_variant=${target_os_cpu_variant}"
-	target_os=""
-	target_cpu=""
-	;;
+    echo "Don't have special settings for target_os_cpu_variant=${target_os_cpu_variant}"
+    target_os=""
+    target_cpu=""
+    ;;
 esac
 
 case ${TARGET_SYSNAME} in
   nto)
-	host=${host_cpu_canonical}-${host_platform}-${target_os}-${qnx_sdp_version}${qnx_abiext_host}
-	configure_host="--host=${host}"
-	;;
+    host=${host_cpu_canonical}-${host_platform}-${target_os}-${qnx_sdp_version}${qnx_abiext_host}
+    configure_host="--host=${host}"
+    ;;
   *)
-	host=""
-	configure_host=""
-	;;
+    host=""
+    configure_host=""
+    ;;
 esac
 target=${target_cpu}-${target_platform}-${target_os}-${qnx_sdp_version}${qnx_abiext_target}
 configure_target="--target=${target}"
@@ -182,15 +183,14 @@ function hook_preconfigure {
   esac
 
 
-  # executable prefix is appended with 'nopython' if nopython is desired
-  nopython_program_prefix=
+  nopython_program_suffix=
 
   # nopython in directory name says "no python support desired"
   case ${PWD} in
-	*nopython*)
-	  with_python_opt="--with-python=no"
-	  nopython_program_prefix="nopython-"
-	  ;;
+    *nopython*)
+      with_python_opt="--with-python=no"
+      nopython_program_suffix="-nopython"
+      ;;
   esac
 
   configure_opts="${configure_host} ${configure_target}"
@@ -200,8 +200,8 @@ function hook_preconfigure {
   case ${TARGET_SYSNAME} in
     nto*)
       root_dir="/usr"
-	  # Our makefiles hard code 6.5.0 CC
-	  unset CC
+      # Our makefiles hard code 6.5.0 CC
+      unset CC
       ;;
     win32*)
       root_dir="/c"
@@ -216,12 +216,12 @@ function hook_preconfigure {
 
   configure_opts="${configure_opts} ${with_python_opt} TARGET_SYSNAME=${TARGET_SYSNAME}"
 
-  basedir=${root_dir}/${qnx_install_version}/host
+  basedir=${root_dir}/${qnx_install_version}/host/${TARGET_SYSNAME}/${host_cpu}/usr
 
   configure_opts="${configure_opts} --prefix=${basedir}"
   configure_opts="${configure_opts} --exec-prefix=${basedir}"
   configure_opts="${configure_opts} --with-local-prefix=${basedir}"
-#  configure_opts="${configure_opts} --program-prefix=${host_target##*-}-${nopython_program_prefix}"
+  configure_opts="${configure_opts} --program-prefix=${target_os_cpu_variant}-"
   # This setting of --includedir is so that the readline compiles don't
   # get things from the wrong place - we'd prefer not to have to say
   # anything at all and let the qcc/gcc get the system headers on their
@@ -234,53 +234,54 @@ function hook_preconfigure {
   configure_opts="${configure_opts} --disable-sim --without-sim"
   configure_opts="${configure_opts} --with-expat=no"
   configure_opts="${configure_opts} --disable-werror"
-	  if [ ${GDB_SUFFIX} ]; then
-		 configure_opts="${configure_opts} --program-suffix=${GDB_SUFFIX}"
-	  fi
+  if [ ${nopython_program_suffix} != "" ]; then
+    configure_opts="${configure_opts} --program-suffix=${nopython_program_suffix}"
+  fi
   configure_opts="${configure_opts} --verbose"
-
+  #
+  # CFLAGS for particular target OS
   case ${target_os} in 
-	nto)
-	  CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG ${CCOPTS}"
-	  #CFLAGS="-D__QNXTARGET__ -g3 -O0 -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG"; export CFLAGS
-	  export CFLAGS
-	;;
+    nto)
+      CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG ${CCOPTS}"
+      export CFLAGS
+    ;;
   esac
 }
 
 function hook_premake {
-	export TERMCAP="-lncurses"
-	strip_r_switch
+  export TERMCAP="-lncurses"
+  strip_r_switch
 }
 
 function hook_postconfigure {
-	if test ${target} = ntomips -a ${SYSNAME} = nto; then
-		for i in Makefile sim/Makefile sim/igen/Makefile; do 
-			cp $i $i.bak
-			sed -e '/^CC_FOR_BUILD =/s/= .*$/= unset QNX_TARGET; \/usr\/bin\/cc/' <$i.bak >$i
-			rm $i.bak
-		done
-	fi
+  if test ${target} = ntomips -a ${SYSNAME} = nto; then
+    for i in Makefile sim/Makefile sim/igen/Makefile; do
+      cp $i $i.bak
+      sed -e '/^CC_FOR_BUILD =/s/= .*$/= unset QNX_TARGET; \/usr\/bin\/cc/' <$i.bak >$i
+      rm $i.bak
+    done
+  fi
 }
 
 function hook_postmake {
-	# Modify stack limit for selfhosted gdb
-	case $host_target in
-		nto*)
-			echo "Setting stack limit to 4M..."
-			ldrel -L -S 4M gdb/gdb
-		;;
-		linux*)
-			if [ "${OFFICIAL_BUILD}" != "" ]; then
-              # Build machine must have chrpath and make it
-              # available in $PATH
-			  chrpath -r \$ORIGIN/../python27/lib gdb/gdb
-			fi
-		;;
-	esac;
+  # Modify stack limit for selfhosted gdb
+  case ${TARGET_SYSNAME} in
+    nto*)
+      echo "Setting stack limit to 4M..."
+      ldrel -L -S 4M gdb/gdb
+      ;;
+    linux*)
+      if [ "${OFFICIAL_BUILD}" != "" ]; then
+	# Build machine must have chrpath and make it
+	# available in $PATH
+	chrpath -r \$ORIGIN/../python27/lib gdb/gdb
+      fi
+      ;;
+  esac
 }
 
 function hook_pinfo {
-	cd gdb
-	gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.5"
+  cd gdb
+  gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.5"
 }
+
