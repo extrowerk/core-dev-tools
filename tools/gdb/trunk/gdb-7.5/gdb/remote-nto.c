@@ -3447,6 +3447,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_thread_alive = nto_thread_alive;
   nto_ops.to_find_new_threads = nto_find_new_threads;
   nto_ops.to_stop = 0;
+  /* nto_ops.to_query = nto_query;  */
   nto_ops.to_stratum = process_stratum;
   nto_ops.to_has_all_memory = nto_has_all_memory;
   nto_ops.to_has_memory = nto_has_memory;
@@ -3454,7 +3455,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_has_registers = nto_has_registers;
   nto_ops.to_has_execution = nto_has_execution;
   nto_ops.to_pid_to_str = nto_pid_to_str;
-  nto_ops.to_has_thread_control = tc_schedlock; /* can lock scheduler */
+  /* nto_ops.to_has_thread_control = tc_schedlock; *//* can lock scheduler */
   nto_ops.to_magic = OPS_MAGIC;
   nto_ops.to_have_continuable_watchpoint = 1;
   nto_ops.to_extra_thread_info = nto_extra_thread_info;
