@@ -216,6 +216,7 @@ enum
   DSMSG_RUN,
   DSMSG_RUN_COUNT,
   DSMSG_RUN_RANGE,
+  DSMSG_RUN_TID,
 };
 
 enum
