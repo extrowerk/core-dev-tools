@@ -736,6 +736,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
       tdep->lowest_pc = 0x1000;
     }
+
+  set_gdbarch_cannot_step_breakpoint (gdbarch, 1);
 }
 
 extern initialize_file_ftype _initialize_armnto_tdep;
