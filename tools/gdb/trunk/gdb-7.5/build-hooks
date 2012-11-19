@@ -54,6 +54,9 @@ case ${TARGET_SYSNAME} in
 	    esac
 	    host_platform="pc"
 	    ;;
+	  ppc*)
+		host_cpu_canonical=powerpc
+	    ;;
     esac
     ;;
   linux)
@@ -183,7 +186,7 @@ function hook_preconfigure {
   esac
 
 
-  nopython_program_suffix=
+  nopython_program_suffix=""
 
   # nopython in directory name says "no python support desired"
   case ${PWD} in
@@ -236,7 +239,7 @@ function hook_preconfigure {
   configure_opts="${configure_opts} --disable-sim --without-sim"
   configure_opts="${configure_opts} --with-expat=no"
   configure_opts="${configure_opts} --disable-werror"
-  if [ ${nopython_program_suffix} != "" ]; then
+  if [ "${nopython_program_suffix}" != "" ]; then
     configure_opts="${configure_opts} --program-suffix=${nopython_program_suffix}"
   fi
   configure_opts="${configure_opts} --verbose"
