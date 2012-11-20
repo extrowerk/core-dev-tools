@@ -119,6 +119,12 @@ typedef union
 } DScomm_t;
 
 
+#ifdef __MINGW32__
+/* Name collision with a symbol declared in Winsock2.h.  */
+#define recv recvb
+#endif
+
+
 
 static void init_nto_ops (void);
 
@@ -318,12 +324,6 @@ static int upload_sets_exec = 1;
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
 #define HOST_QNX_PROTOVER_MINOR	4
-
-#ifdef __MINGW32__
-/* Name collision with a symbol declared in Winsock2.h.  */
-#define recv recvb
-#endif
-
 
 /* Stuff for dealing with the packets which are part of this protocol.  */
 
@@ -2913,7 +2913,7 @@ nto_to_remove_breakpoint (struct gdbarch *gdbarch,
 }
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-void
+static void
 slashify (char *buf)
 {
   int i = 0;
