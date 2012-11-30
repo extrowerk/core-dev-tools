@@ -1378,21 +1378,23 @@ nto_open (char *name, int from_tty)
   immediate_quit = 0;
 }
 
-/* Perform remote attach. */
+/* Perform remote attach.
+ *
+ * Use caller provided recv as the reply may be used by the caller. */
 
 static int
-nto_attach_only (const pid_t pid)
+nto_attach_only (const pid_t pid, DScomm_t *const recv)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
-  DScomm_t tran, recv;
+  DScomm_t tran;
 
   nto_send_init (&tran, DStMsg_attach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.attach.pid = pid;
   tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
 						byte_order);
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.attach), 0);
+  nto_send_recv (&tran, recv, sizeof (tran.pkt.attach), 0);
 
-  if (recv.pkt.hdr.cmd != DSrMsg_okdata)
+  if (recv->pkt.hdr.cmd != DSrMsg_okdata)
     {
       error (_("Failed to attach"));
       return 0;
@@ -1436,7 +1438,7 @@ nto_attach (struct target_ops *ops, char *args, int from_tty)
       gdb_flush (gdb_stdout);
     }
 
-  if (!nto_attach_only (ptid_get_pid (ptid)))
+  if (!nto_attach_only (ptid_get_pid (ptid), recv))
     return;
 
   /* Hack this in here, since we will bypass the notify.  */
@@ -3320,8 +3322,9 @@ nto_follow_fork (struct target_ops *ops, int follow_child)
       /* Attach to the child process, then detach from the parent. */
       struct inferior *parent_inf, *child_inf;
       struct nto_inferior_data *inf_data;
+      DScomm_t recv;
 
-      if (!nto_attach_only (child_pid))
+      if (!nto_attach_only (child_pid, &recv))
 	return 1;
 
       child_inf = add_inferior (child_pid);
@@ -3383,6 +3386,7 @@ nto_follow_fork (struct target_ops *ops, int follow_child)
 	  const ptid_t old_inferior_ptid = inferior_ptid;
 	  struct program_space *const old_program_space
 	    = current_program_space;
+	  DScomm_t recv;
 
 	  nto_trace (0)("%s: parent, attach child\n", __func__);
 	  if (nto_inferior_data (inf)->vfork)
@@ -3391,7 +3395,7 @@ nto_follow_fork (struct target_ops *ops, int follow_child)
 	      return 0;
 	    }
 
-	  if (!nto_attach_only (child_pid))
+	  if (!nto_attach_only (child_pid, &recv))
 	    {
 	      error (_("Could not attach to %d\n"), child_pid);
 	      return 0;
