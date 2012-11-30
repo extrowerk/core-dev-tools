@@ -2,8 +2,13 @@
 #
 # ${host_os}-${host_cpu}-${host_cpu_variant}-${target_os_cpu_variant}[-nopython]
 #
-
-
+# For nto-arm* we need to specify endian and variant. In that case naming
+# is:
+#
+# ${host_os}-${host_cpu}-${host_cpu_endianes}-${host_cpu_variant}-${target_os_cpu_variant}[-nopython]
+#
+#
+#
 # Setup host_os host_cpu target_os and target_cpu
 build_dir=$(basename ${PWD})
 SIFS=${IFS}
@@ -14,6 +19,21 @@ host_os=$1
 host_cpu=$2
 host_cpu_variant=$3
 target_os_cpu_variant=$4
+case ${build_dir} in
+  nto-arm*)
+	SIFS=${IFS}
+	IFS=-
+	set -- ${build_dir}
+	IFS=${SIFS}
+	host_os=$1
+	host_cpu=$2
+	host_cpu_endian=$3
+	host_cpu_variant=$4
+	target_os_cpu_variant=$5
+	;;
+  *)
+    ;;
+esac
 #
 # Get sdp version
 # Assume ntox86-gcc is always available
@@ -33,7 +53,7 @@ case ${TARGET_SYSNAME} in
   nto)
     qnx_abiext_host=""
     host_platform="unknown"
-    case ${host_cpu}${host_cpu_variant} in
+    case ${host_cpu}${host_cpu_endian}${host_cpu_variant} in
       arm*v7*)
 	    qnx_abiext_host=eabi
 	    host_cpu_canonical=arm
