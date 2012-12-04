@@ -3586,7 +3586,7 @@ nto_find_new_threads (struct target_ops *ops)
 	}
 
       new_thread = find_thread_ptid (ptid);
-      if(!new_thread && tip->state != 0)
+      if(!new_thread && tip->state != 0 && set_thread (tip->tid))
 	new_thread = add_thread (ptid);
       if (new_thread && !new_thread->private)
 	{
