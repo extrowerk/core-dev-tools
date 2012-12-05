@@ -384,6 +384,10 @@ do_closedir_cleanup (void *dir)
   closedir (dir);
 }
 
+#ifndef HAVE_RAW_DECL_STRCASESTR
+extern char *strcasestr(const char *, const char *);
+#endif /* !HAVE_RAW_DECL_STRCASESTR */
+
 static void
 procfs_pidlist (char *args, int from_tty)
 {
@@ -456,6 +460,11 @@ procfs_pidlist (char *args, int from_tty)
 	strcpy (name, "unavailable");
       else
 	strcpy (name, info->path);
+
+      if (args != NULL && strcasestr(name, args) == NULL)
+	{
+	  continue;
+	}
 
       /* Collect state info on all the threads.  */
       status = (procfs_status *) buf;
