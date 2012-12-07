@@ -1265,8 +1265,26 @@ Show the list of directories from which to load auto-loaded scripts."),
 				     auto_load_set_cmdlist_get (),
 				     auto_load_show_cmdlist_get ());
   xfree (scripts_directory_help);
-
   auto_load_safe_path = xstrdup (AUTO_LOAD_SAFE_PATH);
+#ifdef __QNXTARGET__
+  {
+    char *qnx_target = getenv("QNX_TARGET");
+    if (qnx_target != NULL)
+      {
+	const size_t len1 = strlen (auto_load_safe_path);
+	const size_t len2 = strlen (qnx_target);
+	const size_t len = len1 + len2 + 2;
+	char *qnx_auto_load_safe_path = xcalloc (1, len);
+	if (qnx_auto_load_safe_path != NULL)
+	  {
+	    xstrprintf ("%s%c%s", qnx_auto_load_safe_path,
+			DIRNAME_SEPARATOR, auto_load_safe_path);
+	    xfree (auto_load_safe_path);
+	    auto_load_safe_path = qnx_auto_load_safe_path;
+	  }
+      }
+  }
+#endif
   auto_load_safe_path_vec_update ();
   add_setshow_optional_filename_cmd ("safe-path", class_support,
 				     &auto_load_safe_path, _("\

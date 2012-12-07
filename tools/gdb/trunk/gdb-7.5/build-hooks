@@ -104,10 +104,12 @@ case ${target_os_cpu_variant} in
     target_cpu="arm"
     qnx_abiext_target="eabi"
     target_platform="unknown"
+    CFLAGS=-D__QNXTARGET_ARM__
     ;;
   ntoarm*)
     target_cpu="arm"
     target_platform="unknown"
+    CFLAGS=-D__QNXTARGET_ARM__
     ;;
   ntox86*)
     case ${qnx_sdp_version} in
@@ -191,8 +193,8 @@ function hook_preconfigure {
 	  if [ "${OFFICIAL_BUILD}" != "" ]; then
 		# For official builds, we provide python install for building
 		with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
-		CFLAGS=-m32
-		LDFLAGS="-m32 -Wl,-rpath=_ORIGIN/../python27/lib"
+		CFLAGS="${CFLAGS} -m32"
+		LDFLAGS="${LDFLAGS} -m32 -Wl,-rpath=_ORIGIN/../python27/lib"
 	  else
 		# Let configure decide; if there is python available, then
 		# it will use it.
@@ -267,7 +269,7 @@ function hook_preconfigure {
   # CFLAGS for particular target OS
   case ${target_os} in 
     nto)
-      CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE $CFLAGS_DEBUG ${CCOPTS}"
+      CFLAGS="${CFLAGS} -D__QNXTARGET__ -g0 -O -D_LARGEFILE64_SOURCE ${CCOPTS}"
       export CFLAGS
     ;;
   esac
