@@ -1575,12 +1575,13 @@ static void
 nto_resume (struct target_ops *ops, ptid_t ptid, int step,
 	    enum gdb_signal sig)
 {
-  DScomm_t tran, *recv = &current_session->recv;
+  DScomm_t tran, *const recv = &current_session->recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch);
   int signo;
+  const int runone = ptid_get_tid (ptid) > 0;
 
   nto_trace (0) ("nto_resume(pid %d, tid %ld, step %d, sig %d)\n",
-		 PIDGET (ptid), TIDGET (ptid),
+		 PIDGET (ptid), ptid_get_tid (ptid),
 		 step, gdb_signal_to_nto (target_gdbarch, sig));
 
   if (ptid_equal (inferior_ptid, null_ptid))
@@ -1654,7 +1655,8 @@ nto_resume (struct target_ops *ops, ptid_t ptid, int step,
 	nto_send_recv (&tran, recv, sizeof (tran.pkt.kill), 1);
       }
 
-  nto_send_init (&tran, DStMsg_run, step ? DSMSG_RUN_COUNT : DSMSG_RUN,
+  nto_send_init (&tran, DStMsg_run, (step || runone) ? DSMSG_RUN_COUNT
+						     : DSMSG_RUN,
 		 SET_CHANNEL_DEBUG);
   tran.pkt.run.step.count = 1;
   tran.pkt.run.step.count =
@@ -3496,7 +3498,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_has_registers = nto_has_registers;
   nto_ops.to_has_execution = nto_has_execution;
   nto_ops.to_pid_to_str = nto_pid_to_str;
-  /* nto_ops.to_has_thread_control = tc_schedlock; *//* can lock scheduler */
+  nto_ops.to_has_thread_control = tc_schedlock; /* can lock scheduler */
   nto_ops.to_magic = OPS_MAGIC;
   nto_ops.to_have_continuable_watchpoint = 1;
   nto_ops.to_extra_thread_info = nto_extra_thread_info;
