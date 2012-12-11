@@ -685,6 +685,46 @@ static struct tramp_frame armbe_nto_sighandler_tramp_frame = {
 };
 #endif
 
+int
+nto_arm_software_single_step (struct frame_info *frame)
+{
+  struct gdbarch *gdbarch = get_frame_arch (frame);
+  struct address_space *aspace = get_frame_address_space (frame);
+  enum bfd_endian byte_order_for_code = gdbarch_byte_order_for_code (gdbarch);
+  CORE_ADDR this_pc;
+  CORE_ADDR next_pc;
+  int thumb = 0;
+  LONGEST insn, mask, match;
+
+  if (arm_deal_with_atomic_sequence (frame))
+    return 1;
+
+  this_pc = get_frame_pc (frame);
+  next_pc = arm_get_next_pc (frame, get_frame_pc (frame));
+  arm_insert_single_step_breakpoint (gdbarch, aspace, next_pc);
+
+  thumb = arm_frame_is_thumb (frame);
+  if (thumb)
+    {
+      mask = 0xff000000;
+      match = 0xdf000000; /* svc */
+    }
+  else
+    {
+      mask = 0x0f000000;
+      match = 0x0f000000; /* svc */
+    }
+
+  if (safe_read_memory_integer (this_pc, 4, byte_order_for_code, &insn)
+      && (insn & mask) == match)
+    {
+      /* In case svc returns an error, pc will be + 4 */
+      arm_insert_single_step_breakpoint (gdbarch, aspace, next_pc + 4);
+    }
+
+  return 1;
+}
+
 static const char arm_nto_thumb2_le_breakpoint[] = { 0xfe, 0xde, 0xff, 0xe7 };
 static const char arm_nto_thumb_le_breakpoint[] = { 0xfe, 0xde };
 
@@ -721,7 +761,7 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   init_armnto_ops ();
 
   /* Our single step is broken. Use software. */
-  set_gdbarch_software_single_step (gdbarch, arm_software_single_step);
+  set_gdbarch_software_single_step (gdbarch, nto_arm_software_single_step);
 
   set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
 
