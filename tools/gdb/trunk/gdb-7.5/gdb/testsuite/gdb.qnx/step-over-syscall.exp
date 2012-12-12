@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+if {![istarget arm-unknown-nto-qnx*]} then {
+    verbose "gdb.qnx: Skipping arm specific tests."
+    return
+}
+
 set testfile step-over-syscall
 set srcfile ${testfile}.c
 set binfile ${objdir}/${subdir}/${testfile}
