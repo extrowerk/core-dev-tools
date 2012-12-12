@@ -1,0 +1,94 @@
+# This testcase is part of GDB, the GNU debugger.
+
+# Copyright 2012 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set testfile step-over-syscall
+set srcfile ${testfile}.c
+set binfile ${objdir}/${subdir}/${testfile}
+
+if { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug}] != "" } {
+     untested ${testfile}.exp
+     return -1
+}
+
+gdb_exit
+gdb_start
+gdb_reinitialize_dir $srcdir/$subdir
+gdb_load ${binfile}
+
+if ![runto_main] then {
+   fail "Can't run to main"
+   return 0
+}
+
+set bp_location [gdb_get_line_number "1 breakpoint here"]
+
+gdb_test "break $bp_location" \
+    "Breakpoint.*at.* file .*$srcfile, line $bp_location\\." \
+    "breakpoint line number 1"
+
+gdb_test continue "Continuing\\..*Breakpoint \[0-9\]+, main \\(\\) at .*$srcfile:$bp_location.*1 breakpoint here.*" \
+    "run until breakpoint set at a line number"
+
+gdb_test "break *MsgSend" \
+    "Breakpoint 3.*at.*" \
+    "break MsgSend"
+
+gdb_test continue "Continuing\\..*Breakpoint 3.*MsgSend.*" \
+    "run until MsgSend breakpoint is hit" 
+
+# Step instruction until exit from MsgSend
+set bp_location [gdb_get_line_number "2 breakpoint here"]
+
+gdb_test "break $bp_location" \
+    "Breakpoint.*at.* file .*$srcfile, line $bp_location\\." \
+    "breakpoint line number 2"
+
+gdb_test  "disassemble" \
+    "Dump of assembler code for function MsgSend.*End of assembler dump.*"\
+    "disassemble MsgSend"
+
+gdb_test "display/i \$pc" \
+    "1: x/i.*<MsgSend>.*" \
+    "display \$pc"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*4>.*"\
+    "stepi 1"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*8>.*"\
+    "stepi 2"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*12>.*"\
+    "stepi 3"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*16>.*"\
+    "stepi 4"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*20>.*"\
+    "stepi 5"
+
+gdb_test  "si" \
+    ".* in MsgSend.*1. x/i .*<MsgSend.*28>.*"\
+    "STEP OVER SVC FAILED "
+
+
+return 0
+
