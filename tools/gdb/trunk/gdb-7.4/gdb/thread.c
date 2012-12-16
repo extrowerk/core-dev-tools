@@ -169,7 +169,7 @@ new_thread (ptid_t ptid)
 #ifdef __QNXTARGET__
   tp->num = ptid_get_tid (ptid);
   highest_thread_num = max (tp->num, highest_thread_num);
-  if (tp->num == 0)
+  if (tp->num <= 0)
 #endif /* !__QNXTARGET__ */
   tp->num = ++highest_thread_num;
   tp->next = thread_list;
