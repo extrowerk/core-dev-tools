@@ -144,7 +144,11 @@ gdb_test_multiple "gcore $gcorefile" "gcore" {
 
 # Let the program continue and die.
 gdb_test continue ".*Program received signal.*"
+if { ! [istarget "*-*-nto-*"] } {
 gdb_test continue ".*Program terminated with signal.*"
+} else {
+  gdb_test continue ".*exited.*"
+}
 
 # Now collect the core dump it left.
 set test "generate native core dump"
