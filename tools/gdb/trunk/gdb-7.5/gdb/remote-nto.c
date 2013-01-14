@@ -3451,6 +3451,27 @@ nto_supports_multi_process (void)
   return 1;
 }
 
+static int
+nto_verify_memory (struct target_ops *ops, const gdb_byte *data,
+		   CORE_ADDR memaddr, ULONGEST size)
+{
+  // TODO: This should be more optimal, similar to remote.c 
+  // implementation and pass address, size and crc32 to pdebug
+  // so it can perform crc32 there and save network traffic
+  gdb_byte *const buf = xmalloc (size);
+  int match;
+
+  if (target_read_memory (memaddr, buf, size) != 0)
+    {
+      warning (_("Error reading memory"));
+      return -1;
+    }
+
+  match = (memcmp (buf, data, size) == 0);
+  xfree (buf);
+  return match;
+}
+
 static void
 init_nto_ops ()
 {
@@ -3505,6 +3526,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_read_description = nto_read_description;
   nto_ops.to_follow_fork = nto_follow_fork;
   nto_ops.to_supports_multi_process = nto_supports_multi_process;
+  nto_ops.to_verify_memory = nto_verify_memory;
 }
 
 static void
