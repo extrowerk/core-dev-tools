@@ -69,8 +69,8 @@ QNX_SYSTEM_INCLUDES \
   "%{h*} %{v:-V} \
    %{b} \
    %{static:-dn -Bstatic} \
-   %{shared:-G -dy -z text} \
-   %{symbolic:-Bsymbolic -G -dy -z text} \
+   %{shared:-G -dy} \
+   %{symbolic:-Bsymbolic -G -dy} \
    %{G:-G} \
    %{YP,*} \
    %{!YP,*:%{p:-Y P,%R/lib} \
