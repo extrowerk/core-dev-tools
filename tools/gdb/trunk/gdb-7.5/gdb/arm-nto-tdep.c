@@ -498,15 +498,30 @@ armnto_regset_from_core_section (struct gdbarch *gdbarch,
 {
   nto_trace (0) ("%s () sect_name:%s\n", __func__, sect_name);
 
-  if (strcmp (sect_name, ".reg") == 0
-      && sect_size >= GP_REGSET_SIZE)
-    return &armnto_gregset;
+  if (strcmp (sect_name, ".reg") == 0)
+    {
+      if (sect_size >= GP_REGSET_SIZE)
+	return &armnto_gregset;
+      else
+	{
+	  warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		   sect_size);
+	  return &armnto_gregset;
+	}
+    }
 
-  if (strcmp (sect_name, ".reg2") == 0
-      && sect_size >= FP_REGSET_SIZE)
-    return &armnto_fpregset;
+  if (strcmp (sect_name, ".reg2") == 0)
+    {
+      if (sect_size >= FP_REGSET_SIZE)
+	return &armnto_fpregset;
+      else
+	{
+	  warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		   sect_size);
+	  return &armnto_fpregset;
+	}
+    }
 
-  gdb_assert (0);
   return NULL;
 }
 
@@ -685,7 +700,7 @@ static struct tramp_frame armbe_nto_sighandler_tramp_frame = {
 };
 #endif
 
-int
+static int
 nto_arm_software_single_step (struct frame_info *frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);

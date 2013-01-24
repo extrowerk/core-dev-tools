@@ -1236,6 +1236,12 @@ nto_core_xfer_partial (struct target_ops *ops, enum target_object object,
 	  warning ("Thread with gdb id %ld not found.\n", ptid_get_tid (inferior_ptid));
 	  return 0;
         }
+      if (!ti->private)
+	{
+	  warning (_("Thread with gdb id %ld does not have thread private data - siginfo not available\n"),
+		   ptid_get_tid (inferior_ptid));
+	  return 0;
+	}
       if ((offset + len) > sizeof (nto_siginfo_t))
 	{
 	  if (offset <= sizeof (nto_siginfo_t))
