@@ -7,6 +7,7 @@ set softtabstop=2
 set tabstop=8
 set cinoptions=^-2>4,{2,e-2,n-2,t0
 set cindent
+set shiftwidth=2
 set exrc
 let cpp_space_errors=1
 let c_space_errors=1
