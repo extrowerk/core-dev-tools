@@ -533,6 +533,8 @@ static CORE_ADDR
 armnto_sigcontext_addr (struct frame_info *this_frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (this_frame);
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  gdb_byte buf[4];
   CORE_ADDR ptrctx, sp;
 
   nto_trace (0) ("%s ()\n", __func__);
@@ -545,7 +547,8 @@ armnto_sigcontext_addr (struct frame_info *this_frame)
    stmia	lr, {r1-r12} 
    mov	r5, lr 
   */
-  get_frame_register (this_frame, ARM_A1_REGNUM + 5, (gdb_byte *)&ptrctx);
+  get_frame_register (this_frame, ARM_A1_REGNUM + 5, buf);
+  ptrctx = extract_unsigned_integer (buf, 4, byte_order);
   ptrctx -= 4;
 
   nto_trace (0) ("context addr: 0x%s\n", paddress (gdbarch, ptrctx));
