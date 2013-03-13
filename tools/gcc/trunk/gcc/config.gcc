@@ -693,6 +693,9 @@ case ${target} in
       tm_defines="${tm_defines} HAS_LIBC_R=1" ;;
   esac
   ;;
+*-*-qnx*)
+  extra_options="$extra_options nto.opt"
+  ;;
 *-*-rtems*)
   case ${enable_threads} in
     yes) thread_file='rtems' ;;
@@ -844,6 +847,7 @@ arm*-*-netbsdelf*)
 arm*-*-nto-qnx*)
         tm_file="dbxelf.h tm-dwarf2.h elfos.h nto-stdint.h arm/elf.h arm/aout.h"
 	tmake_file="${tmake_file} arm/t-arm arm/t-nto"
+	extra_options="${extra_options} arm/nto.opt"
         need_64bit_hwint=yes
 	case ${target} in
 	arm*-*-qnx*eabi)
@@ -2420,6 +2424,7 @@ sh*-*-nto-qnx*)
         xm_defines=POSIX 
         tm_file="${tm_file} dbxelf.h tm-dwarf2.h elfos.h sh/elf.h nto.h nto-stdint.h sh/nto.h"
         tmake_file="${tmake_file} sh/t-sh sh/t-nto"
+	extra_options="${extra_options} sh/nto.opt"
         float_format=sh
         ;;
 sh-wrs-vxworks)
