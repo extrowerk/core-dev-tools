@@ -366,18 +366,25 @@ mipsnto_regset_from_core_section (struct gdbarch *gdbarch,
 				   const char *sect_name, size_t sect_size)
 {
   size_t regsize = mips_isa_regsize (gdbarch);
-  
+
   nto_trace (0) ("%s () sect_name:%s\n", __func__, sect_name);
 
-  if (strcmp (sect_name, ".reg") == 0
-      && sect_size >= MIPSNTO_NUM_GREGS * regsize)
-    return &mipsnto_gregset;
+  if (strcmp (sect_name, ".reg") == 0)
+    {
+      if (sect_size < MIPSNTO_NUM_GREGS * regsize)
+	warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		 sect_size);
+      return &mipsnto_gregset;
+    }
 
-  if (strcmp (sect_name, ".reg2") == 0
-      && sect_size >= MIPSNTO_NUM_FPREGS * regsize)
-    return &mipsnto_fpregset;
+  if (strcmp (sect_name, ".reg2") == 0)
+    {
+      if (sect_size < MIPSNTO_NUM_FPREGS * regsize)
+	warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		 sect_size);
+      return &mipsnto_fpregset;
+    }
 
-  gdb_assert (0);
   return NULL;
 }
 
