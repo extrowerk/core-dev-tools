@@ -314,13 +314,22 @@ shnto_regset_from_core_section (struct gdbarch *gdbarch,
 				  const char *sect_name, size_t sect_size)
 {
   nto_trace (0) ("%s () sect_name:%s\n", __func__, sect_name);
-  if (strcmp (sect_name, ".reg") == 0 && sect_size >= GP_REGSET_SIZE)
-    return &shnto_gregset;
+  if (strcmp (sect_name, ".reg") == 0)
+    {
+      if (sect_size < GP_REGSET_SIZE)
+	warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		 sect_size);
+      return &shnto_gregset;
+    }
 
-  if (strcmp (sect_name, ".reg2") == 0 && sect_size >= FP_REGSET_SIZE)
-    return &shnto_fpregset;
+  if (strcmp (sect_name, ".reg2") == 0)
+    {
+      if (sect_size < FP_REGSET_SIZE)
+	warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
+		 sect_size);
+      return &shnto_fpregset;
+    }
 
-  gdb_assert (0);
   return NULL;
 }
 
