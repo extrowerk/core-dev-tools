@@ -1,0 +1,7 @@
+T_CPPFLAGS=-DTARGET_ALIAS=\"$(target_alias)\"
+
+#CRTSTUFF_T_CFLAGS = -fno-omit-frame-pointer -fpic -DCRTSTUFFS_O
+
+MULTILIB_OPTIONS = fpic 
+MULTILIB_DIRNAMES = pic 
+MULTILIB_MATCHES = fpic=shared

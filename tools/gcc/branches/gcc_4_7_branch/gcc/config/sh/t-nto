@@ -1,0 +1,9 @@
+# This allows us to use a staging area and find the new header files.
+# TCFLAGS is used by xgcc.
+TCFLAGS = -I $(shell echo ${QNX_TARGET})/usr/include
+
+T_CPPFLAGS=-DTARGET_ALIAS=\"$(target_alias)\"
+
+MULTILIB_OPTIONS = fpic
+MULTILIB_DIRNAMES = pic
+MULTILIB_MATCHES = fpic=shared
