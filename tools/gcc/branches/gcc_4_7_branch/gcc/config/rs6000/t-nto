@@ -1,0 +1,18 @@
+# Build libgcc.a with different options.  With gas, build pic libraries
+# as well no floating point
+
+FPBIT = fp-bit.c
+DPBIT = dp-bit.c
+
+dp-bit.c: $(srcdir)/config/fp-bit.c
+	cat $(srcdir)/config/fp-bit.c > dp-bit.c
+
+fp-bit.c: $(srcdir)/config/fp-bit.c
+	echo '#define FLOAT' > fp-bit.c
+	cat $(srcdir)/config/fp-bit.c >> fp-bit.c
+
+T_CPPFLAGS=-DTARGET_ALIAS=\"$(target_alias)\"
+
+MULTILIB_OPTIONS = fpic me500v2
+MULTILIB_DIRNAMES = pic spe 
+MULTILIB_MATCHES = fpic=shared
