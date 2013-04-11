@@ -1,6 +1,6 @@
 // Compatibility symbols for previous versions, C++0x bits -*- C++ -*-
 
-// Copyright (C) 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
+// Copyright (C) 2009-2013 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -23,14 +23,14 @@
 // <http://www.gnu.org/licenses/>.
 
 #include <bits/c++config.h>
-#if defined(_GLIBCXX_HAVE_TLS) && defined(PIC)
+#if defined(_GLIBCXX_HAVE_TLS) && defined(_GLIBCXX_SHARED)
 #define _GLIBCXX_ASYNC_ABI_COMPAT
 #endif
 
 #include <future>
 #include <mutex>
 
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus < 201103L
 # error "compatibility-thread-c++0x.cc must be compiled with -std=gnu++0x"
 #endif
 
@@ -40,7 +40,7 @@
 // XXX GLIBCXX_ABI Deprecated
 // gcc-4.6.0
 // <future> export changes
-#if defined(_GLIBCXX_SYMVER_GNU) && defined(PIC) \
+#if defined(_GLIBCXX_SYMVER_GNU) && defined(_GLIBCXX_SHARED) \
     && defined(_GLIBCXX_HAVE_AS_SYMVER_DIRECTIVE) \
     && defined(_GLIBCXX_HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT)
 
@@ -57,7 +57,7 @@ _GLIBCXX_ASM_SYMVER(_ZN9__gnu_cxx15future_categoryE, _ZSt15future_category, GLIB
 // gcc-4.6.0
 // <mutex> export changes
 #if defined(_GLIBCXX_HAS_GTHREADS) && defined(_GLIBCXX_USE_C99_STDINT_TR1)
-#if defined(_GLIBCXX_SYMVER_GNU) && defined(PIC) \
+#if defined(_GLIBCXX_SYMVER_GNU) && defined(_GLIBCXX_SHARED) \
     && defined(_GLIBCXX_HAVE_AS_SYMVER_DIRECTIVE) \
     && defined(_GLIBCXX_HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT)
 
@@ -82,7 +82,7 @@ _GLIBCXX_ASM_SYMVER(_ZN9__gnu_cxx11try_to_lockE, _ZSt11try_to_lock, GLIBCXX_3.4.
 // <future> export changes
 #if defined(_GLIBCXX_HAS_GTHREADS) && defined(_GLIBCXX_USE_C99_STDINT_TR1) \
   && (ATOMIC_INT_LOCK_FREE > 1)
-#if defined(_GLIBCXX_HAVE_TLS) && defined(PIC)
+#if defined(_GLIBCXX_HAVE_TLS) && defined(_GLIBCXX_SHARED)
 namespace std _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION

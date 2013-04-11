@@ -6,8 +6,6 @@
 
 #include "go-system.h"
 
-#include <gmp.h>
-
 #include "go-c.h"
 #include "types.h"
 #include "expressions.h"
@@ -2006,6 +2004,8 @@ Thunk_statement::do_determine_types()
 void
 Thunk_statement::do_check_types(Gogo*)
 {
+  if (!this->call_->discarding_value())
+    return;
   Call_expression* ce = this->call_->call_expression();
   if (ce == NULL)
     {
@@ -2471,11 +2471,15 @@ Thunk_statement::build_thunk(Gogo* gogo, const std::string& thunk_name)
       Expression_statement* es =
 	static_cast<Expression_statement*>(call_statement);
       Call_expression* ce = es->expr()->call_expression();
-      go_assert(ce != NULL);
-      if (may_call_recover)
-	ce->set_is_deferred();
-      if (recover_arg != NULL)
-	ce->set_recover_arg(recover_arg);
+      if (ce == NULL)
+	go_assert(saw_errors());
+      else
+	{
+	  if (may_call_recover)
+	    ce->set_is_deferred();
+	  if (recover_arg != NULL)
+	    ce->set_recover_arg(recover_arg);
+	}
     }
 
   // That is all the thunk has to do.
@@ -3313,16 +3317,10 @@ Case_clauses::Case_clause::lower(Block* b, Temporary_statement* val_temp,
 	   p != this->cases_->end();
 	   ++p)
 	{
-	  Expression* this_cond;
-	  if (val_temp == NULL)
-	    this_cond = *p;
-	  else
-	    {
-	      Expression* ref = Expression::make_temporary_reference(val_temp,
-								     loc);
-	      this_cond = Expression::make_binary(OPERATOR_EQEQ, ref, *p, loc);
-	    }
-
+	  Expression* ref = Expression::make_temporary_reference(val_temp,
+								 loc);
+	  Expression* this_cond = Expression::make_binary(OPERATOR_EQEQ, ref,
+							  *p, loc);
 	  if (cond == NULL)
 	    cond = this_cond;
 	  else
@@ -3846,6 +3844,16 @@ Switch_statement::do_lower(Gogo*, Named_object*, Block* enclosing,
     return new Constant_switch_statement(this->val_, this->clauses_,
 					 this->break_label_, loc);
 
+  if (this->val_ != NULL
+      && !this->val_->type()->is_comparable()
+      && !Type::are_compatible_for_comparison(true, this->val_->type(),
+					      Type::make_nil_type(), NULL))
+    {
+      error_at(this->val_->location(),
+	       "cannot switch on value whose type that may not be compared");
+      return Statement::make_error_statement(loc);
+    }
+
   Block* b = new Block(enclosing, loc);
 
   if (this->clauses_->empty())
@@ -3856,15 +3864,12 @@ Switch_statement::do_lower(Gogo*, Named_object*, Block* enclosing,
       return Statement::make_statement(val, true);
     }
 
-  Temporary_statement* val_temp;
-  if (this->val_ == NULL)
-    val_temp = NULL;
-  else
-    {
-      // var val_temp VAL_TYPE = VAL
-      val_temp = Statement::make_temporary(NULL, this->val_, loc);
-      b->add_statement(val_temp);
-    }
+  // var val_temp VAL_TYPE = VAL
+  Expression* val = this->val_;
+  if (val == NULL)
+    val = Expression::make_boolean(true, loc);
+  Temporary_statement* val_temp = Statement::make_temporary(NULL, val, loc);
+  b->add_statement(val_temp);
 
   this->clauses_->lower(b, val_temp, this->break_label());
 
@@ -4840,6 +4845,8 @@ Select_clauses::get_backend(Translate_context* context,
   std::vector<std::vector<Bexpression*> > cases(count);
   std::vector<Bstatement*> clauses(count);
 
+  Type* int32_type = Type::lookup_integer_type("int32");
+
   int i = 0;
   for (Clauses::iterator p = this->clauses_.begin();
        p != this->clauses_.end();
@@ -4848,7 +4855,8 @@ Select_clauses::get_backend(Translate_context* context,
       int index = p->index();
       mpz_t ival;
       mpz_init_set_ui(ival, index);
-      Expression* index_expr = Expression::make_integer(&ival, NULL, location);
+      Expression* index_expr = Expression::make_integer(&ival, int32_type,
+							location);
       mpz_clear(ival);
       cases[i].push_back(tree_to_expr(index_expr->get_tree(context)));
 

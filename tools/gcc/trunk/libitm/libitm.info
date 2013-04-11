@@ -1,7 +1,7 @@
 This is libitm.info, produced by makeinfo version 4.13 from
-/d/gcc-4.7.2/gcc-4.7.2/libitm/libitm.texi.
+/d/gcc-4.8.0/gcc-4.8.0/libitm/libitm.texi.
 
-Copyright (C) 2011 Free Software Foundation, Inc.
+Copyright (C) 2011-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.2 or
@@ -17,7 +17,7 @@ END-INFO-DIR-ENTRY
 
    This manual documents the GNU Transactional Memory Library.
 
-   Copyright (C) 2011 Free Software Foundation, Inc.
+   Copyright (C) 2011-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.2 or
@@ -142,6 +142,13 @@ transaction) about which memory locations are shared and which are not
 shared with other threads (i.e., data must be accessed either
 transactionally or nontransactionally). Otherwise, non-write-through TM
 algorithms would not work.
+
+   For memory locations on the stack, this requirement extends to only
+the lifetime of the stack frame that the memory location belongs to (or
+the lifetime of the transaction, whichever is shorter).  Thus, memory
+that is reused for several stack frames could be target of both data
+logging and transactional accesses; however, this is harmless because
+these stack frames' lifetimes will end before the transaction finishes.
 
 3.3.6 [No changes] Scatter/gather calls
 ---------------------------------------
@@ -1286,15 +1293,15 @@ Index
 
 
 Tag Table:
-Node: Top1163
-Node: Enabling libitm2066
-Node: C/C++ Language Constructs for TM2460
-Node: The libitm ABI3940
-Ref: txn-code-properties7308
-Node: Internals17583
-Ref: serial-lock-impl27608
-Ref: progress-guarantees32358
-Node: GNU Free Documentation License34632
-Node: Index59773
+Node: Top1173
+Node: Enabling libitm2076
+Node: C/C++ Language Constructs for TM2470
+Node: The libitm ABI3950
+Ref: txn-code-properties7743
+Node: Internals18018
+Ref: serial-lock-impl28043
+Ref: progress-guarantees32793
+Node: GNU Free Documentation License35067
+Node: Index60208
 
 End Tag Table

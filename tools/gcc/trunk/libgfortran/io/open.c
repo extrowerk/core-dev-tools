@@ -1,5 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 2011
-   Free Software Foundation, Inc.
+/* Copyright (C) 2002-2013 Free Software Foundation, Inc.
    Contributed by Andy Vaught
    F2003 I/O support contributed by Jerry DeLisle
 
@@ -153,8 +152,12 @@ static const st_option async_opt[] =
 static void
 test_endfile (gfc_unit * u)
 {
-  if (u->endfile == NO_ENDFILE && ssize (u->s) == stell (u->s))
-    u->endfile = AT_ENDFILE;
+  if (u->endfile == NO_ENDFILE)
+    { 
+      gfc_offset sz = ssize (u->s);
+      if (sz == 0 || sz == stell (u->s))
+	u->endfile = AT_ENDFILE;
+    }
 }
 
 
@@ -538,7 +541,7 @@ new_unit (st_parameter_open *opp, gfc_unit *u, unit_flags * flags)
 
   /* Create the unit structure.  */
 
-  u->file = get_mem (opp->file_len);
+  u->file = xmalloc (opp->file_len);
   if (u->unit_number != opp->common.unit)
     internal_error (&opp->common, "Unit number changed");
   u->s = s;
@@ -844,10 +847,7 @@ st_open (st_parameter_open *opp)
   if ((opp->common.flags & IOPARM_LIBRETURN_MASK) == IOPARM_LIBRETURN_OK)
     {
       if ((opp->common.flags & IOPARM_OPEN_HAS_NEWUNIT))
-	{
-	  *opp->newunit = get_unique_unit_number(opp);
-	  opp->common.unit = *opp->newunit;
-	}
+	opp->common.unit = get_unique_unit_number(opp);
 
       u = find_or_create_unit (opp->common.unit);
       if (u->s == NULL)
@@ -859,6 +859,10 @@ st_open (st_parameter_open *opp)
       else
 	already_open (opp, u, &flags);
     }
-
+    
+  if ((opp->common.flags & IOPARM_OPEN_HAS_NEWUNIT)
+      && (opp->common.flags & IOPARM_LIBRETURN_MASK) == IOPARM_LIBRETURN_OK)
+    *opp->newunit = opp->common.unit;
+  
   library_end ();
 }
