@@ -1,5 +1,5 @@
 ;; Constraint definitions for IA-32 and x86-64.
-;; Copyright (C) 2006, 2007 Free Software Foundation, Inc.
+;; Copyright (C) 2006-2013 Free Software Foundation, Inc.
 ;;
 ;; This file is part of GCC.
 ;;
@@ -18,7 +18,7 @@
 ;; <http://www.gnu.org/licenses/>.
 
 ;;; Unused letters:
-;;;     B     H           T  W
+;;;     B     H           T
 ;;;           h jk          v
 
 ;; Integer register constraints.
@@ -89,9 +89,11 @@
 ;;  z	First SSE register.
 ;;  i	SSE2 inter-unit moves enabled
 ;;  m	MMX inter-unit moves enabled
+;;  a	Integer register when zero extensions with AND are disabled
 ;;  p	Integer register when TARGET_PARTIAL_REG_STALL is disabled
 ;;  d	Integer register when integer DFmode moves are enabled
 ;;  x	Integer register when integer XFmode moves are enabled
+;;  f	x87 register when 80387 floating point arithmetic is enabled
 
 (define_register_constraint "Yz" "TARGET_SSE ? SSE_FIRST_REG : NO_REGS"
  "First SSE register (@code{%xmm0}).")
@@ -108,6 +110,11 @@
  "TARGET_PARTIAL_REG_STALL ? NO_REGS : GENERAL_REGS"
  "@internal Any integer register when TARGET_PARTIAL_REG_STALL is disabled.")
 
+(define_register_constraint "Ya"
+ "TARGET_ZERO_EXTEND_WITH_AND && optimize_function_for_speed_p (cfun)
+  ? NO_REGS : GENERAL_REGS"
+ "@internal Any integer register when zero extensions with AND are disabled.")
+
 (define_register_constraint "Yd"
  "(TARGET_64BIT
    || (TARGET_INTEGER_DFMODE_MOVES && optimize_function_for_speed_p (cfun)))
@@ -117,6 +124,10 @@
 (define_register_constraint "Yx"
  "optimize_function_for_speed_p (cfun) ? GENERAL_REGS : NO_REGS"
  "@internal Any integer register when integer XFmode moves are enabled.")
+
+(define_register_constraint "Yf"
+ "(ix86_fpmath & FPMATH_387) ? FLOAT_REGS : NO_REGS"
+ "@internal Any x87 register when 80387 FP arithmetic is enabled.")
 
 (define_constraint "z"
   "@internal Constant call address operand."
@@ -187,6 +198,16 @@
    to fit that range (for immediate operands in sign-extending x86-64
    instructions)."
   (match_operand 0 "x86_64_immediate_operand"))
+
+;; We use W prefix to denote any number of
+;; constant-or-symbol-reference constraints
+
+(define_constraint "Wz"
+  "32-bit unsigned integer constant, or a symbolic reference known
+   to fit that range (for zero-extending conversion operations that
+   require non-VOIDmode immediate operands)."
+  (and (match_operand 0 "x86_64_zext_immediate_operand")
+       (match_test "GET_MODE (op) != VOIDmode")))
 
 (define_constraint "Z"
   "32-bit unsigned integer constant, or a symbolic reference known

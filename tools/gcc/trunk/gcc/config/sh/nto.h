@@ -22,8 +22,8 @@ Boston, MA 02111-1307, USA.  */
 #define DWARF2_UNWIND_INFO 1 
 
 #undef TARGET_DEFAULT 
-#define TARGET_DEFAULT  (TARGET_CPU_DEFAULT | MASK_USERMODE | \
-			TARGET_ENDIAN_DEFAULT | TARGET_OPT_DEFAULT)
+#define TARGET_DEFAULT  (TARGET_CPU_DEFAULT | TARGET_ENDIAN_DEFAULT \
+			| TARGET_OPT_DEFAULT)
 
 /* Return to the original ELF way.  */
 #undef USER_LABEL_PREFIX
@@ -114,7 +114,7 @@ do                                                                     \
 
 #undef LINK_SPEC
 #define LINK_SPEC \
-"%{!mb:-EL}%{mb:-EB} -z now %{!mb:-m shlelf_nto}%{mb:-m shelf_nto} \
+"%{!mb:-EL}%{mb:-EB} %{!mb:-m shlelf_nto}%{mb:-m shelf_nto} \
  %{mrelax:-relax} -YP,%$QNX_TARGET/lib -YP,%$QNX_TARGET/usr/lib \
  %{MAP:-Map mapfile} %{static:-dn -Bstatic} %{shared:-G -dy} \
  %{symbolic: -Bsymbolic -G -dy} %{G:-G} \
@@ -133,3 +133,13 @@ QNX_SYSTEM_LIBDIRS \
 #undef  ENDFILE_SPEC
 #define ENDFILE_SPEC "crtend.o%s \
 %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crtn.o"
+
+#undef SUBTARGET_OVERRIDE_OPTIONS
+#define SUBTARGET_OVERRIDE_OPTIONS					\
+  do									\
+    {									\
+      /* Set -musermode if it hasn't been specified.  */		\
+      if (global_options_set.x_TARGET_USERMODE == 0)			\
+	TARGET_USERMODE = true;						\
+    }									\
+  while (0)

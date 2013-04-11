@@ -3,7 +3,7 @@ targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
-qnx_target_version=6.5.0
+qnx_target_version=8.0.0
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
@@ -65,7 +65,10 @@ function hook_preconfigure {
 			qnxtarget=/c/qnx650/target/qnx6/
 			;;
 			nto-*)
-			configure_opts="${configure_opts} --host=i486-pc-nto-qnx6.5.0"
+			CPPFLAGS=
+			configure_opts="${configure_opts} --host=i486-pc-nto-qnx8.0.0"
+		 	# disable plugins for canadian cross	
+			configure_opts="${configure_opts} --disable-plugin"
 			basedir=/usr/qnx650/host/qnx6/x86/usr
 			qnxtarget=/usr/qnx650/target/qnx6
 				
@@ -111,13 +114,14 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tls"
 	configure_opts="${configure_opts} --disable-libstdcxx-pch"
+	configure_opts="${configure_opts} --disable-libquadmath"
 	configure_opts="${configure_opts} --enable-libmudflap"
 	configure_opts="${configure_opts} --enable-libgomp"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
-	if test "${target}" = "mips-unknown-nto-qnx6.5.0"; then
+	if test "${target}" = "mips-unknown-nto-qnx8.0.0"; then
 		configure_opts="${configure_opts} --disable-shared"
 		configure_opts="${configure_opts} --disable-fixed-point"
 	else
