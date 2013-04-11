@@ -3596,23 +3596,7 @@ case "${target}" in
 			exit 1
 			;;
 		esac
-
-		case ${with_mips_plt} in
-		yes)
-			with_mips_plt=plt
-			;;
-		no)
-			with_mips_plt=no-plt
-			;;
-		"")
-			;;
-		*)
-			echo "Unknown --with-mips-plt argument: $with_mips_plt" 1>&2
-			exit 1
-			;;
-		esac
 		;;
-
 	sh[123456ble]-*-* | sh-*-*)
 		supported_defaults="cpu"
 		case "`echo $with_cpu | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ_ abcdefghijklmnopqrstuvwxyz- | sed s/sh/m/`" in
