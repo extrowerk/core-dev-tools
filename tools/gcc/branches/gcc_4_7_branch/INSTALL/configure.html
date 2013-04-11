@@ -3,7 +3,7 @@
 <title>Installing GCC: Configuration</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Installing GCC: Configuration">
-<meta name="generator" content="makeinfo 4.13">
+<meta name="generator" content="makeinfo 4.12">
 <link title="Top" rel="top" href="#Top">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
@@ -432,6 +432,14 @@ tools can not generate or interpret stabs.
 For ARM targets, possible values for <var>dialect</var> are <code>gnu</code> or
 <code>gnu2</code>, which select between the original GNU dialect and the GNU TLS
 descriptor-based dialect.
+
+     <br><dt><code>--enable-multiarch</code><dd>Specify whether to enable or disable multiarch support.  The default is
+to check for glibc start files in a multiarch location, and enable it
+if the files are found.  The auto detection is enabled for native builds,
+and for cross builds configured with <samp><span class="option">--with-sysroot</span></samp>, and without
+<samp><span class="option">--with-native-system-header-dir</span></samp>. 
+More documentation about multiarch can be found at
+<a href="http://wiki.debian.org/Multiarch">http://wiki.debian.org/Multiarch</a>.
 
      <br><dt><code>--disable-multilib</code><dd>Specify that multiple target
 libraries to support different target variants, calling
@@ -1035,6 +1043,15 @@ effect.
 being used as the target C library.  This causes <code>__eprintf</code> to be
 omitted from <samp><span class="file">libgcc.a</span></samp> on the assumption that it will be provided by
 &lsquo;<samp><span class="samp">newlib</span></samp>&rsquo;.
+
+     <br><dt><code>--with-avrlibc</code><dd>Specifies that &lsquo;<samp><span class="samp">AVR-Libc</span></samp>&rsquo; is
+being used as the target C library.  This causes float support
+functions like <code>__addsf3</code> to be omitted from <samp><span class="file">libgcc.a</span></samp> on
+the assumption that it will be provided by <samp><span class="file">libm.a</span></samp>.  For more
+technical details, cf. <a href="http://gcc.gnu.org/PR54461">PR54461</a>. 
+This option is only supported for the AVR target.  It is not supported for
+RTEMS configurations, which currently use newlib.  The option is
+supported since version 4.7.2 and is the default in 4.8.0 and newer.
 
      <br><dt><code>--with-build-time-tools=</code><var>dir</var><dd>Specifies where to find the set of target tools (assembler, linker, etc.) 
 that will be used while building GCC itself.  This option can be useful
