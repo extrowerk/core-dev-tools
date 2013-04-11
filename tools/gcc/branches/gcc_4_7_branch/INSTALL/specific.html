@@ -3,7 +3,7 @@
 <title>Host/Target specific installation notes for GCC</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Host/Target specific installation notes for GCC">
-<meta name="generator" content="makeinfo 4.13">
+<meta name="generator" content="makeinfo 4.12">
 <link title="Top" rel="top" href="#Top">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
@@ -206,7 +206,7 @@ provide a fix shortly.
 
 <p>ARM-family processors.  Subtargets that use the ELF object format
 require GNU binutils 2.13 or newer.  Such subtargets include:
-<code>arm-*-netbsdelf</code>, <code>arm-*-*linux-gnueabi</code>
+<code>arm-*-netbsdelf</code>, <code>arm-*-*linux-gnueabi*</code>
 and <code>arm-*-rtemseabi</code>.
 
    <p><hr />
@@ -1327,9 +1327,9 @@ releases mishandled unaligned relocations on <code>sparc-*-*</code> targets.
 
 <h3 class="heading"><a name="TOC55"></a><a name="sparc64_002dx_002dsolaris2"></a>sparc64-*-solaris2*</h3>
 
-<p>When configuring the GNU Multiple Precision Library (GMP) or the
-MPFR library, the canonical target triplet must be specified as
-the <samp><span class="command">build</span></samp> parameter on the configure line.  For example
+<p>When configuring the GNU Multiple Precision Library (GMP), the MPFR
+library or the MPC library, the canonical target triplet must be specified
+as the <samp><span class="command">build</span></samp> parameter on the configure line.  For example
 on a Solaris 9 system:
 
 <pre class="smallexample">     % ./configure --build=sparc64-sun-solaris2.9 --prefix=xxx
