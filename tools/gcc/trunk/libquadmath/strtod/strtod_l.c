@@ -88,6 +88,10 @@ __quadmath_strncasecmp_c (const char *s1, const char *s2, size_t n)
 }
 #endif
 
+#ifdef __QNXNTO__
+#undef _MIN
+#undef _MAX
+#endif
 
 /* Constants we need from float.h; select the set for the FLOAT precision.  */
 #define MANT_DIG	PASTE(FLT,_MANT_DIG)
