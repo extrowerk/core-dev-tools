@@ -508,7 +508,7 @@ armnto_regset_from_core_section (struct gdbarch *gdbarch,
 
   if (strcmp (sect_name, ".reg2") == 0)
     {
-      if (sect_size >= FP_REGSET_SIZE)
+      if (sect_size < FP_REGSET_SIZE)
 	warning (_("Section '%s' has invalid size (%zu)\n"), sect_name,
 		 sect_size);
       return &armnto_fpregset;

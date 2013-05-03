@@ -1265,7 +1265,10 @@ svr4_read_so_list (CORE_ADDR lm, struct so_list ***link_ptr_ptr,
 	  target_read_string (new->lm_info->l_path, &pathbuff,
 			      PATH_MAX - 1, &errcode);
 	  if (errcode == 0 && pathbuff != NULL) {
-	    buffer = xstrdup (lbasename (pathbuff));
+	    if (svr4_same_1 (pathbuff, "libc.so.3"))
+	      buffer = xstrdup ("libc.so.3");
+	    else
+	      buffer = xstrdup (lbasename (pathbuff));
 	  }
 	  xfree (pathbuff);
 	}
