@@ -220,6 +220,7 @@ function hook_preconfigure {
 
   configure_opts="${configure_host} ${configure_target}"
   configure_opts="${configure_opts} --without-expat"
+  configure_opts="${configure_opts} --with-bugurl=no"
 
   install_sysname=${TARGET_SYSNAME}
   # Setup install dirs.
