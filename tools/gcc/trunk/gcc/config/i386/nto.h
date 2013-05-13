@@ -34,7 +34,7 @@ along with GCC; see the file COPYING3.  If not see
 #define CPP_SPEC \
 QNX_SYSTEM_INCLUDES \
 " %(cpp_cpu) \
- %{posix:-D_POSIX_SOURCE}"
+ %{posix:-D_POSIX_SOURCE} %{pthread:}"
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
