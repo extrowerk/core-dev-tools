@@ -55,6 +55,7 @@ Boston, MA 02111-1307, USA.  */
 QNX_SYSTEM_INCLUDES " \
  -D__SH4__ \
  %{posix:-D_POSIX_SOURCE} \
+ %{pthread:} \
  %{!mb:-D__LITTLE_ENDIAN__} \
  %{!mb:-D__LITTLEENDIAN__} \
  %{mb:-D__BIG_ENDIAN__} \
