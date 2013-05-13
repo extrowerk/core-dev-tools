@@ -53,6 +53,18 @@ extern size_t gcc_gettext_width (const char *);
 extern const char *fake_ngettext(const char *singular,const char *plural,
                                  unsigned long int n);
 
+#undef    fprintf
+#undef    vfprintf
+#undef    printf
+#undef    vprintf
+#undef    sprintf
+#undef    vsprintf
+#undef    snprintf
+#undef    vsnprintf
+#undef    asprintf
+#undef    vasprintf
+#undef    setlocale
+
 #endif
 
 #ifndef _
