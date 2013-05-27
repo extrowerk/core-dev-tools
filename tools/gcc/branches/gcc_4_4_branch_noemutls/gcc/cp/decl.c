@@ -7013,7 +7013,14 @@ grokvardecl (tree type,
     }
 
   if (declspecs->specs[(int)ds_thread])
-    DECL_TLS_MODEL (decl) = decl_default_tls_model (decl);
+    { 
+      if (targetm.have_tls)
+        DECL_TLS_MODEL (decl) = decl_default_tls_model (decl);
+      else
+        /* A mere warning is sure to result in improper semantics
+           at runtime.  Don't bother to allow this to compile.  */
+        error ("thread-local storage not supported for this target");
+    }
 
   if (TREE_PUBLIC (decl))
     {
@@ -9302,7 +9309,15 @@ grokdeclarator (const cp_declarator *declarator,
 		DECL_EXTERNAL (decl) = 1;
 
 		if (thread_p)
-		  DECL_TLS_MODEL (decl) = decl_default_tls_model (decl);
+		  {
+                    if (targetm.have_tls)
+		      DECL_TLS_MODEL (decl) = decl_default_tls_model (decl);
+                    else
+                      /* A mere warning is sure to result in improper
+                         semantics at runtime.  Don't bother to allow this to
+                         compile.  */
+                      error ("thread-local storage not supported for this target");
+		  }
 	      }
 	    else
 	      {
