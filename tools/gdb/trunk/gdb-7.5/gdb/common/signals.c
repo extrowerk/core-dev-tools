@@ -352,9 +352,6 @@ gdb_signal_from_host (int hostsig)
       else
 	error (_("GDB bug: target.c (gdb_signal_from_host): "
 	       "unrecognized real-time signal"));
-      /* For QNX port, we make sure numeric values match our signal.h
-       * in qnx_signals.def.  */
-      return (enum gdb_signal) hostsig;
     }
 #endif
 
