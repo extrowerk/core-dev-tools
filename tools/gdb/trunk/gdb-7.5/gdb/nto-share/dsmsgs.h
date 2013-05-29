@@ -103,6 +103,7 @@
 #define DS_MSG_NO_RESPONSE				0x80000000
 
 #define QNXNTO_NSIG			57	/* From signals.h NSIG.  */
+#define QNXNTO_MAXSIG			64	/* MAXSIG from signals.h */
 
 /* Common message header. It must be 32 or 64 bit aligned.
    The top bit of cmd is 1 for BIG endian data format.  */
@@ -497,6 +498,7 @@ typedef struct
   struct DShdr hdr;
   unsigned char signals[QNXNTO_NSIG];
   unsigned sig_to_pass;
+  unsigned char signals2[QNXNTO_MAXSIG - QNXNTO_NSIG]; /* 64 - 57 */ 
 } DStMsg_handlesig_t;
 
 

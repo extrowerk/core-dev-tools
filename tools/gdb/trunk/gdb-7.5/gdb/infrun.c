@@ -7194,27 +7194,33 @@ leave it stopped or free to run as needed."),
   signal_print[GDB_SIGNAL_PROF] = 0;
   signal_stop[GDB_SIGNAL_CHLD] = 0;
   signal_print[GDB_SIGNAL_CHLD] = 0;
+#ifndef __QNXTARGET__
   signal_stop[GDB_SIGNAL_IO] = 0;
   signal_print[GDB_SIGNAL_IO] = 0;
+#endif
   signal_stop[GDB_SIGNAL_POLL] = 0;
   signal_print[GDB_SIGNAL_POLL] = 0;
   signal_stop[GDB_SIGNAL_URG] = 0;
   signal_print[GDB_SIGNAL_URG] = 0;
   signal_stop[GDB_SIGNAL_WINCH] = 0;
   signal_print[GDB_SIGNAL_WINCH] = 0;
+#ifndef __QNXTARGET__
   signal_stop[GDB_SIGNAL_PRIO] = 0;
   signal_print[GDB_SIGNAL_PRIO] = 0;
+#endif
 
   /* These signals are used internally by user-level thread
      implementations.  (See signal(5) on Solaris.)  Like the above
      signals, a healthy program receives and handles them as part of
      its normal operation.  */
+#ifndef __QNXTARGET__
   signal_stop[GDB_SIGNAL_LWP] = 0;
   signal_print[GDB_SIGNAL_LWP] = 0;
   signal_stop[GDB_SIGNAL_WAITING] = 0;
   signal_print[GDB_SIGNAL_WAITING] = 0;
   signal_stop[GDB_SIGNAL_CANCEL] = 0;
   signal_print[GDB_SIGNAL_CANCEL] = 0;
+#endif
 
   /* Update cached state.  */
   signal_cache_update (-1);

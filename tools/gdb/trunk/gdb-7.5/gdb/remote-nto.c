@@ -323,7 +323,7 @@ static int upload_sets_exec = 1;
 
 /* These define the version of the protocol implemented here.  */
 #define HOST_QNX_PROTOVER_MAJOR	0
-#define HOST_QNX_PROTOVER_MINOR	4
+#define HOST_QNX_PROTOVER_MINOR	5
 
 /* Stuff for dealing with the packets which are part of this protocol.  */
 

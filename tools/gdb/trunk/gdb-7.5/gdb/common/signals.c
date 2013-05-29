@@ -117,7 +117,10 @@ gdb_signal_from_host (int hostsig)
 
   if (hostsig == 0)
     return GDB_SIGNAL_0;
-
+#ifdef __QNXTARGET__
+  extern enum gdb_signal gdb_signal_from_nto (struct gdbarch *, int);
+  return gdb_signal_from_nto (target_gdbarch, hostsig);
+#else
 #if defined (SIGHUP)
   if (hostsig == SIGHUP)
     return GDB_SIGNAL_HUP;
@@ -206,7 +209,7 @@ gdb_signal_from_host (int hostsig)
   if (hostsig == SIGURG)
     return GDB_SIGNAL_URG;
 #endif
-#if defined (SIGIO)
+#if defined (SIGIO) && !defined(__QNXTARGET__)
   if (hostsig == SIGIO)
     return GDB_SIGNAL_IO;
 #endif
@@ -349,10 +352,14 @@ gdb_signal_from_host (int hostsig)
       else
 	error (_("GDB bug: target.c (gdb_signal_from_host): "
 	       "unrecognized real-time signal"));
+      /* For QNX port, we make sure numeric values match our signal.h
+       * in qnx_signals.def.  */
+      return (enum gdb_signal) hostsig;
     }
 #endif
 
   return GDB_SIGNAL_UNKNOWN;
+#endif /* !__QNXTARGET__ */
 }
 
 /* Convert a OURSIG (an enum gdb_signal) to the form used by the
@@ -463,7 +470,7 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
     case GDB_SIGNAL_URG:
       return SIGURG;
 #endif
-#if defined (SIGIO)
+#if defined (SIGIO) && !defined (__QNXTARGET__)
     case GDB_SIGNAL_IO:
       return SIGIO;
 #endif
@@ -595,6 +602,8 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
 #if defined (REALTIME_LO)
       retsig = 0;
 
+#ifndef __QNXTARGET__
+
       if (oursig >= GDB_SIGNAL_REALTIME_33
 	  && oursig <= GDB_SIGNAL_REALTIME_63)
 	{
@@ -615,6 +624,9 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
              GDB_SIGNAL_REALTIME_64 is 64 by definition.  */
 	  retsig = (int) oursig - (int) GDB_SIGNAL_REALTIME_64 + 64;
 	}
+#else /* __QNXTARGET__ */
+      retsig = oursig; // We make sure numeric values match in qnx_signals.def
+#endif /* __QNXTARGET__ */
 
       if (retsig >= REALTIME_LO && retsig < REALTIME_HI)
 	return retsig;
@@ -636,6 +648,7 @@ gdb_signal_to_host_p (enum gdb_signal oursig)
 int
 gdb_signal_to_host (enum gdb_signal oursig)
 {
+#ifndef __QNXNTO__
   int oursig_ok;
   int targ_signo = do_gdb_signal_to_host (oursig, &oursig_ok);
   if (!oursig_ok)
@@ -648,4 +661,7 @@ gdb_signal_to_host (enum gdb_signal oursig)
     }
   else
     return targ_signo;
+#else
+  return oursig;
+#endif
 }
