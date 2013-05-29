@@ -1637,6 +1637,23 @@ enable_break (struct svr4_info *info, int from_tty)
         {
 	  tmp_bfd = solib_bfd_open (interp_name);
 	}
+#ifdef __QNXTARGET__
+      if (tmp_bfd == NULL)
+	{
+	  /* Internal knowledge: */
+	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0)
+	    {
+	      /* We "know" it's libc.so.3 */
+	      tmp_bfd = solib_bfd_open ("libc.so.3");
+	      if (tmp_bfd != NULL)
+		{
+		  /* Change interp name. */
+		  xfree (interp_name);
+		  interp_name = xstrdup ("libc.so.3");
+		}
+	    }
+	}
+#endif
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
 
