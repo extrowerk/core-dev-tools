@@ -720,17 +720,13 @@ nto_initialize_signals (struct gdbarch *gdbarch)
   signal_pass_update (gdb_signal_from_name ("SIG45"), 1);
 
   /* By default we don't want to stop on these two, but we do want to pass.  */
-#if defined(SIGSELECT)
-  signal_stop_update (gdb_signal_from_nto (gdbarch, SIGSELECT), 0);
-  signal_print_update (gdb_signal_from_nto (gdbarch, SIGSELECT), 0);
-  signal_pass_update (gdb_signal_from_nto (gdbarch, SIGSELECT), 1);
-#endif
+  signal_stop_update (GDB_SIGNAL_SELECT, 0);
+  signal_print_update (GDB_SIGNAL_SELECT, 0);
+  signal_pass_update (GDB_SIGNAL_SELECT, 1);
 
-#if defined(SIGPHOTON)
-  signal_stop_update (gdb_signal_from_nto (gdbarch, SIGPHOTON), 0);
-  signal_print_update (gdb_signal_from_nto (gdbarch, SIGPHOTON), 0);
-  signal_pass_update (gdb_signal_from_nto (gdbarch, SIGPHOTON), 1);
-#endif
+  signal_stop_update (GDB_SIGNAL_PHOTON, 0);
+  signal_print_update (GDB_SIGNAL_PHOTON, 0);
+  signal_pass_update (GDB_SIGNAL_PHOTON, 1);
 }
 
 static void

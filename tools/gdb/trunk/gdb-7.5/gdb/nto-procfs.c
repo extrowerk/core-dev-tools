@@ -812,8 +812,7 @@ procfs_wait (struct target_ops *ops,
 	{
 	case _DEBUG_WHY_SIGNALLED:
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
-	  ourstatus->value.sig =
-	    gdb_signal_from_host (status.info.si_signo);
+	  ourstatus->value.sig = status.info.si_signo; /* 1-1 mapping via qnx_signals.def */
 	  exit_signo = 0;
 	  break;
 	case _DEBUG_WHY_FAULTED:
@@ -857,7 +856,6 @@ procfs_wait (struct target_ops *ops,
 	  break;
 #ifdef _DEBUG_RUN_THREAD
 	case _DEBUG_WHY_THREAD:
-	  warning (("Thread event\n"));
 	  /* thread event */
 	  if (status.what == 1)
 	    {
@@ -1141,7 +1139,8 @@ procfs_resume (struct target_ops *ops,
     {
       devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof (status), 0);
       signal_to_pass = gdb_signal_to_host (signo);
-      if (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED))
+      if (status.why == _DEBUG_WHY_REQUESTED
+	  || (status.why & (_DEBUG_WHY_SIGNALLED | _DEBUG_WHY_FAULTED)))
 	{
 	  if (signal_to_pass != status.info.si_signo)
 	    {
@@ -1561,13 +1560,12 @@ procfs_pass_signals (int numsigs, unsigned char *pass_signals)
 {
   int signo;
 
-  sigfillset (&run.trace);
+  sigemptyset (&run.trace);
 
-  for (signo = 1; signo < NSIG; signo++)
+  for (signo = 1; signo < _SIGMAX; signo++)
     {
-      int target_signo = gdb_signal_from_host (signo);
-      if (target_signo < numsigs && pass_signals[target_signo])
-        sigdelset (&run.trace, signo);
+      if (signo < numsigs && signo < GDB_SIGNAL_LAST && !pass_signals[signo])
+	sigaddset (&run.trace, signo);
     }
 }
 

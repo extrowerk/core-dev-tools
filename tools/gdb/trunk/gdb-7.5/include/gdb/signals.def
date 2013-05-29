@@ -20,6 +20,7 @@
    there is no signal.  */
 SET (GDB_SIGNAL_0, 0, "0", "Signal 0")
 #define GDB_SIGNAL_FIRST GDB_SIGNAL_0
+#ifndef __QNXTARGET__
 SET (GDB_SIGNAL_HUP, 1, "SIGHUP", "Hangup")
 SET (GDB_SIGNAL_INT, 2, "SIGINT", "Interrupt")
 SET (GDB_SIGNAL_QUIT, 3, "SIGQUIT", "Quit")
@@ -198,3 +199,7 @@ SET (TARGET_EXC_BREAKPOINT, 150, "EXC_BREAKPOINT", "Breakpoint")
 
 /* Last and unused enum value, for sizing arrays, etc.  */
 SET (GDB_SIGNAL_LAST, 151, NULL, "GDB_SIGNAL_MAGIC")
+
+#else /* __QNXTARGET__ */
+#include <gdb/qnx_signals.def>
+#endif
