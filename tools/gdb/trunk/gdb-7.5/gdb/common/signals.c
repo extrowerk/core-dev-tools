@@ -119,7 +119,10 @@ gdb_signal_from_host (int hostsig)
     return GDB_SIGNAL_0;
 #ifdef __QNXTARGET__
 #ifdef GDBSERVER
-  return hostsig; /* 1-1 mapping via qnx_signals.def */
+  if (hostsig < GDB_SIGNAL_LAST)
+    return hostsig; /* 1-1 mapping via qnx_signals.def */
+  else
+    return 0;
 #else /* ! GDBSERVER */
   extern enum gdb_signal gdb_signal_from_nto (struct gdbarch *, int);
   return gdb_signal_from_nto (target_gdbarch, hostsig);
@@ -213,7 +216,7 @@ gdb_signal_from_host (int hostsig)
   if (hostsig == SIGURG)
     return GDB_SIGNAL_URG;
 #endif
-#if defined (SIGIO) && !defined(__QNXTARGET__)
+#if defined (SIGIO)
   if (hostsig == SIGIO)
     return GDB_SIGNAL_IO;
 #endif
@@ -378,6 +381,12 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
   (void) retsig;
 
   *oursig_ok = 1;
+#ifdef __QNXTARGET__
+  if (oursig < GDB_SIGNAL_LAST)
+    return oursig; /* 1-1 mapping via qnx_signals.def */
+  else
+    return 0;
+#else /* !__QNXTARGET__ */
   switch (oursig)
     {
     case GDB_SIGNAL_0:
@@ -603,8 +612,6 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
 #if defined (REALTIME_LO)
       retsig = 0;
 
-#ifndef __QNXTARGET__
-
       if (oursig >= GDB_SIGNAL_REALTIME_33
 	  && oursig <= GDB_SIGNAL_REALTIME_63)
 	{
@@ -625,9 +632,6 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
              GDB_SIGNAL_REALTIME_64 is 64 by definition.  */
 	  retsig = (int) oursig - (int) GDB_SIGNAL_REALTIME_64 + 64;
 	}
-#else /* __QNXTARGET__ */
-      retsig = oursig; // We make sure numeric values match in qnx_signals.def
-#endif /* __QNXTARGET__ */
 
       if (retsig >= REALTIME_LO && retsig < REALTIME_HI)
 	return retsig;
@@ -636,6 +640,7 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
       *oursig_ok = 0;
       return 0;
     }
+#endif /* !__QNXTARGET__ */
 }
 
 int
