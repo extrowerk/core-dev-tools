@@ -118,9 +118,13 @@ gdb_signal_from_host (int hostsig)
   if (hostsig == 0)
     return GDB_SIGNAL_0;
 #ifdef __QNXTARGET__
+#ifdef GDBSERVER
+  return hostsig; /* 1-1 mapping via qnx_signals.def */
+#else /* ! GDBSERVER */
   extern enum gdb_signal gdb_signal_from_nto (struct gdbarch *, int);
   return gdb_signal_from_nto (target_gdbarch, hostsig);
-#else
+#endif /* ! GDBSERVER */
+#else  /* ! __QNXTARGET__ */
 #if defined (SIGHUP)
   if (hostsig == SIGHUP)
     return GDB_SIGNAL_HUP;
