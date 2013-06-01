@@ -186,6 +186,7 @@ case $target in
 	alpha*-*-* | \
 	arm*-*-*eabi* | \
 	arm*-*-*qnx* | \
+	arm*-*-rtems* | \
 	arm*-*-symbianelf* | \
 	x86_64-*-* | \
 	ia64-*-* | \
