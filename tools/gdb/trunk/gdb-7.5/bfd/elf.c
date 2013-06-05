@@ -8878,6 +8878,10 @@ elfcore_grok_nto_regs (bfd *abfd,
 #define BFD_QNT_CORE_STATUS	8
 #define BFD_QNT_CORE_GREG	9
 #define BFD_QNT_CORE_FPREG	10
+#ifdef __QNXTARGET__
+#define BFD_QNT_LINK_MAP	11
+#define BFD_QNT_LINK_MAP_SEC_NAME ".qnx_link_map"
+#endif
 
 static bfd_boolean
 elfcore_grok_nto_note (bfd *abfd, Elf_Internal_Note *note)
@@ -8897,6 +8901,11 @@ elfcore_grok_nto_note (bfd *abfd, Elf_Internal_Note *note)
       return elfcore_grok_nto_regs (abfd, note, tid, ".reg");
     case BFD_QNT_CORE_FPREG:
       return elfcore_grok_nto_regs (abfd, note, tid, ".reg2");
+#ifdef __QNXTARGET__
+    case BFD_QNT_LINK_MAP:
+      return elfcore_make_note_pseudosection (abfd, BFD_QNT_LINK_MAP_SEC_NAME,
+					      note);
+#endif
     default:
       return TRUE;
     }
