@@ -16160,10 +16160,16 @@ command:
 @kindex info sharedlibrary
 @kindex info share
 @item info share @var{regex}
-@itemx info sharedlibrary @var{regex}
+@itemx info sharedlibrary [-v] @var{regex}
 Print the names of the shared libraries which are currently loaded
 that match @var{regex}.  If @var{regex} is omitted then print
 all shared libraries that are loaded.
+
+If the optional @code{-v} switch is specified then print full path of
+the shared library on the target, as seen and opened by the
+dynamic linker.
+
+Note that optional @code{-v} is available on QNX port of gdb only.
 
 @kindex sharedlibrary
 @kindex share
