@@ -965,7 +965,6 @@ info_sharedlibrary_command (char *pattern, int from_tty)
   if (pattern)
     {
       /* Check if there are options */
-      warning(_("|%s|"), pattern);
       if (strstr(pattern, "-v") == pattern) {
 	verbose = 1;
 	pattern = pattern + strlen ("-v");
