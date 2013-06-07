@@ -37,7 +37,7 @@ ALL_SUBDIRS = gdb.ada gdb.arch gdb.asm gdb.base gdb.cell gdb.cp gdb.disasm \
 	gdb.dwarf2 gdb.fortran gdb.gdb gdb.hp \
 	gdb.java gdb.linespec gdb.mi gdb.modula2 gdb.multi \
 	gdb.objc gdb.opencl gdb.opt gdb.pascal gdb.python gdb.server \
-	gdb.stabs gdb.reverse gdb.threads gdb.trace gdb.xml \
+	gdb.stabs gdb.reverse gdb.threads gdb.trace gdb.xml gdb.qnx \
 	$(SUBDIRS)
 
 EXPECT = `if [ -f $${rootme}/../../expect/expect ] ; then \
