@@ -99,7 +99,7 @@ int svr4_in_dynsym_resolve_code (CORE_ADDR pc);
 
 
 #ifdef __QNXTARGET__
-CORE_ADDR lm_addr_check (struct so_list *so, bfd *abfd);
+CORE_ADDR lm_addr_check (const struct so_list *so, bfd *abfd);
 #endif
 
 #endif /* solib-svr4.h */
