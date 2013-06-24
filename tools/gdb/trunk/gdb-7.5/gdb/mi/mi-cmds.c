@@ -34,6 +34,9 @@ struct mi_cmd mi_cmds[] =
 {
   { "ada-task-info", { NULL, 0 }, mi_cmd_ada_task_info },
   { "add-inferior", { NULL, 0 }, mi_cmd_add_inferior },
+#ifdef __QNXTARGET__
+  { "bb-exec", { NULL, 0 }, mi_cmd_bb_exec },
+#endif
   { "break-after", { "ignore", 1 }, NULL },
   { "break-condition", { "cond", 1 }, NULL },
   { "break-commands", { NULL, 0 }, mi_cmd_break_commands },

@@ -1833,6 +1833,10 @@ gdbtk-wrapper.o: $(srcdir)/gdbtk/generic/gdbtk-wrapper.c
 # Need to explicitly specify the compile rule as make will do nothing
 # or try to compile the object file into the sub-directory.
 
+mi-cmd-bb-exec.o: $(srcdir)/mi/mi-cmd-bb-exec.c
+	$(COMPILE) $(srcdir)/mi/mi-cmd-bb-exec.c
+	$(POSTCOMPILE)
+
 mi-cmd-break.o: $(srcdir)/mi/mi-cmd-break.c
 	$(COMPILE) $(srcdir)/mi/mi-cmd-break.c
 	$(POSTCOMPILE)
