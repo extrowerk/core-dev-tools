@@ -763,7 +763,7 @@ mips-sgi-irix6.5*)
 mips*-*-netbsd*)			# NetBSD/mips, either endian.
 	;;
 mips*-*-nto-qnx*)
-	tmake_file="mips/t-nto"
+	tmake_file="$tmake_file mips/t-nto"
 	;;
 mips*-*-linux*)				# Linux MIPS, either endian.
 	extra_parts="$extra_parts crtfastmath.o"
@@ -772,8 +772,6 @@ mips*-*-linux*)				# Linux MIPS, either endian.
 	if test "${ac_cv_sizeof_long_double}" = 16; then
 		tmake_file="${tmake_file} mips/t-tpbit"
 	fi
-	;;
-mips*-*-qnx*)
 	;;
 mips*-*-openbsd*)
 	;;
@@ -911,7 +909,7 @@ powerpc-*-eabi*)
 	extra_parts="$extra_parts crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o ecrti.o ecrtn.o ncrti.o ncrtn.o"
 	;;
 powerpc-*-qnx*)
-	tmake_file="${tmake_file} rs6000/t-ppccomm rs6000/t-savresfgpr rs6000/t-nto t-softfp-sfdf t-softfp-excl t-softfp"
+	tmake_file="${tmake_file} rs6000/t-ppccomm rs6000/t-savresfgpr rs6000/t-nto t-softfp-sfdf t-softfp-excl t-softfp t-fdpbit"
 	;;
 powerpc-*-rtems*)
 	tmake_file="${tmake_file} rs6000/t-ppccomm rs6000/t-savresfgpr rs6000/t-crtstuff t-crtstuff-pic t-fdpbit"

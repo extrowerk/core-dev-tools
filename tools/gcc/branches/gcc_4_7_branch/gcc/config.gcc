@@ -699,6 +699,7 @@ case ${target} in
   esac
   ;;
 *-*-qnx*)
+  default_use_cxa_atexit=yes
   extra_options="$extra_options nto.opt"
   ;;
 *-*-rtems*)
