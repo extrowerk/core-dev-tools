@@ -318,7 +318,7 @@ init_i386nto_ops (void)
   nto_register_area = i386nto_register_area;
   nto_regset_fill = i386nto_regset_fill;
   nto_fetch_link_map_offsets =
-    svr4_ilp32_fetch_link_map_offsets;
+    nto_generic_svr4_fetch_link_map_offsets;
 }
 
 static void
@@ -350,7 +350,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_ilp32_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Initialize this lazily, to avoid an initialization order
      dependency on solib-svr4.c's _initialize routine.  */
