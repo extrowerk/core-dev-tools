@@ -2,6 +2,7 @@ import unittest
 import Tkinter
 import ttk
 from test.test_support import requires, run_unittest
+import sys
 
 import support
 from test_functions import MockTclObj, MockStateSpec
@@ -186,6 +187,14 @@ class ComboboxTest(unittest.TestCase):
         # testing values with empty string set through configure
         self.combo.configure(values=[1, '', 2])
         self.assertEqual(self.combo['values'], ('1', '', '2'))
+
+        # testing values with spaces
+        self.combo['values'] = ['a b', 'a\tb', 'a\nb']
+        self.assertEqual(self.combo['values'], ('a b', 'a\tb', 'a\nb'))
+
+        # testing values with special characters
+        self.combo['values'] = [r'a\tb', '"a"', '} {']
+        self.assertEqual(self.combo['values'], (r'a\tb', '"a"', '} {'))
 
         # out of range
         self.assertRaises(Tkinter.TclError, self.combo.current,
@@ -560,11 +569,19 @@ class NotebookTest(unittest.TestCase):
 
         self.nb.pack()
         self.nb.wait_visibility()
-        self.assertEqual(self.nb.tab('@5,5'), self.nb.tab('current'))
+        if sys.platform == 'darwin':
+            tb_idx = "@20,5"
+        else:
+            tb_idx = "@5,5"
+        self.assertEqual(self.nb.tab(tb_idx), self.nb.tab('current'))
 
         for i in range(5, 100, 5):
-            if self.nb.tab('@%d, 5' % i, text=None) == 'a':
-                break
+            try:
+                if self.nb.tab('@%d, 5' % i, text=None) == 'a':
+                    break
+            except Tkinter.TclError:
+                pass
+
         else:
             self.fail("Tab with text 'a' not found")
 
@@ -721,7 +738,10 @@ class NotebookTest(unittest.TestCase):
         self.nb.enable_traversal()
         self.nb.focus_force()
         support.simulate_mouse_click(self.nb, 5, 5)
-        self.nb.event_generate('<Alt-a>')
+        if sys.platform == 'darwin':
+            self.nb.event_generate('<Option-a>')
+        else:
+            self.nb.event_generate('<Alt-a>')
         self.assertEqual(self.nb.select(), str(self.child1))
 
 
@@ -925,7 +945,8 @@ class TreeviewTest(unittest.TestCase):
         self.assertRaises(Tkinter.TclError, self.tv.heading, '#0',
             anchor=1)
 
-
+    # XXX skipping for now; should be fixed to work with newer ttk
+    @unittest.skip("skipping pending resolution of Issue #10734")
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
             support.simulate_mouse_click(self.tv, x, y)
