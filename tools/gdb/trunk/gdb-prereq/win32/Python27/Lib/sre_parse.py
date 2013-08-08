@@ -15,7 +15,12 @@
 import sys
 
 from sre_constants import *
-from _sre import MAXREPEAT
+
+try:
+        from _sre import MAXREPEAT
+except ImportError:
+        import _sre
+        _sre.MAXREPEAT = 65535
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
