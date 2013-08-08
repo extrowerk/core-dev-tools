@@ -13,7 +13,12 @@
 import _sre, sys
 import sre_parse
 from sre_constants import *
-from _sre import MAXREPEAT
+
+try:
+        from _sre import MAXREPEAT
+except ImportError:
+        import _sre
+        _sre.MAXREPEAT = 65535
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
