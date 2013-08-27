@@ -60,7 +60,6 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
 		case "${host_target}" in
 			win32-*) 	
-			configure_opts="${configure_opts} --host=i386-mingw32msvc"
 			basedir=/c/qnx650/host/win32/x86/usr
 			qnxtarget=/c/qnx650/target/qnx6/
 			;;
