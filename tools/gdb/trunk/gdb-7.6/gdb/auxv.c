@@ -469,6 +469,17 @@ fprint_target_auxv (struct ui_file *file, struct target_ops *ops)
 	  TAG (AT_SUN_LDDATA, _("Dynamic linker's data segment address"), hex);
 	  TAG (AT_SUN_AUXFLAGS,
 	       _("AF_SUN_ flags passed from the kernel"), hex);
+#ifdef __QNXTARGET__
+#undef TAG
+#define TAG(tag, nme, text, kind) \
+	case tag: name = nme; description = text; flavor = kind; break
+	  TAG (45, "AT_INTP_DEVICE", _("QNX Extension"), hex);
+	  TAG (46, "AT_INTP_INODE", _("QNX Extension"), hex);
+	  TAG (47, "AT_EXEFILE", _("QNX Extension"), hex);
+	  TAG (48, "AT_LIBPATH", _("QNX Extension"), hex);
+	  TAG (49, "AT_DATA", _("QNX Extension"), hex);
+#undef TAG
+#endif /* __QNXTARGET__ */
 	}
 
       fprintf_filtered (file, "%-4s %-20s %-30s ",

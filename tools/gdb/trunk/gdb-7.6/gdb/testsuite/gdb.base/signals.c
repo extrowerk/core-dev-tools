@@ -37,8 +37,8 @@ main ()
 #ifdef SIGALRM
   signal (SIGALRM, handler);
 #endif
-#ifdef SIGUSR1
-  signal (SIGUSR1, handler);
+#ifdef SIGHUP
+  signal (SIGHUP, handler);
 #endif
   alarm (1);
   ++count; /* first */

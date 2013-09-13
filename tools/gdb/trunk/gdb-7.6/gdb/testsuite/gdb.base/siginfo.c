@@ -21,6 +21,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <errno.h>
 
 static volatile int done;
 
@@ -40,6 +41,7 @@ handler (int sig)
 
 main ()
 {
+  int res;
   /* Set up the signal handler.  */
   {
     struct sigaction action;
@@ -51,6 +53,7 @@ main ()
     action.sa_handler = handler;
 #endif
     sigaction (SIGVTALRM, &action, NULL);
+    sigaction (SIGALRM, &action, NULL);
   }
 
   /* Set up a one-off timer.  A timer, rather than SIGSEGV, is used as
@@ -60,7 +63,17 @@ main ()
     struct itimerval itime;
     memset (&itime, 0, sizeof (itime));
     itime.it_value.tv_usec = 250 * 1000;
-    setitimer (ITIMER_VIRTUAL, &itime, NULL);
+
+    res = setitimer (ITIMER_VIRTUAL, &itime, NULL);
+    if (res == -1)
+      {
+	res = setitimer (ITIMER_REAL, &itime, NULL);
+	if (res == -1)
+	  {
+	    printf ("Second call to setitimer failed. errno = %d\r\n", errno);
+	    return 1;
+	  }
+      }
   }
   /* Wait.  */
   while (!done);

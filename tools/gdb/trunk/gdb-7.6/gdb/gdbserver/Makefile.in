@@ -566,6 +566,9 @@ linux-low.o: linux-low.c
 	$(COMPILE) $< @USE_THREAD_DB@
 	$(POSTCOMPILE)
 
+nto-low.o: nto-low.c $(server_h) $(nto_low_h)
+nto-x86-low.o: nto-x86-low.c $(server_h) $(nto_low_h) $(regdef_h) $(regcache_h)
+
 win32_low_h = $(srcdir)/win32-low.h
 
 aarch64.c : $(srcdir)/../regformats/aarch64.dat $(regdat_sh)

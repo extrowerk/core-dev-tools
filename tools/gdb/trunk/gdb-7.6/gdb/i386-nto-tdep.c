@@ -77,7 +77,7 @@ nto_reg_offset (int regnum)
 }
 
 static void
-i386nto_supply_gregset (struct regcache *regcache, char *gpregs)
+i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs)
 {
   struct gdbarch *gdbarch = get_regcache_arch (regcache);
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
@@ -92,7 +92,7 @@ i386nto_supply_gregset (struct regcache *regcache, char *gpregs)
 }
 
 static void
-i386nto_supply_fpregset (struct regcache *regcache, char *fpregs)
+i386nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
   if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
     i387_supply_fxsave (regcache, -1, fpregs);
@@ -101,7 +101,8 @@ i386nto_supply_fpregset (struct regcache *regcache, char *fpregs)
 }
 
 static void
-i386nto_supply_regset (struct regcache *regcache, int regset, char *data)
+i386nto_supply_regset (struct regcache *regcache, int regset,
+		       const gdb_byte *data)
 {
   switch (regset)
     {
@@ -247,7 +248,8 @@ i386nto_register_area (struct gdbarch *gdbarch,
 }
 
 static int
-i386nto_regset_fill (const struct regcache *regcache, int regset, char *data)
+i386nto_regset_fill (const struct regcache *regcache, int regset,
+		     gdb_byte *data)
 {
   if (regset == NTO_REG_GENERAL)
     {
@@ -316,7 +318,7 @@ init_i386nto_ops (void)
   nto_register_area = i386nto_register_area;
   nto_regset_fill = i386nto_regset_fill;
   nto_fetch_link_map_offsets =
-    svr4_ilp32_fetch_link_map_offsets;
+    nto_generic_svr4_fetch_link_map_offsets;
 }
 
 static void
@@ -326,7 +328,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   static struct target_so_ops nto_svr4_so_ops;
 
   /* Deal with our strange signals.  */
-  nto_initialize_signals ();
+  nto_initialize_signals (gdbarch);
 
   /* NTO uses ELF.  */
   i386_elf_init_abi (info, gdbarch);
@@ -348,7 +350,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_ilp32_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Initialize this lazily, to avoid an initialization order
      dependency on solib-svr4.c's _initialize routine.  */
@@ -369,6 +371,10 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
         = nto_in_dynsym_resolve_code;
     }
   set_solib_ops (gdbarch, &nto_svr4_so_ops);
+
+  set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
+
+  set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
@@ -382,4 +388,9 @@ _initialize_i386nto_tdep (void)
 			  i386nto_init_abi);
   gdbarch_register_osabi_sniffer (bfd_arch_i386, bfd_target_elf_flavour,
 				  nto_elf_osabi_sniffer);
+}
+
+int nto_breakpoint_size (CORE_ADDR addr)
+{
+  return 0;
 }
