@@ -32,15 +32,17 @@ fi
 rm gdb/version.in
 
 if [ "$REV_NO" ]; then
-  atrev=`svn update -r${REV_NO}`
+  SVNOPT=-r${REV_NO}
 else
-  atrev=`svn update`
+  SVNOPT=
 fi
+atrev=`svn update ${SVNOPT}`
+versionin=`svn cat ${SVNOPT} gdb/version.in`
 
 atrev=${atrev##*revision }
 atrev=${atrev%\.}
 
-versionin="7.5 qnx (rev. ${atrev})"
+versionin="${versionin} qnx (rev. ${atrev})"
 
 if [ "${APPEND_DATE}" ]; then
   now=`date +"%Y%m%d%H%M%S"`
