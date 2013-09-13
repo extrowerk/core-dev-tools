@@ -99,7 +99,7 @@ if [runto_main] then {
 
     # ...setup the signal
 
-    gdb_test "next" "signal \\(SIGUSR1.*" "next to signal"
+    gdb_test "next" "signal \\(SIGHUP.*" "next to signal"
     gdb_test "next" "alarm \\(.*" "next to alarm #1"
     gdb_test "next" "\\+\\+count; /\\* first \\*/" \
 	"next to ++count #1"
@@ -270,10 +270,10 @@ The program being debugged stopped while in a function called from GDB.*" \
     # the inferior.  (This probably causes the inferior to run away.
     # Be prepared to rerun to main for further testing.)
 
-    gdb_test "signal SIGUSR1" "Breakpoint.*handler.*"
+    gdb_test "signal SIGHUP" "Breakpoint.*handler.*"
     gdb_test "bt" \
 	"#0  handler .*#1  .signal handler called.*\#2 .*main.*" \
-	"backtrace for SIGUSR1"
+	"backtrace for SIGHUP"
 }
 
 return 0

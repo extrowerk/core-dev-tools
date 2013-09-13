@@ -1,6 +1,6 @@
 /* nto-tdep.h - QNX Neutrino target header.
 
-   Copyright (C) 2003-2013 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2007-2012 Free Software Foundation, Inc.
 
    Contributed by QNX Software Systems Ltd.
 
@@ -31,6 +31,12 @@
 
 struct nto_target_ops
 {
+/* For 'maintenance debug nto-debug' command.  */
+  int internal_debugging;
+
+  /* For stop-on-thread-events */
+  int stop_on_thread_events;
+
 /* The CPUINFO flags from the remote.  Currently used by
    i386 for fxsave but future proofing other hosts.
    This is initialized in procfs_attach or nto_start_remote
@@ -46,14 +52,14 @@ struct nto_target_ops
    regset it came from.  If reg == -1 update all regsets.  */
   int (*regset_id) (int);
 
-  void (*supply_gregset) (struct regcache *, char *);
+  void (*supply_gregset) (struct regcache *, const gdb_byte *);
 
-  void (*supply_fpregset) (struct regcache *, char *);
+  void (*supply_fpregset) (struct regcache *, const gdb_byte *);
 
-  void (*supply_altregset) (struct regcache *, char *);
+  void (*supply_altregset) (struct regcache *, const gdb_byte *);
 
 /* Given a regset, tell gdb about registers stored in data.  */
-  void (*supply_regset) (struct regcache *, int, char *);
+  void (*supply_regset) (struct regcache *, int, const gdb_byte *);
 
 /* Given a register and regset, calculate the offset into the regset
    and stuff it into the last argument.  If regno is -1, calculate the
@@ -63,7 +69,7 @@ struct nto_target_ops
 
 /* Build the Neutrino register set info into the data buffer.
    Return -1 if unknown regset, 0 otherwise.  */
-  int (*regset_fill) (const struct regcache *, int, char *);
+  int (*regset_fill) (const struct regcache *, int, gdb_byte *);
 
 /* Gives the fetch_link_map_offsets function exposure outside of
    solib-svr4.c so that we can override relocate_section_addresses().  */
@@ -72,9 +78,19 @@ struct nto_target_ops
 /* Used by nto_elf_osabi_sniffer to determine if we're connected to an
    Neutrino target.  */
   enum gdb_osabi (*is_nto_target) (bfd *abfd);
+
+  /* Variant specific directory extension. e.g. -spe, -v7... */
+  const char *(*variant_directory_suffix)(void);
+
+  /* Read description. */
+  const struct target_desc *(*read_description) (struct target_ops *ops);
 };
 
 extern struct nto_target_ops current_nto_target;
+
+#define nto_internal_debugging (current_nto_target.internal_debugging)
+
+#define nto_stop_on_thread_events (current_nto_target.stop_on_thread_events)
 
 #define nto_cpuinfo_flags (current_nto_target.cpuinfo_flags)
 
@@ -98,6 +114,22 @@ extern struct nto_target_ops current_nto_target;
 (current_nto_target.fetch_link_map_offsets)
 
 #define nto_is_nto_target (current_nto_target.is_nto_target)
+
+#define nto_variant_directory_suffix (current_nto_target.variant_directory_suffix)
+
+#define ntoops_read_description (current_nto_target.read_description)
+
+#define nto_trace(level) \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered ("nto: "); \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered
+
+/* register supply helper macros*/
+#define NTO_ALL_REGS (-1)
+#define RAW_SUPPLY_IF_NEEDED(regcache, whichreg, dataptr) \
+  {if (!(NTO_ALL_REGS == regno || regno == (whichreg))) {} \
+    else regcache_raw_supply (regcache, whichreg, dataptr); }
 
 /* Keep this consistant with neutrino syspage.h.  */
 enum
@@ -139,8 +171,58 @@ struct private_thread_info
   short tid;
   unsigned char state;
   unsigned char flags;
+  CORE_ADDR starting_ip;
+  void *siginfo; // cached from core file read
   char name[1];
 };
+
+
+/* Per-inferior data, common for both procfs and remote.  */
+struct nto_inferior_data
+{
+  /* Is program loaded? */
+  int has_memory;
+
+  /* Does target has stack available? */
+  int has_stack;
+
+  /* Is it being executed? */
+  int has_execution;
+
+  /* Does it have registers? */
+  int has_registers;
+
+  /* Last stopped flags result from wait function */
+  unsigned int stopped_flags;
+
+  /* Last known stopped PC */
+  CORE_ADDR stopped_pc;
+
+  /* In case of a fork, remember child pid. */
+  int child_pid;
+
+  /* In case of a fork, is it a vfork? */
+  int vfork;
+
+  /* bind_func address needed to determine if we are in
+   * dynsym code */
+  CORE_ADDR bind_func_addr;
+
+  /* Size of __bind_func symbol */
+  size_t bind_func_sz;
+
+  /* Similar to bind_func, we want to look it up only once */
+  CORE_ADDR resolve_func_addr;
+
+  /* To avoid repeatedly looking up symbols, mark here
+   * that the lookup has been done.  If it is done,
+   * then bind_func_ptr will not be re-calculated,
+   * even if it is still zero (meaning original attempt
+   * failed).
+   */
+  int bind_func_p;
+};
+
 
 /* Generic functions in nto-tdep.c.  */
 
@@ -158,14 +240,43 @@ int nto_find_and_open_solib (char *, unsigned, char **);
 
 enum gdb_osabi nto_elf_osabi_sniffer (bfd *abfd);
 
-void nto_initialize_signals (void);
+void nto_initialize_signals (struct gdbarch *gdbarch);
 
 /* Dummy function for initializing nto_target_ops on targets which do
    not define a particular regset.  */
-void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
+void nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
 char *nto_extra_thread_info (struct thread_info *);
+
+struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
+
+/* needed for remote protocol and for core files */
+enum gdb_signal gdb_signal_from_nto (struct gdbarch *, int sig);
+int gdb_signal_to_nto (struct gdbarch *gdbarch, enum gdb_signal sig);
+
+int qnx_filename_cmp (const char *s1, const char *s2, size_t n);
+
+LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
+					  gdb_byte *readbuf,
+					  LONGEST len);
+
+char *nto_pid_to_str (struct target_ops *ops, ptid_t);
+
+char *nto_gdbarch_core_pid_to_str (struct gdbarch *, ptid_t);
+
+const struct target_desc *nto_read_description (struct target_ops *ops);
+
+
+struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
+
+int nto_breakpoint_size (CORE_ADDR addr);
+
+struct type *nto_get_siginfo_type (struct gdbarch *);
+
+void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
+
+int nto_stopped_by_watchpoint (void);
 
 #endif

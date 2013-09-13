@@ -46,6 +46,9 @@ static struct mi_cmd mi_cmds[] =
 
   DEF_MI_CMD_MI ("ada-task-info", mi_cmd_ada_task_info),
   DEF_MI_CMD_MI ("add-inferior", mi_cmd_add_inferior),
+#ifdef __QNXTARGET__
+  DEF_MI_CMD_MI("bb-exec", mi_cmd_bb_exec),
+#endif
   DEF_MI_CMD_CLI_1 ("break-after", "ignore", 1,
 		    &mi_suppress_notification.breakpoint),
   DEF_MI_CMD_CLI_1 ("break-condition","cond", 1,

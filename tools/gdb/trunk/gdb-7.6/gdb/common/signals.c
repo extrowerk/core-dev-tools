@@ -117,7 +117,17 @@ gdb_signal_from_host (int hostsig)
 
   if (hostsig == 0)
     return GDB_SIGNAL_0;
-
+#ifdef __QNXTARGET__
+#ifdef GDBSERVER
+  if (hostsig < GDB_SIGNAL_LAST)
+    return hostsig; /* 1-1 mapping via qnx_signals.def */
+  else
+    return 0;
+#else /* ! GDBSERVER */
+  extern enum gdb_signal gdb_signal_from_nto (struct gdbarch *, int);
+  return gdb_signal_from_nto (target_gdbarch, hostsig);
+#endif /* ! GDBSERVER */
+#else  /* ! __QNXTARGET__ */
 #if defined (SIGHUP)
   if (hostsig == SIGHUP)
     return GDB_SIGNAL_HUP;
@@ -353,6 +363,7 @@ gdb_signal_from_host (int hostsig)
 #endif
 
   return GDB_SIGNAL_UNKNOWN;
+#endif /* !__QNXTARGET__ */
 }
 
 /* Convert a OURSIG (an enum gdb_signal) to the form used by the
@@ -370,6 +381,12 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
   (void) retsig;
 
   *oursig_ok = 1;
+#ifdef __QNXTARGET__
+  if (oursig < GDB_SIGNAL_LAST)
+    return oursig; /* 1-1 mapping via qnx_signals.def */
+  else
+    return 0;
+#else /* !__QNXTARGET__ */
   switch (oursig)
     {
     case GDB_SIGNAL_0:
@@ -463,7 +480,7 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
     case GDB_SIGNAL_URG:
       return SIGURG;
 #endif
-#if defined (SIGIO)
+#if defined (SIGIO) && !defined (__QNXTARGET__)
     case GDB_SIGNAL_IO:
       return SIGIO;
 #endif
@@ -623,6 +640,7 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
       *oursig_ok = 0;
       return 0;
     }
+#endif /* !__QNXTARGET__ */
 }
 
 int
@@ -636,6 +654,7 @@ gdb_signal_to_host_p (enum gdb_signal oursig)
 int
 gdb_signal_to_host (enum gdb_signal oursig)
 {
+#ifndef __QNXNTO__
   int oursig_ok;
   int targ_signo = do_gdb_signal_to_host (oursig, &oursig_ok);
   if (!oursig_ok)
@@ -648,4 +667,7 @@ gdb_signal_to_host (enum gdb_signal oursig)
     }
   else
     return targ_signo;
+#else
+  return oursig;
+#endif
 }

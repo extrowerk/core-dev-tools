@@ -18,7 +18,7 @@
 # This file is based on corefile.exp which was written by Fred
 # Fish. (fnf@cygnus.com)
 
-if { ! [istarget "*-*-linux*"] && ! [istarget "*-*-solaris*"] } {
+if { ! [istarget "*-*-linux*"] && ! [istarget "*-*-solaris*"] && ! [istarget "*-*-nto-*"] } {
     verbose "Skipping auxv.exp because of lack of support."
     return
 }
@@ -130,7 +130,11 @@ set gcore_works [gdb_gcore_cmd "$gcorefile" "gcore"]
 
 # Let the program continue and die.
 gdb_test continue ".*Program received signal.*"
+if { ! [istarget "*-*-nto-*"] } {
 gdb_test continue ".*Program terminated with signal.*"
+} else {
+  gdb_test continue ".*exited.*"
+}
 
 # Now collect the core dump it left.
 set test "generate native core dump"
