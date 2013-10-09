@@ -310,6 +310,6 @@ function hook_postmake {
 
 function hook_pinfo {
   cd gdb
-  gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.5"
+  gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.6"
 }
 
