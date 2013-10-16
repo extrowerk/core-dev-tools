@@ -32,6 +32,7 @@ if { ![istarget *-*-sysv4*] \
      && ![istarget *-*-linux*] \
      && ![istarget *-*-gnu*] \
      && ![istarget *-*-nacl*] \
+     && ![istarget *-*-qnx*] \
      && ![istarget *-*-irix5*] \
      && ![istarget *-*-irix6*] \
      && ![is_pecoff_format] \
