@@ -602,7 +602,7 @@ proper position among the other output files.  */
 #endif
 
 #ifndef SSP_DEFAULT_SPEC
-#ifdef TARGET_LIBC_PROVIDES_SSP
+#if defined(TARGET_LIBC_PROVIDES_SSP) && defined(ENABLE_STACK_PROTECTOR)
 #define SSP_DEFAULT_SPEC "%{!fno-stack-protector:%{!fstack-protector:%{!fstack-protector-all:%{!ffreestanding:%{!nostdlib:-fstack-protector-strong}}}}}"
 #else
 #define SSP_DEFAULT_SPEC ""
