@@ -69,6 +69,13 @@ do { \
 #undef MD_EXEC_PREFIX
 #undef MD_STARTFILE_PREFIX
 
+#ifdef HAVE_GNU_INDIRECT_FUNCTION
+#define GNU_INDIRECT_FUNCTION if (HAVE_GNU_INDIRECT_FUNCTION) \
+				 builtin_define ("__GNU_INDIRECT_FUNCTION__"); 
+#else 
+#define GNU_INDIRECT_FUNCTION
+#endif
+
 #define NTO_TARGET_OS_CPP_BUILTINS()		\
 do {                                            \
         builtin_define ("__QNX__");             \
@@ -78,7 +85,8 @@ do {                                            \
         builtin_assert ("system=qnx");          \
         builtin_assert ("system=nto");          \
         builtin_assert ("system=qnxnto");       \
-	builtin_define ("__PRAGMA_PACK_PUSH_POP__"); \
+        builtin_define ("__PRAGMA_PACK_PUSH_POP__");	\
+	GNU_INDIRECT_FUNCTION			\
     } while (0)
 
 /* Determine whether the entire c99 runtime

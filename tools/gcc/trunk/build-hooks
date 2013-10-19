@@ -119,6 +119,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
+	configure_opts="${configure_opts} --enable-gnu-indirect-function"
 	if test "${target}" = "mips-unknown-nto-qnx8.0.0"; then
 		configure_opts="${configure_opts} --disable-shared"
 		configure_opts="${configure_opts} --disable-fixed-point"
