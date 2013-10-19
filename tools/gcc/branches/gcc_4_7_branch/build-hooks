@@ -117,6 +117,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
 	configure_opts="${configure_opts} --enable-gnu-indirect-function"
+	configure_opts="${configure_opts} --enable-stack-protector"
 	if test "${target}" = "mips-unknown-nto-qnx6.5.0"; then
 		configure_opts="${configure_opts} --disable-shared"
 		configure_opts="${configure_opts} --disable-fixed-point"
