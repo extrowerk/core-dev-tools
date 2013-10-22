@@ -1,5 +1,5 @@
 /* { dg-do run } */
-/* { dg-options "-O2 -msse2" } */
+/* { dg-options "-O2 -msse2 -fno-stack-protector" } */
 /* { dg-require-effective-target sse2 } */
 
 #ifndef CHECK_H
