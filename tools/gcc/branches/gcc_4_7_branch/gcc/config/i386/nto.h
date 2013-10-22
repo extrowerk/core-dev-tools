@@ -77,7 +77,10 @@ QNX_SYSTEM_INCLUDES \
     %{!p:-Y P,%R/lib}} \
    %{Qy:} %{!Qn:-Qy} \
    -m i386nto \
-   %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2}"
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic}} \
+     --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef SIZE_TYPE
 #define SIZE_TYPE "unsigned int"

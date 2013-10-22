@@ -106,7 +106,10 @@ do {                                            \
 %(link_os) \
 %{EB} %{EL} \
 %{EL:-melf32lppcnto} %{!EL:-melf32ppcnto} %{MAP: -Map mapfile} \
-%{!shared: --dynamic-linker /usr/lib/ldqnx.so.2} "
+%{!shared: \
+  %{!static: \
+   %{rdynamic:-export-dynamic}} \
+  --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef CPP_SPEC
 #define CPP_SPEC \
