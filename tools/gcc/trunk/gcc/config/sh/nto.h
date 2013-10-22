@@ -119,7 +119,10 @@ do                                                                     \
  %{mrelax:-relax} -YP,%$QNX_TARGET/lib -YP,%$QNX_TARGET/usr/lib \
  %{MAP:-Map mapfile} %{static:-dn -Bstatic} %{shared:-G -dy} \
  %{symbolic: -Bsymbolic -G -dy} %{G:-G} \
- %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2}"
+ %{!shared: \
+   %{!static: \
+    %{rdynamic:-export-dynamic}} \
+   --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef  LIB_SPEC
 #define LIB_SPEC \

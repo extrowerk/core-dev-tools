@@ -77,16 +77,16 @@ QNX_SYSTEM_INCLUDES \
     %{!p:-Y P,%R/lib}} \
    %{Qy:} %{!Qn:-Qy} \
    -m i386nto \
-   %{!shared: --dynamic-linker /usr/lib/ldqnx.so.2}"
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic}} \
+     --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef SIZE_TYPE
 #define SIZE_TYPE "unsigned int"
 
 #undef PTRDIFF_TYPE
 #define PTRDIFF_TYPE "int"
-
-#undef EH_FRAME_SECTION_NAME
-#define EH_FRAME_SECTION_NAME ".eh_frame"
 
 /* Define the register numbers to be used in Dwarf debugging information.
    QNX NTO use the SVR4 register numbers in Dwarf output code, for gdb */
