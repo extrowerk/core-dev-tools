@@ -406,6 +406,7 @@ __do_global_dtors_aux (void)
 
 #ifdef USE_EH_FRAME_REGISTRY
 #ifdef CRT_GET_RFIB_DATA
+#error here
   /* If we used the new __register_frame_info_bases interface,
      make sure that we deregister from the same place.  */
   if (__deregister_frame_info_bases)
