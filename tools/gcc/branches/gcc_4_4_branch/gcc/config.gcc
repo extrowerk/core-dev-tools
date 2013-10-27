@@ -1905,7 +1905,7 @@ powerpc-*-gnu*)
 	fi
 	;;
 powerpc*-*-nto-qnx* | ppc*-*-nto-qnx*)
-	tm_file="${tm_file} dbxelf.h tm-dwarf2.h elfos.h svr4.h freebsd-spec.h rs6000/sysv4.h nto.h rs6000/nto.h"
+	tm_file="${tm_file} dbxelf.h tm-dwarf2.h elfos.h svr4.h freebsd-spec.h rs6000/sysv4.h rs6000/e500.h nto.h rs6000/nto.h"
 	tmake_file=rs6000/t-nto
 	extra_options="${extra_options} rs6000/sysv4.opt rs6000/nto.opt"
 	xm_defines=POSIX
