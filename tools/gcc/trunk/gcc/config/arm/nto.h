@@ -47,7 +47,7 @@ do {                                            \
  %{march=*:-march=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
- %{!mhard-float: %{!mfpu=*:-mfpu=softvfp}}" 
+ %{!mhard-float: %{!mfpu=*:-mfpu=softvfp}} -meabi=gnu" 
 
 #define QNX_SYSTEM_LIBDIRS \
 "-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3 \
@@ -62,15 +62,14 @@ do {                                            \
 #undef LIB_SPEC
 #define LIB_SPEC \
   QNX_SYSTEM_LIBDIRS \
-  "%{!symbolic: -lc -Bstatic %{!shared: -lc} %{shared:-lcS}}"
+  "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef LIBGCC_SPEC
 #define LIBGCC_SPEC "-lgcc"
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/%{pg:m}%{p:m}crt1.o \
-  } \
+"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/%{pg:m}%{p:m}crt1%{pie:S}.o } \
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}/lib/crti.o \
 crtbegin.o%s " 
 

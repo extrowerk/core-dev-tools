@@ -119,7 +119,7 @@ QNX_SYSTEM_INCLUDES \
 
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1.o} \
+"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1%{pie:S}.o} \
 %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crti.o  crtbegin.o%s" \
 
 #undef  ENDFILE_SPEC
@@ -140,7 +140,7 @@ QNX_SYSTEM_INCLUDES \
 #undef	LIB_SPEC
 #define LIB_SPEC \
 QNX_SYSTEM_LIBDIRS \
-"%{!symbolic: -lc -Bstatic %{!shared: -lc} %{shared:-lcS}}"
+"%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef	LIBGCC_SPEC
 #define	LIBGCC_SPEC "libgcc.a%s"

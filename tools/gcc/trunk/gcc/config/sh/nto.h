@@ -127,11 +127,11 @@ do                                                                     \
 #undef  LIB_SPEC
 #define LIB_SPEC \
 QNX_SYSTEM_LIBDIRS \
-"%{!symbolic:-lc -dn -Bstatic %{!shared: -lc} %{shared: -lcS}}"
+"%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/%{pg:m}%{p:m}crt1.o} \
+"%{!shared: %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/%{pg:m}%{p:m}crt1%{pie:S}.o} \
 %$QNX_TARGET/sh%{mb:be}%{!mb:le}/lib/crti.o crtbegin.o%s"
 
 #undef  ENDFILE_SPEC
