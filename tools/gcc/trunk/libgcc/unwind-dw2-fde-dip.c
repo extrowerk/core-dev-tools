@@ -32,8 +32,11 @@
 
 #include "tconfig.h"
 #include "tsystem.h"
-#if !defined(inhibit_libc) && !defined(__OpenBSD__)
+#if !defined(inhibit_libc) && !defined(__OpenBSD__) && !defined(__QNXNTO__)
 #include <elf.h>		/* Get DT_CONFIG.  */
+#endif
+#if defined(__QNXNTO__)
+#include <sys/elf.h>
 #endif
 #include "coretypes.h"
 #include "tm.h"
@@ -75,9 +78,19 @@
 # define USE_PT_GNU_EH_FRAME
 #endif
 
+#if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
+    && defined(__QNXNTO__)
+# define ElfW(type) Elf32_##type
+# define USE_PT_GNU_EH_FRAME
+#endif
+
 #if defined(USE_PT_GNU_EH_FRAME)
 
+#if !defined(__QNXNTO__)
 #include <link.h>
+#else
+#include <sys/link.h>
+#endif
 
 #ifndef __RELOC_POINTER
 # define __RELOC_POINTER(ptr, base) ((ptr) + (base))
