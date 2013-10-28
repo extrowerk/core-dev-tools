@@ -204,7 +204,11 @@ AC_ARG_WITH(ld,
 DEFAULT_LINKER="$with_ld")
 if test x"${DEFAULT_LINKER+set}" = x"set"; then
   if test ! -x "$DEFAULT_LINKER"; then
-    AC_MSG_ERROR([cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER])
+    if test ! -x "`which $DEFAULT_LINKER`"; then
+      AC_MSG_ERROR([cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER])
+    elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gnu_ld_flag=yes
+    fi
   elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gnu_ld_flag=yes
   fi
@@ -244,7 +248,11 @@ AC_ARG_WITH(as,
 DEFAULT_ASSEMBLER="$with_as")
 if test x"${DEFAULT_ASSEMBLER+set}" = x"set"; then
   if test ! -x "$DEFAULT_ASSEMBLER"; then
-    AC_MSG_ERROR([cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER])
+    if test ! -x "`which $DEFAULT_ASSEMBLER`"; then
+      AC_MSG_ERROR([cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER])
+    elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
+      gas_flag=yes
+    fi
   elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gas_flag=yes
   fi
@@ -4769,6 +4777,18 @@ if test x$gcc_cv_libc_provides_ssp = xyes; then
   AC_DEFINE(TARGET_LIBC_PROVIDES_SSP, 1,
 	    [Define if your target C library provides stack protector support])
 fi
+
+AC_ARG_ENABLE(stack-protector,
+[AS_HELP_STRING([--enable-stack-protector],
+                [compiler will default to -fstack-protector-strong])],
+[],
+enable_stack_protector=no)
+
+if test x"$enable_stack_protector" = xyes; then
+    AC_DEFINE(ENABLE_STACK_PROTECTOR, 1,
+    [Define if gcc should enable stack protection by default.])
+fi
+
 
 # Test for <sys/sdt.h> on the target.
 GCC_TARGET_TEMPLATE([HAVE_SYS_SDT_H])

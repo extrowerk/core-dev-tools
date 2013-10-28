@@ -912,6 +912,7 @@ enable_initfini_array
 enable_comdat
 enable_gnu_unique_object
 enable_linker_build_id
+enable_stack_protector
 with_long_double_128
 with_gc
 with_system_zlib
@@ -1624,6 +1625,8 @@ Optional Features:
                           extension on glibc systems
   --enable-linker-build-id
                           compiler will always pass --build-id to linker
+  --enable-stack-protector
+                          compiler will default to -fstack-protector-strong
   --enable-maintainer-mode
                           enable make rules and dependencies not useful (and
                           sometimes confusing) to the casual installer
@@ -17836,7 +17839,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 17831 "configure"
+#line 17842 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -17942,7 +17945,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 17937 "configure"
+#line 17948 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -26803,6 +26806,21 @@ if test x$gcc_cv_libc_provides_ssp = xyes; then
 $as_echo "#define TARGET_LIBC_PROVIDES_SSP 1" >>confdefs.h
 
 fi
+
+# Check whether --enable-stack-protector was given.
+if test "${enable_stack_protector+set}" = set; then :
+  enableval=$enable_stack_protector;
+else
+  enable_stack_protector=no
+fi
+
+
+if test x"$enable_stack_protector" = xyes; then
+
+$as_echo "#define ENABLE_STACK_PROTECTOR 1" >>confdefs.h
+
+fi
+
 
 # Test for <sys/sdt.h> on the target.
 
