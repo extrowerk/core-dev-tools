@@ -152,6 +152,10 @@
 #undef ENABLE_RTL_FLAG_CHECKING
 #endif
 
+/* Define if gcc should enable stack protection by default. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_STACK_PROTECTOR
+#endif
 
 /* Define if you want runtime assertions enabled. This is a cheap check. */
 #undef ENABLE_RUNTIME_CHECKING
