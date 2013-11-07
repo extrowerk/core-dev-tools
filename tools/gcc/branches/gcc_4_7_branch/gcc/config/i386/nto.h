@@ -68,6 +68,7 @@ QNX_SYSTEM_INCLUDES \
 #define LINK_SPEC \
   "%{h*} %{v:-V} \
    %{b} \
+   %{!r:--build-id=md5} \
    %{static:-dn -Bstatic} \
    %{shared:-G -dy} \
    %{symbolic:-Bsymbolic -G -dy} \

@@ -68,6 +68,7 @@ do {                                            \
 #define LINK_SPEC \
 "%{h*} %{v:-V} \
  %{b} %{Wl,*:%*} \
+ %{!r:--build-id=md5} \
  %{static:-Bstatic} \
  %{shared} \
  %{symbolic:-Bsymbolic} \

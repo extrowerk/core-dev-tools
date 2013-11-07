@@ -106,6 +106,7 @@ do {                                            \
 %(link_os) \
 %{EB} %{EL} \
 %{EL:-melf32lppcnto} %{!EL:-melf32ppcnto} %{MAP: -Map mapfile} \
+%{!r:--build-id=md5} \
 %{!shared: \
   %{!static: \
    %{rdynamic:-export-dynamic}} \

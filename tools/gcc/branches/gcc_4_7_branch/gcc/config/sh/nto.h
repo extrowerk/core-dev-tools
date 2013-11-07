@@ -118,6 +118,7 @@ do                                                                     \
  %{mrelax:-relax} -YP,%$QNX_TARGET/lib -YP,%$QNX_TARGET/usr/lib \
  %{MAP:-Map mapfile} %{static:-dn -Bstatic} %{shared:-G -dy} \
  %{symbolic: -Bsymbolic -G -dy} %{G:-G} \
+ %{!r:--build-id=md5} \
  %{!shared: \
    %{!static: \
     %{rdynamic:-export-dynamic}} \

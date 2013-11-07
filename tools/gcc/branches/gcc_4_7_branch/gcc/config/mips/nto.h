@@ -63,6 +63,7 @@ Boston, MA 02111-1307, USA.  */
 %{shared} %{non_shared} \
 %{!EL:%{!mel:-belf32-tradbigmips}} %{EL|mel:-belf32-tradlittlemips} \
 %{MAP: -Map mapfile} \
+%{!r:--build-id=md5} \
 %{static: -dn -Bstatic} \
 %{!shared: \
   %{!static: \
