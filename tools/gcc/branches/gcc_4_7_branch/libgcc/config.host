@@ -577,7 +577,7 @@ i[34567]86-pc-msdosdjgpp*)
 i[34567]86-*-lynxos*)
 	;;
 i[34567]86-*-nto-qnx*)
-	tmake_file="$tmake_file i386/t-nto i386/t-crtstuff t-libgcc-pic"
+	tmake_file="$tmake_file i386/t-nto i386/t-crtstuff t-libgcc-pic t-eh-dw2-dip"
 	;;
 x86_64-*-nto-qnx*)
         ;;
