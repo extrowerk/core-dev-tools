@@ -114,16 +114,25 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-libgomp"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
+	configure_opts="${configure_opts} --enable-shared"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
 	configure_opts="${configure_opts} --enable-gnu-indirect-function"
 	configure_opts="${configure_opts} --enable-stack-protector"
-	if test "${target}" = "mips-unknown-nto-qnx6.5.0"; then
-		configure_opts="${configure_opts} --disable-shared"
-		configure_opts="${configure_opts} --disable-fixed-point"
-	else
-		configure_opts="${configure_opts} --enable-shared"
-	fi
+
+	case ${cpu_string} in
+		mips*)
+			configure_opts="${configure_opts} --disable-shared"
+			configure_opts="${configure_opts} --disable-fixed-point"
+			;;
+		armeabi)
+			configure_opts="${configure_opts} --with-arch=armv7-a"
+			configure_opts="${configure_opts} --with-float=softfp"
+			configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+			configure_opts="${configure_opts} --with-mode=thumb"
+			;;
+		*)	;;
+	esac
 
 	# The cross compilation of libgcc.a and libstdc++ require system headers
 	# from the next version of Neutrino while gcc itself should be compiled
