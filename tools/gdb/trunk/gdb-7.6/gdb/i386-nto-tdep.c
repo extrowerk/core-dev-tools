@@ -34,6 +34,8 @@
 #include "solib.h"
 #include "solib-svr4.h"
 
+#include "features/i386/i386-avx.c"
+
 #ifndef X86_CPU_FXSR
 #define X86_CPU_FXSR (1L << 12)
 #endif
@@ -94,7 +96,7 @@ i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs)
 static void
 i386nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
-  if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
+  if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
     i387_supply_fxsave (regcache, -1, fpregs);
   else
     i387_supply_fsave (regcache, -1, fpregs);
@@ -126,6 +128,8 @@ i386nto_regset_id (int regno)
     return NTO_REG_FLOAT;
   else if (regno < I386_SSE_NUM_REGS)
     return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
+  else if (regno < I386_AVX_NUM_REGS)
+	return NTO_REG_FLOAT;
 
   return -1;			/* Error.  */
 }
@@ -160,7 +164,7 @@ i386nto_register_area (struct gdbarch *gdbarch,
       int xmm_reg = (regno >= I387_XMM0_REGNUM (tdep)
 		     && regno < I387_MXCSR_REGNUM (tdep));
 
-      if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
+      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
 	{
 	  off_adjust = 32;
 	  regsize = 16;
@@ -264,7 +268,7 @@ i386nto_regset_fill (const struct regcache *regcache, int regset,
     }
   else if (regset == NTO_REG_FLOAT)
     {
-      if (nto_cpuinfo_valid && nto_cpuinfo_flags | X86_CPU_FXSR)
+      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
 	i387_collect_fxsave (regcache, -1, data);
       else
 	i387_collect_fsave (regcache, -1, data);
@@ -307,6 +311,14 @@ i386nto_sigcontext_addr (struct frame_info *this_frame)
   return ptrctx;
 }
 
+static const struct traget_desc *
+i386nto_read_description(struct target_ops *ops)
+{
+  /* We support up to YMM regs, but does target implement them
+   * is another story.  We get that from nto_cpuinfo_flags.  */
+  return tdesc_i386_avx;
+}
+
 static void
 init_i386nto_ops (void)
 {
@@ -319,6 +331,7 @@ init_i386nto_ops (void)
   nto_regset_fill = i386nto_regset_fill;
   nto_fetch_link_map_offsets =
     nto_generic_svr4_fetch_link_map_offsets;
+  ntoops_read_description = i386nto_read_description;
 }
 
 static void
@@ -375,6 +388,8 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
 
   set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
+
+  initialize_tdesc_i386_avx ();
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
