@@ -17,7 +17,7 @@
 
 # Test arm displaced stepping.
 
-if {![istarget "arm*-*-*"]} then {
+if {![istarget "arm*-*-*"] || [istarget "arm*qnx*"]} then {
     verbose "Skipping arm displaced stepping tests."
     return
 }
