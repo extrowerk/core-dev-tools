@@ -146,7 +146,7 @@ proc test_it_break { ndx } {
 # stop at conditional instructions with a false predicate during stepi.
 # If we are using a simulator or debug interface with hardware single
 # step, then GDB will stop at such instructions.
-if { [istarget arm*-linux*] } {
+if { [istarget arm*-linux*] || [istarget arm*-qnx*] } {
     set software_step 1
 } else {
     set software_step 0
