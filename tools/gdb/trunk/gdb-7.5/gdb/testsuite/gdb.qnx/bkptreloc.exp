@@ -1,0 +1,148 @@
+# Copyright 2013 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+standard_testfile
+set executable $testfile
+
+# Test overview:
+#  generate two shared objects. One that will be used by the process
+#  and another, modified, that will be found by gdb. Gdb should
+#  detect the mismatch and refuse to use mismatched shared object.
+
+if { [get_compiler_info] } {
+  untested "get_compiler_info failed."
+  return -1
+}
+
+# First version of the object, to be loaded by ld.
+set srclib1 ${testfile}lib1.c
+set srclib2 ${testfile}lib2.c
+set lib1 lib${testfile}lib1.so
+set lib2 lib${testfile}lib2.so
+
+# Executable
+set srcfile ${testfile}.c
+
+set exec_opts {}
+
+if { ![istarget "arm-*-qnx*"] } {
+  lappend exec_opts "shlib_load"
+}
+
+lappend exec_opts "debug"
+lappend exec_opts "additional_flags=-fpie -pie"
+
+if { [build_executable $testfile.exp $executable $srcfile $exec_opts] != 0 } {
+  return -1
+}
+
+set exec_opts {}
+lappend exec_opts "debug"
+
+if { [gdb_compile_shlib "${srcdir}/${subdir}/${srclib1}" "gdb.qnx/${lib1}" [list debug ldflags=-Wl,--build-id]] != ""
+     || [gdb_compile_shlib "${srcdir}/${subdir}/${srclib2}" "gdb.qnx/${lib2}" [list debug ldflags=-Wl,--build-id]] != "" } {
+  untested "gdb_compile_shlib failed."
+  return -1
+}
+
+gdb_exit
+gdb_start
+if { [ gdb_upload_binary gdb.qnx/${lib1} ${lib1} ] != 0 } {
+  untested "Could not upload shared library"
+  return -1
+}
+if { [ gdb_upload_binary gdb.qnx/${lib2} ${lib2} ] != 0 } {
+  untested "Could not upload shared library"
+  return -1
+}
+
+proc test_iter { lib1 lib2 msg } {
+  global gdb_prompt
+  global testfile
+  global executable
+  global srcdir
+  global srcfile
+
+  gdb_test "set args ./${lib1} ./${lib2}" "" ""
+  gdb_test "set nto-cwd /tmp"
+
+  gdb_test "run" "" "re-run" "Start it from the.*y or n.*$" "y"
+
+
+  gdb_test "sharedlibrary" "" ""
+
+  set nocrlf "\[^\r\n\]*"
+  set expected_header "From${nocrlf}To${nocrlf}Syms${nocrlf}Read${nocrlf}Shared${nocrlf}"
+  set expected_line "Yes${nocrlf}${lib1}"
+
+  gdb_test "info sharedlibrary ${lib1}" \
+	"${expected_header}\r\n.*${expected_line}.*" \
+	"${msg} - Symbols for ${lib1} loaded: expected 'Yes'"
+
+  set expected_line "Yes${nocrlf}${lib2}"
+
+  gdb_test "info sharedlibrary ${lib2}" \
+	"${expected_header}\r\n.*${expected_line}.*" \
+	"${msg} - Symbols for ${lib2} loaded: expected 'Yes'"
+
+
+  gdb_test "info break" "" ""
+
+  gdb_test "cont" "Continuing.*Breakpoint.*fooimpl.*" "hit bkpt in shlib"
+
+  return 0
+}
+
+clean_restart ${executable}
+
+gdb_test "set solib-search-path gdb.qnx" "" "" 
+
+if ![runto "${srcfile}:[gdb_get_line_number "set breakpoint 1 here"]"] {
+  return -1
+} 
+
+gdb_test "set breakpoint pending on" "" ""
+
+gdb_test "b fooimpl" "" ""
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib1} ${lib2} "lib1 lib2"] } {
+  untested "test iter 1"
+}
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib2} ${lib1} "lib2 lib1"] } {
+  untested "test iter 2"
+}
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib1} ${lib2} "lib1 lib2"] } {
+  untested "test iter 1"
+}
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib2} ${lib1} "lib2 lib1"] } {
+  untested "test iter 2"
+}
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib1} ${lib2} "lib1 lib2"] } {
+  untested "test iter 1"
+}
+
+# Now test it does not mis-invalidate matching libraries
+if { [test_iter ${lib2} ${lib1} "lib2 lib1"] } {
+  untested "test iter 2"
+}
