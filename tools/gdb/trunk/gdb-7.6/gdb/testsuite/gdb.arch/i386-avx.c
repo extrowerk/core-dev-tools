@@ -53,13 +53,17 @@ have_avx (void)
 {
   unsigned int eax, ebx, ecx, edx;
 
-  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx))
+  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx)) {
+	printf("No avx\n");
     return 0;
+  }
 
   if ((ecx & (bit_AVX | bit_OSXSAVE)) == (bit_AVX | bit_OSXSAVE))
     return 1;
-  else
+  else {
+	printf("keine avx\n");
     return 0;
+  }
 }
 
 int
@@ -122,7 +126,9 @@ main (int argc, char **argv)
 #endif
 
       puts ("Bye!"); /* second breakpoint here */
-    }
+    } else {
+	  puts ("CPU doesn't have AVX");
+	}
 
   return 0;
 }
