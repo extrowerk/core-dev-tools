@@ -91,6 +91,7 @@ function hook_preconfigure {
 
 
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
+	configure_opts="${configure_opts} --enable-gold"
 	configure_opts="${configure_opts} --disable-werror"
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --prefix=${execdir}"
