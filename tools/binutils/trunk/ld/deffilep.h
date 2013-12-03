@@ -109,10 +109,11 @@ typedef union YYSTYPE
   char *id;
   const char *id_const;
   int number;
+  bfd_vma vma;
   char *digits;
 }
 /* Line 1529 of yacc.c.  */
-#line 116 "deffilep.h"
+#line 117 "deffilep.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
