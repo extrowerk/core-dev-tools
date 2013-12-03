@@ -12,3 +12,10 @@ ENTRY=_start
 TEXT_START_SYMBOLS='_btext = .;'
 TEXT_START_ADDR=0x08020000
 MAXPAGESIZE=0x1000
+
+# Place .got.plt as close to .plt as possible so that the former can be
+# referred to from the latter with the microMIPS ADDIUPC instruction
+# that only has a span of +/-16MB.
+PLT_NEXT_DATA=
+INITIAL_READWRITE_SECTIONS=$OTHER_READWRITE_SECTIONS
+unset OTHER_READWRITE_SECTIONS
