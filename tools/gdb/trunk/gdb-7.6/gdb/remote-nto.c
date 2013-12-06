@@ -1039,7 +1039,8 @@ nto_get_thread_alive (struct target_ops *ops, ptid_t th)
       const struct tidinfo *const ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
       returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
 					     byte_order);
-      if (!nto_thread_alive (ops, ptid_build (PIDGET (th), 0, returned_tid)))
+
+      if (!ptidinfo->state)
 	{
 	  return nto_get_thread_alive (ops, ptid_build (PIDGET (th), 0,
 				       returned_tid+1));
@@ -1051,7 +1052,7 @@ nto_get_thread_alive (struct target_ops *ops, ptid_t th)
       what is the status of the thread, but rather answers question:
       "Does the thread exist?". Note that a thread might have already
       exited but has not been joined yet; we will show it here as 
-      alive an well. Not completely correct.  */
+      alive and well. Not completely correct.  */
       returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status,
 					     4, byte_order);
     }
@@ -1594,7 +1595,8 @@ nto_resume (struct target_ops *ops, ptid_t ptid, int step,
      first next available will be selected.  */
   if (!ptid_equal (ptid, minus_one_ptid))
     {
-      ptid_t ptid_alive = nto_get_thread_alive (ops, ptid);
+      ptid_t ptid_alive = nto_get_thread_alive (ops,
+	ptid_build (ptid_get_pid(ptid), 0, ptid_get_tid (inferior_ptid)));
 
       /* If returned thread is minus_one_ptid, then requested thread is
 	 dead and there are no alive threads with tid > ptid_get_tid (ptid).
@@ -2045,6 +2047,8 @@ nto_parse_notify (const DScomm_t *const recv, struct target_ops *ops,
 	priv->tid = tid;
 //    priv->starting_ip = stopped_pc;
 	ti = add_thread_with_info (ptid_build (pid, 0, tid), priv);
+	if (status->kind == TARGET_WAITKIND_SPURIOUS)
+	  tid = ptid_get_tid (inferior_ptid);
       }
       break;
     case DSMSG_NOTIFY_TIDUNLOAD:

@@ -460,13 +460,19 @@ first_thread_of_process (int pid)
 struct thread_info *
 any_thread_of_process (int pid)
 {
-  struct thread_info *tp;
+  struct thread_info *tp, *first = NULL;
 
   for (tp = thread_list; tp; tp = tp->next)
     if (ptid_get_pid (tp->ptid) == pid)
-      return tp;
+      {
+	if (!first)
+	  first = tp;
+	/* Prefer inferior_ptid to avoid jumps over threads. */
+	if (ptid_equal (inferior_ptid, tp->ptid))
+	  return tp;
+      }
 
-  return NULL;
+  return first;
 }
 
 struct thread_info *
@@ -481,7 +487,12 @@ any_live_thread_of_process (int pid)
 	if (tp->executing)
 	  tp_executing = tp;
 	else
-	  return tp;
+	  {
+	    if (!tp_executing)
+	      tp_executing = tp;
+	    if (ptid_equal (inferior_ptid, tp->ptid))
+	      return tp; /* Favour inferior_ptid */
+	  }
       }
 
   return tp_executing;
