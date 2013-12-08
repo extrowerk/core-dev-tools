@@ -125,6 +125,7 @@ function hook_preconfigure {
 			;;
 		x86)
 			configure_opts="${configure_opts} --enable-gnu-indirect-function"
+			;;
 		*)	;;
 	esac
 
