@@ -58,12 +58,10 @@ function hook_preconfigure {
 			CPPFLAGS=
 			basedir=/usr/${qnx_target}/host/qnx6/x86/usr
 			qnxtarget=/usr/${qnx_target}/target/qnx6
-			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			darwin-*)
 			basedir=/Developer/SDKs/${qnx_target}/host/darwin/x86/usr
 			qnxtarget=/Developer/SDKs/${qnx_target}/target/qnx6
-			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			linux-*)
 				host_cpu=$(uname -m)
@@ -103,6 +101,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-threads=posix"
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tls"
+	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-libstdcxx-pch"
 	configure_opts="${configure_opts} --enable-libmudflap"
 	configure_opts="${configure_opts} --enable-libgomp"
