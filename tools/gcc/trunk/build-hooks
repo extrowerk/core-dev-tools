@@ -103,6 +103,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-threads=posix"
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tls"
+	configure_opts="${configure_opts} --disable-libssp"
 	configure_opts="${configure_opts} --disable-libstdcxx-pch"
 	configure_opts="${configure_opts} --enable-libmudflap"
 	configure_opts="${configure_opts} --enable-libgomp"
@@ -111,6 +112,8 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-shared"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
+	configure_opts="${configure_opts} --enable-gnu-indirect-function"
+	configure_opts="${configure_opts} --enable-stack-protector"
 
 	case ${cpu_string} in
 		mips*)
@@ -122,9 +125,6 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --with-float=softfp"
 			configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
 			configure_opts="${configure_opts} --with-mode=thumb"
-			;;
-		x86)
-			configure_opts="${configure_opts} --enable-gnu-indirect-function"
 			;;
 		*)	;;
 	esac
