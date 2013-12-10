@@ -85,8 +85,8 @@ function hook_preconfigure {
 	case ${target} in
 	*nto-qnx*)	
 		configure_opts="${configure_opts} --enable-cheaders=c"
-		configure_opts="${configure_opts} --with-as=${nto_target}-as"
-		configure_opts="${configure_opts} --with-ld=${nto_target}-ld"
+		configure_opts="${configure_opts} --with-as=${target}-as"
+		configure_opts="${configure_opts} --with-ld=${target}-ld"
 	esac 
 
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
