@@ -105,6 +105,9 @@ static int verbose_only_flag;
 
 static int print_subprocess_help;
 
+/* Linker suffix passed to -fuse-ld=... */
+static const char *use_ld;
+
 /* Whether we should report subprocess execution times to a file.  */
 
 FILE *report_times_to_file = NULL;
@@ -3959,6 +3962,10 @@ process_command (unsigned int decoded_options_count,
           free (fname);
 	  continue;
 	}
+      else if (decoded_options[j].opt_index == OPT_fuse_ld_bfd)
+	use_ld = ".bfd";
+      else if (decoded_options[j].opt_index == OPT_fuse_ld_gold)
+	use_ld = ".gold";
 
       read_cmdline_option (&global_options, &global_options_set,
 			   decoded_options + j, UNKNOWN_LOCATION,
@@ -6768,6 +6775,38 @@ main (int argc, char **argv)
 
   if (print_prog_name)
     {
+      if (use_ld != NULL && ! strcmp (print_prog_name, "ld"))
+	{
+	  /* Append USE_LD to to the default linker.  */
+#ifdef DEFAULT_LINKER
+	  char *ld;
+# ifdef HAVE_HOST_EXECUTABLE_SUFFIX
+	  int len = (sizeof (DEFAULT_LINKER)
+		     - sizeof (HOST_EXECUTABLE_SUFFIX));
+	  ld = NULL;
+	  if (len > 0)
+	    {
+	      char *default_linker = xstrdup (DEFAULT_LINKER);
+	      /* Strip HOST_EXECUTABLE_SUFFIX if DEFAULT_LINKER contains
+		 HOST_EXECUTABLE_SUFFIX.  */
+	      if (! strcmp (&default_linker[len], HOST_EXECUTABLE_SUFFIX))
+		{
+		  default_linker[len] = '\0';
+		  ld = concat (default_linker, use_ld,
+			       HOST_EXECUTABLE_SUFFIX, NULL);
+		}
+	    }
+	  if (ld == NULL)
+# endif
+	  ld = concat (DEFAULT_LINKER, use_ld, NULL);
+	  if (access (ld, X_OK) == 0)
+	    {
+	      printf ("%s\n", ld);
+	      return (0);
+	    }
+#endif
+	  print_prog_name = concat (print_prog_name, use_ld, NULL);
+	}
       char *newname = find_a_file (&exec_prefixes, print_prog_name, X_OK, 0);
       printf ("%s\n", (newname ? newname : print_prog_name));
       return (0);
