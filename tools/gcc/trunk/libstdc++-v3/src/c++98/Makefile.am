@@ -171,7 +171,7 @@ parallel_settings.o: parallel_settings.cc
 # OPTIMIZE_CXXFLAGS on the compile line so that -O2 can be overridden
 # as the occasion calls for it.
 AM_CXXFLAGS = \
-	$(glibcxx_lt_pic_flag) $(glibcxx_compiler_shared_flag) \
+	$(PIC_CXXFLAGS) \
 	$(XTEMPLATE_FLAGS) \
 	$(WARN_CXXFLAGS) $(OPTIMIZE_CXXFLAGS) $(CONFIG_CXXFLAGS)
 
@@ -180,7 +180,11 @@ AM_MAKEFLAGS = \
 
 # Libtool notes
 
-# 1) In general, libtool expects an argument such as `--tag=CXX' when
+# 1) Need to explicitly set LTCXXCOMPILE so that AM_CXXFLAGS is
+# last. (That way, things like -O2 passed down from the toplevel can
+# be overridden by --enable-debug.)
+
+# 2) In general, libtool expects an argument such as `--tag=CXX' when
 # using the C++ compiler, because that will enable the settings
 # detected when C++ support was being configured.  However, when no
 # such flag is given in the command line, libtool attempts to figure

@@ -30,7 +30,7 @@
 # error "compatibility-c++0x.cc must be compiled with -std=gnu++0x"
 #endif
 
-#ifdef _GLIBCXX_SHARED
+#ifdef PIC
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
