@@ -24,7 +24,7 @@
 
 #include <bits/move.h>
 
-#ifdef _GLIBCXX_SHARED
+#ifdef PIC
 
 #ifndef _GLIBCXX_BEGIN_NAMESPACE_COMPAT
 # define _GLIBCXX_BEGIN_NAMESPACE_COMPAT
