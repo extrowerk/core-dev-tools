@@ -2121,6 +2121,24 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
   if (len < 1)
     return 0;
 
+  /* Ugly hack to keep i386-nto-tdep.c cleaner. */
+  if (gdbarch_bfd_arch_info (target_gdbarch ()) != NULL
+      && strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386")
+	 == 0
+      && regset == NTO_REG_FLOAT && len > 512
+      && current_session->target_proto_major == 0
+      && current_session->target_proto_minor < 5)
+    {
+      /* Pre-avx support context was at most 512 bytes. With avx,
+       * it can be more. Old pdebug (pre 0.5) would EINVAL if kernel
+       * says regset is different from gdb's idea; older kernel also
+       * returned exactly 512. */
+      len = 512;
+      /* Even uglier: */
+#define X86_CPU_XSAVE       (1UL <<  17)  /* CPU supports XSAVE/XRSTOR */
+      nto_cpuinfo_flags &= ~X86_CPU_XSAVE;
+    }
+
   nto_send_init (&tran, DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
   tran.pkt.regrd.offset = 0;	/* Always get whole set.  */
   tran.pkt.regrd.size = EXTRACT_SIGNED_INTEGER (&len, 2,
@@ -2195,7 +2213,7 @@ nto_store_registers (struct target_ops *ops,
 		     struct regcache *regcache, int regno)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  int len, regset;
+  int len, regset, regno_regset;
   unsigned int off;
   DScomm_t tran, recv;
 
@@ -2207,44 +2225,33 @@ nto_store_registers (struct target_ops *ops,
   if (!set_thread (ptid_get_tid (inferior_ptid)))
     return;
 
-  if (regno == -1)		/* Send them all.  */
+  regno_regset = nto_regset_id (regno);
+
+  for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
     {
-      for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
-	{
-	  len = nto_register_area (target_gdbarch (), -1, regset, &off);
-	  if (len < 1)
-	    continue;
+      if (regno_regset != NTO_REG_END && regno_regset != regset)
+	continue;
 
-	  /* Fetch the regset and copy it to our outgoing data before we fill
-	     it with gdb's registers.  This avoids the possibility of sending
-	     garbage to the remote.  */
-	  if (!fetch_regs (regcache, regset, 0))
-	    continue;
+      len = nto_register_area (target_gdbarch (), -1, regset, &off);
+      if (len < 1)
+	continue;
 
-	  memcpy (tran.pkt.regwr.data, recv.pkt.okdata.data,
-		  sizeof (recv.pkt.okdata.data));
+      /* Fetch the regset and copy it to our outgoing data before we fill
+	 it with gdb's registers.  This avoids the possibility of sending
+	 garbage to the remote.  */
+      if (!fetch_regs (regcache, regset, 0))
+	continue;
 
-	  if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data) == -1)
-	    continue;
+      memcpy (tran.pkt.regwr.data, recv.pkt.okdata.data,
+	      sizeof (recv.pkt.okdata.data));
 
-	  nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
-	  tran.pkt.regwr.offset = 0;
-	  nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
-	}
-      return;
+      if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data) == -1)
+	continue;
+
+      nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
+      tran.pkt.regwr.offset = 0;
+      nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
     }
-
-  /* Only sending one register.  */
-  regset = nto_regset_id (regno);
-  len = nto_register_area (target_gdbarch (), regno, regset, &off);
-  if (len < 1)			/* Don't know about this register.  */
-    return;
-
-  nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
-  tran.pkt.regwr.offset = EXTRACT_SIGNED_INTEGER (&off, 2,
-						  byte_order);
-  regcache_raw_collect (regcache, regno, tran.pkt.regwr.data);
-  nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
 }
 
 /* Use of the data cache *used* to be disabled because it loses for looking at

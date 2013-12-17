@@ -38,6 +38,6 @@ if ![runto_main] then {
 }
 
 gdb_test "stepi" ".*fldt.*" "first stepi"
-gdb_test "info float" ".*R7: Empty   0x00000000000000000000\r\n.*"
+gdb_test "info float" ".*R7: Empty   0x.*\r\n.*" "R7 empty"
 gdb_test "stepi" ".*ret.*" "second stepi"
-gdb_test "info float" ".*=>R7: Valid   0xbffee922191107450000 .*"
+gdb_test "info float" ".*=>R7: Valid   0xbffee922191107450000 .*" "R7 valid"

@@ -37,7 +37,29 @@
 #include "features/i386/i386-avx.c"
 
 #ifndef X86_CPU_FXSR
-#define X86_CPU_FXSR (1L << 12)
+
+/*
+ * CPU capability/state flags
+ */
+#define X86_CPU_CPUID       (1UL <<  0) /* CPU supports cpuid instruction */
+#define X86_CPU_RDTSC       (1UL <<  1) /* CPU supports rdtsc instruction */
+#define X86_CPU_INVLPG      (1UL <<  2)  /* CPU has INVLPG instruction */
+#define X86_CPU_WP          (1UL <<  3)  /* CPU has WP bit in CR0 */
+#define X86_CPU_BSWAP       (1UL <<  4)  /* CPU has BSWAP instruction */
+#define X86_CPU_MMX         (1UL <<  5)  /* CPU has MMX instructions */
+#define X86_CPU_CMOV        (1UL <<  6)  /* CPU has CMOVxx instructions */
+#define X86_CPU_PSE         (1UL <<  7)  /* CPU has page size extensions */
+#define X86_CPU_PGE         (1UL <<  8)  /* CPU has TLB global mappings */
+#define X86_CPU_MTRR        (1UL <<  9)  /* CPU has MTRR registers */
+#define X86_CPU_SEP         (1UL <<  10)  /* CPU supports SYSENTER  */
+#define X86_CPU_SIMD        (1UL <<  11)  /* CPU supports SIMD (SSE1)  */
+#define X86_CPU_FXSR        (1UL <<  12)  /* CPU supports FXSAVE/FXRSTOR  */
+#define X86_CPU_PAE         (1UL <<  13)  /* CPU has phys addr extension  */
+#define X86_CPU_NX          (1UL <<  14)  /* CPU supports NX PTE bit */
+#define X86_CPU_SSE2        (1UL <<  15)  /* CPU supports SSE2 */
+#define X86_CPU_AVX         (1UL <<  16)  /* CPU supports AVX */
+#define X86_CPU_XSAVE       (1UL <<  17)  /* CPU supports XSAVE/XRSTOR */
+
 #endif
 
 /* Why 13?  Look in our /usr/include/x86/context.h header at the
@@ -96,7 +118,9 @@ i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs)
 static void
 i386nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
-  if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
+  if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_XSAVE))
+    i387_supply_xsave (regcache, -1, fpregs);
+  else if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
     i387_supply_fxsave (regcache, -1, fpregs);
   else
     i387_supply_fsave (regcache, -1, fpregs);
@@ -129,7 +153,7 @@ i386nto_regset_id (int regno)
   else if (regno < I386_SSE_NUM_REGS)
     return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
   else if (regno < I386_AVX_NUM_REGS)
-	return NTO_REG_FLOAT;
+    return NTO_REG_FLOAT;
 
   return -1;			/* Error.  */
 }
@@ -164,7 +188,13 @@ i386nto_register_area (struct gdbarch *gdbarch,
       int xmm_reg = (regno >= I387_XMM0_REGNUM (tdep)
 		     && regno < I387_MXCSR_REGNUM (tdep));
 
-      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
+      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_XSAVE)
+	  && regno == -1)
+	{
+	  /* At most DS_DATA_MAX_SIZE: */
+	  regsize = 1024;
+	}
+      else if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
 	{
 	  off_adjust = 32;
 	  regsize = 16;
@@ -268,7 +298,9 @@ i386nto_regset_fill (const struct regcache *regcache, int regset,
     }
   else if (regset == NTO_REG_FLOAT)
     {
-      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
+      if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_XSAVE))
+	i387_collect_xsave (regcache, -1, data, 0);
+      else if (nto_cpuinfo_valid && (nto_cpuinfo_flags & X86_CPU_FXSR))
 	i387_collect_fxsave (regcache, -1, data);
       else
 	i387_collect_fsave (regcache, -1, data);
