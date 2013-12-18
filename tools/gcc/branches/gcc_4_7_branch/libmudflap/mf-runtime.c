@@ -2034,6 +2034,7 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   unsigned omitted_size = 0;
   unsigned i;
 #  ifdef __QNXNTO__
+  guess_omit_levels += 2;
   bt_accessor_t acc;
 #  endif /* __QNXNTO__ */
   DECLARE (void, free, void *ptr);
@@ -2049,6 +2050,8 @@ __mf_backtrace (char ***symbols, void *guess_pc, unsigned guess_omit_levels)
   bt_init_accessor (&acc, BT_SELF);
   pc_array_size = bt_get_backtrace (&acc, (bt_addr_t *) pc_array, 
 				    pc_array_size);
+  if ((int)pc_array_size == -1)
+    pc_array_size = 0;
   bt_release_accessor (&acc);
 #   else  /* ! __QNXNTO__ */
 
