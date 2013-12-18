@@ -75,7 +75,11 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 #if PIC
 
+#ifndef __QNXNTO__
 enum { BS = 4096, NB=10 };
+#else
+enum { BS = 1, NB = 1 }; // We do not need bootstrap allocator
+#endif
 static char __mf_0fn_bufs[NB][BS];
 static unsigned __mf_0fn_bufs_used[NB];
 

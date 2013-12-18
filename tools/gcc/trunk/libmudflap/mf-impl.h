@@ -400,9 +400,10 @@ ret __mfwrap_ ## fname (__VA_ARGS__)
 #define BEGIN_PROTECT(fname, ...)       \
   if (UNLIKELY (__mf_starting_p)) \
   {                                         \
-    return CALL_BACKUP(fname, __VA_ARGS__); \
+    /* ifdef __QNXNTO__ */ __mf_init(); }    \
+    /* else  return CALL_BACKUP(fname, __VA_ARGS__);  \
   }                                         \
-  else if (UNLIKELY (__mf_get_state () == reentrant))   \
+  else */if (UNLIKELY (__mf_get_state () == reentrant))   \
   {                                         \
     extern unsigned long __mf_reentrancy;   \
     __mf_reentrancy ++; \
