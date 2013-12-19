@@ -3390,6 +3390,13 @@ driver_handle_option (struct gcc_options *opts,
       do_save = false;
       break;
 
+    case OPT_fuse_ld_bfd:
+      use_ld = ".bfd";
+      break;
+    case OPT_fuse_ld_gold:
+      use_ld = ".gold";
+      break;
+
     case OPT_fcompare_debug_second:
       compare_debug_second = 1;
       break;
@@ -3962,10 +3969,6 @@ process_command (unsigned int decoded_options_count,
           free (fname);
 	  continue;
 	}
-      else if (decoded_options[j].opt_index == OPT_fuse_ld_bfd)
-	use_ld = ".bfd";
-      else if (decoded_options[j].opt_index == OPT_fuse_ld_gold)
-	use_ld = ".gold";
 
       read_cmdline_option (&global_options, &global_options_set,
 			   decoded_options + j, UNKNOWN_LOCATION,
