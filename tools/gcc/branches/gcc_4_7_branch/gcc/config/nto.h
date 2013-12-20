@@ -47,7 +47,7 @@ do { \
 -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
 -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
 -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
--idirafter %$QNX_TARGET/usr/include}"
+-isysroot %$QNX_TARGET/}"
 
 /* Don't assume anything about the header files.  */
 #undef NO_IMPLICIT_EXTERN_C
