@@ -176,7 +176,8 @@ add_standard_paths (const char *sysroot, const char *iprefix,
 	      char *sysroot_no_trailing_dir_separator = xstrdup (sysroot);
 	      size_t sysroot_len = strlen (sysroot);
 
-	      if (sysroot_len > 0 && sysroot[sysroot_len - 1] == DIR_SEPARATOR)
+	      if (sysroot_len > 0 && sysroot[sysroot_len - 1] == DIR_SEPARATOR
+		  && p->fname[0] == DIR_SEPARATOR)
 		sysroot_no_trailing_dir_separator[sysroot_len - 1] = '\0';
 	      str = concat (sysroot_no_trailing_dir_separator, p->fname, NULL);
 	      free (sysroot_no_trailing_dir_separator);
