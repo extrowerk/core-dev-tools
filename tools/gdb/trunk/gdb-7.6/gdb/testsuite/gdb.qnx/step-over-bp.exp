@@ -1,0 +1,86 @@
+# Copyright 2013 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+standard_testfile
+set executable $testfile
+set srcfile ${testfile}.c
+
+# Test overview:
+#  Set several consecutive breakpoints using line numbers,
+#  then step over breakpoints
+
+if { [get_compiler_info] } {
+  untested "get_compiler_info failed."
+  return -1
+}
+
+set exec_opts { -O0 }
+
+lappend exec_opts "debug"
+
+if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile}] } {
+    untested ${testfile}.exp
+    return -1
+}
+
+if ![runto_main] {
+  fail "Can't run to main"
+  return -1
+}
+
+set bp_loc_1 [gdb_get_line_number "set breakpoint 1 here"]
+set bp_loc_2 [gdb_get_line_number "set breakpoint 2 here"]
+set bp_loc_3 [gdb_get_line_number "set breakpoint 3 here"]
+set bp_loc_4 [gdb_get_line_number "set breakpoint 4 here"]
+set bp_loc_5 [gdb_get_line_number "set breakpoint 5 here"]
+
+gdb_test "break ${srcfile}:${bp_loc_1}" "Breakpoint 2 at .*" "set breakpoint 1"
+
+gdb_test "break ${srcfile}:${bp_loc_2}" "Breakpoint 3 at .*" "set breakpoint 2"
+
+gdb_test "break ${srcfile}:${bp_loc_3}" "Breakpoint 4 at .*" "set breakpoint 3"
+
+gdb_test "break ${srcfile}:${bp_loc_4}" "Breakpoint 5 at .*" "set breakpoint 4"
+
+gdb_test "break ${srcfile}:${bp_loc_5}" "Breakpoint 6 at .*" "set breakpoint 5"
+
+proc step_once { num } {
+
+  gdb_test_multiple "step" "Step ${num}" {
+      -re "Cannot remove.*" {
+	  fail "Step ${num}"
+      }
+      -re "Breakpoint ${num}" {
+	  pass "Step ${num}"
+      }
+  }
+}
+
+step_once 2 
+step_once 3
+step_once 4
+step_once 5
+
+set final_step_loc [gdb_get_line_number "final step here"]
+gdb_test_multiple "step" "Final step" {
+    -re "${final_step_loc}.*a = c . b;"  {
+	pass "Final step"
+    }
+    default {
+	fail "Final step"
+    }
+}
+
+

@@ -15067,7 +15067,21 @@ insert_single_step_breakpoint (struct gdbarch *gdbarch,
      this requires corresponding changes elsewhere where single step
      breakpoints are handled, however.  So, for now, we use this.  */
 
-  *bpt_p = deprecated_insert_raw_breakpoint (gdbarch, aspace, next_pc);
+  if (!regular_breakpoint_inserted_here_p (aspace, next_pc))
+    {
+      *bpt_p = deprecated_insert_raw_breakpoint (gdbarch, aspace, next_pc);
+    }
+  else
+    {
+      /* Keep breakpoint info. */
+      struct bp_target_info *bp_tgt;
+
+      bp_tgt = XZALLOC (struct bp_target_info);
+
+      bp_tgt->placed_address_space = aspace;
+      bp_tgt->placed_address = next_pc;
+      *bpt_p = bp_tgt;
+    }
   if (*bpt_p == NULL)
     error (_("Could not insert single-step breakpoint at %s"),
 	     paddress (gdbarch, next_pc));
@@ -15088,19 +15102,31 @@ single_step_breakpoints_inserted (void)
 void
 remove_single_step_breakpoints (void)
 {
+  struct bp_target_info *bp_tgt;
+
   gdb_assert (single_step_breakpoints[0] != NULL);
 
   /* See insert_single_step_breakpoint for more about this deprecated
      call.  */
-  deprecated_remove_raw_breakpoint (single_step_gdbarch[0],
-				    single_step_breakpoints[0]);
+  bp_tgt = single_step_breakpoints[0];
+  if (!regular_breakpoint_inserted_here_p (bp_tgt->placed_address_space,
+					   bp_tgt->placed_address))
+    {
+      deprecated_remove_raw_breakpoint (single_step_gdbarch[0],
+					single_step_breakpoints[0]);
+    }
   single_step_gdbarch[0] = NULL;
   single_step_breakpoints[0] = NULL;
 
   if (single_step_breakpoints[1] != NULL)
     {
-      deprecated_remove_raw_breakpoint (single_step_gdbarch[1],
-					single_step_breakpoints[1]);
+      bp_tgt = single_step_breakpoints[1];
+      if (!regular_breakpoint_inserted_here_p (bp_tgt->placed_address_space,
+					       bp_tgt->placed_address))
+	{
+	  deprecated_remove_raw_breakpoint (single_step_gdbarch[1],
+					    single_step_breakpoints[1]);
+	}
       single_step_gdbarch[1] = NULL;
       single_step_breakpoints[1] = NULL;
     }
