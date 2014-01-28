@@ -1657,12 +1657,21 @@ nto_resume (struct target_ops *ops, ptid_t ptid, int step,
 	nto_send_recv (&tran, recv, sizeof (tran.pkt.kill), 1);
       }
 
-  nto_send_init (&tran, DStMsg_run, (step || runone) ? DSMSG_RUN_COUNT
-						     : DSMSG_RUN,
-		 SET_CHANNEL_DEBUG);
-  tran.pkt.run.step.count = 1;
-  tran.pkt.run.step.count =
-    EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run.step.count, 4, byte_order);
+  if (gdbarch_software_single_step_p (target_gdbarch ()))
+    {
+      /* Do not interfere with gdb logic. */
+      nto_send_init (&tran, DStMsg_run, DSMSG_RUN,
+		     SET_CHANNEL_DEBUG);
+    }
+  else
+    {
+      nto_send_init (&tran, DStMsg_run, (step || runone) ? DSMSG_RUN_COUNT
+							 : DSMSG_RUN,
+		     SET_CHANNEL_DEBUG);
+      tran.pkt.run.step.count = 1;
+      tran.pkt.run.step.count =
+	EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run.step.count, 4, byte_order);
+    }
   nto_send_recv (&tran, recv, sizeof (tran.pkt.run), 1);
 }
 
