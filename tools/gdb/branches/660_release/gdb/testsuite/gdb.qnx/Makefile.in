@@ -1,0 +1,19 @@
+VPATH = @srcdir@
+srcdir = @srcdir@
+
+EXECUTABLES = bkptreloc infoshared_v solib-mismatch step-over-syscall 
+
+MISCELLANEOUS = libsolib-mismatch.* libbkptreloclib* 
+
+all info install-info dvi install uninstall installcheck check:
+	@echo "Nothing to be done for $@..."
+
+clean mostlyclean:
+	-rm -f *~ *.o a.out xgdb *.x *.ci *.tmp
+	-rm -f *.dwo *.dwp
+	-rm -f core core.coremaker coremaker.core corefile $(EXECUTABLES)
+	-rm -f $(MISCELLANEOUS)
+
+distclean maintainer-clean realclean: clean
+	-rm -f Makefile config.status config.log
+	-rm -fr *.log summary detail *.plog *.sum *.psum site.*
