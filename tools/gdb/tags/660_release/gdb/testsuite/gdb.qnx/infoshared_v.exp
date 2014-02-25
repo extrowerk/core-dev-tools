@@ -1,0 +1,36 @@
+# Copyright 2013 Free Software Foundation, Inc.
+
+# Contributed by QNX Software Systems Ltd.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test optional -v switch of info sharedlibrary (QNX port only)
+
+set testfile "infoshared_v"
+set srcfile infoshared_v.c
+
+if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile}] } {
+    untested ${testfile}.exp
+    return -1
+}
+
+if ![runto_main] {
+    fail "Can't run to main"
+    return -1
+}
+
+gdb_test "info sharedlibrary libc" "From * To .*\r\n0x.*libc\.so\.3" "normal list"
+
+gdb_test "info sharedlibrary -v libc" "From * To .*\r\n0x.*libc\.so\.3.*(/usr/lib/ldqnx\.so\.2).*" "info shared verbose"
+
