@@ -6,16 +6,13 @@ qnx_target=qnx800
 cpu_target=`echo ${nto_target} | sed 's/nto//'`
 
 if [ ${nto_target} != ntomulti ]; then
-  if [ $cpu_target = x86 ]; then
-    cpu_string=i486
-  else 
-    cpu_string=$cpu_target
-  fi
-  if [ $cpu_string = armeabi ]; then
-    nto_target=ntoarm
-    cpu_string=arm
-    os_variant=eabi
-  fi
+
+  case $cpu_target in
+	x86) cpu_string=i486 ;;
+	armeabihf) nto_target=ntoarm; cpu_string=arm; os_variant=eabihf ;;
+	armeabi) nto_target=ntoarm; cpu_string=arm; os_variant=eabi ;;
+        *) cpu_string=$cpu_target ;;
+  esac 
 
   tmpstring=`echo ${cpu_string}-nto-qnx${qnx_target_version}${os_variant}`
   target=`${srcdir}/config.sub ${tmpstring}`
