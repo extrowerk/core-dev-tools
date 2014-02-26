@@ -144,7 +144,7 @@ case ${generic_target} in
   arm-*-nacl*)				fmt=elf  em=nacl ;;
   arm-*-netbsdelf*)			fmt=elf  em=nbsd ;;
   arm-*-*n*bsd*)			fmt=aout em=nbsd ;;
-  arm-*-qnx*eabi)			fmt=elf em=armeabi ;;
+  arm-*-qnx*eabi*)			fmt=elf em=armeabi ;;
   arm-*-nto*)				fmt=elf ;;
   arm-epoc-pe)				fmt=coff em=epoc-pe ;;
   arm-wince-pe | arm-*-wince | arm*-*-mingw32ce* | arm*-*-cegcc*)
