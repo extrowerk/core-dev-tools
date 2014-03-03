@@ -133,7 +133,7 @@ function hook_preconfigure {
 		armeabihf)
 			configure_opts="${configure_opts} --with-float=hard"
 			configure_opts="${configure_opts} --with-arch=armv7-a"
-			configure_opts="${configure_opts} --with-fpu=vfpv3-d32"
+			configure_opts="${configure_opts} --with-fpu=vfpv3"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		*)	;;
