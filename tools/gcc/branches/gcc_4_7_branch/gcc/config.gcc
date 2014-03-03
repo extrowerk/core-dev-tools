@@ -857,7 +857,7 @@ arm*-*-nto-qnx*)
 	extra_options="${extra_options} arm/nto.opt"
         need_64bit_hwint=yes
 	case ${target} in
-	arm*-*-qnx*eabi)
+	arm*-*-qnx*eabi*)
 		tm_file="$tm_file nto.h arm/bpabi.h arm/nto-eabi.h arm/arm.h"
 		tmake_file="${tmake_file} arm/t-bpabi"
 	    ;;
