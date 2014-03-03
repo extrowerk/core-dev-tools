@@ -328,7 +328,7 @@ arm*-*-netbsdelf*)
 arm*-*-nto-qnx*)
 	tmake_file="${tmake_file} arm/t-arm arm/t-nto"
 	case ${host} in
-	arm*-*-qnx*eabi)
+	arm*-*-qnx*eabi*)
 		tmake_file="${tmake_file} arm/t-bpabi"
 		tm_file="$tm_file arm/bpabi-lib.h"
 		unwind_header=config/arm/unwind-arm.h
