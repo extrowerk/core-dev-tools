@@ -32,20 +32,17 @@ do {                                            \
  %{march=*:-march=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
- %{!mfloat-abi=*: -mfloat-abi=softfp} \
- %{!march=*: -march=armv7-a} \
- %{!mfpu=*: -mfpu=vfpv3-d16} \
  -meabi=5" 
 
 #define QNX_SYSTEM_LIBDIRS \
-"-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/gcc/%v1.%v2.%v3 \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/usr/lib \
- -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/opt/lib \
- -rpath-link %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/usr/lib:\
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/opt/lib "
+"-L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib/gcc/%v1.%v2.%v3 \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/usr/lib \
+ -L %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/opt/lib \
+ -rpath-link %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib/gcc/%v1.%v2.%v3:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/usr/lib:\
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/opt/lib "
 
 #undef LIB_SPEC
 #define LIB_SPEC \
@@ -57,12 +54,12 @@ do {                                            \
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/%{pg:m}%{p:m}crt1%{pie:S}.o } \
-%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/crti.o crtbegin.o%s "
+"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib/%{pg:m}%{p:m}crt1%{pie:S}.o } \
+%$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib/crti.o crtbegin.o%s "
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
-"crtend.o%s %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/crtn.o"
+"crtend.o%s %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7%{mfloat-abi=hard:hf}/lib/crtn.o"
 
 #undef LINK_SPEC
 #define LINK_SPEC \
@@ -93,9 +90,6 @@ do {                                            \
 
 #undef	CC1_SPEC
 #define	CC1_SPEC " \
-%{!mfloat-abi=*: -mfloat-abi=softfp} \
-%{!march=*: -march=armv7-a} \
-%{!mfpu=*: -mfpu=vfpv3-d16}  \
 %{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
 /* Call the function profiler with a given profile label. 

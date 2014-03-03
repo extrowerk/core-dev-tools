@@ -11,9 +11,13 @@ cpu_string=`echo ${nto_target} | sed 's/nto//'`
 
 case ${cpu_string} in
 	x86)		targetarch=i486 ;;
-	armeabi)	targetarch=arm
+	armeabi*)	targetarch=arm
 			nto_target=ntoarm
-			os_variant=eabi ;;
+			os_variant=eabi
+			case ${cpu_string} in
+				armeabihf) os_variant=${os_variant}hf ;;
+			esac
+			;;
 	*)		targetarch=${cpu_string} ;;
 esac
 
@@ -121,9 +125,15 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --disable-fixed-point"
 			;;
 		armeabi)
-			configure_opts="${configure_opts} --with-arch=armv7-a"
 			configure_opts="${configure_opts} --with-float=softfp"
+			configure_opts="${configure_opts} --with-arch=armv7-a"
 			configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+			configure_opts="${configure_opts} --with-mode=thumb"
+			;;
+		armeabihf)
+			configure_opts="${configure_opts} --with-float=hard"
+			configure_opts="${configure_opts} --with-arch=armv7-a"
+			configure_opts="${configure_opts} --with-fpu=vfpv3-d32"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		*)	;;
