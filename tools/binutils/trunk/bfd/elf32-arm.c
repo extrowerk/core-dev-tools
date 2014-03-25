@@ -12670,6 +12670,11 @@ elf32_arm_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	    /* Fall through.  */
 	  case R_ARM_ABS32:
 	  case R_ARM_ABS32_NOI:
+	    if (h != NULL && info->executable)
+	      {
+		h->pointer_equality_needed = 1;
+	      }
+	    /* Fall through.  */
 	  case R_ARM_REL32:
 	  case R_ARM_REL32_NOI:
 	  case R_ARM_MOVW_PREL_NC:
@@ -14034,7 +14039,7 @@ elf32_arm_finish_dynamic_symbol (bfd * output_bfd,
 	     Otherwise, the PLT entry would provide a definition for
 	     the symbol even if the symbol wasn't defined anywhere,
 	     and so the symbol would never be NULL.  */
-	  if (!h->ref_regular_nonweak)
+	  if (!h->ref_regular_nonweak || !h->pointer_equality_needed)
 	    sym->st_value = 0;
 	}
       else if (eh->is_iplt && eh->plt.noncall_refcount != 0)
