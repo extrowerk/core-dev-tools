@@ -41,12 +41,10 @@ QNX_SYSTEM_INCLUDES \
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: \
-  %{!symbolic: \
-    %{pg:%$QNX_TARGET/x86/lib/mcrt1.o%s} \
-    %{!pg:%{p:%$QNX_TARGET/x86/lib/mcrt1.o%s} \
-    %{!p:%$QNX_TARGET/x86/lib/crt1%{pie:S}.o%s}} \
-    }} \
+"%{!shared: %{pg|p|profile:%$QNX_TARGET/x86/lib/mcrt1.o%s; \
+		pie: %$QNX_TARGET/x86/lib/crt1S.o%s; \
+		static|nopie:%$QNX_TARGET/x86/lib/crt1.o%s; \
+		:%$QNX_TARGET/x86/lib/crt1S.o%s}} \
 %$QNX_TARGET/x86/lib/crti.o%s crtbegin.o%s" 
 
 #undef ENDFILE_SPEC
@@ -65,7 +63,7 @@ QNX_SYSTEM_INCLUDES \
 #undef LIB_SPEC
 #define LIB_SPEC \
   QNX_SYSTEM_LIBDIRS \
-  "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
+  "%{!symbolic: -lc -Bstatic %{static|nopie: -lc;:-lcS}}"
 
 #undef LINK_SPEC
 #define LINK_SPEC \
