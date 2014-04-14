@@ -620,7 +620,9 @@ proper position among the other output files.  */
 
 #ifndef LINK_PIE_SPEC
 #ifdef HAVE_LD_PIE
-#define LINK_PIE_SPEC "%{pie:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
+#define LINK_PIE_SPEC "%{pie:-pie}\
+  %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
+  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
 #else
 #define LINK_PIE_SPEC "%{pie:} "
 #endif
@@ -784,6 +786,7 @@ static const char *cc1_options =
  %{-version:--version}\
  %{-help=*:--help=%*}\
  %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}}\
+ %{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|D__KERNEL__:;:-fPIE}\
  %{static:%{pie:%e-static and -pie are incompatible}}\
  %{fsyntax-only:-o %j} %{-param*}\
  %{fmudflap|fmudflapth:-fno-builtin -fno-merge-constants}\
