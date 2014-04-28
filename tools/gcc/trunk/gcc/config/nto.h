@@ -89,10 +89,6 @@ do {                                            \
 	GNU_INDIRECT_FUNCTION			\
     } while (0)
 
-/* Determine whether the entire c99 runtime
-   is present in the runtime library.  */
-#define TARGET_C99_FUNCTIONS 1
-
 /* Don't set libgcc.a's gthread/pthread symbols to weak, as our
    libc has them as well, and we get problems when linking static,
    as libgcc.a will get a symbol value of 0.  */
