@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2013 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2014 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -434,6 +434,20 @@ Note &lsquo;<samp>libiberty</samp>&rsquo; does not support shared libraries at a
 <samp>--disable-shared</samp> does not accept a list of package names as
 argument, only <samp>--enable-shared</samp> does.
 </p>
+<p>Contrast with <samp>--enable-host-shared</samp>, which affects <em>host</em>
+code.
+</p>
+</dd>
+<dt><code>--enable-host-shared</code></dt>
+<dd><p>Specify that the <em>host</em> code should be built into position-independent
+machine code (with -fPIC), allowing it to be used within shared libraries,
+but yielding a slightly slower compiler.
+</p>
+<p>Currently this option is only of use to people developing GCC itself.
+</p>
+<p>Contrast with <samp>--enable-shared</samp>, which affects <em>target</em>
+libraries.
+</p>
 </dd>
 <dt><code><a name="with_002dgnu_002das"></a>--with-gnu-as</code></dt>
 <dd><p>Specify that the compiler should assume that the
@@ -547,6 +561,19 @@ and for cross builds configured with <samp>--with-sysroot</samp>, and without
 <samp>--with-native-system-header-dir</samp>.
 More documentation about multiarch can be found at
 <a href="http://wiki.debian.org/Multiarch">http://wiki.debian.org/Multiarch</a>.
+</p>
+</dd>
+<dt><code>--enable-vtable-verify</code></dt>
+<dd><p>Specify whether to enable or disable the vtable verification feature.
+Enabling this feature causes libstdc++ to be built with its virtual calls
+in verifiable mode.  This means that, when linked with libvtv, every
+virtual call in libstdc++ will verify the vtable pointer through which the
+call will be made before actually making the call.  If not linked with libvtv,
+the verifier will call stub functions (in libstdc++ itself) and do nothing.
+If vtable verification is disabled, then libstdc++ is not built with its
+virtual calls in verifiable mode at all.  However the libvtv library will
+still be built (see <samp>--disable-libvtv</samp> to turn off building libvtv).
+<samp>--disable-vtable-verify</samp> is the default.
 </p>
 </dd>
 <dt><code>--disable-multilib</code></dt>
@@ -730,8 +757,8 @@ This is an alias for <samp>--enable-tls=no</samp>.
 <dt><code>--with-cpu-64=<var>cpu</var></code></dt>
 <dd><p>Specify which cpu variant the compiler should generate code for by default.
 <var>cpu</var> will be used as the default value of the <samp>-mcpu=</samp> switch.
-This option is only supported on some targets, including ARM, i386, M68k,
-PowerPC, and SPARC.  The <samp>--with-cpu-32</samp> and
+This option is only supported on some targets, including ARC, ARM, i386, M68k,
+PowerPC, and SPARC.  It is mandatory for ARC.  The <samp>--with-cpu-32</samp> and
 <samp>--with-cpu-64</samp> options specify separate default CPUs for
 32-bit and 64-bit modes; these options are only supported for i386,
 x86-64 and PowerPC.
@@ -770,6 +797,27 @@ libraries.  This option is only supported on Epiphany targets.
 ISA for floating-point arithmetics.  You can select either &lsquo;<samp>sse</samp>&rsquo; which
 enables <samp>-msse2</samp> or &lsquo;<samp>avx</samp>&rsquo; which enables <samp>-mavx</samp> by default.
 This option is only supported on i386 and x86-64 targets.
+</p>
+</dd>
+<dt><code>--with-nan=<var>encoding</var></code></dt>
+<dd><p>On MIPS targets, set the default encoding convention to use for the
+special not-a-number (NaN) IEEE 754 floating-point data.  The
+possibilities for <var>encoding</var> are:
+</p><dl compact="compact">
+<dt><code>legacy</code></dt>
+<dd><p>Use the legacy encoding, as with the <samp>-mnan=legacy</samp> command-line
+option.
+</p></dd>
+<dt><code>2008</code></dt>
+<dd><p>Use the 754-2008 encoding, as with the <samp>-mnan=2008</samp> command-line
+option.
+</p></dd>
+</dl>
+<p>To use this configuration option you must have an assembler version
+installed that supports the <samp>-mnan=</samp> command-line option too.
+In the absence of this configuration option the default convention is
+the legacy encoding, as when neither of the <samp>-mnan=2008</samp> and
+<samp>-mnan=legacy</samp> command-line options has been used.
 </p>
 </dd>
 <dt><code>--with-divide=<var>type</var></code></dt>
@@ -856,6 +904,12 @@ will try to guess whether the <code>.init_array</code> and
 <code>.fini_array</code> sections are supported and, if they are, use them.
 </p>
 </dd>
+<dt><code>--enable-link-mutex</code></dt>
+<dd><p>When building GCC, use a mutex to avoid linking the compilers for
+multiple languages at the same time, to avoid thrashing on build
+systems with limited free memory.  The default is not to use such a mutex.
+</p>
+</dd>
 <dt><code>--enable-maintainer-mode</code></dt>
 <dd><p>The build rules that regenerate the Autoconf and Automake output files as
 well as the GCC master message catalog <samp>gcc.pot</samp> are normally
@@ -906,7 +960,7 @@ addition, &lsquo;<samp>libstdc++</samp>&rsquo;&rsquo;s include files will be ins
 <samp>--with-gxx-include-dir=<var>dirname</var></samp>.  Using this option is
 particularly useful if you intend to use several versions of GCC in
 parallel.  This is currently supported by &lsquo;<samp>libgfortran</samp>&rsquo;,
-&lsquo;<samp>libjava</samp>&rsquo;, &lsquo;<samp>libmudflap</samp>&rsquo;, &lsquo;<samp>libstdc++</samp>&rsquo;, and &lsquo;<samp>libobjc</samp>&rsquo;.
+&lsquo;<samp>libjava</samp>&rsquo;, &lsquo;<samp>libstdc++</samp>&rsquo;, and &lsquo;<samp>libobjc</samp>&rsquo;.
 </p>
 </dd>
 <dt><code>--enable-languages=<var>lang1</var>,<var>lang2</var>,&hellip;</code></dt>
@@ -968,6 +1022,11 @@ support for <code>libquadmath</code> on systems supporting it.
 </dd>
 <dt><code>--disable-libgomp</code></dt>
 <dd><p>Specify that the run-time libraries used by GOMP should not be built.
+</p>
+</dd>
+<dt><code>--disable-libvtv</code></dt>
+<dd><p>Specify that the run-time libraries used by vtable verification
+should not be built.
 </p>
 </dd>
 <dt><code>--with-dwarf2</code></dt>
@@ -1287,7 +1346,7 @@ linker for all final links. <var>choice</var> can be one of
 <dt><code>--disable-gnu-unique-object</code></dt>
 <dd><p>Tells GCC to use the gnu_unique_object relocation for C++ template
 static data members and inline function local statics.  Enabled by
-default for a native toolchain with an assembler that accepts it and
+default for a toolchain with an assembler that accepts it and
 GLIBC 2.11 or above, otherwise disabled.
 </p>
 </dd>
@@ -1312,6 +1371,19 @@ produce shorter header file paths in diagnostics and dependency output
 files, but these changed header paths may conflict with some compilation
 environments.  Enabled by default, and may be disabled using
 <samp>--disable-canonical-system-headers</samp>.
+</p>
+</dd>
+<dt><code>--with-glibc-version=<var>major</var>.<var>minor</var></code></dt>
+<dd><p>Tell GCC that when the GNU C Library (glibc) is used on the target it
+will be version <var>major</var>.<var>minor</var> or later.  Normally this can
+be detected from the C library&rsquo;s header files, but this option may be
+needed when bootstrapping a cross toolchain without the header files
+available for building the initial bootstrap compiler.
+</p>
+<p>If GCC is configured with some multilibs that use glibc and some that
+do not, this option applies only to the multilibs that use glibc.
+However, such configurations may not work well as not all the relevant
+configuration in GCC is on a per-multilib basis.
 </p></dd>
 </dl>
 
@@ -1408,6 +1480,12 @@ technical details, cf. <a href="http://gcc.gnu.org/PR54461">PR54461</a>.
 This option is only supported for the AVR target.  It is not supported for
 RTEMS configurations, which currently use newlib.  The option is
 supported since version 4.7.2 and is the default in 4.8.0 and newer.
+</p>
+</dd>
+<dt><code>--with-nds32-lib=<var>library</var></code></dt>
+<dd><p>Specifies that <var>library</var> setting is used for building <samp>libgcc.a</samp>.
+Currently, the valid <var>library</var> is &lsquo;<samp>newlib</samp>&rsquo; or &lsquo;<samp>mculib</samp>&rsquo;.
+This option is only supported for the NDS32 target.
 </p>
 </dd>
 <dt><code>--with-build-time-tools=<var>dir</var></code></dt>

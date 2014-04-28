@@ -1,6 +1,6 @@
 ## Makefile for the C++11 sources of the GNU C++ Standard library.
 ##
-## Copyright (C) 1997-2013 Free Software Foundation, Inc.
+## Copyright (C) 1997-2014 Free Software Foundation, Inc.
 ##
 ## This file is part of the libstdc++ version 3 distribution.
 ## Process this file with automake to produce Makefile.in.
@@ -51,7 +51,8 @@ cxx11_sources = \
 	compatibility-c++0x.cc \
 	compatibility-atomic-c++0x.cc \
 	compatibility-thread-c++0x.cc \
-	compatibility-chrono.cc
+	compatibility-chrono.cc \
+	compatibility-condvar.cc
 
 libstdc___la_SOURCES = $(cxx98_sources) $(cxx11_sources)
 
@@ -71,7 +72,6 @@ libstdc___la_LDFLAGS = \
 	-version-info $(libtool_VERSION) ${version_arg} -lm
 
 libstdc___la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
-
 
 # Use special rules for compatibility-ldbl.cc compilation, as we need to
 # pass -mlong-double-64.
@@ -103,13 +103,18 @@ compatibility-chrono.lo: compatibility-chrono.cc
 compatibility-chrono.o: compatibility-chrono.cc
 	$(CXXCOMPILE) -std=gnu++11 -c $<
 
+compatibility-condvar.lo: compatibility-condvar.cc
+	$(LTCXXCOMPILE) -std=gnu++11 -c $<
+compatibility-condvar.o: compatibility-condvar.cc
+	$(CXXCOMPILE) -std=gnu++11 -c $<
+
 # AM_CXXFLAGS needs to be in each subdirectory so that it can be
 # modified in a per-library or per-sub-library way.  Need to manually
 # set this option because CONFIG_CXXFLAGS has to be after
 # OPTIMIZE_CXXFLAGS on the compile line so that -O2 can be overridden
 # as the occasion calls for it.
 AM_CXXFLAGS = \
-	$(XTEMPLATE_FLAGS) \
+	$(XTEMPLATE_FLAGS) $(VTV_CXXFLAGS) \
 	$(WARN_CXXFLAGS) $(OPTIMIZE_CXXFLAGS) $(CONFIG_CXXFLAGS)
 
 # Libtool notes
@@ -160,8 +165,8 @@ CXXLINK = \
 	$(LIBTOOL) --tag CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXX) \
+	$(VTV_CXXLINKFLAGS) \
 	$(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
-
 
 # Symbol versioning for shared libraries.
 if ENABLE_SYMVERS

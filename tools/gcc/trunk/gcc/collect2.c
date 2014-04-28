@@ -1,6 +1,6 @@
 /* Collect static initialization info into data structures that can be
    traversed by C++ initialization and finalization routines.
-   Copyright (C) 1992-2013 Free Software Foundation, Inc.
+   Copyright (C) 1992-2014 Free Software Foundation, Inc.
    Contributed by Chris Smith (csmith@convex.com).
    Heavily modified by Michael Meissner (meissner@cygnus.com),
    Per Bothner (bothner@cygnus.com), and John Gilmore (gnu@cygnus.com).
@@ -182,6 +182,7 @@ static int strip_flag;			/* true if -s */
 static int export_flag;                 /* true if -bE */
 static int aix64_flag;			/* true if -b64 */
 static int aixrtl_flag;			/* true if -brtl */
+static int aixlazy_flag;               /* true if -blazy */
 #endif
 
 enum lto_mode_d {
@@ -191,7 +192,11 @@ enum lto_mode_d {
 };
 
 /* Current LTO mode.  */
+#ifdef ENABLE_LTO
+static enum lto_mode_d lto_mode = LTO_MODE_WHOPR;
+#else
 static enum lto_mode_d lto_mode = LTO_MODE_NONE;
+#endif
 
 bool debug;				/* true if -debug */
 bool helpflag;			/* true if --help */
@@ -214,6 +219,13 @@ static const char *ldd_file_name;	/* pathname of ldd (or equivalent) */
 static const char *strip_file_name;		/* pathname of strip */
 const char *c_file_name;		/* pathname of gcc */
 static char *initname, *fininame;	/* names of init and fini funcs */
+
+
+#ifdef TARGET_AIX_VERSION
+static char *aix_shared_initname;
+static char *aix_shared_fininame;       /* init/fini names as per the scheme
+					   described in config/rs6000/aix.h */
+#endif
 
 static struct head constructors;	/* list of constructors found */
 static struct head destructors;		/* list of destructors found */
@@ -279,7 +291,9 @@ typedef enum {
   SYM_DTOR = 2,  /* destructor  */
   SYM_INIT = 3,  /* shared object routine that calls all the ctors  */
   SYM_FINI = 4,  /* shared object routine that calls all the dtors  */
-  SYM_DWEH = 5   /* DWARF exception handling table  */
+  SYM_DWEH = 5,  /* DWARF exception handling table  */
+  SYM_AIXI = 6,
+  SYM_AIXD = 7
 } symkind;
 
 static symkind is_ctor_dtor (const char *);
@@ -340,6 +354,8 @@ enum scanfilter_masks {
   SCAN_INIT = 1 << SYM_INIT,
   SCAN_FINI = 1 << SYM_FINI,
   SCAN_DWEH = 1 << SYM_DWEH,
+  SCAN_AIXI = 1 << SYM_AIXI,
+  SCAN_AIXD = 1 << SYM_AIXD,
   SCAN_ALL  = ~0
 };
 
@@ -589,6 +605,10 @@ is_ctor_dtor (const char *s)
     { "GLOBAL__F_", sizeof ("GLOBAL__F_")-1, SYM_DWEH, 0 },
     { "GLOBAL__FI_", sizeof ("GLOBAL__FI_")-1, SYM_INIT, 0 },
     { "GLOBAL__FD_", sizeof ("GLOBAL__FD_")-1, SYM_FINI, 0 },
+#ifdef TARGET_AIX_VERSION
+    { "GLOBAL__AIXI_", sizeof ("GLOBAL__AIXI_")-1, SYM_AIXI, 0 },
+    { "GLOBAL__AIXD_", sizeof ("GLOBAL__AIXD_")-1, SYM_AIXD, 0 },
+#endif
     { NULL, 0, SYM_REGULAR, 0 }
   };
 
@@ -602,7 +622,7 @@ is_ctor_dtor (const char *s)
     {
       if (ch == p->name[0]
 	  && (!p->two_underscores || ((s - orig_s) >= 2))
-	  && strncmp(s, p->name, p->len) == 0)
+	  && strncmp (s, p->name, p->len) == 0)
 	{
 	  return p->ret;
 	}
@@ -791,7 +811,7 @@ maybe_run_lto_and_relink (char **lto_ld_argv, char **object_lst,
 	 plus number of partitions.  */
       for (lto_ld_argv_size = 0; lto_ld_argv[lto_ld_argv_size]; lto_ld_argv_size++)
 	;
-      out_lto_ld_argv = XCNEWVEC(char *, num_files + lto_ld_argv_size + 1);
+      out_lto_ld_argv = XCNEWVEC (char *, num_files + lto_ld_argv_size + 1);
       out_lto_ld_argv_size = 0;
 
       /* After running the LTO back end, we will relink, substituting
@@ -1016,15 +1036,11 @@ main (int argc, char **argv)
 	  debug = true;
         else if (! strcmp (argv[i], "-flto-partition=none"))
 	  no_partition = true;
-        else if ((! strncmp (argv[i], "-flto=", 6)
-		  || ! strcmp (argv[i], "-flto")) && ! use_plugin)
-	  lto_mode = LTO_MODE_WHOPR;
 	else if (!strncmp (argv[i], "-fno-lto", 8))
 	  lto_mode = LTO_MODE_NONE;
         else if (! strcmp (argv[i], "-plugin"))
 	  {
 	    use_plugin = true;
-	    lto_mode = LTO_MODE_NONE;
 	    if (selected_linker == USE_DEFAULT_LD)
 	      selected_linker = USE_PLUGIN_LD;
 	  }
@@ -1048,10 +1064,14 @@ main (int argc, char **argv)
 	    aixrtl_flag = 1;
 	else if (strcmp (argv[i], "-bnortl") == 0)
 	    aixrtl_flag = 0;
+	else if (strcmp (argv[i], "-blazy") == 0)
+	    aixlazy_flag = 1;
 #endif
       }
     vflag = debug;
     find_file_set_debug (debug);
+    if (use_plugin)
+      lto_mode = LTO_MODE_NONE;
     if (no_partition && lto_mode == LTO_MODE_WHOPR)
       lto_mode = LTO_MODE_LTO;
   }
@@ -1237,8 +1257,11 @@ main (int argc, char **argv)
 #ifdef COLLECT_EXPORT_LIST
   export_file = make_temp_file (".x");
 #endif
-  ldout = make_temp_file (".ld");
-  lderrout = make_temp_file (".le");
+  if (!debug)
+    {
+      ldout = make_temp_file (".ld");
+      lderrout = make_temp_file (".le");
+    }
   *c_ptr++ = c_file_name;
   *c_ptr++ = "-x";
   *c_ptr++ = "c";
@@ -1691,9 +1714,9 @@ main (int argc, char **argv)
                                    "%d destructors found\n",
                                    destructors.number),
                          destructors.number);
-      notice_translated (ngettext("%d frame table found\n",
-                                  "%d frame tables found\n",
-                                  frame_tables.number),
+      notice_translated (ngettext ("%d frame table found\n",
+                                   "%d frame tables found\n",
+				   frame_tables.number),
                          frame_tables.number);
     }
 
@@ -1745,7 +1768,7 @@ main (int argc, char **argv)
   sort_ids (&constructors);
   sort_ids (&destructors);
 
-  maybe_unlink(output_file);
+  maybe_unlink (output_file);
   outf = fopen (c_file, "w");
   if (outf == (FILE *) 0)
     fatal_error ("fopen %s: %m", c_file);
@@ -1774,6 +1797,11 @@ main (int argc, char **argv)
 	 second link phase now.  No new exports should have been added.  */
       if (! exports.first)
 	*ld2++ = concat ("-bE:", export_file, NULL);
+
+#ifdef TARGET_AIX_VERSION
+      add_to_list (&exports, aix_shared_initname);
+      add_to_list (&exports, aix_shared_fininame);
+#endif
 
 #ifndef LD_INIT_SWITCH
       add_to_list (&exports, initname);
@@ -1859,8 +1887,8 @@ collect_wait (const char *prog, struct pex_obj *pex)
 	{
 	  int sig = WTERMSIG (status);
 	  error ("%s terminated with signal %d [%s]%s",
-		 prog, sig, strsignal(sig),
-		 WCOREDUMP(status) ? ", core dumped" : "");
+		 prog, sig, strsignal (sig),
+		 WCOREDUMP (status) ? ", core dumped" : "");
 	  exit (FATAL_EXIT_CODE);
 	}
 
@@ -2067,6 +2095,19 @@ extract_init_priority (const char *name)
 {
   int pos = 0, pri;
 
+#ifdef TARGET_AIX_VERSION
+  /* Run dependent module initializers before any constructors in this
+     module.  */
+  switch (is_ctor_dtor (name))
+    {
+    case SYM_AIXI:
+    case SYM_AIXD:
+      return INT_MIN;
+    default:
+      break;
+    }
+#endif
+
   while (name[pos] == '_')
     ++pos;
   pos += 10; /* strlen ("GLOBAL__X_") */
@@ -2227,11 +2268,22 @@ write_c_file_stat (FILE *stream, const char *name ATTRIBUTE_UNUSED)
 
   initname = concat ("_GLOBAL__FI_", prefix, NULL);
   fininame = concat ("_GLOBAL__FD_", prefix, NULL);
+#ifdef TARGET_AIX_VERSION
+  aix_shared_initname = concat ("_GLOBAL__AIXI_", prefix, NULL);
+  aix_shared_fininame = concat ("_GLOBAL__AIXD_", prefix, NULL);
+#endif
 
   free (prefix);
 
   /* Write the tables as C code.  */
 
+  /* This count variable is used to prevent multiple calls to the
+     constructors/destructors.
+     This guard against multiple calls is important on AIX as the initfini
+     functions are deliberately invoked multiple times as part of the
+     mechanisms GCC uses to order constructors across different dependent
+     shared libraries (see config/rs6000/aix.h).
+   */
   fprintf (stream, "static int count;\n");
   fprintf (stream, "typedef void entry_pt();\n");
   write_list_with_asm (stream, "extern entry_pt ", constructors.first);
@@ -2302,8 +2354,8 @@ write_c_file_stat (FILE *stream, const char *name ATTRIBUTE_UNUSED)
 
   if (shared_obj)
     {
-      COLLECT_SHARED_INIT_FUNC(stream, initname);
-      COLLECT_SHARED_FINI_FUNC(stream, fininame);
+      COLLECT_SHARED_INIT_FUNC (stream, initname);
+      COLLECT_SHARED_FINI_FUNC (stream, fininame);
     }
 }
 
@@ -2578,6 +2630,7 @@ scan_prog_file (const char *prog_name, scanpass which_pass,
 
 
       *end = '\0';
+
       switch (is_ctor_dtor (name))
 	{
 	case SYM_CTOR:
@@ -2774,16 +2827,16 @@ scan_libraries (const char *prog_name)
 
 #if defined (EXTENDED_COFF)
 
-#   define GCC_SYMBOLS(X)	(SYMHEADER(X).isymMax + SYMHEADER(X).iextMax)
+#   define GCC_SYMBOLS(X)	(SYMHEADER (X).isymMax + SYMHEADER (X).iextMax)
 #   define GCC_SYMENT		SYMR
 #   define GCC_OK_SYMBOL(X)	((X).st == stProc || (X).st == stGlobal)
 #   define GCC_SYMINC(X)	(1)
-#   define GCC_SYMZERO(X)	(SYMHEADER(X).isymMax)
-#   define GCC_CHECK_HDR(X)	(PSYMTAB(X) != 0)
+#   define GCC_SYMZERO(X)	(SYMHEADER (X).isymMax)
+#   define GCC_CHECK_HDR(X)	(PSYMTAB (X) != 0)
 
 #else
 
-#   define GCC_SYMBOLS(X)	(HEADER(ldptr).f_nsyms)
+#   define GCC_SYMBOLS(X)	(HEADER (ldptr).f_nsyms)
 #   define GCC_SYMENT		SYMENT
 #   if defined (C_WEAKEXT)
 #     define GCC_OK_SYMBOL(X) \
@@ -2939,6 +2992,25 @@ scan_prog_file (const char *prog_name, scanpass which_pass,
 
 		      switch (is_ctor_dtor (name))
 			{
+#if TARGET_AIX_VERSION
+		      /* Add AIX shared library initalisers/finalisers
+			 to the constructors/destructors list of the
+			 current module.  */
+			case SYM_AIXI:
+			  if (! (filter & SCAN_CTOR))
+			    break;
+			  if (is_shared && !aixlazy_flag)
+			    add_to_list (&constructors, name);
+			  break;
+
+			case SYM_AIXD:
+			  if (! (filter & SCAN_DTOR))
+			    break;
+			  if (is_shared && !aixlazy_flag)
+			    add_to_list (&destructors, name);
+			  break;
+#endif
+
 			case SYM_CTOR:
 			  if (! (filter & SCAN_CTOR))
 			    break;
@@ -3041,7 +3113,7 @@ scan_prog_file (const char *prog_name, scanpass which_pass,
   while (ldclose (ldptr) == FAILURE);
 #else
   /* Otherwise we simply close ldptr.  */
-  (void) ldclose(ldptr);
+  (void) ldclose (ldptr);
 #endif
 }
 #endif /* OBJECT_FORMAT_COFF */
@@ -3061,7 +3133,7 @@ resolve_lib_name (const char *name)
     if (libpaths[i]->max_len > l)
       l = libpaths[i]->max_len;
 
-  lib_buf = XNEWVEC (char, l + strlen(name) + 10);
+  lib_buf = XNEWVEC (char, l + strlen (name) + 10);
 
   for (i = 0; libpaths[i]; i++)
     {
@@ -3072,7 +3144,7 @@ resolve_lib_name (const char *name)
 	     may contain directories both with trailing DIR_SEPARATOR and
 	     without it.  */
 	  const char *p = "";
-	  if (!IS_DIR_SEPARATOR (list->prefix[strlen(list->prefix)-1]))
+	  if (!IS_DIR_SEPARATOR (list->prefix[strlen (list->prefix)-1]))
 	    p = "/";
 	  for (j = 0; j < 2; j++)
 	    {

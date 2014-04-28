@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- Copyright (C) 1988-2013 Free Software Foundation, Inc.
+<!-- Copyright (C) 1988-2014 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -104,6 +104,23 @@ frontends other than C might use GCC extensions.
 may need to use <samp>--disable-stage1-checking</samp>, though
 bootstrapping the compiler with such earlier compilers is strongly
 discouraged.
+</p>
+</dd>
+<dt>C standard library and headers</dt>
+<dd>
+<p>In order to build GCC, the C standard library and headers must be present
+for all target variants for which target libraries will be built (and not
+only the variant of the host C++ compiler).
+</p>
+<p>This affects the popular &lsquo;<samp>x86_64-unknown-linux-gnu</samp>&rsquo; platform (among
+other multilib targets), for which 64-bit (&lsquo;<samp>x86_64</samp>&rsquo;) and 32-bit
+(&lsquo;<samp>i386</samp>&rsquo;) libc headers are usually packaged separately. If you do a
+build of a native compiler on &lsquo;<samp>x86_64-unknown-linux-gnu</samp>&rsquo;, make sure you
+either have the 32-bit libc developer package properly installed (the exact
+name of the package depends on your distro) or you must build GCC as a
+64-bit only compiler by configuring with the option
+<samp>--disable-multilib</samp>.  Otherwise, you may encounter an error such as
+&lsquo;<samp>fatal error: gnu/stubs-32.h: No such file</samp>&rsquo;
 </p>
 </dd>
 <dt>GNAT</dt>
@@ -230,26 +247,31 @@ installed but it is not in your default library search path, the
 <samp>--with-mpc-lib</samp> and <samp>--with-mpc-include</samp>.
 </p>
 </dd>
-<dt>ISL Library version 0.11.1</dt>
+<dt>ISL Library version 0.12.2</dt>
 <dd>
 <p>Necessary to build GCC with the Graphite loop optimizations.
 It can be downloaded from <a href="ftp://gcc.gnu.org/pub/gcc/infrastructure/">ftp://gcc.gnu.org/pub/gcc/infrastructure/</a>
-as <samp>isl-0.11.1.tar.bz2</samp>.
-</p>
-<p>The <samp>--with-isl</samp> configure option should be used if ISL is not
-installed in your default library search path.
+as <samp>isl-0.12.2.tar.bz2</samp>.  If an ISL source distribution is found
+in a subdirectory of your GCC sources named <samp>isl</samp>, it will be
+built together with GCC.  Alternatively, the <samp>--with-isl</samp> configure
+option should be used if ISL is not installed in your default library
+search path.
 </p>
 </dd>
-<dt>CLooG 0.18.0</dt>
+<dt>CLooG 0.18.1</dt>
 <dd>
 <p>Necessary to build GCC with the Graphite loop optimizations.  It can be
 downloaded from <a href="ftp://gcc.gnu.org/pub/gcc/infrastructure/">ftp://gcc.gnu.org/pub/gcc/infrastructure/</a> as
-<samp>cloog-0.18.0.tar.gz</samp>.  The <samp>--with-cloog</samp> configure option should
-be used if CLooG is not installed in your default library search path.
-CLooG needs to be built against ISL 0.11.1.  Use <samp>--with-isl=system</samp>
-to direct CLooG to pick up an already installed ISL, otherwise it will use
-ISL 0.11.1 as bundled with CLooG.  CLooG needs to be configured to use GMP
-internally, use <samp>--with-bits=gmp</samp> to direct it to do that.
+<samp>cloog-0.18.1.tar.gz</samp>.  If a CLooG source distribution is found
+in a subdirectory of your GCC sources named <samp>cloog</samp>, it will be
+built together with GCC.  Alternatively, the <samp>--with-cloog</samp> configure
+option should be used if CLooG is not installed in your default library search
+path.
+</p>
+<p>If you want to install CLooG separately it needs to be built against
+ISL 0.12.2 by using the <samp>--with-isl=system</samp> to direct CLooG to pick
+up an already installed ISL.  Using the ISL library as bundled with CLooG
+is not supported.
 </p>
 </dd>
 </dl>
@@ -296,7 +318,11 @@ to the latest released version.
 <dt>Expect</dt>
 <dt>Tcl</dt>
 <dd>
-<p>Necessary to run the GCC testsuite; see the section on testing for details.
+<p>Necessary to run the GCC testsuite; see the section on testing for
+details.  Tcl 8.6 has a known regression in RE pattern handling that
+make parts of the testsuite fail.  See
+<a href="http://core.tcl.tk/tcl/tktview/267b7e2334ee2e9de34c4b00d6e72e2f1997085f">http://core.tcl.tk/tcl/tktview/267b7e2334ee2e9de34c4b00d6e72e2f1997085f</a>
+for more information.
 </p>
 </dd>
 <dt>autogen version 5.5.4 (or later) and</dt>

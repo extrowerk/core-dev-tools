@@ -46,13 +46,13 @@ File: libffi.info,  Node: Introduction,  Next: Using libffi,  Prev: Top,  Up: To
 1 What is libffi?
 *****************
 
-Compilers for high level languages generate code that follow certain
+Compilers for high-level languages generate code that follow certain
 conventions.  These conventions are necessary, in part, for separate
 compilation to work.  One such convention is the "calling convention".
 The calling convention is a set of assumptions made by the compiler
 about where function arguments will be found on entry to a function.  A
 calling convention also specifies where the return value for a function
-is found.  The calling convention is also sometimes called the "ABI" or
+is found.  The calling convention is part of what is called the "ABI" or
 "Application Binary Interface".
 
    Some programs may not know at the time of compilation what arguments
@@ -156,11 +156,11 @@ function:
      CIF.  CIF must have already been prepared using 'ffi_prep_cif'.
 
      RVALUE is a pointer to a chunk of memory that will hold the result
-     of the function call.  This must be large enough to hold the result
-     and must be suitably aligned; it is the caller's responsibility to
-     ensure this.  If CIF declares that the function returns 'void'
-     (using 'ffi_type_void'), then RVALUE is ignored.  If RVALUE is
-     'NULL', then the return value is discarded.
+     of the function call.  This must be large enough to hold the
+     result, no smaller than the system register size (generally 32 or
+     64 bits), and must be suitably aligned; it is the caller's
+     responsibility to ensure this.  If CIF declares that the function
+     returns 'void' (using 'ffi_type_void'), then RVALUE is ignored.
 
      AVALUES is a vector of 'void *' pointers that point to the memory
      locations holding the argument values for a call.  If CIF declares
@@ -186,7 +186,7 @@ Here is a trivial example that calls 'puts' a few times.
        ffi_type *args[1];
        void *values[1];
        char *s;
-       int rc;
+       ffi_arg rc;
 
        /* Initialize the argument info vectors */
        args[0] = &ffi_type_pointer;
@@ -194,7 +194,7 @@ Here is a trivial example that calls 'puts' a few times.
 
        /* Initialize the cif */
        if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
-     		       &ffi_type_uint, args) == FFI_OK)
+     		       &ffi_type_sint, args) == FFI_OK)
          {
            s = "Hello World!";
            ffi_call(&cif, puts, &rc, values);
@@ -314,7 +314,7 @@ perfectly happy passing structures back and forth.  You must first
 describe the structure to 'libffi' by creating a new 'ffi_type' object
 for it.
 
- -- ffi_type:
+ -- Data type: ffi_type
      The 'ffi_type' has the following members:
      'size_t size'
           This is set by 'libffi'; you should initialize it to zero.
@@ -363,6 +363,7 @@ The following example initializes a 'ffi_type' object representing the
            int i;
 
            tm_type.size = tm_type.alignment = 0;
+           tm_type.type = FFI_TYPE_STRUCT;
            tm_type.elements = &tm_type_elements;
 
            for (i = 0; i < 9; i++)
@@ -477,11 +478,13 @@ A trivial example that creates a new 'puts' by binding 'fputs' with
      #include <ffi.h>
 
      /* Acts like puts with the file given at time of enclosure. */
-     void puts_binding(ffi_cif *cif, unsigned int *ret, void* args[],
-                       FILE *stream)
+     void puts_binding(ffi_cif *cif, void *ret, void* args[],
+                       void *stream)
      {
-       *ret = fputs(*(char **)args[0], stream);
+       *(ffi_arg *)ret = fputs(*(char **)args[0], (FILE *)stream);
      }
+
+     typedef int (*puts_t)(char *);
 
      int main()
      {
@@ -489,7 +492,7 @@ A trivial example that creates a new 'puts' by binding 'fputs' with
        ffi_type *args[1];
        ffi_closure *closure;
 
-       int (*bound_puts)(char *);
+       void *bound_puts;
        int rc;
 
        /* Allocate closure and bound_puts */
@@ -502,13 +505,13 @@ A trivial example that creates a new 'puts' by binding 'fputs' with
 
            /* Initialize the cif */
            if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,
-                            &ffi_type_uint, args) == FFI_OK)
+                            &ffi_type_sint, args) == FFI_OK)
              {
                /* Initialize the closure, setting stream to stdout */
                if (ffi_prep_closure_loc(closure, &cif, puts_binding,
                                         stdout, bound_puts) == FFI_OK)
                  {
-                   rc = bound_puts("Hello World!");
+                   rc = ((puts_t)bound_puts)("Hello World!");
                    /* rc now holds the result of the call to fputs */
                  }
              }
@@ -567,6 +570,7 @@ Index
 * ffi_status <1>:                        The Basics.           (line 39)
 * ffi_status <2>:                        The Closure API.      (line 34)
 * ffi_type:                              Structures.           (line 11)
+* ffi_type <1>:                          Structures.           (line 11)
 * ffi_type_double:                       Primitive Types.      (line 41)
 * ffi_type_float:                        Primitive Types.      (line 38)
 * ffi_type_longdouble:                   Primitive Types.      (line 71)
@@ -598,17 +602,17 @@ Index
 Tag Table:
 Node: Top682
 Node: Introduction1429
-Node: Using libffi3061
-Node: The Basics3547
-Node: Simple Example7187
-Node: Types8214
-Node: Primitive Types8497
-Node: Structures10318
-Node: Type Example11182
-Node: Multiple ABIs12405
-Node: The Closure API12776
-Node: Closure Example15720
-Node: Missing Features17279
-Node: Index17732
+Node: Using libffi3062
+Node: The Basics3548
+Node: Simple Example7199
+Node: Types8230
+Node: Primitive Types8513
+Node: Structures10334
+Node: Type Example11208
+Node: Multiple ABIs12474
+Node: The Closure API12845
+Node: Closure Example15789
+Node: Missing Features17397
+Node: Index17850
 
 End Tag Table

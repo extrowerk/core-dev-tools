@@ -1,5 +1,5 @@
 /* OpenMP directive translation -- generate GCC trees from gfc_code.
-   Copyright (C) 2005-2013 Free Software Foundation, Inc.
+   Copyright (C) 2005-2014 Free Software Foundation, Inc.
    Contributed by Jakub Jelinek <jakub@redhat.com>
 
 This file is part of GCC.
@@ -23,7 +23,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tree.h"
-#include "gimple.h"	/* For create_tmp_var_raw.  */
+#include "gimple-expr.h"
+#include "gimplify.h"	/* For create_tmp_var_raw.  */
+#include "stringpool.h"
 #include "diagnostic-core.h"	/* For internal_error.  */
 #include "gfortran.h"
 #include "trans.h"
@@ -32,6 +34,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "trans-array.h"
 #include "trans-const.h"
 #include "arith.h"
+#include "omp-low.h"
 
 int ompws_flags;
 
@@ -157,6 +160,9 @@ gfc_omp_clause_default_ctor (tree clause, tree decl, tree outer)
 
   if (! GFC_DESCRIPTOR_TYPE_P (type)
       || GFC_TYPE_ARRAY_AKIND (type) != GFC_ARRAY_ALLOCATABLE)
+    return NULL;
+
+  if (OMP_CLAUSE_CODE (clause) == OMP_CLAUSE_REDUCTION)
     return NULL;
 
   gcc_assert (outer != NULL);
@@ -323,9 +329,12 @@ gfc_omp_clause_dtor (tree clause ATTRIBUTE_UNUSED, tree decl)
       || GFC_TYPE_ARRAY_AKIND (type) != GFC_ARRAY_ALLOCATABLE)
     return NULL;
 
+  if (OMP_CLAUSE_CODE (clause) == OMP_CLAUSE_REDUCTION)
+    return NULL;
+
   /* Allocatable arrays in FIRSTPRIVATE/LASTPRIVATE etc. clauses need
      to be deallocated if they were allocated.  */
-  return gfc_trans_dealloc_allocated (decl, false);
+  return gfc_trans_dealloc_allocated (decl, false, NULL);
 }
 
 
@@ -500,7 +509,7 @@ gfc_trans_omp_array_reduction (tree c, gfc_symbol *sym, locus where)
   tree decl, backend_decl, stmt, type, outer_decl;
   locus old_loc = gfc_current_locus;
   const char *iname;
-  gfc_try t;
+  bool t;
 
   decl = OMP_CLAUSE_DECL (c);
   gfc_current_locus = where;
@@ -562,7 +571,7 @@ gfc_trans_omp_array_reduction (tree c, gfc_symbol *sym, locus where)
   ref->u.ar.type = AR_FULL;
   ref->u.ar.dimen = 0;
   t = gfc_resolve_expr (e1);
-  gcc_assert (t == SUCCESS);
+  gcc_assert (t);
 
   e2 = gfc_get_expr ();
   e2->expr_type = EXPR_VARIABLE;
@@ -570,12 +579,12 @@ gfc_trans_omp_array_reduction (tree c, gfc_symbol *sym, locus where)
   e2->symtree = symtree2;
   e2->ts = sym->ts;
   t = gfc_resolve_expr (e2);
-  gcc_assert (t == SUCCESS);
+  gcc_assert (t);
 
   e3 = gfc_copy_expr (e1);
   e3->symtree = symtree3;
   t = gfc_resolve_expr (e3);
-  gcc_assert (t == SUCCESS);
+  gcc_assert (t);
 
   iname = NULL;
   switch (OMP_CLAUSE_REDUCTION_CODE (c))
@@ -647,7 +656,7 @@ gfc_trans_omp_array_reduction (tree c, gfc_symbol *sym, locus where)
   e1 = gfc_copy_expr (e1);
   e3 = gfc_copy_expr (e3);
   t = gfc_resolve_expr (e4);
-  gcc_assert (t == SUCCESS);
+  gcc_assert (t);
 
   /* Create the init statement list.  */
   pushlevel ();
@@ -707,7 +716,8 @@ gfc_trans_omp_array_reduction (tree c, gfc_symbol *sym, locus where)
       gfc_start_block (&block);
       gfc_add_expr_to_block (&block, gfc_trans_assignment (e3, e4, false,
 			     true));
-      gfc_add_expr_to_block (&block, gfc_trans_dealloc_allocated (decl, false));
+      gfc_add_expr_to_block (&block, gfc_trans_dealloc_allocated (decl, false,
+								  NULL));
       stmt = gfc_finish_block (&block);
     }
   else

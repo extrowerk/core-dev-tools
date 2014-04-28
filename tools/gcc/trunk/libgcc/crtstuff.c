@@ -1,6 +1,6 @@
 /* Specialized bits of code needed to support construction and
    destruction of file-scope objects in C++ code.
-   Copyright (C) 1991-2013 Free Software Foundation, Inc.
+   Copyright (C) 1991-2014 Free Software Foundation, Inc.
    Contributed by Ron Guilmette (rfg@monkeys.com).
 
 This file is part of GCC.
@@ -406,7 +406,6 @@ __do_global_dtors_aux (void)
 
 #ifdef USE_EH_FRAME_REGISTRY
 #ifdef CRT_GET_RFIB_DATA
-#error here
   /* If we used the new __register_frame_info_bases interface,
      make sure that we deregister from the same place.  */
   if (__deregister_frame_info_bases)
@@ -461,12 +460,14 @@ frame_dummy (void)
 #endif /* USE_EH_FRAME_REGISTRY */
 
 #ifdef JCR_SECTION_NAME
-  if (__JCR_LIST__[0])
+  void **jcr_list;
+  __asm ("" : "=g" (jcr_list) : "0" (__JCR_LIST__));
+  if (__builtin_expect (*jcr_list != NULL, 0))
     {
       void (*register_classes) (void *) = _Jv_RegisterClasses;
       __asm ("" : "+r" (register_classes));
       if (register_classes)
-	register_classes (__JCR_LIST__);
+	register_classes (jcr_list);
     }
 #endif /* JCR_SECTION_NAME */
 
@@ -566,12 +567,14 @@ __do_global_ctors_1(void)
 #endif
 
 #ifdef JCR_SECTION_NAME
-  if (__JCR_LIST__[0])
+  void **jcr_list
+  __asm ("" : "=g" (jcr_list) : "0" (__JCR_LIST__));
+  if (__builtin_expect (*jcr_list != NULL, 0))
     {
       void (*register_classes) (void *) = _Jv_RegisterClasses;
       __asm ("" : "+r" (register_classes));
       if (register_classes)
-	register_classes (__JCR_LIST__);
+	register_classes (jcr_list);
     }
 #endif
 
