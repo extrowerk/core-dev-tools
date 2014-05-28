@@ -1,0 +1,93 @@
+#! /bin/sh
+
+# (C) 1998, 2000, 2002, 2003, 2007 Free Software Foundation
+# Originally by Alexandre Oliva <oliva@dcc.unicamp.br>
+
+# The script will interpret arguments until it finds one it does not
+# understand.  The remaining ones will be passed to `runtest'.  A
+# double-dash can be used to explicitly separate the arguments to
+# `test_installed' from the ones to `runtest'.
+
+# This script should be run in an empty directory; it will refuse to
+# run if it finds a file named site.exp in the current directory.
+
+
+if test -f site.exp; then
+    echo site.exp already exists >&2
+    exit 1
+fi
+
+while true; do
+  case "$1" in
+  --with-testsuite=*) testsuite=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --srcdir=*) srcdir=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+
+  --prefix=*) prefix=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-ld=*) LD_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; srcdir_tmp=ld; shift;;
+  --with-gas=*) GAS_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; srcdir_tmp=gas; shift;;
+  --with-binutils=*) BINUTILS_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; srcdir_tmp=binutils; shift;;
+  --without-ld) LD_UNDER_TEST=no; shift;;
+  --without-gas) GAS_UNDER_TEST=no; shift;;
+  --without-binutils) BINUTILS_UNDER_TEST=no; shift;;
+
+  --tmpdir=*) tmpdir=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+
+  --help) cat <<\EOF
+Runs the testsuite for an installed version of gcc/g++/gfortran/objc
+Copyright (C) 1998  Free Software Foundation
+by Alexandre Oliva <oliva@dcc.unicamp.br>
+
+Supported arguments:
+
+--help                        prints this page
+
+--with-testsuite=/some/dir/gcc/testsuite   specify the testsuite directory
+--srcdir=/some/dir            same as --with-testsuite=/some/dir/gcc/testsuite
+                              [deduced from shell-script pathname]
+
+--prefix=/some/dir            use gcc, g++ and gfortran from /some/dir/bin [PATH]
+--with-ld=/some/dir/bin/ld    use specified ld program [ld]
+--with-gas=/some/dir/bin/gas  use specified gas program [gas]
+--with-binutils=/some/dir/bin/binutils use specified 
+--without-ld                  do not run ld testsuite
+--without-gas                 do not run gas testsuite
+--without-binutils            do not run binutils testsuite
+
+--tmpdir=/some/dir            create temporaries and leave failed programs
+                              at specified directory [.]
+
+--   end of argument list; following arguments are passed to runtest
+EOF
+    exit
+  ;;
+  
+  --) shift; break;;
+  *) break;;
+  esac
+done
+  
+if test x"${testsuite+set}" != x"set" && test x"${srcdir+set}" != x"set"; then
+  file=$0
+  while [ -h $file ]; do
+    file=`ls -l $file | sed s/'.* -> '//`
+  done
+  srcdir=`CDPATH=. && cd \`echo "$file" | sed 's,/*[^/]*$,,;s,^$,.,'\`/.. >/dev/null && ${PWDCMD-pwd}`
+fi
+
+cat >site.exp <<EOF
+set rootme "."
+set qnx_host `echo ${QNX_HOST}`
+set tmpdir "${tmpdir-`${PWDCMD-pwd}`}"
+set srcdir "${testsuite-${srcdir}/trunk/${srcdir_tmp}/testsuite}"
+set CFLAGS ""
+set CXXFLAGS ""
+set LD_UNDER_TEST "${LD_UNDER_TEST-${prefix}${prefix+/bin/}ld}"
+set GAS_UNDER_TEST "${GAS_UNDER_TEST-${prefix}${prefix+/bin/}gas}"
+set BINUTILS_UNDER_TEST "${BINUTILS_UNDER_TEST-${prefix}${prefix+/bin}}"
+EOF
+
+test x"${LD_UNDER_TEST}" = x"no" || runtest --tool ld ${1+"$@"}
+test x"${GAS_UNDER_TEST}" = x"no" || runtest --tool gas ${1+"$@"}
+test x"${BINUTILS_UNDER_TEST}" = x"no" || runtest --tool binutils ${1+"$@"}
+
+exit 0
