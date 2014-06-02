@@ -66,6 +66,11 @@ AsanThread *AsanThreadRegistry::GetMain() {
 }
 
 AsanThread *AsanThreadRegistry::GetCurrent() {
+#if ASAN_NTO
+  if (asan_init_is_running) {
+    return 0;
+  }
+#endif
   AsanThreadSummary *summary = (AsanThreadSummary *)AsanTSDGet();
   if (!summary) {
 #if ASAN_ANDROID

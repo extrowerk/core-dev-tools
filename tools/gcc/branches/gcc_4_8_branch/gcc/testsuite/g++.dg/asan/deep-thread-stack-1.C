@@ -1,5 +1,6 @@
 // { dg-do run { target pthread } }
-// { dg-options "-lasan -lpthread" }
+// { dg-options "-lasan" }
+// { dg-additional-options "-lpthread" { target { ! *-*-nto-qnx* } } }
 // { dg-shouldfail "asan" }
 
 #include <pthread.h>

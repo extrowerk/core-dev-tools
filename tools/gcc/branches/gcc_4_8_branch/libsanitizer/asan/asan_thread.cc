@@ -66,7 +66,11 @@ void AsanThread::Destroy() {
   ClearShadowForThreadStack();
   fake_stack().Cleanup();
   uptr size = RoundUpTo(sizeof(AsanThread), GetPageSizeCached());
-  UnmapOrDie(this, size);
+
+  // We didn't map main thread, and thus cannot delete it..
+  if (this != asanThreadRegistry().GetMain()) {
+    UnmapOrDie(this, size);
+  }
 }
 
 void AsanThread::Init() {
@@ -86,7 +90,9 @@ void AsanThread::Init() {
 
 thread_return_t AsanThread::ThreadStart() {
   Init();
+#if !defined(__QNXNTO__)
   if (flags()->use_sigaltstack) SetAlternateSignalStack();
+#endif
 
   if (!start_routine_) {
     // start_routine_ == 0 if we're on the main thread or on one of the
@@ -98,7 +104,9 @@ thread_return_t AsanThread::ThreadStart() {
 
   thread_return_t res = start_routine_(arg_);
   malloc_storage().CommitBack();
+#if !defined(__QNXNTO__)
   if (flags()->use_sigaltstack) UnsetAlternateSignalStack();
+#endif
 
   this->Destroy();
 
