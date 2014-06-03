@@ -79,6 +79,8 @@ namespace std
 #endif
     }
 
+    ~mutex() { __gthread_mutex_destroy(&_M_mutex); }
+
     mutex(const mutex&) = delete;
     mutex& operator=(const mutex&) = delete;
 

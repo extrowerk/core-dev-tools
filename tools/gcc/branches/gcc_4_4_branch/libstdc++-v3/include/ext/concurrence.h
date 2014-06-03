@@ -169,6 +169,15 @@ _GLIBCXX_BEGIN_NAMESPACE(__gnu_cxx)
 	}
 #endif
     }
+
+#if __GTHREADS
+
+    ~__mutex() 
+    { 
+      if (__gthread_active_p())
+	__gthread_mutex_destroy(&_M_mutex); 
+    }
+#endif 
     
     void unlock()
     {
