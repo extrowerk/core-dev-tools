@@ -35,7 +35,10 @@ case "${target}" in
   x86_64-*-darwin[1]* | i?86-*-darwin[1]*)
 	TSAN_SUPPORTED=no
 	;;
-  *-*-nto-qnx*)
+  arm-*-nto-qnx*eabi)
+	TSAN_SUPPORTED=no
+        ;;
+  i?86-*-nto-qnx*)
 	TSAN_SUPPORTED=no
         ;;
   *)
