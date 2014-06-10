@@ -9,7 +9,7 @@
 // run-time libraries and implements POSIX-specific functions from
 // sanitizer_libc.h.
 //===----------------------------------------------------------------------===//
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__QNXNTO__)
 
 #include "sanitizer_common.h"
 #include "sanitizer_libc.h"
@@ -26,6 +26,12 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#if defined(__QNXNTO__)
+#define MAP_NORESERVE MAP_LAZY
+#define madvise posix_madvise
+#define MADV_DONTNEED POSIX_MADV_DONTNEED
+#endif
 
 namespace __sanitizer {
 

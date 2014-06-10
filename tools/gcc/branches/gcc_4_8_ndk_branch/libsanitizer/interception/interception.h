@@ -13,7 +13,7 @@
 #ifndef INTERCEPTION_H
 #define INTERCEPTION_H
 
-#if !defined(__linux__) && !defined(__APPLE__) && !defined(_WIN32)
+#if !defined(__linux__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__)
 # error "Interception doesn't work on this operating system."
 #endif
 
@@ -98,6 +98,11 @@ typedef __sanitizer::u64  OFF64_T;
 #  define WRAPPER_NAME(x) "wrap_"#x
 #  define INTERCEPTOR_ATTRIBUTE
 # endif
+# define DECLARE_WRAPPER(ret_type, func, ...)
+#elif defined(__QNXNTO__)
+# define WRAP(x) x
+# define WRAPPER_NAME(x) #x
+# define INTERCEPTOR_ATTRIBUTE
 # define DECLARE_WRAPPER(ret_type, func, ...)
 #else
 # define WRAP(x) __interceptor_ ## x
@@ -184,6 +189,9 @@ typedef unsigned long uptr;  // NOLINT
 # define OVERRIDE_FUNCTION(old_func, new_func) \
     OVERRIDE_FUNCTION_MAC(old_func, new_func)
 # define INTERCEPT_FUNCTION(func) INTERCEPT_FUNCTION_MAC(func)
+#elif defined(__QNXNTO__)
+# include "interception_nto.h"
+# define INTERCEPT_FUNCTION(func) INTERCEPT_FUNCTION_NTO(func)
 #else  // defined(_WIN32)
 # include "interception_win.h"
 # define INTERCEPT_FUNCTION(func) INTERCEPT_FUNCTION_WIN(func)

@@ -85,18 +85,47 @@ am__DEPENDENCIES_1 =
 @USING_MAC_INTERPOSE_FALSE@	$(am__DEPENDENCIES_1)
 @USING_MAC_INTERPOSE_TRUE@libasan_la_DEPENDENCIES = $(top_builddir)/sanitizer_common/libsanitizer_common.la \
 @USING_MAC_INTERPOSE_TRUE@	$(am__DEPENDENCIES_1)
-am__objects_1 = asan_allocator.lo asan_allocator2.lo \
-	asan_interceptors.lo asan_mac.lo asan_malloc_mac.lo \
-	asan_new_delete.lo asan_posix.lo asan_rtl.lo asan_stats.lo \
-	asan_thread_registry.lo asan_fake_stack.lo asan_globals.lo \
-	asan_linux.lo asan_malloc_linux.lo asan_malloc_win.lo \
-	asan_poisoning.lo asan_report.lo asan_stack.lo asan_thread.lo \
-	asan_win.lo
+am__objects_1 = libasan_la-asan_allocator.lo \
+	libasan_la-asan_allocator2.lo libasan_la-asan_interceptors.lo \
+	libasan_la-asan_mac.lo libasan_la-asan_malloc_mac.lo \
+	libasan_la-asan_new_delete.lo libasan_la-asan_posix.lo \
+	libasan_la-asan_rtl.lo libasan_la-asan_stats.lo \
+	libasan_la-asan_thread_registry.lo \
+	libasan_la-asan_fake_stack.lo libasan_la-asan_globals.lo \
+	libasan_la-asan_linux.lo libasan_la-asan_malloc_linux.lo \
+	libasan_la-asan_malloc_win.lo libasan_la-asan_malloc_nto.lo \
+	libasan_la-asan_poisoning.lo libasan_la-asan_report.lo \
+	libasan_la-asan_stack.lo libasan_la-asan_thread.lo \
+	libasan_la-asan_nto.lo libasan_la-asan_win.lo
 am_libasan_la_OBJECTS = $(am__objects_1)
 libasan_la_OBJECTS = $(am_libasan_la_OBJECTS)
 libasan_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(libasan_la_CXXFLAGS) \
 	$(CXXFLAGS) $(libasan_la_LDFLAGS) $(LDFLAGS) -o $@
+libasan_cpp_la_DEPENDENCIES =  \
+	$(top_builddir)/sanitizer_common/libsanitizer_common_cpp.la \
+	$(top_builddir)/interception/libinterception_cpp.la
+am__objects_2 = libasan_cpp_la-asan_allocator.lo \
+	libasan_cpp_la-asan_allocator2.lo \
+	libasan_cpp_la-asan_interceptors.lo libasan_cpp_la-asan_mac.lo \
+	libasan_cpp_la-asan_malloc_mac.lo \
+	libasan_cpp_la-asan_new_delete.lo libasan_cpp_la-asan_posix.lo \
+	libasan_cpp_la-asan_rtl.lo libasan_cpp_la-asan_stats.lo \
+	libasan_cpp_la-asan_thread_registry.lo \
+	libasan_cpp_la-asan_fake_stack.lo \
+	libasan_cpp_la-asan_globals.lo libasan_cpp_la-asan_linux.lo \
+	libasan_cpp_la-asan_malloc_linux.lo \
+	libasan_cpp_la-asan_malloc_win.lo \
+	libasan_cpp_la-asan_malloc_nto.lo \
+	libasan_cpp_la-asan_poisoning.lo libasan_cpp_la-asan_report.lo \
+	libasan_cpp_la-asan_stack.lo libasan_cpp_la-asan_thread.lo \
+	libasan_cpp_la-asan_nto.lo libasan_cpp_la-asan_win.lo
+am_libasan_cpp_la_OBJECTS = $(am__objects_2)
+libasan_cpp_la_OBJECTS = $(am_libasan_cpp_la_OBJECTS)
+libasan_cpp_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) \
+	$(libasan_cpp_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
 am__depfiles_maybe = depfiles
@@ -110,7 +139,7 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libasan_la_SOURCES)
+SOURCES = $(libasan_la_SOURCES) $(libasan_cpp_la_SOURCES)
 HEADERS = $(nodist_toolexeclib_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -252,13 +281,10 @@ AM_CPPFLAGS = -I $(top_srcdir)/include -I $(top_srcdir)
 
 # May be used by toolexeclibdir.
 gcc_version := $(shell cat $(top_srcdir)/../gcc/BASE-VER)
-AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic \
-	-Wno-long-long -fPIC -fno-builtin -fno-exceptions \
-	-fomit-frame-pointer -funwind-tables -fvisibility=hidden \
-	-Wno-variadic-macros $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
+AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros
 ACLOCAL_AMFLAGS = -I $(top_srcdir) -I $(top_srcdir)/config
-toolexeclib_LTLIBRARIES = libasan.la
-nodist_toolexeclib_HEADERS = libasan_preinit.o
+toolexeclib_LTLIBRARIES = libasan.la libasan_cpp.la
+nodist_toolexeclib_HEADERS = libasan_preinit.o libasan_preinit_cpp.o
 asan_files = \
 	asan_allocator.cc \
 	asan_allocator2.cc \
@@ -275,19 +301,28 @@ asan_files = \
 	asan_linux.cc \
 	asan_malloc_linux.cc \
 	asan_malloc_win.cc \
+	asan_malloc_nto.cc \
 	asan_poisoning.cc \
 	asan_report.cc \
 	asan_stack.cc \
 	asan_thread.cc \
+	asan_nto.cc \
 	asan_win.cc
 
 libasan_la_SOURCES = $(asan_files)
+libasan_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
 @USING_MAC_INTERPOSE_FALSE@libasan_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common.la \
 @USING_MAC_INTERPOSE_FALSE@	$(top_builddir)/interception/libinterception.la \
 @USING_MAC_INTERPOSE_FALSE@	$(LIBSTDCXX_RAW_CXX_LDFLAGS)
 @USING_MAC_INTERPOSE_TRUE@libasan_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common.la \
 @USING_MAC_INTERPOSE_TRUE@	$(LIBSTDCXX_RAW_CXX_LDFLAGS)
-libasan_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version` -lpthread -ldl
+libasan_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
+libasan_cpp_la_SOURCES = $(asan_files)
+libasan_cpp_la_CXXFLAGS = -I$(QNX_TARGET)/usr/include/cpp -I$(QNX_TARGET)/usr/include/cpp/c
+libasan_cpp_la_LIBADD =  \
+	$(top_builddir)/sanitizer_common/libsanitizer_common_cpp.la \
+	$(top_builddir)/interception/libinterception_cpp.la -lcpp
+libasan_cpp_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS
 # values defined in terms of make variables, as is the case for CC and
@@ -395,6 +430,8 @@ clean-toolexeclibLTLIBRARIES:
 	done
 libasan.la: $(libasan_la_OBJECTS) $(libasan_la_DEPENDENCIES) 
 	$(libasan_la_LINK) -rpath $(toolexeclibdir) $(libasan_la_OBJECTS) $(libasan_la_LIBADD) $(LIBS)
+libasan_cpp.la: $(libasan_cpp_la_OBJECTS) $(libasan_cpp_la_DEPENDENCIES) 
+	$(libasan_cpp_la_LINK) -rpath $(toolexeclibdir) $(libasan_cpp_la_OBJECTS) $(libasan_cpp_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -402,26 +439,50 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_allocator.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_allocator2.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_fake_stack.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_globals.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_interceptors.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_malloc_linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_malloc_mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_malloc_win.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_new_delete.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_poisoning.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_posix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_report.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_rtl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_stack.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_stats.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_thread.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_thread_registry.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asan_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_allocator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_allocator2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_fake_stack.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_globals.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_interceptors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_linux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_mac.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_malloc_linux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_malloc_mac.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_malloc_nto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_malloc_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_new_delete.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_nto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_poisoning.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_posix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_report.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_rtl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_stack.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_stats.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_thread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_thread_registry.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_cpp_la-asan_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_allocator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_allocator2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_fake_stack.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_globals.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_interceptors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_linux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_mac.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_malloc_linux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_malloc_mac.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_malloc_nto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_malloc_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_new_delete.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_nto.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_poisoning.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_posix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_report.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_rtl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_stack.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_stats.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_thread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_thread_registry.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libasan_la-asan_win.Plo@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -443,6 +504,314 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+libasan_la-asan_allocator.lo: asan_allocator.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_allocator.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_allocator.Tpo -c -o libasan_la-asan_allocator.lo `test -f 'asan_allocator.cc' || echo '$(srcdir)/'`asan_allocator.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_allocator.Tpo $(DEPDIR)/libasan_la-asan_allocator.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_allocator.cc' object='libasan_la-asan_allocator.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_allocator.lo `test -f 'asan_allocator.cc' || echo '$(srcdir)/'`asan_allocator.cc
+
+libasan_la-asan_allocator2.lo: asan_allocator2.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_allocator2.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_allocator2.Tpo -c -o libasan_la-asan_allocator2.lo `test -f 'asan_allocator2.cc' || echo '$(srcdir)/'`asan_allocator2.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_allocator2.Tpo $(DEPDIR)/libasan_la-asan_allocator2.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_allocator2.cc' object='libasan_la-asan_allocator2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_allocator2.lo `test -f 'asan_allocator2.cc' || echo '$(srcdir)/'`asan_allocator2.cc
+
+libasan_la-asan_interceptors.lo: asan_interceptors.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_interceptors.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_interceptors.Tpo -c -o libasan_la-asan_interceptors.lo `test -f 'asan_interceptors.cc' || echo '$(srcdir)/'`asan_interceptors.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_interceptors.Tpo $(DEPDIR)/libasan_la-asan_interceptors.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_interceptors.cc' object='libasan_la-asan_interceptors.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_interceptors.lo `test -f 'asan_interceptors.cc' || echo '$(srcdir)/'`asan_interceptors.cc
+
+libasan_la-asan_mac.lo: asan_mac.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_mac.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_mac.Tpo -c -o libasan_la-asan_mac.lo `test -f 'asan_mac.cc' || echo '$(srcdir)/'`asan_mac.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_mac.Tpo $(DEPDIR)/libasan_la-asan_mac.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_mac.cc' object='libasan_la-asan_mac.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_mac.lo `test -f 'asan_mac.cc' || echo '$(srcdir)/'`asan_mac.cc
+
+libasan_la-asan_malloc_mac.lo: asan_malloc_mac.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_malloc_mac.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_malloc_mac.Tpo -c -o libasan_la-asan_malloc_mac.lo `test -f 'asan_malloc_mac.cc' || echo '$(srcdir)/'`asan_malloc_mac.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_malloc_mac.Tpo $(DEPDIR)/libasan_la-asan_malloc_mac.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_mac.cc' object='libasan_la-asan_malloc_mac.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_malloc_mac.lo `test -f 'asan_malloc_mac.cc' || echo '$(srcdir)/'`asan_malloc_mac.cc
+
+libasan_la-asan_new_delete.lo: asan_new_delete.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_new_delete.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_new_delete.Tpo -c -o libasan_la-asan_new_delete.lo `test -f 'asan_new_delete.cc' || echo '$(srcdir)/'`asan_new_delete.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_new_delete.Tpo $(DEPDIR)/libasan_la-asan_new_delete.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_new_delete.cc' object='libasan_la-asan_new_delete.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_new_delete.lo `test -f 'asan_new_delete.cc' || echo '$(srcdir)/'`asan_new_delete.cc
+
+libasan_la-asan_posix.lo: asan_posix.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_posix.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_posix.Tpo -c -o libasan_la-asan_posix.lo `test -f 'asan_posix.cc' || echo '$(srcdir)/'`asan_posix.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_posix.Tpo $(DEPDIR)/libasan_la-asan_posix.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_posix.cc' object='libasan_la-asan_posix.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_posix.lo `test -f 'asan_posix.cc' || echo '$(srcdir)/'`asan_posix.cc
+
+libasan_la-asan_rtl.lo: asan_rtl.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_rtl.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_rtl.Tpo -c -o libasan_la-asan_rtl.lo `test -f 'asan_rtl.cc' || echo '$(srcdir)/'`asan_rtl.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_rtl.Tpo $(DEPDIR)/libasan_la-asan_rtl.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_rtl.cc' object='libasan_la-asan_rtl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_rtl.lo `test -f 'asan_rtl.cc' || echo '$(srcdir)/'`asan_rtl.cc
+
+libasan_la-asan_stats.lo: asan_stats.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_stats.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_stats.Tpo -c -o libasan_la-asan_stats.lo `test -f 'asan_stats.cc' || echo '$(srcdir)/'`asan_stats.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_stats.Tpo $(DEPDIR)/libasan_la-asan_stats.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_stats.cc' object='libasan_la-asan_stats.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_stats.lo `test -f 'asan_stats.cc' || echo '$(srcdir)/'`asan_stats.cc
+
+libasan_la-asan_thread_registry.lo: asan_thread_registry.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_thread_registry.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_thread_registry.Tpo -c -o libasan_la-asan_thread_registry.lo `test -f 'asan_thread_registry.cc' || echo '$(srcdir)/'`asan_thread_registry.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_thread_registry.Tpo $(DEPDIR)/libasan_la-asan_thread_registry.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_thread_registry.cc' object='libasan_la-asan_thread_registry.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_thread_registry.lo `test -f 'asan_thread_registry.cc' || echo '$(srcdir)/'`asan_thread_registry.cc
+
+libasan_la-asan_fake_stack.lo: asan_fake_stack.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_fake_stack.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_fake_stack.Tpo -c -o libasan_la-asan_fake_stack.lo `test -f 'asan_fake_stack.cc' || echo '$(srcdir)/'`asan_fake_stack.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_fake_stack.Tpo $(DEPDIR)/libasan_la-asan_fake_stack.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_fake_stack.cc' object='libasan_la-asan_fake_stack.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_fake_stack.lo `test -f 'asan_fake_stack.cc' || echo '$(srcdir)/'`asan_fake_stack.cc
+
+libasan_la-asan_globals.lo: asan_globals.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_globals.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_globals.Tpo -c -o libasan_la-asan_globals.lo `test -f 'asan_globals.cc' || echo '$(srcdir)/'`asan_globals.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_globals.Tpo $(DEPDIR)/libasan_la-asan_globals.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_globals.cc' object='libasan_la-asan_globals.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_globals.lo `test -f 'asan_globals.cc' || echo '$(srcdir)/'`asan_globals.cc
+
+libasan_la-asan_linux.lo: asan_linux.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_linux.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_linux.Tpo -c -o libasan_la-asan_linux.lo `test -f 'asan_linux.cc' || echo '$(srcdir)/'`asan_linux.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_linux.Tpo $(DEPDIR)/libasan_la-asan_linux.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_linux.cc' object='libasan_la-asan_linux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_linux.lo `test -f 'asan_linux.cc' || echo '$(srcdir)/'`asan_linux.cc
+
+libasan_la-asan_malloc_linux.lo: asan_malloc_linux.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_malloc_linux.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_malloc_linux.Tpo -c -o libasan_la-asan_malloc_linux.lo `test -f 'asan_malloc_linux.cc' || echo '$(srcdir)/'`asan_malloc_linux.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_malloc_linux.Tpo $(DEPDIR)/libasan_la-asan_malloc_linux.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_linux.cc' object='libasan_la-asan_malloc_linux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_malloc_linux.lo `test -f 'asan_malloc_linux.cc' || echo '$(srcdir)/'`asan_malloc_linux.cc
+
+libasan_la-asan_malloc_win.lo: asan_malloc_win.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_malloc_win.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_malloc_win.Tpo -c -o libasan_la-asan_malloc_win.lo `test -f 'asan_malloc_win.cc' || echo '$(srcdir)/'`asan_malloc_win.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_malloc_win.Tpo $(DEPDIR)/libasan_la-asan_malloc_win.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_win.cc' object='libasan_la-asan_malloc_win.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_malloc_win.lo `test -f 'asan_malloc_win.cc' || echo '$(srcdir)/'`asan_malloc_win.cc
+
+libasan_la-asan_malloc_nto.lo: asan_malloc_nto.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_malloc_nto.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_malloc_nto.Tpo -c -o libasan_la-asan_malloc_nto.lo `test -f 'asan_malloc_nto.cc' || echo '$(srcdir)/'`asan_malloc_nto.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_malloc_nto.Tpo $(DEPDIR)/libasan_la-asan_malloc_nto.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_nto.cc' object='libasan_la-asan_malloc_nto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_malloc_nto.lo `test -f 'asan_malloc_nto.cc' || echo '$(srcdir)/'`asan_malloc_nto.cc
+
+libasan_la-asan_poisoning.lo: asan_poisoning.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_poisoning.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_poisoning.Tpo -c -o libasan_la-asan_poisoning.lo `test -f 'asan_poisoning.cc' || echo '$(srcdir)/'`asan_poisoning.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_poisoning.Tpo $(DEPDIR)/libasan_la-asan_poisoning.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_poisoning.cc' object='libasan_la-asan_poisoning.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_poisoning.lo `test -f 'asan_poisoning.cc' || echo '$(srcdir)/'`asan_poisoning.cc
+
+libasan_la-asan_report.lo: asan_report.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_report.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_report.Tpo -c -o libasan_la-asan_report.lo `test -f 'asan_report.cc' || echo '$(srcdir)/'`asan_report.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_report.Tpo $(DEPDIR)/libasan_la-asan_report.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_report.cc' object='libasan_la-asan_report.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_report.lo `test -f 'asan_report.cc' || echo '$(srcdir)/'`asan_report.cc
+
+libasan_la-asan_stack.lo: asan_stack.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_stack.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_stack.Tpo -c -o libasan_la-asan_stack.lo `test -f 'asan_stack.cc' || echo '$(srcdir)/'`asan_stack.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_stack.Tpo $(DEPDIR)/libasan_la-asan_stack.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_stack.cc' object='libasan_la-asan_stack.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_stack.lo `test -f 'asan_stack.cc' || echo '$(srcdir)/'`asan_stack.cc
+
+libasan_la-asan_thread.lo: asan_thread.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_thread.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_thread.Tpo -c -o libasan_la-asan_thread.lo `test -f 'asan_thread.cc' || echo '$(srcdir)/'`asan_thread.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_thread.Tpo $(DEPDIR)/libasan_la-asan_thread.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_thread.cc' object='libasan_la-asan_thread.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_thread.lo `test -f 'asan_thread.cc' || echo '$(srcdir)/'`asan_thread.cc
+
+libasan_la-asan_nto.lo: asan_nto.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_nto.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_nto.Tpo -c -o libasan_la-asan_nto.lo `test -f 'asan_nto.cc' || echo '$(srcdir)/'`asan_nto.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_nto.Tpo $(DEPDIR)/libasan_la-asan_nto.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_nto.cc' object='libasan_la-asan_nto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_nto.lo `test -f 'asan_nto.cc' || echo '$(srcdir)/'`asan_nto.cc
+
+libasan_la-asan_win.lo: asan_win.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_la-asan_win.lo -MD -MP -MF $(DEPDIR)/libasan_la-asan_win.Tpo -c -o libasan_la-asan_win.lo `test -f 'asan_win.cc' || echo '$(srcdir)/'`asan_win.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_la-asan_win.Tpo $(DEPDIR)/libasan_la-asan_win.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_win.cc' object='libasan_la-asan_win.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_la-asan_win.lo `test -f 'asan_win.cc' || echo '$(srcdir)/'`asan_win.cc
+
+libasan_cpp_la-asan_allocator.lo: asan_allocator.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_allocator.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_allocator.Tpo -c -o libasan_cpp_la-asan_allocator.lo `test -f 'asan_allocator.cc' || echo '$(srcdir)/'`asan_allocator.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_allocator.Tpo $(DEPDIR)/libasan_cpp_la-asan_allocator.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_allocator.cc' object='libasan_cpp_la-asan_allocator.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_allocator.lo `test -f 'asan_allocator.cc' || echo '$(srcdir)/'`asan_allocator.cc
+
+libasan_cpp_la-asan_allocator2.lo: asan_allocator2.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_allocator2.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_allocator2.Tpo -c -o libasan_cpp_la-asan_allocator2.lo `test -f 'asan_allocator2.cc' || echo '$(srcdir)/'`asan_allocator2.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_allocator2.Tpo $(DEPDIR)/libasan_cpp_la-asan_allocator2.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_allocator2.cc' object='libasan_cpp_la-asan_allocator2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_allocator2.lo `test -f 'asan_allocator2.cc' || echo '$(srcdir)/'`asan_allocator2.cc
+
+libasan_cpp_la-asan_interceptors.lo: asan_interceptors.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_interceptors.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_interceptors.Tpo -c -o libasan_cpp_la-asan_interceptors.lo `test -f 'asan_interceptors.cc' || echo '$(srcdir)/'`asan_interceptors.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_interceptors.Tpo $(DEPDIR)/libasan_cpp_la-asan_interceptors.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_interceptors.cc' object='libasan_cpp_la-asan_interceptors.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_interceptors.lo `test -f 'asan_interceptors.cc' || echo '$(srcdir)/'`asan_interceptors.cc
+
+libasan_cpp_la-asan_mac.lo: asan_mac.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_mac.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_mac.Tpo -c -o libasan_cpp_la-asan_mac.lo `test -f 'asan_mac.cc' || echo '$(srcdir)/'`asan_mac.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_mac.Tpo $(DEPDIR)/libasan_cpp_la-asan_mac.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_mac.cc' object='libasan_cpp_la-asan_mac.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_mac.lo `test -f 'asan_mac.cc' || echo '$(srcdir)/'`asan_mac.cc
+
+libasan_cpp_la-asan_malloc_mac.lo: asan_malloc_mac.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_malloc_mac.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_malloc_mac.Tpo -c -o libasan_cpp_la-asan_malloc_mac.lo `test -f 'asan_malloc_mac.cc' || echo '$(srcdir)/'`asan_malloc_mac.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_malloc_mac.Tpo $(DEPDIR)/libasan_cpp_la-asan_malloc_mac.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_mac.cc' object='libasan_cpp_la-asan_malloc_mac.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_malloc_mac.lo `test -f 'asan_malloc_mac.cc' || echo '$(srcdir)/'`asan_malloc_mac.cc
+
+libasan_cpp_la-asan_new_delete.lo: asan_new_delete.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_new_delete.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_new_delete.Tpo -c -o libasan_cpp_la-asan_new_delete.lo `test -f 'asan_new_delete.cc' || echo '$(srcdir)/'`asan_new_delete.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_new_delete.Tpo $(DEPDIR)/libasan_cpp_la-asan_new_delete.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_new_delete.cc' object='libasan_cpp_la-asan_new_delete.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_new_delete.lo `test -f 'asan_new_delete.cc' || echo '$(srcdir)/'`asan_new_delete.cc
+
+libasan_cpp_la-asan_posix.lo: asan_posix.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_posix.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_posix.Tpo -c -o libasan_cpp_la-asan_posix.lo `test -f 'asan_posix.cc' || echo '$(srcdir)/'`asan_posix.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_posix.Tpo $(DEPDIR)/libasan_cpp_la-asan_posix.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_posix.cc' object='libasan_cpp_la-asan_posix.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_posix.lo `test -f 'asan_posix.cc' || echo '$(srcdir)/'`asan_posix.cc
+
+libasan_cpp_la-asan_rtl.lo: asan_rtl.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_rtl.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_rtl.Tpo -c -o libasan_cpp_la-asan_rtl.lo `test -f 'asan_rtl.cc' || echo '$(srcdir)/'`asan_rtl.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_rtl.Tpo $(DEPDIR)/libasan_cpp_la-asan_rtl.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_rtl.cc' object='libasan_cpp_la-asan_rtl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_rtl.lo `test -f 'asan_rtl.cc' || echo '$(srcdir)/'`asan_rtl.cc
+
+libasan_cpp_la-asan_stats.lo: asan_stats.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_stats.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_stats.Tpo -c -o libasan_cpp_la-asan_stats.lo `test -f 'asan_stats.cc' || echo '$(srcdir)/'`asan_stats.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_stats.Tpo $(DEPDIR)/libasan_cpp_la-asan_stats.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_stats.cc' object='libasan_cpp_la-asan_stats.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_stats.lo `test -f 'asan_stats.cc' || echo '$(srcdir)/'`asan_stats.cc
+
+libasan_cpp_la-asan_thread_registry.lo: asan_thread_registry.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_thread_registry.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_thread_registry.Tpo -c -o libasan_cpp_la-asan_thread_registry.lo `test -f 'asan_thread_registry.cc' || echo '$(srcdir)/'`asan_thread_registry.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_thread_registry.Tpo $(DEPDIR)/libasan_cpp_la-asan_thread_registry.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_thread_registry.cc' object='libasan_cpp_la-asan_thread_registry.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_thread_registry.lo `test -f 'asan_thread_registry.cc' || echo '$(srcdir)/'`asan_thread_registry.cc
+
+libasan_cpp_la-asan_fake_stack.lo: asan_fake_stack.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_fake_stack.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_fake_stack.Tpo -c -o libasan_cpp_la-asan_fake_stack.lo `test -f 'asan_fake_stack.cc' || echo '$(srcdir)/'`asan_fake_stack.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_fake_stack.Tpo $(DEPDIR)/libasan_cpp_la-asan_fake_stack.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_fake_stack.cc' object='libasan_cpp_la-asan_fake_stack.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_fake_stack.lo `test -f 'asan_fake_stack.cc' || echo '$(srcdir)/'`asan_fake_stack.cc
+
+libasan_cpp_la-asan_globals.lo: asan_globals.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_globals.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_globals.Tpo -c -o libasan_cpp_la-asan_globals.lo `test -f 'asan_globals.cc' || echo '$(srcdir)/'`asan_globals.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_globals.Tpo $(DEPDIR)/libasan_cpp_la-asan_globals.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_globals.cc' object='libasan_cpp_la-asan_globals.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_globals.lo `test -f 'asan_globals.cc' || echo '$(srcdir)/'`asan_globals.cc
+
+libasan_cpp_la-asan_linux.lo: asan_linux.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_linux.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_linux.Tpo -c -o libasan_cpp_la-asan_linux.lo `test -f 'asan_linux.cc' || echo '$(srcdir)/'`asan_linux.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_linux.Tpo $(DEPDIR)/libasan_cpp_la-asan_linux.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_linux.cc' object='libasan_cpp_la-asan_linux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_linux.lo `test -f 'asan_linux.cc' || echo '$(srcdir)/'`asan_linux.cc
+
+libasan_cpp_la-asan_malloc_linux.lo: asan_malloc_linux.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_malloc_linux.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_malloc_linux.Tpo -c -o libasan_cpp_la-asan_malloc_linux.lo `test -f 'asan_malloc_linux.cc' || echo '$(srcdir)/'`asan_malloc_linux.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_malloc_linux.Tpo $(DEPDIR)/libasan_cpp_la-asan_malloc_linux.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_linux.cc' object='libasan_cpp_la-asan_malloc_linux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_malloc_linux.lo `test -f 'asan_malloc_linux.cc' || echo '$(srcdir)/'`asan_malloc_linux.cc
+
+libasan_cpp_la-asan_malloc_win.lo: asan_malloc_win.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_malloc_win.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_malloc_win.Tpo -c -o libasan_cpp_la-asan_malloc_win.lo `test -f 'asan_malloc_win.cc' || echo '$(srcdir)/'`asan_malloc_win.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_malloc_win.Tpo $(DEPDIR)/libasan_cpp_la-asan_malloc_win.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_win.cc' object='libasan_cpp_la-asan_malloc_win.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_malloc_win.lo `test -f 'asan_malloc_win.cc' || echo '$(srcdir)/'`asan_malloc_win.cc
+
+libasan_cpp_la-asan_malloc_nto.lo: asan_malloc_nto.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_malloc_nto.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_malloc_nto.Tpo -c -o libasan_cpp_la-asan_malloc_nto.lo `test -f 'asan_malloc_nto.cc' || echo '$(srcdir)/'`asan_malloc_nto.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_malloc_nto.Tpo $(DEPDIR)/libasan_cpp_la-asan_malloc_nto.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_malloc_nto.cc' object='libasan_cpp_la-asan_malloc_nto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_malloc_nto.lo `test -f 'asan_malloc_nto.cc' || echo '$(srcdir)/'`asan_malloc_nto.cc
+
+libasan_cpp_la-asan_poisoning.lo: asan_poisoning.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_poisoning.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_poisoning.Tpo -c -o libasan_cpp_la-asan_poisoning.lo `test -f 'asan_poisoning.cc' || echo '$(srcdir)/'`asan_poisoning.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_poisoning.Tpo $(DEPDIR)/libasan_cpp_la-asan_poisoning.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_poisoning.cc' object='libasan_cpp_la-asan_poisoning.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_poisoning.lo `test -f 'asan_poisoning.cc' || echo '$(srcdir)/'`asan_poisoning.cc
+
+libasan_cpp_la-asan_report.lo: asan_report.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_report.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_report.Tpo -c -o libasan_cpp_la-asan_report.lo `test -f 'asan_report.cc' || echo '$(srcdir)/'`asan_report.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_report.Tpo $(DEPDIR)/libasan_cpp_la-asan_report.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_report.cc' object='libasan_cpp_la-asan_report.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_report.lo `test -f 'asan_report.cc' || echo '$(srcdir)/'`asan_report.cc
+
+libasan_cpp_la-asan_stack.lo: asan_stack.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_stack.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_stack.Tpo -c -o libasan_cpp_la-asan_stack.lo `test -f 'asan_stack.cc' || echo '$(srcdir)/'`asan_stack.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_stack.Tpo $(DEPDIR)/libasan_cpp_la-asan_stack.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_stack.cc' object='libasan_cpp_la-asan_stack.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_stack.lo `test -f 'asan_stack.cc' || echo '$(srcdir)/'`asan_stack.cc
+
+libasan_cpp_la-asan_thread.lo: asan_thread.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_thread.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_thread.Tpo -c -o libasan_cpp_la-asan_thread.lo `test -f 'asan_thread.cc' || echo '$(srcdir)/'`asan_thread.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_thread.Tpo $(DEPDIR)/libasan_cpp_la-asan_thread.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_thread.cc' object='libasan_cpp_la-asan_thread.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_thread.lo `test -f 'asan_thread.cc' || echo '$(srcdir)/'`asan_thread.cc
+
+libasan_cpp_la-asan_nto.lo: asan_nto.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_nto.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_nto.Tpo -c -o libasan_cpp_la-asan_nto.lo `test -f 'asan_nto.cc' || echo '$(srcdir)/'`asan_nto.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_nto.Tpo $(DEPDIR)/libasan_cpp_la-asan_nto.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_nto.cc' object='libasan_cpp_la-asan_nto.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_nto.lo `test -f 'asan_nto.cc' || echo '$(srcdir)/'`asan_nto.cc
+
+libasan_cpp_la-asan_win.lo: asan_win.cc
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libasan_cpp_la-asan_win.lo -MD -MP -MF $(DEPDIR)/libasan_cpp_la-asan_win.Tpo -c -o libasan_cpp_la-asan_win.lo `test -f 'asan_win.cc' || echo '$(srcdir)/'`asan_win.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libasan_cpp_la-asan_win.Tpo $(DEPDIR)/libasan_cpp_la-asan_win.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='asan_win.cc' object='libasan_cpp_la-asan_win.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libasan_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libasan_cpp_la-asan_win.lo `test -f 'asan_win.cc' || echo '$(srcdir)/'`asan_win.cc
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -646,6 +1015,11 @@ uninstall-am: uninstall-nodist_toolexeclibHEADERS \
 
 
 libasan_preinit.o: asan_preinit.o
+	cp $< $@
+
+asan_preinit_cpp.cc: asan_preinit.cc
+	cp $< $@
+libasan_preinit_cpp.o: asan_preinit_cpp.o
 	cp $< $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

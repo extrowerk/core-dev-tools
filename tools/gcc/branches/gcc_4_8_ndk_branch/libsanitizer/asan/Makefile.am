@@ -8,11 +8,10 @@ if USING_MAC_INTERPOSE
 DEFS += -DMAC_INTERPOSE_FUNCTIONS -DMISSING_BLOCKS_SUPPORT
 endif
 AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros
-AM_CXXFLAGS += $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
 ACLOCAL_AMFLAGS = -I $(top_srcdir) -I $(top_srcdir)/config
 
-toolexeclib_LTLIBRARIES = libasan.la
-nodist_toolexeclib_HEADERS = libasan_preinit.o
+toolexeclib_LTLIBRARIES = libasan.la libasan_cpp.la
+nodist_toolexeclib_HEADERS = libasan_preinit.o libasan_preinit_cpp.o
 
 asan_files = \
 	asan_allocator.cc \
@@ -30,13 +29,16 @@ asan_files = \
 	asan_linux.cc \
 	asan_malloc_linux.cc \
 	asan_malloc_win.cc \
+	asan_malloc_nto.cc \
 	asan_poisoning.cc \
 	asan_report.cc \
 	asan_stack.cc \
 	asan_thread.cc \
+	asan_nto.cc \
 	asan_win.cc
 
 libasan_la_SOURCES = $(asan_files)
+libasan_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
 if USING_MAC_INTERPOSE
 libasan_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common.la
 else
@@ -44,9 +46,20 @@ libasan_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common.la $(to
 endif
 libasan_la_LIBADD += $(LIBSTDCXX_RAW_CXX_LDFLAGS)
 
-libasan_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version` -lpthread -ldl
+libasan_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
+
+libasan_cpp_la_SOURCES = $(asan_files)
+libasan_cpp_la_CXXFLAGS = -I$(QNX_TARGET)/usr/include/cpp -I$(QNX_TARGET)/usr/include/cpp/c
+libasan_cpp_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common_cpp.la $(top_builddir)/interception/libinterception_cpp.la
+libasan_cpp_la_LIBADD += -lcpp
+libasan_cpp_la_LDFLAGS = -version-info `grep -v '^\#' $(srcdir)/libtool-version`
 
 libasan_preinit.o: asan_preinit.o
+	cp $< $@
+
+asan_preinit_cpp.cc: asan_preinit.cc
+	cp $< $@
+libasan_preinit_cpp.o: asan_preinit_cpp.o
 	cp $< $@
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS

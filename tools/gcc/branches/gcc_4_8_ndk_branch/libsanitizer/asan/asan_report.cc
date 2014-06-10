@@ -19,6 +19,9 @@
 #include "sanitizer_common/sanitizer_common.h"
 #include "sanitizer_common/sanitizer_report_decorator.h"
 #include "sanitizer_common/sanitizer_symbolizer.h"
+#if defined(__QNXNTO__)
+#include <cstdlib>
+#endif
 
 namespace __asan {
 
@@ -463,6 +466,10 @@ class ScopedInErrorReport {
       error_report_callback(error_message_buffer);
     }
     Report("ABORTING\n");
+#if defined(__QNXNTO__)
+    if (flags()->core_on_error)
+      std::abort();
+#endif
     Die();
   }
 };

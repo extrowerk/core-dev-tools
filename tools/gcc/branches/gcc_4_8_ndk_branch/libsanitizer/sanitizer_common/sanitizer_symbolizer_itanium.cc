@@ -8,7 +8,7 @@
 // This file is shared between the sanitizer run-time libraries.
 // Itanium C++ ABI-specific implementation of symbolizer parts.
 //===----------------------------------------------------------------------===//
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__linux__) || defined(__QNXNTO__)
 
 #include "sanitizer_symbolizer.h"
 

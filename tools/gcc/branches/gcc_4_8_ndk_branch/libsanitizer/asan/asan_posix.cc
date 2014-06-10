@@ -9,7 +9,7 @@
 //
 // Posix-specific details.
 //===----------------------------------------------------------------------===//
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__QNXNTO__)
 
 #include "asan_internal.h"
 #include "asan_interceptors.h"
@@ -27,7 +27,9 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
+#if !defined(__QNXNTO__)
 static const uptr kAltStackSize = SIGSTKSZ * 4;  // SIGSTKSZ is not enough.
+#endif
 
 namespace __asan {
 
@@ -39,7 +41,9 @@ static void MaybeInstallSigaction(int signum,
   REAL(memset)(&sigact, 0, sizeof(sigact));
   sigact.sa_sigaction = handler;
   sigact.sa_flags = SA_SIGINFO;
+#if !defined(__QNXNTO__)
   if (flags()->use_sigaltstack) sigact.sa_flags |= SA_ONSTACK;
+#endif
   CHECK(0 == REAL(sigaction)(signum, &sigact, 0));
   if (flags()->verbosity >= 1) {
     Report("Installed the sigaction for signal %d\n", signum);
@@ -55,6 +59,7 @@ static void     ASAN_OnSIGSEGV(int, siginfo_t *siginfo, void *context) {
   ReportSIGSEGV(pc, sp, bp, addr);
 }
 
+#if !defined(__QNXNTO__)
 void SetAlternateSignalStack() {
   stack_t altstack, oldstack;
   CHECK(0 == sigaltstack(0, &oldstack));
@@ -83,12 +88,15 @@ void UnsetAlternateSignalStack() {
   CHECK(0 == sigaltstack(&altstack, &oldstack));
   UnmapOrDie(oldstack.ss_sp, oldstack.ss_size);
 }
+#endif
 
 void InstallSignalHandlers() {
   // Set the alternate signal stack for the main thread.
   // This will cause SetAlternateSignalStack to be called twice, but the stack
   // will be actually set only once.
+#if !defined(__QNXNTO__)
   if (flags()->use_sigaltstack) SetAlternateSignalStack();
+#endif
   MaybeInstallSigaction(SIGSEGV, ASAN_OnSIGSEGV);
   MaybeInstallSigaction(SIGBUS, ASAN_OnSIGSEGV);
 }

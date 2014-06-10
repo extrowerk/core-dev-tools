@@ -19,7 +19,7 @@
 #include "sanitizer_common/sanitizer_stacktrace.h"
 #include "sanitizer_common/sanitizer_libc.h"
 
-#if !defined(__linux__) && !defined(__APPLE__) && !defined(_WIN32)
+#if !defined(__linux__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__)
 # error "This operating system is not supported by AddressSanitizer"
 #endif
 
@@ -49,8 +49,14 @@
 # define ASAN_ANDROID 0
 #endif
 
+#if defined(__QNXNTO__)
+# define ASAN_NTO     1
+#else
+# define ASAN_NTO     0
+#endif
 
-#define ASAN_POSIX (ASAN_LINUX || ASAN_MAC)
+
+#define ASAN_POSIX (ASAN_LINUX || ASAN_MAC || ASAN_NTO)
 
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 # error "The AddressSanitizer run-time should not be"
@@ -90,7 +96,7 @@
 #endif
 
 #ifndef ASAN_USE_PREINIT_ARRAY
-# define ASAN_USE_PREINIT_ARRAY (ASAN_LINUX && !ASAN_ANDROID)
+# define ASAN_USE_PREINIT_ARRAY ((ASAN_LINUX && !ASAN_ANDROID) || ASAN_NTO)
 #endif
 
 // All internal functions in asan reside inside the __asan namespace

@@ -10,7 +10,7 @@
 // Sizes and layouts of platform-specific POSIX data structures.
 //===----------------------------------------------------------------------===//
 
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__QNXNTO__)
 
 #include "sanitizer_internal_defs.h"
 #include "sanitizer_platform_limits_posix.h"
