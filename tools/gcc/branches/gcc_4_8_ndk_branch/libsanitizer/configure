@@ -12507,6 +12507,9 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	;;
 
       *nto* | *qnx*)
+        archive_cmds_CXX='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+        archive_expsym_cmds_CXX='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname ${wl}-retain-symbols-file $wl$export_symbols -o $lib'
+        output_verbose_link_cmd='$CC -shared -fexceptions $CFLAGS -v conftest.$objext 2>&1 | egrep "\-L"'l
         ld_shlibs_CXX=yes
 	;;
 

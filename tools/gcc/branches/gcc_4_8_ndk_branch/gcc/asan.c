@@ -911,15 +911,24 @@ asan_clear_shadow (rtx shadow_mem, HOST_WIDE_INT len)
   end = force_reg (Pmode, plus_constant (Pmode, addr, len));
   emit_label (top_label);
 
+#if defined(TARGET_THUMB) || defined(TARGET_ARM)
+  emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, const0_rtx)));
+#else
   emit_move_insn (shadow_mem, const0_rtx);
+#endif
   tmp = expand_simple_binop (Pmode, PLUS, addr, GEN_INT (4), addr,
                              true, OPTAB_LIB_WIDEN);
   if (tmp != addr)
-    emit_move_insn (addr, tmp);
+      emit_move_insn (addr, tmp);
   emit_cmp_and_jump_insns (addr, end, LT, NULL_RTX, Pmode, true, top_label);
   jump = get_last_insn ();
   gcc_assert (JUMP_P (jump));
   add_reg_note (jump, REG_BR_PROB, GEN_INT (REG_BR_PROB_BASE * 80 / 100));
+
+  /* This is modifying shadow_mem, and we need to back it up.. */
+  tmp = expand_simple_binop (Pmode, MINUS, addr, GEN_INT (len), addr,
+                             true, OPTAB_LIB_WIDEN);
+  emit_move_insn (addr, tmp);
 }
 
 /* Insert code to protect stack vars.  The prologue sequence should be emitted
@@ -1021,7 +1030,11 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 	      }
 	    else
 	      shadow_bytes[i] = ASAN_STACK_MAGIC_PARTIAL;
-	  emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
+#if defined(TARGET_THUMB) || defined(TARGET_ARM)
+        emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, asan_shadow_cst (shadow_bytes))));
+#else
+        emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
+#endif
 	  offset = aoff;
 	}
       while (offset <= offsets[l - 2] - ASAN_RED_ZONE_SIZE)
@@ -1031,7 +1044,11 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 				       >> ASAN_SHADOW_SHIFT);
 	  prev_offset = offset;
 	  memset (shadow_bytes, cur_shadow_byte, 4);
-	  emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
+#if defined(TARGET_THUMB) || defined(TARGET_ARM)
+      emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, asan_shadow_cst (shadow_bytes))));
+#else
+      emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
+#endif
 	  offset += ASAN_RED_ZONE_SIZE;
 	}
       cur_shadow_byte = ASAN_STACK_MAGIC_MIDDLE;

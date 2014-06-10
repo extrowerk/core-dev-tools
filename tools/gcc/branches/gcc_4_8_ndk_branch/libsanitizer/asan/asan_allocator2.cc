@@ -297,6 +297,9 @@ void InitializeAllocator() {
 
 static void *Allocate(uptr size, uptr alignment, StackTrace *stack,
                       AllocType alloc_type) {
+#if ASAN_NTO
+  if (!asan_init_is_running)
+#endif
   if (!asan_inited)
     __asan_init();
   CHECK(stack);

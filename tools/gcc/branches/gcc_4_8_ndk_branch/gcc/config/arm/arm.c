@@ -227,6 +227,7 @@ static void arm_init_libfuncs (void);
 static tree arm_build_builtin_va_list (void);
 static void arm_expand_builtin_va_start (tree, rtx);
 static tree arm_gimplify_va_arg_expr (tree, tree, gimple_seq *, gimple_seq *);
+static unsigned HOST_WIDE_INT arm_asan_shadow_offset (void);
 static void arm_option_override (void);
 static unsigned HOST_WIDE_INT arm_shift_truncation_mask (enum machine_mode);
 static bool arm_cannot_copy_insn_p (rtx);
@@ -580,6 +581,9 @@ static const struct attribute_spec arm_attribute_table[] =
 #define TARGET_EXPAND_BUILTIN_VA_START arm_expand_builtin_va_start
 #undef TARGET_GIMPLIFY_VA_ARG_EXPR
 #define TARGET_GIMPLIFY_VA_ARG_EXPR arm_gimplify_va_arg_expr
+
+#undef TARGET_ASAN_SHADOW_OFFSET
+#define TARGET_ASAN_SHADOW_OFFSET arm_asan_shadow_offset
 
 #ifdef HAVE_AS_TLS
 #undef TARGET_ASM_OUTPUT_DWARF_DTPREL
@@ -1605,6 +1609,14 @@ arm_gimplify_va_arg_expr (tree valist, tree type, gimple_seq *pre_p,
 {
   valist = arm_extract_valist_ptr (valist);
   return std_gimplify_va_arg_expr (valist, type, pre_p, post_p);
+}
+
+/* Implement the TARGET_ASAN_SHADOW_OFFSET hook.  */
+
+static unsigned HOST_WIDE_INT
+arm_asan_shadow_offset (void)
+{
+  return (HOST_WIDE_INT_1 << 29);
 }
 
 /* Fix up any incompatible options that the user has specified.  */

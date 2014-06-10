@@ -100,6 +100,15 @@ class MemoryMappingLayout {
   u32 current_filetype_;
   int current_load_cmd_count_;
   char *current_load_cmd_addr_;
+# elif defined __QNXNTO__
+  struct {
+      uptr start;
+      uptr end;
+      uptr offset;
+      char name[255];
+  } *maps_;
+  u32 nmaps_;
+  u32 idx_;
 # endif
 };
 

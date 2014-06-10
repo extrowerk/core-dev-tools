@@ -108,7 +108,9 @@ static void ParseFlagsFromString(Flags *f, const char *str) {
   ParseFlag(str, &f->allow_user_poisoning, "allow_user_poisoning");
   ParseFlag(str, &f->sleep_before_dying, "sleep_before_dying");
   ParseFlag(str, &f->handle_segv, "handle_segv");
+#if !defined(__QNXNTO__)
   ParseFlag(str, &f->use_sigaltstack, "use_sigaltstack");
+#endif
   ParseFlag(str, &f->check_malloc_usable_size, "check_malloc_usable_size");
   ParseFlag(str, &f->unmap_shadow_on_exit, "unmap_shadow_on_exit");
   ParseFlag(str, &f->abort_on_error, "abort_on_error");
@@ -125,6 +127,9 @@ static void ParseFlagsFromString(Flags *f, const char *str) {
   ParseFlag(str, &f->poison_heap, "poison_heap");
   ParseFlag(str, &f->alloc_dealloc_mismatch, "alloc_dealloc_mismatch");
   ParseFlag(str, &f->use_stack_depot, "use_stack_depot");
+#if defined(__QNXNTO__)
+  ParseFlag(str, &f->core_on_error, "core_on_error");
+#endif
 }
 
 void InitializeFlags(Flags *f, const char *env) {
@@ -147,7 +152,9 @@ void InitializeFlags(Flags *f, const char *env) {
   f->allow_user_poisoning = true;
   f->sleep_before_dying = 0;
   f->handle_segv = ASAN_NEEDS_SEGV;
+#if !defined(__QNXNTO__)
   f->use_sigaltstack = false;
+#endif
   f->check_malloc_usable_size = true;
   f->unmap_shadow_on_exit = false;
   f->abort_on_error = false;
@@ -164,6 +171,9 @@ void InitializeFlags(Flags *f, const char *env) {
   f->poison_heap = true;
   f->alloc_dealloc_mismatch = true;
   f->use_stack_depot = true;  // Only affects allocator2.
+#if defined(__QNXNTO__)
+  f->core_on_error = false;
+#endif
 
   // Override from compile definition.
   ParseFlagsFromString(f, MaybeUseAsanDefaultOptionsCompileDefiniton());
@@ -504,18 +514,29 @@ void __asan_init() {
     }
   }
 
+#if !ASAN_NTO
   // On Linux AsanThread::ThreadStart() calls malloc() that's why asan_inited
   // should be set to 1 prior to initializing the threads.
   asan_inited = 1;
   asan_init_is_running = false;
+#else
+  InitializeAllocator();
+#endif
 
   asanThreadRegistry().Init();
   asanThreadRegistry().GetMain()->ThreadStart();
   force_interface_symbols();  // no-op.
 
+#if !ASAN_NTO
   InitializeAllocator();
+#endif
 
   if (flags()->verbosity) {
     Report("AddressSanitizer Init done\n");
   }
+  
+#if ASAN_NTO
+  asan_inited = 1;
+  asan_init_is_running = false;
+#endif
 }

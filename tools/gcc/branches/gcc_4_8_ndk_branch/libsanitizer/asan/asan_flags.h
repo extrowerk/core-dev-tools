@@ -70,7 +70,9 @@ struct Flags {
   // If set, registers ASan custom segv handler.
   bool handle_segv;
   // If set, uses alternate stack for signal handling.
+#if !defined(__QNXNTO__)
   bool use_sigaltstack;
+#endif
   // Allow the users to work around the bug in Nvidia drivers prior to 295.*.
   bool check_malloc_usable_size;
   // If set, explicitly unmaps (huge) shadow at exit.
@@ -108,6 +110,11 @@ struct Flags {
   bool alloc_dealloc_mismatch;
   // Use stack depot instead of storing stacks in the redzones.
   bool use_stack_depot;
+#if defined(__QNXNTO__)
+  // Force the generation of a core file after an error is encountered
+  bool core_on_error;
+#endif
+
 };
 
 Flags *flags();
