@@ -76,7 +76,9 @@ void __gcov_merge_delta (gcov_type *counters  __attribute__ ((unused)),
 
 #ifdef L_gcov
 #include "gcov-io.c"
+#ifdef __QNXNTO__
 #include "flush-gcov.c"
+#endif /* __QNXNTO__ */
 
 /* Chain of per-object gcov structures.  */
 static struct gcov_info *gcov_list;
@@ -167,7 +169,18 @@ gcov_exit (void)
   int gcov_prefix_strip = 0;
   size_t prefix_length;
   char *gi_filename, *gi_filename_up;
+#ifdef __QNXNTO__
+  size_t prefix_pid = 0; /* Append <pid> to the prefix. */
+  /* Format of prefix_pid directory:
+	for prefix_pid 1:  "%010u"
+	for prefix_pid 2:  "%010u-%010u".  */
+  const size_t prefix_pid_length[] = { 0, 12, 23 };
+  const char *const prefix_pid_fmt[] = { "", "/%010u/", "/%010u-%010u/" };
+  const size_t prefix_pid_length_sz = sizeof (prefix_pid_length)
+				      / sizeof (prefix_pid_length[0]);
 
+#endif /* __QNXNTO__ */
+ 
   memset (&all, 0, sizeof (all));
   /* Find the totals for this execution.  */
   memset (&this_program, 0, sizeof (this_program));
@@ -213,13 +226,55 @@ gcov_exit (void)
     }
   else
     prefix_length = 0;
-  
+
+#ifdef __QNXNTO__
+  /* Do we want to append <pid> to the GCOV_PREFIX (or prepend to the
+     root dir of the reports) */
+  {
+    char *tmp = getenv ("GCOV_PREFIX_PID");
+    if (tmp)
+      {
+	prefix_pid = atoi (tmp);
+	if (prefix_pid >= prefix_pid_length_sz)
+	  prefix_pid = 0;
+      }
+  }
+  gi_filename = (char *) alloca (prefix_length + prefix_pid_length[prefix_pid]
+				 + gcov_max_filename + 2);
+#else /* ! __QNXNTO__ */
   /* Allocate and initialize the filename scratch space.  */
   gi_filename = (char *) alloca (prefix_length + gcov_max_filename + 1);
+#endif /* __QNXNTO__ */
+
   if (prefix_length)
     memcpy (gi_filename, gcov_prefix, prefix_length);
   gi_filename_up = gi_filename + prefix_length;
-  
+
+#ifdef __QNXNTO__
+  {
+    int r;
+    switch (prefix_pid)
+      {
+	case 1:
+	  r = sprintf (gi_filename_up, prefix_pid_fmt[prefix_pid],
+		       getpid());
+	  break;
+	case 2:
+	  r = sprintf (gi_filename_up, prefix_pid_fmt[prefix_pid],
+		       getppid(), getpid());
+	  break;
+	default:
+	  r = 0;
+	  break;
+      }
+    if (r > 0)
+      {
+	gi_filename_up += r;
+	prefix_length += r;
+      }
+  }
+#endif /* __QNXNTO__ */
+
   /* Now merge each file.  */
   for (gi_ptr = gcov_list; gi_ptr; gi_ptr = gi_ptr->next)
     {
@@ -570,7 +625,9 @@ __gcov_init (struct gcov_info *info)
       info->next = gcov_list;
       gcov_list = info;
     }
-  flush_init();
+#ifdef __QNXNTO__
+  __flush_init();
+#endif /* __QNXNTO__ */
   info->version = 0;
 }
 
