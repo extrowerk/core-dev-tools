@@ -1729,12 +1729,21 @@ backtrace_command_1 (char *count_exp, int show_locals, int from_tty)
       if (show_locals)
 	{
 	  struct frame_id frame_id = get_frame_id (fi);
+#ifdef __QNXTARGET__
+	  /* JI642782 */
+	  int fi_relative_level = frame_relative_level (fi);
+#endif /* __QNXTARGET__ */
 
 	  print_frame_local_vars (fi, 1, gdb_stdout);
 
 	  /* print_frame_local_vars invalidates FI.  */
 	  fi = frame_find_by_id (frame_id);
+#ifdef __QNXTARGET__
+	  /* JI642782 */
+	  if (fi == NULL || fi_relative_level != frame_relative_level (fi))
+#else /* ! __QNXTARGET__ */
 	  if (fi == NULL)
+#endif /* ! __QNXTARGET__ */
 	    {
 	      trailing = NULL;
 	      warning (_("Unable to restore previously selected frame."));
