@@ -1512,6 +1512,9 @@ elf_symfile_finish (struct objfile *objfile)
   if (objfile->deprecated_sym_stab_info != NULL)
     {
       xfree (objfile->deprecated_sym_stab_info);
+#ifdef __QNXNTO__
+      objfile->deprecated_sym_stab_info = NULL;	
+#endif /* __QNXNTO__ */
     }
 
   dwarf2_free_objfile (objfile);

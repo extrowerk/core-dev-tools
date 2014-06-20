@@ -2931,7 +2931,11 @@ clear_symtab_users (int add_flags)
 static void
 clear_symtab_users_cleanup (void *ignore)
 {
+#ifdef __QNXNTO__
+  clear_symtab_users (SYMFILE_DEFER_BP_RESET);
+#else  /* ! __QNXNTO__ */
   clear_symtab_users (0);
+#endif /* ! __QNXNTO__ */
 }
 
 /* OVERLAYS:
