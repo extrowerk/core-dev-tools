@@ -26,6 +26,13 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #ifndef GCC_UNWIND_DW2_FDE_H
 #define GCC_UNWIND_DW2_FDE_H
 
+#ifdef __QNXNTO__
+#include <sys/neutrino.h>
+#if _NTO_VERSION < 660
+#undef HIDE_EXPORTS
+#endif
+#endif
+
 #ifndef HIDE_EXPORTS
 #pragma GCC visibility push(default)
 #endif
