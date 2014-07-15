@@ -555,6 +555,7 @@ i[34567]86-*-lynxos*)
 	;;
 i[34567]86-*-nto-qnx*)
 	tmake_file="$tmake_file i386/t-nto i386/t-crtstuff t-libgcc-pic t-eh-dw2-dip"
+	md_unwind_header=i386/nto-unwind.h
 	;;
 x86_64-*-nto-qnx*)
         ;;
