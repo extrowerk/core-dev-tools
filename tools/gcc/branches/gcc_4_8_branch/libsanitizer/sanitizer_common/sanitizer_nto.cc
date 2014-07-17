@@ -227,6 +227,18 @@ void GetThreadStackTopAndBottom(bool at_initialization, uptr *stack_top,
 const char *GetEnv(const char *name) {
   char** env = environ;
   uptr name_len = internal_strlen(name);
+
+  if (env == NULL) {
+    static bool reported = false;
+    if (!reported) {
+      Report("Unable to lookup environment variables because 'environ' has not been set.\n");
+      Report("This is likely caused by the program having its own global symbol for 'environ'\n");
+      Report("which can happen when linking against both the static and dynamic C libraries.\n");
+      reported = true;
+    }
+    return NULL;
+  }
+
   while (*env != 0) {
     uptr len = internal_strlen(*env);
     if (len > name_len) {
