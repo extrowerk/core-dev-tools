@@ -66,18 +66,6 @@ libinterception_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libinterception_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-libinterception_cpp_la_DEPENDENCIES =
-am__objects_2 = libinterception_cpp_la-interception_linux.lo \
-	libinterception_cpp_la-interception_mac.lo \
-	libinterception_cpp_la-interception_win.lo \
-	libinterception_cpp_la-interception_nto.lo \
-	libinterception_cpp_la-interception_type_test.lo
-am_libinterception_cpp_la_OBJECTS = $(am__objects_2)
-libinterception_cpp_la_OBJECTS = $(am_libinterception_cpp_la_OBJECTS)
-libinterception_cpp_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
 am__depfiles_maybe = depfiles
@@ -91,8 +79,7 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libinterception_la_SOURCES) \
-	$(libinterception_cpp_la_SOURCES)
+SOURCES = $(libinterception_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 ACLOCAL = @ACLOCAL@
@@ -232,7 +219,7 @@ AM_CPPFLAGS = -I $(top_srcdir)/include -I $(top_srcdir)
 gcc_version := $(shell cat $(top_srcdir)/../gcc/BASE-VER)
 AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros
 ACLOCAL_AMFLAGS = -I m4
-noinst_LTLIBRARIES = libinterception.la libinterception_cpp.la
+noinst_LTLIBRARIES = libinterception.la
 interception_files = \
         interception_linux.cc \
         interception_mac.cc \
@@ -241,10 +228,7 @@ interception_files = \
 	interception_type_test.cc
 
 libinterception_la_SOURCES = $(interception_files)
-libinterception_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
-libinterception_cpp_la_SOURCES = $(interception_files)
-libinterception_cpp_la_CXXFLAGS = -I$(QNX_TARGET)/usr/include/cpp -I$(QNX_TARGET)/usr/include/cpp/c
-libinterception_cpp_la_LIBADD = -lcpp
+@TARGET_OS_NTO_FALSE@libinterception_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS
 # values defined in terms of make variables, as is the case for CC and
@@ -330,8 +314,6 @@ clean-noinstLTLIBRARIES:
 	done
 libinterception.la: $(libinterception_la_OBJECTS) $(libinterception_la_DEPENDENCIES) 
 	$(libinterception_la_LINK)  $(libinterception_la_OBJECTS) $(libinterception_la_LIBADD) $(LIBS)
-libinterception_cpp.la: $(libinterception_cpp_la_OBJECTS) $(libinterception_cpp_la_DEPENDENCIES) 
-	$(libinterception_cpp_la_LINK)  $(libinterception_cpp_la_OBJECTS) $(libinterception_cpp_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -339,11 +321,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_cpp_la-interception_linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_cpp_la-interception_mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_cpp_la-interception_nto.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_cpp_la-interception_type_test.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_cpp_la-interception_win.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_la-interception_linux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_la-interception_mac.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libinterception_la-interception_nto.Plo@am__quote@
@@ -405,41 +382,6 @@ libinterception_la-interception_type_test.lo: interception_type_test.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_type_test.cc' object='libinterception_la-interception_type_test.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_la-interception_type_test.lo `test -f 'interception_type_test.cc' || echo '$(srcdir)/'`interception_type_test.cc
-
-libinterception_cpp_la-interception_linux.lo: interception_linux.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libinterception_cpp_la-interception_linux.lo -MD -MP -MF $(DEPDIR)/libinterception_cpp_la-interception_linux.Tpo -c -o libinterception_cpp_la-interception_linux.lo `test -f 'interception_linux.cc' || echo '$(srcdir)/'`interception_linux.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libinterception_cpp_la-interception_linux.Tpo $(DEPDIR)/libinterception_cpp_la-interception_linux.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_linux.cc' object='libinterception_cpp_la-interception_linux.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_cpp_la-interception_linux.lo `test -f 'interception_linux.cc' || echo '$(srcdir)/'`interception_linux.cc
-
-libinterception_cpp_la-interception_mac.lo: interception_mac.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libinterception_cpp_la-interception_mac.lo -MD -MP -MF $(DEPDIR)/libinterception_cpp_la-interception_mac.Tpo -c -o libinterception_cpp_la-interception_mac.lo `test -f 'interception_mac.cc' || echo '$(srcdir)/'`interception_mac.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libinterception_cpp_la-interception_mac.Tpo $(DEPDIR)/libinterception_cpp_la-interception_mac.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_mac.cc' object='libinterception_cpp_la-interception_mac.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_cpp_la-interception_mac.lo `test -f 'interception_mac.cc' || echo '$(srcdir)/'`interception_mac.cc
-
-libinterception_cpp_la-interception_win.lo: interception_win.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libinterception_cpp_la-interception_win.lo -MD -MP -MF $(DEPDIR)/libinterception_cpp_la-interception_win.Tpo -c -o libinterception_cpp_la-interception_win.lo `test -f 'interception_win.cc' || echo '$(srcdir)/'`interception_win.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libinterception_cpp_la-interception_win.Tpo $(DEPDIR)/libinterception_cpp_la-interception_win.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_win.cc' object='libinterception_cpp_la-interception_win.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_cpp_la-interception_win.lo `test -f 'interception_win.cc' || echo '$(srcdir)/'`interception_win.cc
-
-libinterception_cpp_la-interception_nto.lo: interception_nto.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libinterception_cpp_la-interception_nto.lo -MD -MP -MF $(DEPDIR)/libinterception_cpp_la-interception_nto.Tpo -c -o libinterception_cpp_la-interception_nto.lo `test -f 'interception_nto.cc' || echo '$(srcdir)/'`interception_nto.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libinterception_cpp_la-interception_nto.Tpo $(DEPDIR)/libinterception_cpp_la-interception_nto.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_nto.cc' object='libinterception_cpp_la-interception_nto.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_cpp_la-interception_nto.lo `test -f 'interception_nto.cc' || echo '$(srcdir)/'`interception_nto.cc
-
-libinterception_cpp_la-interception_type_test.lo: interception_type_test.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libinterception_cpp_la-interception_type_test.lo -MD -MP -MF $(DEPDIR)/libinterception_cpp_la-interception_type_test.Tpo -c -o libinterception_cpp_la-interception_type_test.lo `test -f 'interception_type_test.cc' || echo '$(srcdir)/'`interception_type_test.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libinterception_cpp_la-interception_type_test.Tpo $(DEPDIR)/libinterception_cpp_la-interception_type_test.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='interception_type_test.cc' object='libinterception_cpp_la-interception_type_test.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libinterception_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libinterception_cpp_la-interception_type_test.lo `test -f 'interception_type_test.cc' || echo '$(srcdir)/'`interception_type_test.cc
 
 mostlyclean-libtool:
 	-rm -f *.lo
