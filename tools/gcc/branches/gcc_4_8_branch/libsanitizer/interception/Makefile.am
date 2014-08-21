@@ -7,7 +7,7 @@ DEFS = -D_GNU_SOURCE -D_DEBUG -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D
 AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libinterception.la libinterception_cpp.la
+noinst_LTLIBRARIES = libinterception.la
 
 interception_files = \
         interception_linux.cc \
@@ -17,10 +17,9 @@ interception_files = \
 	interception_type_test.cc
 
 libinterception_la_SOURCES = $(interception_files)
+if !TARGET_OS_NTO
 libinterception_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
-libinterception_cpp_la_SOURCES = $(interception_files)
-libinterception_cpp_la_CXXFLAGS = -I$(QNX_TARGET)/usr/include/cpp -I$(QNX_TARGET)/usr/include/cpp/c
-libinterception_cpp_la_LIBADD = -lcpp
+endif
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS
 # values defined in terms of make variables, as is the case for CC and
