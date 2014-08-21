@@ -25,7 +25,37 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 /* Do code reading to identify a signal frame, and set the frame
    state data appropriately.  See unwind-dw2.c for the structs.  */
 
+#if !defined(inhibit_libc) && defined(__QNXNTO__) && _NTO_VERSION >= 660
+
 #include <ucontext.h>
+#include <sys/link.h>
+
+struct address_range
+{
+  _Unwind_Ptr begin;
+  _Unwind_Ptr end;
+};
+
+static int
+load_contains_pc (const struct dl_phdr_info *info, size_t size, void *ptr)
+{
+  long n;
+  struct address_range *range = (struct address_range *)ptr;
+  const Elf32_Phdr *phdr = info->dlpi_phdr;
+
+  (void)size;
+
+  for (n = info->dlpi_phnum; --n >= 0; phdr++)
+    {
+      if (phdr->p_type == PT_LOAD)
+        {
+	      _Unwind_Ptr vaddr = (_Unwind_Ptr)phdr->p_vaddr + info->dlpi_addr;
+	      if (range->begin >= vaddr && range->end < vaddr + phdr->p_memsz)
+	        return 1;
+	    }
+	}
+  return 0;
+}
 
 #define MD_FALLBACK_FRAME_STATE_FOR x86_fallback_frame_state
 
@@ -36,6 +66,7 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
   unsigned char *pc;
   mcontext_t *mctx;
   long new_cfa;
+  struct address_range range;
 
   /*
    <__signalstub+0>:	mov    0x2c(%esp),%eax
@@ -67,7 +98,10 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
   */
 
   pc = context->ra - 33;
-  if (   *(unsigned int*)(pc) == 0x2c24448b
+  range.begin = (_Unwind_Ptr)pc;
+  range.end = range.begin + 65;
+  if (dl_iterate_phdr (load_contains_pc, &range)
+      &&   *(unsigned int*)(pc) == 0x2c24448b
       && *(unsigned int*)(pc+4) == 0x89187889
       && *(unsigned int*)(pc+8) == 0x68891c70
       && *(unsigned int*)(pc+12) == 0x28588920
@@ -84,16 +118,16 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
       && *(unsigned int*)(pc+56) == 0x1bb804
       && *(unsigned int*)(pc+60) == 0x28cd0000
       && *(unsigned char*)(pc+64) == 0xc3)
-  {
-    struct handler_args {
-	  int signo;
-	  siginfo_t *sip;
-	  ucontext_t *ucontext;
-    } *handler_args = context->cfa;
-    mctx = &handler_args->ucontext->uc_mcontext;
-  } else {
+    {
+      struct handler_args {
+	    int signo;
+	    siginfo_t *sip;
+	    ucontext_t *ucontext;
+      } *handler_args = context->cfa;
+      mctx = &handler_args->ucontext->uc_mcontext;
+    }
+  else
     return _URC_END_OF_STACK;
-  }
 
   new_cfa = mctx->cpu.esp;
 
@@ -123,4 +157,6 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
 
   return _URC_NO_REASON;
 }
+
+#endif
 
