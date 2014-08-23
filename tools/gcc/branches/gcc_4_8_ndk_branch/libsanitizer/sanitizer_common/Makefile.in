@@ -80,33 +80,6 @@ libsanitizer_common_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libsanitizer_common_la_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-libsanitizer_common_cpp_la_DEPENDENCIES =
-am__objects_2 = libsanitizer_common_cpp_la-sanitizer_allocator.lo \
-	libsanitizer_common_cpp_la-sanitizer_common.lo \
-	libsanitizer_common_cpp_la-sanitizer_flags.lo \
-	libsanitizer_common_cpp_la-sanitizer_libc.lo \
-	libsanitizer_common_cpp_la-sanitizer_linux.lo \
-	libsanitizer_common_cpp_la-sanitizer_mac.lo \
-	libsanitizer_common_cpp_la-sanitizer_nto.lo \
-	libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo \
-	libsanitizer_common_cpp_la-sanitizer_posix.lo \
-	libsanitizer_common_cpp_la-sanitizer_printf.lo \
-	libsanitizer_common_cpp_la-sanitizer_stackdepot.lo \
-	libsanitizer_common_cpp_la-sanitizer_stacktrace.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo \
-	libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo \
-	libsanitizer_common_cpp_la-sanitizer_win.lo
-am_libsanitizer_common_cpp_la_OBJECTS = $(am__objects_2)
-libsanitizer_common_cpp_la_OBJECTS =  \
-	$(am_libsanitizer_common_cpp_la_OBJECTS)
-libsanitizer_common_cpp_la_LINK = $(LIBTOOL) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/../depcomp
 am__depfiles_maybe = depfiles
@@ -120,8 +93,7 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libsanitizer_common_la_SOURCES) \
-	$(libsanitizer_common_cpp_la_SOURCES)
+SOURCES = $(libsanitizer_common_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 ACLOCAL = @ACLOCAL@
@@ -261,7 +233,7 @@ AM_CPPFLAGS = -I $(top_srcdir)/include
 gcc_version := $(shell cat $(top_srcdir)/../gcc/BASE-VER)
 AM_CXXFLAGS = -Wall -W -Wno-unused-parameter -Wwrite-strings -pedantic -Wno-long-long  -fPIC -fno-builtin -fno-exceptions -fomit-frame-pointer -funwind-tables -fvisibility=hidden -Wno-variadic-macros
 ACLOCAL_AMFLAGS = -I m4
-noinst_LTLIBRARIES = libsanitizer_common.la libsanitizer_common_cpp.la
+noinst_LTLIBRARIES = libsanitizer_common.la
 sanitizer_common_files = \
         sanitizer_allocator.cc \
         sanitizer_common.cc \
@@ -284,10 +256,7 @@ sanitizer_common_files = \
         sanitizer_win.cc
 
 libsanitizer_common_la_SOURCES = $(sanitizer_common_files) 
-libsanitizer_common_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
-libsanitizer_common_cpp_la_SOURCES = $(sanitizer_common_files)
-libsanitizer_common_cpp_la_CXXFLAGS = -I$(QNX_TARGET)/usr/include/cpp -I$(QNX_TARGET)/usr/include/cpp/c
-libsanitizer_common_cpp_la_LIBADD = -lcpp
+@TARGET_OS_NTO_FALSE@libsanitizer_common_la_CXXFLAGS = $(LIBSTDCXX_RAW_CXX_CXXFLAGS)
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS
 # values defined in terms of make variables, as is the case for CC and
@@ -373,8 +342,6 @@ clean-noinstLTLIBRARIES:
 	done
 libsanitizer_common.la: $(libsanitizer_common_la_OBJECTS) $(libsanitizer_common_la_DEPENDENCIES) 
 	$(libsanitizer_common_la_LINK)  $(libsanitizer_common_la_OBJECTS) $(libsanitizer_common_la_LIBADD) $(LIBS)
-libsanitizer_common_cpp.la: $(libsanitizer_common_cpp_la_OBJECTS) $(libsanitizer_common_cpp_la_DEPENDENCIES) 
-	$(libsanitizer_common_cpp_la_LINK)  $(libsanitizer_common_cpp_la_OBJECTS) $(libsanitizer_common_cpp_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -382,25 +349,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_allocator.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_common.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_flags.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_libc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_nto.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_posix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_printf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stackdepot.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stacktrace.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_win.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_win.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_la-sanitizer_allocator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_la-sanitizer_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsanitizer_common_la-sanitizer_flags.Plo@am__quote@
@@ -574,139 +522,6 @@ libsanitizer_common_la-sanitizer_win.lo: sanitizer_win.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_win.cc' object='libsanitizer_common_la-sanitizer_win.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_la-sanitizer_win.lo `test -f 'sanitizer_win.cc' || echo '$(srcdir)/'`sanitizer_win.cc
-
-libsanitizer_common_cpp_la-sanitizer_allocator.lo: sanitizer_allocator.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_allocator.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_allocator.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_allocator.lo `test -f 'sanitizer_allocator.cc' || echo '$(srcdir)/'`sanitizer_allocator.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_allocator.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_allocator.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_allocator.cc' object='libsanitizer_common_cpp_la-sanitizer_allocator.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_allocator.lo `test -f 'sanitizer_allocator.cc' || echo '$(srcdir)/'`sanitizer_allocator.cc
-
-libsanitizer_common_cpp_la-sanitizer_common.lo: sanitizer_common.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_common.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_common.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_common.lo `test -f 'sanitizer_common.cc' || echo '$(srcdir)/'`sanitizer_common.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_common.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_common.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_common.cc' object='libsanitizer_common_cpp_la-sanitizer_common.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_common.lo `test -f 'sanitizer_common.cc' || echo '$(srcdir)/'`sanitizer_common.cc
-
-libsanitizer_common_cpp_la-sanitizer_flags.lo: sanitizer_flags.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_flags.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_flags.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_flags.lo `test -f 'sanitizer_flags.cc' || echo '$(srcdir)/'`sanitizer_flags.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_flags.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_flags.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_flags.cc' object='libsanitizer_common_cpp_la-sanitizer_flags.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_flags.lo `test -f 'sanitizer_flags.cc' || echo '$(srcdir)/'`sanitizer_flags.cc
-
-libsanitizer_common_cpp_la-sanitizer_libc.lo: sanitizer_libc.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_libc.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_libc.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_libc.lo `test -f 'sanitizer_libc.cc' || echo '$(srcdir)/'`sanitizer_libc.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_libc.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_libc.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_libc.cc' object='libsanitizer_common_cpp_la-sanitizer_libc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_libc.lo `test -f 'sanitizer_libc.cc' || echo '$(srcdir)/'`sanitizer_libc.cc
-
-libsanitizer_common_cpp_la-sanitizer_linux.lo: sanitizer_linux.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_linux.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_linux.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_linux.lo `test -f 'sanitizer_linux.cc' || echo '$(srcdir)/'`sanitizer_linux.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_linux.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_linux.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_linux.cc' object='libsanitizer_common_cpp_la-sanitizer_linux.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_linux.lo `test -f 'sanitizer_linux.cc' || echo '$(srcdir)/'`sanitizer_linux.cc
-
-libsanitizer_common_cpp_la-sanitizer_mac.lo: sanitizer_mac.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_mac.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_mac.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_mac.lo `test -f 'sanitizer_mac.cc' || echo '$(srcdir)/'`sanitizer_mac.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_mac.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_mac.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_mac.cc' object='libsanitizer_common_cpp_la-sanitizer_mac.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_mac.lo `test -f 'sanitizer_mac.cc' || echo '$(srcdir)/'`sanitizer_mac.cc
-
-libsanitizer_common_cpp_la-sanitizer_nto.lo: sanitizer_nto.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_nto.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_nto.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_nto.lo `test -f 'sanitizer_nto.cc' || echo '$(srcdir)/'`sanitizer_nto.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_nto.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_nto.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_nto.cc' object='libsanitizer_common_cpp_la-sanitizer_nto.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_nto.lo `test -f 'sanitizer_nto.cc' || echo '$(srcdir)/'`sanitizer_nto.cc
-
-libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo: sanitizer_platform_limits_posix.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo `test -f 'sanitizer_platform_limits_posix.cc' || echo '$(srcdir)/'`sanitizer_platform_limits_posix.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_platform_limits_posix.cc' object='libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_platform_limits_posix.lo `test -f 'sanitizer_platform_limits_posix.cc' || echo '$(srcdir)/'`sanitizer_platform_limits_posix.cc
-
-libsanitizer_common_cpp_la-sanitizer_posix.lo: sanitizer_posix.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_posix.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_posix.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_posix.lo `test -f 'sanitizer_posix.cc' || echo '$(srcdir)/'`sanitizer_posix.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_posix.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_posix.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_posix.cc' object='libsanitizer_common_cpp_la-sanitizer_posix.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_posix.lo `test -f 'sanitizer_posix.cc' || echo '$(srcdir)/'`sanitizer_posix.cc
-
-libsanitizer_common_cpp_la-sanitizer_printf.lo: sanitizer_printf.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_printf.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_printf.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_printf.lo `test -f 'sanitizer_printf.cc' || echo '$(srcdir)/'`sanitizer_printf.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_printf.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_printf.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_printf.cc' object='libsanitizer_common_cpp_la-sanitizer_printf.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_printf.lo `test -f 'sanitizer_printf.cc' || echo '$(srcdir)/'`sanitizer_printf.cc
-
-libsanitizer_common_cpp_la-sanitizer_stackdepot.lo: sanitizer_stackdepot.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_stackdepot.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stackdepot.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_stackdepot.lo `test -f 'sanitizer_stackdepot.cc' || echo '$(srcdir)/'`sanitizer_stackdepot.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stackdepot.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stackdepot.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_stackdepot.cc' object='libsanitizer_common_cpp_la-sanitizer_stackdepot.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_stackdepot.lo `test -f 'sanitizer_stackdepot.cc' || echo '$(srcdir)/'`sanitizer_stackdepot.cc
-
-libsanitizer_common_cpp_la-sanitizer_stacktrace.lo: sanitizer_stacktrace.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_stacktrace.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stacktrace.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_stacktrace.lo `test -f 'sanitizer_stacktrace.cc' || echo '$(srcdir)/'`sanitizer_stacktrace.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stacktrace.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_stacktrace.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_stacktrace.cc' object='libsanitizer_common_cpp_la-sanitizer_stacktrace.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_stacktrace.lo `test -f 'sanitizer_stacktrace.cc' || echo '$(srcdir)/'`sanitizer_stacktrace.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer.lo: sanitizer_symbolizer.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer.lo `test -f 'sanitizer_symbolizer.cc' || echo '$(srcdir)/'`sanitizer_symbolizer.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer.lo `test -f 'sanitizer_symbolizer.cc' || echo '$(srcdir)/'`sanitizer_symbolizer.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo: sanitizer_symbolizer_itanium.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo `test -f 'sanitizer_symbolizer_itanium.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_itanium.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer_itanium.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_itanium.lo `test -f 'sanitizer_symbolizer_itanium.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_itanium.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo: sanitizer_symbolizer_linux.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo `test -f 'sanitizer_symbolizer_linux.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_linux.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer_linux.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_linux.lo `test -f 'sanitizer_symbolizer_linux.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_linux.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo: sanitizer_symbolizer_mac.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo `test -f 'sanitizer_symbolizer_mac.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_mac.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer_mac.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_mac.lo `test -f 'sanitizer_symbolizer_mac.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_mac.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo: sanitizer_symbolizer_win.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_win.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo `test -f 'sanitizer_symbolizer_win.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_win.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_win.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_win.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer_win.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_win.lo `test -f 'sanitizer_symbolizer_win.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_win.cc
-
-libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo: sanitizer_symbolizer_nto.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo `test -f 'sanitizer_symbolizer_nto.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_nto.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_symbolizer_nto.cc' object='libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_symbolizer_nto.lo `test -f 'sanitizer_symbolizer_nto.cc' || echo '$(srcdir)/'`sanitizer_symbolizer_nto.cc
-
-libsanitizer_common_cpp_la-sanitizer_win.lo: sanitizer_win.cc
-@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -MT libsanitizer_common_cpp_la-sanitizer_win.lo -MD -MP -MF $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_win.Tpo -c -o libsanitizer_common_cpp_la-sanitizer_win.lo `test -f 'sanitizer_win.cc' || echo '$(srcdir)/'`sanitizer_win.cc
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_win.Tpo $(DEPDIR)/libsanitizer_common_cpp_la-sanitizer_win.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sanitizer_win.cc' object='libsanitizer_common_cpp_la-sanitizer_win.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsanitizer_common_cpp_la_CXXFLAGS) $(CXXFLAGS) -c -o libsanitizer_common_cpp_la-sanitizer_win.lo `test -f 'sanitizer_win.cc' || echo '$(srcdir)/'`sanitizer_win.cc
 
 mostlyclean-libtool:
 	-rm -f *.lo
