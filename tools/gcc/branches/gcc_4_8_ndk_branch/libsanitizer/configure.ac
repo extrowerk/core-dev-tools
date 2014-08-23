@@ -87,6 +87,12 @@ case "$host" in
 esac
 AM_CONDITIONAL(USING_MAC_INTERPOSE, $MAC_INTERPOSE)
 
+case "$host" in
+  *-*-nto-qnx*) TARGET_OS_NTO=true ;;
+  *) TARGET_OS_NTO=false ;;
+esac
+AM_CONDITIONAL(TARGET_OS_NTO, $TARGET_OS_NTO)
+
 AC_CONFIG_FILES([Makefile])
 
 AC_CONFIG_FILES(AC_FOREACH([DIR], [interception sanitizer_common asan], [DIR/Makefile ]),
