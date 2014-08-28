@@ -27,7 +27,7 @@ if [ "$OSTOCLEAN" ]; then
   case $OSTOCLEAN in
     linux) RMARG="linux-x86-*/[!G]*"
       ;;
-    nto) RMARG="nto-x86-*/[!G]*"
+    nto) RMARG="nto-*-*/[!G]*"
       ;;
     win32) RMARG="win32-x86-*/[!G]*"
       ;;
