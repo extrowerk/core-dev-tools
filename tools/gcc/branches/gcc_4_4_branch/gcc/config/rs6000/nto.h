@@ -119,23 +119,23 @@ QNX_SYSTEM_INCLUDES \
 
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1.o} \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crti.o  crtbegin.o%s" \
+"%{!shared: %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib/%{pg:m}%{p:m}crt1.o} \
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib/crti.o  crtbegin.o%s" \
 
 #undef  ENDFILE_SPEC
 #define ENDFILE_SPEC "crtend.o%s \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/crtn.o"
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib/crtn.o"
 
 #define QNX_SYSTEM_LIBDIRS \
-" -L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3 \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/usr/lib \
--L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib \
+" -L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3 \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/usr/lib \
+-L %$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/opt/lib \
 -rpath-link \
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/usr/lib:\
-%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{me500*:-spe}/opt/lib "
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib/gcc/%v1.%v2.%v3:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/lib:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/usr/lib:\
+%$QNX_TARGET/ppc%{!EL:be}%{EL:le}%{msoft-float:-sf}%{me500*:-spe}/opt/lib "
 
 #undef	LIB_SPEC
 #define LIB_SPEC \
