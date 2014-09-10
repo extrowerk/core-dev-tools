@@ -25,9 +25,10 @@ LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde.c \
   $(srcdir)/unwind-sjlj.c $(srcdir)/unwind-c.c
 LIB2ADDEHDEP = unwind.inc unwind-dw2-fde.h
 
-MULTILIB_OPTIONS = fpic me500v2
-MULTILIB_DIRNAMES = pic spe 
+MULTILIB_OPTIONS = fpic me500v2 msoft-float
+MULTILIB_DIRNAMES = pic spe softfloat
 MULTILIB_MATCHES = fpic=shared
+MULTILIB_EXCEPTIONS = *me500v2/*msoft-float*
 
 EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
 
