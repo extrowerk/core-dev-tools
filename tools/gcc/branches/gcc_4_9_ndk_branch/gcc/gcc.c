@@ -680,7 +680,9 @@ proper position among the other output files.  */
 
 #ifndef LINK_PIE_SPEC
 #ifdef HAVE_LD_PIE
-#define LINK_PIE_SPEC "%{pie:-pie} "
+#define LINK_PIE_SPEC "%{pie:-pie}\
+  %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
+  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
 #else
 #define LINK_PIE_SPEC "%{pie:} "
 #endif
@@ -883,6 +885,8 @@ static const char *cc1_options =
  %{-target-help:--target-help}\
  %{-version:--version}\
  %{-help=*:--help=%*}\
+ %{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|D__KERNEL__:;:-fPIE}\
+ %{static:%{pie:%e-static and -pie are incompatible}}\
  %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}}\
  %{fsyntax-only:-o %j} %{-param*}\
  %{coverage:-fprofile-arcs -ftest-coverage}";
