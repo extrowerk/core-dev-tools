@@ -999,7 +999,7 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
                       plongest (gdbarch->frame_red_zone_size));
   fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_gcore_bfd_target_p() = %d\n",
-                      gdbarch_gcore_bfd_target_p (gdbarch));
+                      pstring (gdbarch_gcore_bfd_target_p (gdbarch)));
   fprintf_unfiltered (file,
                       "gdbarch_dump: gcore_bfd_target = %s\n",
                       pstring (gdbarch->gcore_bfd_target));
@@ -1314,16 +1314,16 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
                       host_address_to_string (gdbarch->stabs_argument_has_addr));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_gdb_register_prefix = %s\n",
-                      gdbarch->stap_gdb_register_prefix);
+                      pstring (gdbarch->stap_gdb_register_prefix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_gdb_register_suffix = %s\n",
-                      gdbarch->stap_gdb_register_suffix);
+                      pstring (gdbarch->stap_gdb_register_suffix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_integer_prefix = %s\n",
-                      gdbarch->stap_integer_prefix);
+                      pstring (gdbarch->stap_integer_prefix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_integer_suffix = %s\n",
-                      gdbarch->stap_integer_suffix);
+                      pstring (gdbarch->stap_integer_suffix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_stap_is_single_operand_p() = %d\n",
                       gdbarch_stap_is_single_operand_p (gdbarch));
@@ -1338,16 +1338,16 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
                       host_address_to_string (gdbarch->stap_parse_special_token));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_register_indirection_prefix = %s\n",
-                      gdbarch->stap_register_indirection_prefix);
+                      pstring (gdbarch->stap_register_indirection_prefix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_register_indirection_suffix = %s\n",
-                      gdbarch->stap_register_indirection_suffix);
+                      pstring (gdbarch->stap_register_indirection_suffix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_register_prefix = %s\n",
-                      gdbarch->stap_register_prefix);
+                      pstring (gdbarch->stap_register_prefix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: stap_register_suffix = %s\n",
-                      gdbarch->stap_register_suffix);
+                      pstring (gdbarch->stap_register_suffix));
   fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_static_transform_name_p() = %d\n",
                       gdbarch_static_transform_name_p (gdbarch));
