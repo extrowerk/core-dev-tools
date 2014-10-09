@@ -1086,6 +1086,8 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
   /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
   const unsigned int sizeof_auxv_t = 8;
   enum bfd_endian byte_order;
+  int envpnullfound = 0;
+  const int at_type_max = 50; /* AT_NUM from our auxv.h */
 
   /* Skip over argc, argv and envp... Comment from ldd.c:
 
@@ -1120,9 +1122,14 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
 	 == 0)
     {
       anint = extract_unsigned_integer (targ32, sizeof (targ32), byte_order);
-      data_ofs += sizeof (targ32);
-      if (anint == 0)
+      if (!envpnullfound && anint == 0)
+	{
+	  envpnullfound = 1;
+	  /* Now loop until non-null is found. */
+	}
+      else if (envpnullfound && anint != 0)
 	break;
+      data_ofs += sizeof (targ32);
     }
   initial_stack += data_ofs;
 
@@ -1136,7 +1143,7 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
 	{
 	  ULONGEST a_type = extract_unsigned_integer (buff, sizeof (targ32),
 						      byte_order);
-	  if (a_type != AT_NULL)
+	  if (a_type != AT_NULL && a_type < at_type_max)
 	    {
 	      buff += sizeof_auxv_t;
 	      len_read += sizeof_auxv_t;
@@ -1145,8 +1152,6 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
 	    {
 	      break;
 	    }
-	  //if (a_type == AT_PHNUM) /* That's all we need.  */
-	   // break;
 	  initial_stack += sizeof_auxv_t;
 	}
       else
