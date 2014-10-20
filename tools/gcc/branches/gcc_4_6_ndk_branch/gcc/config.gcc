@@ -669,6 +669,10 @@ case ${target} in
       tm_defines="${tm_defines} HAS_LIBC_R=1" ;;
   esac
   ;;
+*-*-qnx*)
+  default_use_cxa_atexit=yes
+  extra_options="$extra_options nto.opt"
+  ;;
 *-*-rtems*)
   case ${enable_threads} in
     yes) thread_file='rtems' ;;
