@@ -89,7 +89,10 @@ crtbegin.o%s "
  %{shared} \
  %{symbolic:-Bsymbolic} \
  %{G:-G} %{MAP:-Map mapfile} \
- %{!shared:-dynamic-linker /usr/lib/ldqnx.so.2} \
+ %{!shared: \
+   %{!static: \
+     %{rdynamic:-export-dynamic}} \
+   --dynamic-linker /usr/lib/ldqnx.so.2} \
  -m armnto -X \
  %{EB:-EB} %{!EB:-EL} %{EL:-EL}"
 
