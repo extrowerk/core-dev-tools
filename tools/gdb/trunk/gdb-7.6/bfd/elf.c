@@ -8713,6 +8713,15 @@ elfobj_grok_gnu_build_id (bfd *abfd, Elf_Internal_Note *note)
     return FALSE;
 
   t = elf_tdata (abfd);
+#ifdef __QNXTARGET__
+  if (t->build_id != NULL)
+    {
+      /* Already found. Duplicate build-id????*/
+      (*_bfd_error_handler)
+	(_("warning: %B: GNU build_id note already read. Duplicated build-ids?  (Please check your build)."), abfd);
+      return TRUE;
+    }
+#endif /* __QNXTARGET__ */
   t->build_id = bfd_alloc (abfd, sizeof (*t->build_id) - 1 + note->descsz);
   if (t->build_id == NULL)
     return FALSE;
