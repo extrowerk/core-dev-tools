@@ -8576,6 +8576,15 @@ elfcore_grok_note (bfd *abfd, Elf_Internal_Note *note)
 static bfd_boolean
 elfobj_grok_gnu_build_id (bfd *abfd, Elf_Internal_Note *note)
 {
+#ifdef __QNXTARGET__
+  if (elf_tdata (abfd)->build_id != NULL)
+    {
+      /* Already found. Duplicate build-id????*/
+      (*_bfd_error_handler)
+	(_("warning: %B: GNU build_id note already read. Duplicated build-ids?  (Please check your build)."), abfd);
+      return TRUE;
+    }
+#endif /* __QNXTARGET__ */
   elf_tdata (abfd)->build_id_size = note->descsz;
   elf_tdata (abfd)->build_id = (bfd_byte *) bfd_alloc (abfd, note->descsz);
   if (elf_tdata (abfd)->build_id == NULL)
