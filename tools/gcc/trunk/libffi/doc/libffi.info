@@ -1,4 +1,4 @@
-This is libffi.info, produced by makeinfo version 5.1 from libffi.texi.
+This is libffi.info, produced by makeinfo version 5.2 from libffi.texi.
 
 This manual is for Libffi, a portable foreign-function interface
 library.
@@ -523,6 +523,7 @@ A trivial example that creates a new 'puts' by binding 'fputs' with
        return 0;
      }
 
+
 
 File: libffi.info,  Node: Missing Features,  Next: Index,  Prev: Using libffi,  Up: Top
 
@@ -612,7 +613,7 @@ Node: Type Example11208
 Node: Multiple ABIs12474
 Node: The Closure API12845
 Node: Closure Example15789
-Node: Missing Features17397
-Node: Index17850
+Node: Missing Features17398
+Node: Index17851
 
 End Tag Table
