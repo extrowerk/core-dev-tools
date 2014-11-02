@@ -1,4 +1,4 @@
-This is gcj.info, produced by makeinfo version 5.1 from gcj.texi.
+This is gcj.info, produced by makeinfo version 5.2 from gcj.texi.
 
 Copyright (C) 2001-2014 Free Software Foundation, Inc.
 
@@ -42,6 +42,7 @@ START-INFO-DIR-ENTRY
                             Merge the per-solib databases made by aot-compile
                             into one system-wide database.
 END-INFO-DIR-ENTRY
+
 
 
    Copyright (C) 2001-2014 Free Software Foundation, Inc.
@@ -3603,51 +3604,51 @@ Index
 
 
 Tag Table:
-Node: Top2678
-Node: Copying4097
-Node: GNU Free Documentation License41628
-Node: Invoking gcj66751
-Node: Input and output files67514
-Node: Input Options69036
-Node: Encodings72311
-Node: Warnings73517
-Node: Linking74630
-Node: Code Generation77563
-Node: Configure-time Options84339
-Node: Compatibility86079
-Node: Limitations86598
-Node: Extensions88176
-Node: Invoking jcf-dump91267
-Node: Invoking gij92212
-Node: Invoking gcj-dbtool95468
-Node: Invoking jv-convert97929
-Node: Invoking grmic99008
-Node: Invoking gc-analyze100394
-Node: Invoking aot-compile101835
-Node: Invoking rebuild-gcj-db102783
-Node: About CNI103093
-Node: Basic concepts104552
-Node: Packages107448
-Node: Primitive types109776
-Node: Reference types111453
-Node: Interfaces112537
-Node: Objects and Classes113448
-Node: Class Initialization115643
-Node: Object allocation117986
-Node: Memory allocation118776
-Node: Arrays119408
-Node: Methods122218
-Node: Strings125039
-Node: Mixing with C++126543
-Node: Exception Handling130016
-Node: Synchronization131651
-Node: Invocation133640
-Node: Reflection138592
-Node: System properties139050
-Node: Standard Properties139927
-Node: GNU Classpath Properties144358
-Node: libgcj Runtime Properties145404
-Node: Resources149907
-Node: Index150721
+Node: Top2679
+Node: Copying4098
+Node: GNU Free Documentation License41630
+Node: Invoking gcj66754
+Node: Input and output files67517
+Node: Input Options69039
+Node: Encodings72314
+Node: Warnings73520
+Node: Linking74633
+Node: Code Generation77566
+Node: Configure-time Options84342
+Node: Compatibility86082
+Node: Limitations86601
+Node: Extensions88179
+Node: Invoking jcf-dump91270
+Node: Invoking gij92215
+Node: Invoking gcj-dbtool95471
+Node: Invoking jv-convert97932
+Node: Invoking grmic99011
+Node: Invoking gc-analyze100397
+Node: Invoking aot-compile101838
+Node: Invoking rebuild-gcj-db102786
+Node: About CNI103096
+Node: Basic concepts104555
+Node: Packages107451
+Node: Primitive types109779
+Node: Reference types111456
+Node: Interfaces112540
+Node: Objects and Classes113451
+Node: Class Initialization115646
+Node: Object allocation117989
+Node: Memory allocation118779
+Node: Arrays119411
+Node: Methods122221
+Node: Strings125042
+Node: Mixing with C++126546
+Node: Exception Handling130019
+Node: Synchronization131654
+Node: Invocation133643
+Node: Reflection138595
+Node: System properties139053
+Node: Standard Properties139930
+Node: GNU Classpath Properties144361
+Node: libgcj Runtime Properties145407
+Node: Resources149910
+Node: Index150724
 
 End Tag Table

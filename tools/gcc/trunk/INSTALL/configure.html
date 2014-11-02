@@ -19,7 +19,7 @@ A GNU Manual
 You have freedom to copy and modify this GNU Manual, like GNU
      software.  Copies published by the Free Software Foundation raise
      funds for GNU development. -->
-<!-- Created by GNU Texinfo 5.1, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
 <head>
 <title>Installing GCC</title>
 
@@ -1001,6 +1001,11 @@ for the specified languages using <code>make stage1-start check-gcc</code>.
 be built.  This can be useful for debugging, or for compatibility with
 previous Ada build procedures, when it was required to explicitly
 do a &lsquo;<samp>make -C gcc gnatlib_and_tools</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>--disable-libsanitizer</code></dt>
+<dd><p>Specify that the run-time libraries for the various sanitizers should
+not be built.
 </p>
 </dd>
 <dt><code>--disable-libssp</code></dt>
