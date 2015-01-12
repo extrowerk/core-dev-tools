@@ -17,6 +17,7 @@
 if {!([istarget "i*86-*-linux*"]
       || [istarget "i*86-*-gnu*"]
       || [istarget "i*86-*-nacl*"]
+      || [istarget "i*86-*-nto*"]
       || [istarget "x86_64-*-linux*"]
       || [istarget "x86_64-*-nacl*"])
     || ![is_elf_format]

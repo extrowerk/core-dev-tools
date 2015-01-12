@@ -1,7 +1,7 @@
 #source: ehdr_start.s
 #ld: -e _start
 #nm: -n
-#target: *-*-linux* *-*-gnu* *-*-nacl*
+#target: *-*-linux* *-*-gnu* *-*-nacl* *-*-nto*
 #xfail: frv-*-*
 
 #...

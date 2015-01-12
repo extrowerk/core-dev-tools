@@ -1,4 +1,4 @@
-## Process this file with automake to generate Makefile.in
+# Process this file with automake to generate Makefile.in
 #
 #   Copyright (C) 2012-2014 Free Software Foundation, Inc.
 #
@@ -173,6 +173,7 @@ ALL_EMULATION_SOURCES = \
 	earmelfb_nacl.c \
 	earmelfb_nbsd.c \
 	earmnbsd.c \
+	earmnto_eabi.c \
 	earmnto.c \
 	earmpe.c \
 	earmsymbian.c \
@@ -769,6 +770,11 @@ earmelfb_nbsd.c: $(srcdir)/emulparams/armelfb_nbsd.sh \
 
 earmnbsd.c:	$(srcdir)/emulparams/armnbsd.sh \
   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
+
+earmnto_eabi.c: $(srcdir)/emulparams/armnto_eabi.sh \
+  $(srcdir)/emulparams/armnto.sh \
+  $(ELF_DEPS) $(srcdir)/emultempl/armelf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 
 earmnto.c: $(srcdir)/emulparams/armnto.sh \
   $(ELF_DEPS) $(srcdir)/emultempl/armelf.em \

@@ -9,10 +9,10 @@ Disassembly of section \.plt:
     8e04:	e59fe004 	ldr	lr, \[pc, #4\]	; 8e10 <targetfn@plt-0x4>
     8e08:	e08fe00e 	add	lr, pc, lr
     8e0c:	e5bef008 	ldr	pc, \[lr, #8\]!
-    8e10:	0001027c 	\.word	0x0001027c
+    8e10:	000..27c 	\.word	0x000..27c
 00008e14 <targetfn@plt>:
     8e14:	e28fc600 	add	ip, pc, #0, 12
-    8e18:	e28cca10 	add	ip, ip, #16, 20	; 0x10000
+    8e18:	e28cca.. 	add	ip, ip, .*
     8e1c:	e5bcf27c 	ldr	pc, \[ip, #636\]!	; 0x27c
 
 Disassembly of section \.text:

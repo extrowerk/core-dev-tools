@@ -4,6 +4,7 @@
 	.arch armv6
 	.syntax unified
 	.text
+	.type   foo, %function
 foo:
 	bl bar
 	.weak bar

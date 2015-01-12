@@ -118,6 +118,7 @@ foreach t $test_list {
 
 if { [istarget *-*-linux*]
      || [istarget *-*-nacl*]
+     || [istarget *-*-nto*]
      || [istarget *-*-gnu*] } {
     run_ld_link_tests {
 	{"Weak symbols in dynamic objects 1 (support)"
@@ -190,6 +191,7 @@ run_ld_link_exec_tests $xfails $array_tests
 
 if { [istarget *-*-linux*]
      || [istarget *-*-nacl*]
+     || [istarget *-*-nto*]
      || [istarget *-*-gnu*] } {
     run_ld_link_exec_tests $xfails $array_tests_pie
 }

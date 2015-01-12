@@ -10,7 +10,7 @@
 
 	.text
 	.globl _start
-
+	.type   _start, %function
 _start:
 	@ ALU, PC-relative
 

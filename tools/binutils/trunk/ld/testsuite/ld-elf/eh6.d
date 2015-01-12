@@ -1,7 +1,7 @@
 #source: eh6.s
 #ld: --gc-sections -shared
 #readelf: -wf
-#target: x86_64-*-linux-gnu* i?86-*-linux-gnu i?86-*-gnu*
+#target: x86_64-*-linux-gnu* i?86-*-linux-gnu i?86-*-gnu* i?86-*-nto*
 
 Contents of the .eh_frame section:
 

@@ -1,6 +1,7 @@
 @ Test to ensure that a ARM to Thumb call exceeding 32Mb generates a stub.
 
 	.global _start
+	.type   _start, %function
 	.global bar
 	.syntax unified
 

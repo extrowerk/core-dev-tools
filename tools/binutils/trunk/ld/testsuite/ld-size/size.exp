@@ -21,7 +21,7 @@
 #
 
 
-# Size relications have only been implemented for the ix86 and x86_64,
+# Size relocations have only been implemented for the ix86 and x86_64,
 # so far.
 if {!(([istarget "i?86-*-*"]
        || [istarget "x86_64-*-*"])

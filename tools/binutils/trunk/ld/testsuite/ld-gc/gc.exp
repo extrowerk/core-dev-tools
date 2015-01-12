@@ -118,6 +118,7 @@ if { [is_elf_format] && [check_shared_lib_support] } then {
 if { [is_remote host] || [which $CC] != 0 } {
     if { [istarget "*-*-linux*"]
 	 || [istarget "*-*-nacl*"]
+	 || [istarget "*-*-nto*"]
 	 || [istarget "*-*-gnu*"] } {
 	ld_compile "$CC -fPIC $CFLAGS $cflags" $srcdir/$subdir/pr11218-1.c tmpdir/pr11218-1.o
 	ld_simple_link $ld tmpdir/pr11218-1.so "-shared tmpdir/pr11218-1.o"

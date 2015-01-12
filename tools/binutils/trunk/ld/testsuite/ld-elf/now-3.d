@@ -1,7 +1,7 @@
 #source: start.s
 #readelf: -d -W
 #ld: -shared -z now
-#target: *-*-linux* *-*-gnu*
+#target: *-*-linux* *-*-gnu* *-*-nto*
 
 #failif
 #...
