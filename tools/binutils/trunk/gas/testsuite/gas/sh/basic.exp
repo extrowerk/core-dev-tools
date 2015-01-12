@@ -19,7 +19,7 @@
 
 # Written by Cygnus Support.
 
-if {[istarget "sh*-*-linux-*"] || [istarget "sh*l*-*-netbsdelf*"]} then {
+if {[istarget "sh*-*-linux-*"] || [istarget "sh*l*-*-netbsdelf*"] || [istarget "sh*-*-nto*"]} then {
     global ASFLAGS
     set ASFLAGS "$ASFLAGS -big"
 }
@@ -141,7 +141,7 @@ if [istarget sh*-*-*] then {
 	run_dump_test "pcrel2"
     }
 
-    if {[istarget sh*-*elf] || [istarget sh*-*linux*]} then {
+    if {[istarget sh*-*elf] || [istarget sh*-*linux*] || [istarget sh*-nto*]} then {
 	if {![istarget "sh64*-*-*"] && ![istarget "sh5*-*-*"]} then {
 	    run_dump_test "sh4a"
 	    run_dump_test "sh4a-fp"

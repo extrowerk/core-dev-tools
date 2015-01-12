@@ -5,5 +5,6 @@
 	.text
 	.global bar
 	.global _start
+	.type   _start, %function
 _start:
 	bl bar

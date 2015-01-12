@@ -37,7 +37,8 @@ if { [istarget powerpc64*-*-*] || [istarget *-*-elf64*]} then {
      || [istarget powerpc*-*-sysv4*] \
      || [istarget powerpc*-*-linux*] \
      || [istarget powerpc*-*-solaris*] \
-     || [istarget powerpc*-*-rtems*] } then {
+     || [istarget powerpc*-*-rtems*] \
+     || [istarget powerpc*-*-nto*] } then {
     run_dump_test "astest"
     run_dump_test "astest2"
     run_dump_test "test1elf32"

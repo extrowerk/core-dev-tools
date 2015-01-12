@@ -37,6 +37,7 @@ proc is_elf_format {} {
 	 && ![istarget *-*-irix5*]
 	 && ![istarget *-*-irix6*]
 	 && ![istarget *-*-netbsd*]
+	 && ![istarget *-*-nto*]
 	 && ![istarget *-*-openbsd*]
 	 && ![istarget *-*-qnx*]
 	 && ![istarget *-*-solaris2*] } {

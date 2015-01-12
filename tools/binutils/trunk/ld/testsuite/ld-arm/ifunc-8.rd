@@ -1,5 +1,5 @@
 
-Relocation section '\.rel\.dyn' at offset 0x8000 contains 62 entries:
+Relocation section '\.rel\.dyn' at offset 0x[0-9a-f]+ contains 62 entries:
  Offset     Info    Type            Sym\.Value  Sym\. Name
 0001106c  ......17 R_ARM_RELATIVE   
 00011070  ......17 R_ARM_RELATIVE   
@@ -64,7 +64,7 @@ Relocation section '\.rel\.dyn' at offset 0x8000 contains 62 entries:
 000100c0  ......03 R_ARM_REL32       00000000   tbf4
 00011090  ......15 R_ARM_GLOB_DAT    00000000   tbf4
 
-Relocation section '\.rel\.plt' at offset 0x81f0 contains 12 entries:
+Relocation section '\.rel\.plt' at offset 0x[0-9a-f]+ contains 12 entries:
  Offset     Info    Type            Sym\.Value  Sym\. Name
 0001100c  ......16 R_ARM_JUMP_SLOT   00000000   atf2
 00011010  ......16 R_ARM_JUMP_SLOT   00000000   aaf4

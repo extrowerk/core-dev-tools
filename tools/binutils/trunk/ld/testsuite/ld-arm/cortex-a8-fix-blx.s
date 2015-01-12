@@ -24,6 +24,7 @@
 
 	.arm
         .align  2
+	.type   armfn, %function
 armfn:
 	mov	r2, r3, asl r4
 	bx	lr

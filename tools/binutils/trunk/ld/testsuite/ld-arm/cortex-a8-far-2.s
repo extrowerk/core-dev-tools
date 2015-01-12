@@ -1,5 +1,6 @@
 	.syntax unified
 	.thumb
+	.type   _start, %function
 three:
 	bl far_fn1
 	bl far_fn2

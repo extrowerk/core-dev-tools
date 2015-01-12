@@ -25,6 +25,7 @@
 
 if { ![istarget *-*-linux*]
      && ![istarget *-*-nacl*]
+     && ![istarget *-*-nto*]
      && ![istarget *-*-gnu*]} {
     return
 }
@@ -150,7 +151,8 @@ if { ([istarget "i?86-*-elf*"]
       || [istarget "x86_64-*-linux*"]
       || [istarget "amd64-*-linux*"]
       || [istarget "i?86-*nacl*"]
-      || [istarget "x86_64-*nacl*"]) } {
+      || [istarget "x86_64-*nacl*"]
+      || [istarget "i?86-*-nto*"]) } {
     binutils_test strip "-z relro -shared" relro2
     binutils_test objcopy "-z relro -shared" relro2
 }

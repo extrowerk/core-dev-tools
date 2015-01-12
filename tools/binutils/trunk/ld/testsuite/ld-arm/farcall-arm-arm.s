@@ -1,6 +1,7 @@
 @ Test to ensure that a ARM to ARM call exceeding 32Mb generates a stub.
 
 	.global _start
+	.type   _start, %function
 	.syntax unified
 
 @ We will place the section .text at 0x1000.

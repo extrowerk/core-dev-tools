@@ -1,6 +1,7 @@
 @ Test to ensure that ARM calls exceeding 32Mb generate stubs.
 
 	.global _start
+	.type   _start, %function
 	.syntax unified
 
 @ We will place the section .text at 0x1000.
@@ -33,6 +34,7 @@ bar3:
 	bx lr
 
 	.global bar4
+	.type bar4, %function
 	.thumb_func
 bar4:
 	bx lr

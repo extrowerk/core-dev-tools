@@ -31,6 +31,7 @@ if { ![istarget hppa*64*-*-hpux*] \
      && ![istarget i?86-*-linux*] \
      && ![istarget i?86-*-gnu*] \
      && ![istarget *-*-nacl*] \
+     && ![istarget *-*-nto*] \
      && ![istarget ia64-*-linux*] \
      && ![istarget m68k-*-linux*] \
      && ![istarget mips*-*-linux*] \

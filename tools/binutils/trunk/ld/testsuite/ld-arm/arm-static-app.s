@@ -1,5 +1,6 @@
 	.text
 	.globl _start
+	.type   _start, %function
 _start:
 	mov	ip, sp
 	stmdb	sp!, {r11, ip, lr, pc}

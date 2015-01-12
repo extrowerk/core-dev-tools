@@ -28,7 +28,8 @@ if {    ![istarget *-*-sysv4*] \
      && ![istarget *-*-gnu*] \
      && ![istarget *-*-irix5*] \
      && ![istarget *-*-irix6*] \
-     && ![istarget *-*-solaris2*] } {
+     && ![istarget *-*-solaris2*] \
+     && ![istarget *-*-nto*] } {
     return
 }
 

@@ -1,5 +1,6 @@
 	.text
 	.globl _start
+	.type  _start, %function
 _start:
 	mov	ip, sp
 	stmdb	sp!, {r11, ip, lr, pc}
@@ -11,6 +12,7 @@ _start:
 	.long	lib_func1
 
 	.globl app_func2
+	.type  app_func2, %function
 app_func2:
 	bx	lr
 
