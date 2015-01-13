@@ -679,7 +679,7 @@ case "${targ}" in
     ;;
   x86_64-*-nto-*)
     targ_defvec=x86_64_elf64_vec
-    targ_selvecs="i386_elf32_vec x86_64_elf32_vec i386_aout_linux_vec i386_pei_vec x86_64_pei_vec l1om_elf64_vec k1om_elf64_vec"
+    targ_selvecs="i386_elf32_vec x86_64_elf32_vec i386_aout_linux_vec l1om_elf64_vec k1om_elf64_vec"
     want64=true
     targ_cflags=-D__QNXTARGET__
     ;;
