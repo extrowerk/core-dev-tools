@@ -15,6 +15,8 @@ typedef struct timezone *__restrict __timezone_ptr_t;
 extern int gettimeofday (struct timeval *__restrict __tv,
     __timezone_ptr_t __tz) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (1)));
 
+#include <setjmp.h>
+/*
 typedef long int __jmp_buf[8];
 typedef struct
   {
@@ -31,7 +33,7 @@ typedef struct __jmp_buf_tag jmp_buf[1];
 extern int setjmp (jmp_buf __env) __attribute__ ((__nothrow__));
 extern void longjmp (struct __jmp_buf_tag __env[1], int __val)
      __attribute__ ((__nothrow__)) __attribute__ ((__noreturn__));
-
+*/
 extern int bar (void);
 
 int __attribute__ ((noinline, noclone))

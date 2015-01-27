@@ -21,8 +21,10 @@ bar (void)
   return ((__UINTPTR_TYPE__) &t[0]) & 15;
 }
 
-/* { dg-final { scan-tree-dump-times "&s" 1 "optimized" } } */
-/* { dg-final { scan-tree-dump-times "&t" 1 "optimized" } } */
+/* { dg-final { scan-tree-dump-times "&s" 1 "optimized" { target { ! tls_emulated } } } } */
+/* { dg-final { scan-tree-dump-times "&t" 1 "optimized" { target { ! tls_emulated } } } } */
+/* { dg-final { scan-tree-dump-times "__emutls_get_address.*&__emutls_v.s" 1 "optimized" { target { tls_emulated } } } } */
+/* { dg-final { scan-tree-dump-times "__emutls_get_address.*&__emutls_v.t" 1 "optimized" { target { tls_emulated } } } } */
 /* { dg-final { scan-tree-dump-times "return 0" 0 "optimized" } } */
 /* { dg-final { scan-assembler-not ".align\[ \t]*16\[^:]*\[\n\r]s:" { target { *-*-linux* } } } } */
 /* { dg-final { scan-assembler ".align\[ \t]*16\[^:]*\[\n\r]t:" { target { *-*-linux* } } } } */

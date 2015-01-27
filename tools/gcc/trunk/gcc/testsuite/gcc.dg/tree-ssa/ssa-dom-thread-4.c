@@ -1,5 +1,6 @@
 /* { dg-do compile } */ 
 /* { dg-options "-O2 -fdump-tree-dom1-details" } */
+/* { dg-options "-O2 -fdump-tree-dom1-details -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 struct bitmap_head_def;
 typedef struct bitmap_head_def *bitmap;
 typedef const struct bitmap_head_def *const_bitmap;

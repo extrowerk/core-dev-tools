@@ -2,6 +2,7 @@
    when evaluating an && condition.  VRP is not able to optimize this.  */
 /* { dg-do compile { target { ! { logical_op_short_circuit || { m68k*-*-* mmix*-*-* mep*-*-* bfin*-*-* v850*-*-* picochip*-*-* moxie*-*-* cris*-*-* m32c*-*-* fr30*-*-* mcore*-*-* powerpc*-*-* xtensa*-*-* hppa*-*-* } } } } } */
 /* { dg-options "-O2 -fdump-tree-forwprop1" } */
+/* { dg-options "-O2 -fdump-tree-forwprop1 -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 
 extern char *frob (void);
 extern _Bool testit (void);

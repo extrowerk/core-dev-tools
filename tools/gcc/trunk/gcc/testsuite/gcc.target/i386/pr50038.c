@@ -1,5 +1,6 @@
 /* PR target/50038 */
 /* { dg-options "-O2" } */
+/* { dg-options "-O2 -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 
 void
 test (int len, unsigned char *in, unsigned char *out)

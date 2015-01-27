@@ -1,7 +1,7 @@
 /* Prefetching when the step is loop invariant.  */
 /* { dg-do compile } */
 /* { dg-require-effective-target sse2 } */
-/* { dg-options "-O3 -msse2 -fprefetch-loop-arrays -fdump-tree-aprefetch-details --param min-insn-to-prefetch-ratio=3 --param simultaneous-prefetches=10 -fdump-tree-aprefetch-details" } */
+/* { dg-options "-march=i686 -O3 -msse2 -fprefetch-loop-arrays -fdump-tree-aprefetch-details --param min-insn-to-prefetch-ratio=3 --param simultaneous-prefetches=10 -fdump-tree-aprefetch-details" } */
 
 
 double data[16384];
