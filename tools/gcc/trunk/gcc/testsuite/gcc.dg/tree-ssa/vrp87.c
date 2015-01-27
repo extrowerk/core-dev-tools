@@ -3,6 +3,7 @@
 /* { dg-do compile { target { ! { logical_op_short_circuit || { m68k*-*-* mmix*-*-* mep*-*-* bfin*-*-* v850*-*-* picochip*-*-* moxie*-*-* cris*-*-* m32c*-*-* fr30*-*-* mcore*-*-* powerpc*-*-* xtensa*-*-* hppa*-*-* } } } } } */
 
 /* { dg-options "-O2 -fdump-tree-vrp2-details -fdump-tree-cddce2-details" } */
+/* { dg-options "-O2 -fdump-tree-vrp2-details -fdump-tree-cddce2-details -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 
 struct bitmap_head_def;
 typedef struct bitmap_head_def *bitmap;

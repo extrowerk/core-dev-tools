@@ -7,7 +7,7 @@
 #define PTRDIFF_TYPE "int"
 
 #undef DEFAULT_SIGNED_CHAR
-#define DEFAULT_SIGNED_CHAR  1 
+#define DEFAULT_SIGNED_CHAR  1
 
 #define	OBJECT_FORMAT_ELF
 #define	HAS_INIT_SECTION

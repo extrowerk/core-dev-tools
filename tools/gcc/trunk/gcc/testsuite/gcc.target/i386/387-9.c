@@ -1,6 +1,6 @@
 /* Verify that 387 fsincos instruction is generated.  */
 /* { dg-do compile } */
-/* { dg-options "-O -funsafe-math-optimizations -mfpmath=387 -mfancy-math-387" } */
+/* { dg-options "-O -funsafe-math-optimizations -mfpmath=387 -mfancy-math-387 -fno-stack-protector" } */
 
 extern double sin (double);
 extern double cos (double);

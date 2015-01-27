@@ -71,8 +71,8 @@ do { \
 
 #ifdef HAVE_GNU_INDIRECT_FUNCTION
 #define GNU_INDIRECT_FUNCTION if (HAVE_GNU_INDIRECT_FUNCTION) \
-				 builtin_define ("__GNU_INDIRECT_FUNCTION__"); 
-#else 
+				 builtin_define ("__GNU_INDIRECT_FUNCTION__");
+#else
 #define GNU_INDIRECT_FUNCTION
 #endif
 
@@ -106,12 +106,17 @@ do {                                            \
 #define WCHAR_TYPE_SIZE 32
 
 #undef WINT_TYPE
-#define WINT_TYPE "long int"
+#define WINT_TYPE "int"
 
 #undef WINT_TYPE_SIZE
 #define WINT_TYPE_SIZE 32
 
 #define TARGET_POSIX_IO
+
+/* Determine what functions are present at the runtime;
+ *    all new versions of QNX have C99 functions.  */
+#undef TARGET_LIBC_HAS_FUNCTION
+#define TARGET_LIBC_HAS_FUNCTION default_libc_has_function
 
 #undef GOMP_SELF_SPECS
 #define GOMP_SELF_SPECS ""

@@ -1,4 +1,4 @@
-/* { dg-options "-O2" } */
+/* { dg-options "-O2 -march=i686" } */
 /* { dg-do compile } */
 /* { dg-require-effective-target ia32 } */
 

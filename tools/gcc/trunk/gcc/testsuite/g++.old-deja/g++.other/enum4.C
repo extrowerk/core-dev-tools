@@ -12,7 +12,7 @@
 // not be needed.  arm-*-linux* should be a good approximation to
 // those platforms where the EABI supplement defines enum values to be
 // 32 bits wide.
-// { dg-options "-fshort-enums -Wl,--no-enum-size-warning" { target arm*-*-linux* } }
+// { dg-options "-fshort-enums -Wl,--no-enum-size-warning" { target arm*-*-linux* arm*-*-qnx* } }
 
 enum E { 
   a = -312

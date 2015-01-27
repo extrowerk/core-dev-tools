@@ -2,6 +2,7 @@
 /* { dg-options "-O2" } */
 /* { dg-require-effective-target nonpic } */
 /* { dg-final { scan-assembler-not "12345" } } */
+/* { dg-options "-O2 -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 
 static inline unsigned int myrnd (void)
 {

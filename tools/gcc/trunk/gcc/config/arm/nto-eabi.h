@@ -12,14 +12,14 @@
 #define PTRDIFF_TYPE "int"
 
 #undef DEFAULT_SIGNED_CHAR
-#define DEFAULT_SIGNED_CHAR  1 
+#define DEFAULT_SIGNED_CHAR  1
 
 #define	OBJECT_FORMAT_ELF
 
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()                \
 do {                                            \
- 	TARGET_BPABI_CPP_BUILTINS(); 		\
+ 	TARGET_BPABI_CPP_BUILTINS();		\
 	NTO_TARGET_OS_CPP_BUILTINS();		\
 	builtin_define ("__ARM__");             \
 } while (0)
@@ -92,13 +92,13 @@ do {                                            \
 #define	CC1_SPEC " \
 %{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
-/* Call the function profiler with a given profile label. 
+/* Call the function profiler with a given profile label.
    This is _mcount on other nto's.  It is mcount on ntoarm.  Leave it,
    or make sure it is also changed in lib/c/prof/arm/profile.h.  */
 #undef ARM_FUNCTION_PROFILER
-#define ARM_FUNCTION_PROFILER(STREAM, LABELNO)  				\
+#define ARM_FUNCTION_PROFILER(STREAM, LABELNO)				\
 {									\
-  fprintf (STREAM, "\tpush {lr}\n");  	    			\
+  fprintf (STREAM, "\tpush {lr}\n");					\
   fprintf (STREAM, "\tbl\tmcount%s\n", NEED_PLT_RELOC ? "(PLT)" : "");	\
 }
 
@@ -118,7 +118,7 @@ do {                                            \
   register unsigned long _flg __asm ("a3") = 0x1000000;			\
   __asm __volatile ("bl	msync"						\
                     : "=r" (_beg)					\
-                    : "r" (_beg), "r" (_len), "r" (_flg));		\
+                    : "r" (_beg), "r" (_len), "r" (_flg) : "lr");		\
 }
 
 #undef  DEFAULT_STRUCTURE_SIZE_BOUNDARY

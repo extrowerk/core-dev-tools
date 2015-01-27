@@ -1,5 +1,6 @@
 /* { dg-do run } */
 /* { dg-options "-O0" } */
+/* { dg-options "-O0 -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 
 #include <x86intrin.h>
 
