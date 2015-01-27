@@ -44,4 +44,16 @@ Driver JoinedOrMissing
 rpath=
 Driver JoinedOrMissing
 
+stdlib=libcpp
+C++ 
+Use Dinkumware C++ library
+
+stdlib=libcpp-ne
+C++ 
+Use Dinkumware C++ library with no exceptions
+
+stdlib=libstdc++
+C++ 
+Use GNU libstdc++ library 
+
 ; This comment is to ensure we retain the blank line above.
