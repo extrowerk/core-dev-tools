@@ -56,6 +56,14 @@ along with GCC; see the file COPYING3.  If not see
 #define LIBSTDCXX_STATIC NULL
 #endif
 
+#ifndef LIBCPP
+#define LIBCPP "cpp"
+#endif
+
+#ifndef LIBCPP_NE
+#define LIBCPP_NE "cpp-ne"
+#endif
+
 void
 lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 		      unsigned int *in_decoded_options_count,
@@ -72,6 +80,13 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
      1  means libstdc++ is needed and should be linked in.
      2  means libstdc++ is needed and should be linked statically.  */
   int library = 0;
+
+  /* What do with libcpp:
+     -1  means we should not link in libcpp if it is needed
+     0  means we should link in libcpp if it is needed
+     1  means libcpp is needed and should be linked in.
+     2  means libcpp-ne is needed and should be linked statically.  */
+  int library_cpp = 0;
 
   /* The number of arguments being added to what's in argv, other than
      libraries.  We use this to track the number of times we've inserted
@@ -207,7 +222,14 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 	  library = library >= 0 ? 2 : library;
 	  args[i] |= SKIPOPT;
 	  break;
-
+	case OPT_stdlib_libcpp:
+	  library = -1;
+	  library_cpp = 1;
+	  break;
+	case OPT_stdlib_libcpp_ne:
+	  library = -1;
+	  library_cpp = 2;
+	  break;
 	case OPT_SPECIAL_input_file:
 	  {
 	    int len;
@@ -364,6 +386,14 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 	  j++;
 	}
 #endif
+    }
+  if (library_cpp > 0)
+    {
+      generate_option (OPT_l,
+		       library_cpp > 1 ? LIBCPP_NE : LIBCPP, 1,
+		       CL_DRIVER, &new_decoded_options[j]);
+      added_libraries++;
+      j++;
     }
   if (saw_math)
     new_decoded_options[j++] = *saw_math;
