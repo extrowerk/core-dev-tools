@@ -1,4 +1,4 @@
-/* Base configuration for all QNX Neutrino targets 
+/* Base configuration for all QNX Neutrino targets
    Copyright (C) 2006
    Free Software Foundation, Inc.
 
@@ -66,8 +66,8 @@ do { \
 
 #define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG
 #define DBX_DEBUGGING_INFO
-#define DWARF_DEBUGGING_INFO
-#define DWARF2_DEBUGGING_INFO
+#define DWARF_DEBUGGING_INFO 1
+#define DWARF2_DEBUGGING_INFO 1
 
 #define SUPPORTS_WEAK 1
 
@@ -125,11 +125,6 @@ do {                                            \
 
 #undef GOMP_SELF_SPECS
 #define GOMP_SELF_SPECS ""
-
-#define MFLIB_SPEC " %{fmudflap: -export-dynamic -lmudflap -lsocket\
- %{static:%(link_gcc_c_sequence) -lmudflap -lsocket -lbacktrace}} \
- %{fmudflapth: -export-dynamic -lmudflapth -lsocket\
- %{static:%(link_gcc_c_sequence) -lmudflapth -lsocket -lbacktrace}} "
 
 #undef LINK_GCC_C_SEQUENCE_SPEC
 #define LINK_GCC_C_SEQUENCE_SPEC \
