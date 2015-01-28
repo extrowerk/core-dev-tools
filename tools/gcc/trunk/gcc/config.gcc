@@ -939,6 +939,11 @@ aarch64*-*-linux*)
 	done
 	TM_MULTILIB_CONFIG=`echo $TM_MULTILIB_CONFIG | sed 's/^,//'`
 	;;
+aarch64*-*-qnx*)
+	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h nto.h nto-stdint.h"
+	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-nto.h"
+	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-nto"
+	;;
 alpha*-*-linux*)
 	tm_file="elfos.h ${tm_file} alpha/elf.h alpha/linux.h alpha/linux-elf.h glibc-stdint.h"
 	tmake_file="${tmake_file} alpha/t-linux"
@@ -1395,8 +1400,8 @@ x86_64-*-netbsd*)
 	extra_options="${extra_options} netbsd.opt netbsd-elf.opt"
 	;;
 x86_64-*-nto-qnx*)
-        tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h svr4.h nto.h  i386/x86-64.h i386/nto64.h"
-        tmake_file="${tmake_file} i386/t-nto"
+        tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h nto.h nto-stdint.h i386/x86-64.h i386/nto64.h"
+        tmake_file="${tmake_file} i386/t-nto64"
         ;;
 i[34567]86-*-openbsd2.*|i[34567]86-*openbsd3.[0123])
 	tm_file="i386/i386.h i386/unix.h i386/bsd.h i386/gas.h i386/gstabs.h openbsd-oldgas.h openbsd.h i386/openbsd.h"

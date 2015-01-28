@@ -184,8 +184,8 @@ __extension__
 static const struct cpu_regmove_cost generic_regmove_cost =
 {
   NAMED_PARAM (GP2GP, 1),
-  NAMED_PARAM (GP2FP, 2),
-  NAMED_PARAM (FP2GP, 2),
+  NAMED_PARAM (GP2FP, 5),
+  NAMED_PARAM (FP2GP, 5),
   /* We currently do not provide direct support for TFmode Q->Q move.
      Therefore we need to raise the cost above 2 in order to have
      reload handle the situation.  */

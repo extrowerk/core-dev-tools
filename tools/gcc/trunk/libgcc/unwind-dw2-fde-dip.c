@@ -81,7 +81,13 @@
 
 #if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
     && defined(__QNXNTO__) && _NTO_VERSION >= 660
+#if __PTR_BITS__ == 32
 # define ElfW(type) Elf32_##type
+#elif __PTR_BITS__ == 64
+# define ElfW(type) Elf64_##type
+#else
+#error __PTR_BITS_ not defined
+#endif
 # define USE_PT_GNU_EH_FRAME
 #endif
 
