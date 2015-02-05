@@ -52,6 +52,7 @@ mi_cmd_stack_list_frames (char *command, char **argv, int argc)
   int i;
   struct cleanup *cleanup_stack;
   struct frame_info *fi;
+  volatile struct gdb_exception except;
 
   if (argc > 2 || argc == 1)
     error (_("-stack-list-frames: Usage: [FRAME_LOW FRAME_HIGH]"));
@@ -69,12 +70,15 @@ mi_cmd_stack_list_frames (char *command, char **argv, int argc)
       frame_high = -1;
     }
 
-  /* Let's position fi on the frame at which to start the
-     display. Could be the innermost frame if the whole stack needs
-     displaying, or if frame_low is 0.  */
-  for (i = 0, fi = get_current_frame ();
-       fi && i < frame_low;
-       i++, fi = get_prev_frame (fi));
+  TRY_CATCH (except, RETURN_MASK_ERROR)
+    {
+      /* Let's position fi on the frame at which to start the
+	 display. Could be the innermost frame if the whole stack needs
+	 displaying, or if frame_low is 0.  */
+      for (i = 0, fi = get_current_frame ();
+	   fi && i < frame_low;
+	   i++, fi = get_prev_frame (fi));
+    }
 
   if (fi == NULL)
     error (_("-stack-list-frames: Not enough frames in stack."));
@@ -83,14 +87,17 @@ mi_cmd_stack_list_frames (char *command, char **argv, int argc)
 
   /* Now let's print the frames up to frame_high, or until there are
      frames in the stack.  */
-  for (;
-       fi && (i <= frame_high || frame_high == -1);
-       i++, fi = get_prev_frame (fi))
+  TRY_CATCH (except, RETURN_MASK_ERROR)
     {
-      QUIT;
-      /* Print the location and the address always, even for level 0.
-         If args is 0, don't print the arguments.  */
-      print_frame_info (fi, 1, LOC_AND_ADDRESS, 0 /* args */ );
+      for (;
+	   fi && (i <= frame_high || frame_high == -1);
+	   i++, fi = get_prev_frame (fi))
+	{
+	  QUIT;
+	  /* Print the location and the address always, even for level 0.
+	     If args is 0, don't print the arguments.  */
+	  print_frame_info (fi, 1, LOC_AND_ADDRESS, 0 /* args */ );
+	}
     }
 
   do_cleanups (cleanup_stack);
@@ -102,6 +109,7 @@ mi_cmd_stack_info_depth (char *command, char **argv, int argc)
   int frame_high;
   int i;
   struct frame_info *fi;
+  volatile struct gdb_exception except;
 
   if (argc > 1)
     error (_("-stack-info-depth: Usage: [MAX_DEPTH]"));
@@ -113,10 +121,13 @@ mi_cmd_stack_info_depth (char *command, char **argv, int argc)
        the stack.  */
     frame_high = -1;
 
-  for (i = 0, fi = get_current_frame ();
-       fi && (i < frame_high || frame_high == -1);
-       i++, fi = get_prev_frame (fi))
-    QUIT;
+  TRY_CATCH (except, RETURN_MASK_ERROR)
+    {
+      for (i = 0, fi = get_current_frame ();
+	   fi && (i < frame_high || frame_high == -1);
+	   i++, fi = get_prev_frame (fi))
+	QUIT;
+    }
 
   ui_out_field_int (current_uiout, "depth", i);
 }

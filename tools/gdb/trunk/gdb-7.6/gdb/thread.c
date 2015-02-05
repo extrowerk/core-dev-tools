@@ -1218,11 +1218,16 @@ thread_apply_all_command (char *cmd, int from_tty)
   for (tp = thread_list; tp; tp = tp->next)
     if (thread_alive (tp))
       {
+	volatile struct gdb_exception except;
+
 	switch_to_thread (tp->ptid);
 
 	printf_filtered (_("\nThread %d (%s):\n"),
 			 tp->num, target_pid_to_str (inferior_ptid));
-	execute_command (cmd, from_tty);
+	TRY_CATCH (except, RETURN_MASK_ERROR)
+	  {
+	    execute_command (cmd, from_tty);
+	  }
 	strcpy (cmd, saved_cmd);	/* Restore exact command used
 					   previously.  */
       }
