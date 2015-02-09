@@ -547,7 +547,7 @@ case "${targ}" in
     ;;
   i[3-7]86-*-nto*)
     targ_defvec=i386_elf32_vec
-    targ_selvecs=i386_coff_vec
+    targ_selvecs="i386_coff_vec i386_pei_vec"
     targ_cflags=-D__QNXTARGET__
     ;;
   i[3-7]86-*-aros*)
@@ -679,7 +679,7 @@ case "${targ}" in
     ;;
   x86_64-*-nto-*)
     targ_defvec=x86_64_elf64_vec
-    targ_selvecs="i386_elf32_vec x86_64_elf32_vec i386_aout_linux_vec l1om_elf64_vec k1om_elf64_vec"
+    targ_selvecs="i386_elf32_vec x86_64_elf32_vec i386_aout_linux_vec l1om_elf64_vec k1om_elf64_vec i386_pei_vec x86_64_pei_vec"
     want64=true
     targ_cflags=-D__QNXTARGET__
     ;;
