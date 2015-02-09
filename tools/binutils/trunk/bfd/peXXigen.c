@@ -3563,17 +3563,32 @@ rsrc_cmp (bfd_boolean is_name, rsrc_entry * a, rsrc_entry * b)
     res = 0;
     for (i = min (alen, blen); i--; astring += 2, bstring += 2)
       {
+
+#if defined __APPLE__
+	wint_t awc;
+	wint_t bwc;
+#else
 	wchar_t awc;
 	wchar_t bwc;
+#endif
 
 	/* Convert UTF-16 unicode characters into wchar_t characters so
 	   that we can then perform a case insensitive comparison.  */
 	int Alen = u16_mbtouc (& awc, (const unsigned short *) astring, 2);
 	int Blen = u16_mbtouc (& bwc, (const unsigned short *) bstring, 2);
 
+#if defined __APPLE__
+	awc = towlower(awc);
+	bwc = towlower(bwc);
+#endif
+
 	if (Alen != Blen)
 	  return Alen - Blen;
+#if defined __APPLE__
+	res = wcsncmp (& awc, & bwc, 1);
+#else
 	res = wcsncasecmp (& awc, & bwc, 1);
+#endif
 	if (res)
 	  break;
       }
