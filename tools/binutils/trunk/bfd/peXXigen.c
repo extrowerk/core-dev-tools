@@ -3564,7 +3564,7 @@ rsrc_cmp (bfd_boolean is_name, rsrc_entry * a, rsrc_entry * b)
     for (i = min (alen, blen); i--; astring += 2, bstring += 2)
       {
 
-#if defined __APPLE__
+#if defined __APPLE__ || defined __QNXNTO__
 	wint_t awc;
 	wint_t bwc;
 #else
@@ -3577,14 +3577,14 @@ rsrc_cmp (bfd_boolean is_name, rsrc_entry * a, rsrc_entry * b)
 	int Alen = u16_mbtouc (& awc, (const unsigned short *) astring, 2);
 	int Blen = u16_mbtouc (& bwc, (const unsigned short *) bstring, 2);
 
-#if defined __APPLE__
+#if defined __APPLE__ || defined __QNXNTO__
 	awc = towlower(awc);
 	bwc = towlower(bwc);
 #endif
 
 	if (Alen != Blen)
 	  return Alen - Blen;
-#if defined __APPLE__
+#if defined __APPLE__ || defined __QNXNTO__
 	res = wcsncmp (& awc, & bwc, 1);
 #else
 	res = wcsncasecmp (& awc, & bwc, 1);
