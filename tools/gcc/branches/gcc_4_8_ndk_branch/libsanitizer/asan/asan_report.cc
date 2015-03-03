@@ -20,7 +20,7 @@
 #include "sanitizer_common/sanitizer_report_decorator.h"
 #include "sanitizer_common/sanitizer_symbolizer.h"
 #if defined(__QNXNTO__)
-#include <cstdlib>
+#include <stdlib.h>
 #endif
 
 namespace __asan {
