@@ -43,15 +43,16 @@ do { \
 
 #define QNX_SYSTEM_INCLUDES \
 "%{!nostdinc: \
- %{stdlib=libcpp|stdlib=libcpp-ne: \
-  -isystem %$QNX_TARGET/usr/include/cpp/c/ \
-  -isystem %$QNX_TARGET/usr/include/cpp \
- } \
- %{!stdlib=libcpp: \
 -isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
--isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
--isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
--isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward } \
+%{!nostdinc++: \
+%{stdlib=libcpp|stdlib=libcpp-ne: \
+ -isystem %$QNX_TARGET/usr/include/cpp/c/ \
+ -isystem %$QNX_TARGET/usr/include/cpp \
+} \
+%{!stdlib=libcpp: \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward } } \
 -isysroot %$QNX_TARGET/}"
 
 /* Don't assume anything about the header files.  */
