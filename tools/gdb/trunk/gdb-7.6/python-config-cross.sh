@@ -20,10 +20,10 @@ win32*)
 	py_exec_prefix="${prefix}/bin"
 	;;
 darwin*)
-	python_ver=2.6
+	python_ver=2.7
 	python_root=/usr/darwin/x86_64-apple-darwin/x86_64-apple-darwin/
 	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver}"
-	py_libs="-lpython2.6"
+	py_libs="-lpython${python_ver}"
 	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
 	# This is needed to automatically setup PYTHONHOME env. var.
 	py_exec_prefix="${python_root}"
