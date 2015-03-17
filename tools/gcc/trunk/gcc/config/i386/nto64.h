@@ -51,6 +51,11 @@ QNX_SYSTEM_INCLUDES \
 #define NTO_DYNAMIC_LINKER32 "/usr/lib/ldqnx.so.2"
 #define NTO_DYNAMIC_LINKER64 "/usr/lib/ldqnx-64.so.2"
 
+#undef LINK_PIE_SPEC
+#define LINK_PIE_SPEC "%{" SPEC_64 ": %{pie:-pie}\
+      %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
+  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}}} "
+
 #undef	LINK_SPEC
 #define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m i386nto} \
   %{h*} %{v:-V} \
@@ -121,6 +126,10 @@ QNX_SYSTEM_INCLUDES \
 #else
 #define MULTILIB_DEFAULTS { "m32" }
 #endif
+
+#undef CC1_SPEC
+#define CC1_SPEC \
+"%{" SPEC_64 ":%{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|nopie|D__KERNEL__:;:-fPIE}} %(cc1_cpu) "
 
 /* Put all *tf routines in libgcc.  */
 #undef LIBGCC2_HAS_TF_MODE
