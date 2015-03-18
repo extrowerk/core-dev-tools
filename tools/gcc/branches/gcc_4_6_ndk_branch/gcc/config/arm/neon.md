@@ -143,7 +143,9 @@
    (UNSPEC_VZIP2		204)
    (UNSPEC_MISALIGNED_ACCESS	205)
    (UNSPEC_VCLE			206)
-   (UNSPEC_VCLT			207)])
+   (UNSPEC_VCLT			207)
+   (UNSPEC_VCGEU                208)
+   (UNSPEC_VCGTU                209)])
 
 
 ;; Attribute used to permit string comparisons against <VQH_mnem> in
@@ -2109,6 +2111,18 @@
                    (const_string "neon_int_5")))]
 )
 
+(define_insn "neon_vcgeu<mode>"
+  [(set (match_operand:<V_cmp_result> 0 "s_register_operand" "=w")
+        (unspec:<V_cmp_result>
+	  [(match_operand:VDQIW 1 "s_register_operand" "w")
+	   (match_operand:VDQIW 2 "s_register_operand" "w")
+           (match_operand:SI 3 "immediate_operand" "i")]
+          UNSPEC_VCGEU))]
+  "TARGET_NEON"
+  "vcge.%T3%#<V_sz_elem>\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+  [(set_attr "neon_type" "neon_int_5")]
+)
+
 (define_insn "neon_vcgt<mode>"
   [(set (match_operand:<V_cmp_result> 0 "s_register_operand" "=w,w")
         (unspec:<V_cmp_result>
@@ -2126,6 +2140,18 @@
                                  (const_string "neon_fp_vadd_ddd_vabs_dd")
                                  (const_string "neon_fp_vadd_qqq_vabs_qq"))
                    (const_string "neon_int_5")))]
+)
+
+(define_insn "neon_vcgtu<mode>"
+  [(set (match_operand:<V_cmp_result> 0 "s_register_operand" "=w")
+        (unspec:<V_cmp_result>
+	  [(match_operand:VDQIW 1 "s_register_operand" "w")
+	   (match_operand:VDQIW 2 "s_register_operand" "w")
+           (match_operand:SI 3 "immediate_operand" "i")]
+          UNSPEC_VCGTU))]
+  "TARGET_NEON"
+  "vcgt.%T3%#<V_sz_elem>\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+  [(set_attr "neon_type" "neon_int_5")]
 )
 
 ;; VCLE and VCLT only support comparisons with immediate zero (register
