@@ -289,7 +289,6 @@ case "${host_os}" in
   qnx[68]* | nto-qnx[68]* )
     os_include_dir="os/qnx/qnx6.1"
     c_model=c
-    c_compatibility=yes
     ;;
   solaris2)
     # This too-vague configuration does not provide enough information
