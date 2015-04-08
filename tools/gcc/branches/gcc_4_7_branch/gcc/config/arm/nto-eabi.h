@@ -118,7 +118,7 @@ do {                                            \
   register unsigned long _flg __asm ("a3") = 0x1000000;			\
   __asm __volatile ("bl	msync"						\
                     : "=r" (_beg)					\
-                    : "r" (_beg), "r" (_len), "r" (_flg));		\
+                    : "r" (_beg), "r" (_len), "r" (_flg) : "lr");	\
 }
 
 #undef  DEFAULT_STRUCTURE_SIZE_BOUNDARY
