@@ -82,9 +82,9 @@ QNX_SYSTEM_INCLUDES \
       %{p: \
        %{" SPEC_32 ": %$QNX_TARGET/x86/lib/mcrt1.o%s} \
        %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/mcrt1.o%s}}} \
-    %{!p: \
+    %{!p: %{!pg: \
        %{" SPEC_32 ": %$QNX_TARGET/x86/lib/crt1.o%s} \
-       %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/crt1.o%s}} \
+       %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/crt1.o%s}}} \
     }} \
     %{" SPEC_32 ": %$QNX_TARGET/x86/lib/crti.o%s} \
     %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/crti.o%s} \
