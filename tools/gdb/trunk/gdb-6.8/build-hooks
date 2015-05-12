@@ -78,7 +78,7 @@ function hook_preconfigure {
                   INSTALL_ROOT=/opt/$qnx_install_version/host
 		  ;;
 		win32*)
-		  configure_opts="${configure_opts} --host=i386-mingw32msvc"
+		  configure_opts="${configure_opts} --host=i686-mingw32msvc"
 		  #execdir=/c/qnx630/host/win32/x86/usr
                   if [ $SYSNAME != "win32" ]; then
                      if [ x$INSTALL_ROOT = x ]; then
