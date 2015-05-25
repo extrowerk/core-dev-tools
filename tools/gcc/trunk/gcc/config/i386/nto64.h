@@ -130,9 +130,3 @@ QNX_SYSTEM_INCLUDES \
 #undef CC1_SPEC
 #define CC1_SPEC \
 "%{" SPEC_64 ":%{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|nopie|D__KERNEL__:;:-fPIE}} %(cc1_cpu) "
-
-/* Put all *tf routines in libgcc.  */
-#undef LIBGCC2_HAS_TF_MODE
-#define LIBGCC2_HAS_TF_MODE 1
-#define LIBGCC2_TF_CEXT q
-#define TF_SIZE 113

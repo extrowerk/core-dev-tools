@@ -25,11 +25,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 /* Do code reading to identify a signal frame, and set the frame
    state data appropriately.  See unwind-dw2.c for the structs.  */
 
-#if defined(__QNXNTO__)
-
-#include <sys/neutrino.h>
-
-#if !defined(inhibit_libc) && _NTO_VERSION >= 660
+#if !defined(inhibit_libc) && defined(__QNXNTO__) && _NTO_VERSION >= 660
 
 #include <ucontext.h>
 #include <sys/link.h>
@@ -73,39 +69,55 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
   struct address_range range;
 
   /*
-   < 0>:	push   %eax
-   <+1>:	push   %esi
-   <+2>:	pushl  (%esi)
-   <+4>:	call   *0x28(%esi)
-   <+7>:	push   %esi             <--- PC
-   <+8>:	mov    %edi,%eax
-   <+10>:	mov    0x18(%eax),%edi
-   <+13>:	mov    0x1c(%eax),%esi
-   <+16>:	mov    0x20(%eax),%ebp
-   <+19>:	mov    0x28(%eax),%ebx
-   <+22>:	mov    0x2c(%eax),%edx
-   <+25>:	mov    0x30(%eax),%ecx
-   <+28>:	sub    $0x4,%esp
-   <+31>:	mov    $0x1b,%eax
-   <+36>:	int    $0x28
-   <+38>:	ret
-   <+39>:   ret
+   <__signalstub+0>:	mov    0x2c(%esp),%eax
+   <__signalstub+4>:	mov    %edi,0x18(%eax)
+   <__signalstub+7>:	mov    %esi,0x1c(%eax)
+   <__signalstub+10>:	mov    %ebp,0x20(%eax)
+   <__signalstub+13>:	mov    %ebx,0x28(%eax)
+   <__signalstub+16>:	mov    %edx,0x2c(%eax)
+   <__signalstub+19>:	mov    %ecx,0x30(%eax)
+   <__signalstub+22>:	mov    %esp,%esi
+   <__signalstub+24>:	mov    %eax,%edi
+   <__signalstub+26>:	push   %eax
+   <__signalstub+27>:	push   %esi
+   <__signalstub+28>:	pushl  (%esi)
+   <__signalstub+30>:	call   *0x28(%esi)
+   <__signalstub+33>:	push   %esi             <--- PC
+   <__signalstub+34>:	mov    %edi,%eax
+   <__signalstub+36>:	mov    0x18(%eax),%edi
+   <__signalstub+39>:	mov    0x1c(%eax),%esi
+   <__signalstub+42>:	mov    0x20(%eax),%ebp
+   <__signalstub+45>:	mov    0x28(%eax),%ebx
+   <__signalstub+48>:	mov    0x2c(%eax),%edx
+   <__signalstub+51>:	mov    0x30(%eax),%ecx
+   <__signalstub+54>:	sub    $0x4,%esp
+   <__signalstub+57>:	mov    $0x1b,%eax
+   <__signalstub+62>:	int    $0x28
+   <__signalstub+64>:	ret    
+   <__signalstub+65>:	ret    
   */
 
-  pc = context->ra - 7;
+  pc = context->ra - 33;
   range.begin = (_Unwind_Ptr)pc;
-  range.end = range.begin + 40;
+  range.end = range.begin + 65;
   if (dl_iterate_phdr (load_contains_pc, &range)
-      && *(unsigned int*)(pc) == 0x36ff5650
-      && *(unsigned int*)(pc+4) == 0x562856ff
-      && *(unsigned int*)(pc+8) == 0x788bf889
-      && *(unsigned int*)(pc+12) == 0x1c708b18
-      && *(unsigned int*)(pc+16) == 0x8b20688b
-      && *(unsigned int*)(pc+20) == 0x508b2858
-      && *(unsigned int*)(pc+24) == 0x30488b2c
-      && *(unsigned int*)(pc+28) == 0xb804ec83
-      && *(unsigned int*)(pc+32) == 0x0000001b
-      && *(unsigned int*)(pc+36) == 0xc3c328cd)
+      &&   *(unsigned int*)(pc) == 0x2c24448b
+      && *(unsigned int*)(pc+4) == 0x89187889
+      && *(unsigned int*)(pc+8) == 0x68891c70
+      && *(unsigned int*)(pc+12) == 0x28588920
+      && *(unsigned int*)(pc+16) == 0x892c5089
+      && *(unsigned int*)(pc+20) == 0xe6893048
+      && *(unsigned int*)(pc+24) == 0x5650c789
+      && *(unsigned int*)(pc+28) == 0x56ff36ff
+      && *(unsigned int*)(pc+32) == 0xf8895628
+      && *(unsigned int*)(pc+36) == 0x8b18788b
+      && *(unsigned int*)(pc+40) == 0x688b1c70
+      && *(unsigned int*)(pc+44) == 0x28588b20
+      && *(unsigned int*)(pc+48) == 0x8b2c508b
+      && *(unsigned int*)(pc+52) == 0xec833048
+      && *(unsigned int*)(pc+56) == 0x1bb804
+      && *(unsigned int*)(pc+60) == 0x28cd0000
+      && *(unsigned char*)(pc+64) == 0xc3)
     {
       struct handler_args {
 	    int signo;
@@ -146,6 +158,5 @@ x86_fallback_frame_state (struct _Unwind_Context *context,
   return _URC_NO_REASON;
 }
 
-#endif
 #endif
 
