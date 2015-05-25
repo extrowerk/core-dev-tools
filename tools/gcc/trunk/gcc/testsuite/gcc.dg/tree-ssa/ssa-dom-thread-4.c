@@ -1,6 +1,6 @@
 /* { dg-do compile } */ 
-/* { dg-options "-O2 -fdump-tree-dom1-details" } */
-/* { dg-options "-O2 -fdump-tree-dom1-details -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
+/* { dg-options "-O2 -fdump-tree-dom1-details -std=gnu89" } */
+/* { dg-options "-O2 -fdump-tree-dom1-details -std=gnu89 -march=i686" { target { { i?86-*-* x86_64-*-* } && ia32 } } } */
 struct bitmap_head_def;
 typedef struct bitmap_head_def *bitmap;
 typedef const struct bitmap_head_def *const_bitmap;
@@ -76,6 +76,6 @@ bitmap_ior_and_compl (bitmap dst, const_bitmap a, const_bitmap b,
       -> "kill_elt->indx == b_elt->indx" in the second condition,
 	 skipping the known-true "b_elt && kill_elt" in the second
 	 condition.  */
-/* { dg-final { scan-tree-dump-times "Threaded" 4 "dom1" { target logical_op_short_circuit xfail logical_op_short_circuit } } } */
+/* { dg-final { scan-tree-dump-times "Threaded" 4 "dom1" { target logical_op_short_circuit } } } */
 /* { dg-final { cleanup-tree-dump "dom1" } } */
 

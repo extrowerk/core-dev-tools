@@ -3,14 +3,14 @@ targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
-qnx_target=qnx800
-qnx_target_version=8.0.0
+qnx_target=qnx670
+qnx_target_version=6.7.0
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
 
 case ${cpu_string} in
-	x86)		targetarch=i486 ;;
+	x86)		targetarch=i586 ;;
 	armeabi*)	targetarch=arm
 			nto_target=ntoarm
 			os_variant=eabi

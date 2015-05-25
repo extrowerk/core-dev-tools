@@ -1,5 +1,5 @@
 /* Definitions for Intel 386 running QNX/Neutrino.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -94,9 +94,3 @@ QNX_SYSTEM_INCLUDES \
 #undef DBX_REGISTER_NUMBER
 #define DBX_REGISTER_NUMBER(n) \
   (TARGET_64BIT ? dbx64_register_map[n] : svr4_dbx_register_map[n])
-
-/* Put all *tf routines in libgcc.  */
-#undef LIBGCC2_HAS_TF_MODE
-#define LIBGCC2_HAS_TF_MODE 1
-#define LIBGCC2_TF_CEXT q
-#define TF_SIZE 113
