@@ -29,7 +29,7 @@ along with GCC; see the file COPYING3.  If not see
 #undef LINK_PIE_SPEC
 #define LINK_PIE_SPEC "%{pie:-pie}\
     %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
-  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
+  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie|fno-pie|fno-PIE|fno-pic|fno-PIC:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
 
 #undef LINK_SPEC
 #define LINK_SPEC \
