@@ -54,7 +54,7 @@ QNX_SYSTEM_INCLUDES \
 #undef LINK_PIE_SPEC
 #define LINK_PIE_SPEC "%{" SPEC_64 ": %{pie:-pie}\
       %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
-  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}}} "
+  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie|fno-pie|fno-PIE|fno-pic|fno-PIC:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}}} "
 
 #undef	LINK_SPEC
 #define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m i386nto} \
