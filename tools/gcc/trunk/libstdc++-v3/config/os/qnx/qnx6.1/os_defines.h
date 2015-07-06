@@ -29,6 +29,5 @@
 #define _GLIBCXX_GTHREAD_USE_WEAK 0
 
 // System-specific #define, typedefs, corrections, etc, go here.  This
-#define _QNX_SOURCE 1
 
 #endif
