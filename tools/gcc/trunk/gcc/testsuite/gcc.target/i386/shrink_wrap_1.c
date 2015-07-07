@@ -1,5 +1,5 @@
 /* { dg-do compile { target { ! ia32 } } } */
-/* { dg-options "-O2 -fdump-rtl-pro_and_epilogue" } */
+/* { dg-options "-O2 -fno-stack-protector -fdump-rtl-pro_and_epilogue" } */
 
 enum machine_mode
 {
