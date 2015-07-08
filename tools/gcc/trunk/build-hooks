@@ -120,6 +120,9 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-stack-protector"
 
 	case ${cpu_string} in
+		x86*)
+			configure_opts="${configure_opts} --with-tune=generic"
+			;;
 		mips*)
 			configure_opts="${configure_opts} --disable-shared"
 			configure_opts="${configure_opts} --disable-fixed-point"
