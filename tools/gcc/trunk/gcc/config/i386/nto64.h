@@ -60,6 +60,7 @@ QNX_SYSTEM_INCLUDES \
 #define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m i386nto} \
   %{h*} %{v:-V} \
   %{b} \
+  %{!r:--build-id=md5} \
   %{shared:-G -dy -z text} \
   %{symbolic:-Bsymbolic -G -dy -z text} \
   %{G:-G} \
