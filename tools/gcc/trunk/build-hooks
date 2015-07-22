@@ -42,9 +42,9 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx6/x86}}
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx6/${cpu}}}
 				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/${qnx_target}/host/qnx6/x86/usr ;;
+		*)		basedir=/usr/${qnx_target}/host/qnx6/${cpu}/usr ;;
 		esac
 		;;
 	darwin)
@@ -55,31 +55,27 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
 		case "${host_target}" in
 			win32-*) 	
-			basedir=/c/${qnx_target}/host/win32/x86/usr
+			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
 			qnxtarget=/c/${qnx_target}/target/qnx6/
 			;;
 			nto-*)
 			CPPFLAGS=
-			basedir=/usr/${qnx_target}/host/qnx6/x86/usr
+			basedir=/usr/${qnx_target}/host/qnx6/${cpu}/usr
 			qnxtarget=/usr/${qnx_target}/target/qnx6
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			darwin-*)
-			basedir=/Developer/SDKs/${qnx_target}/host/darwin/x86/usr
+			basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
 			qnxtarget=/Developer/SDKs/${qnx_target}/target/qnx6
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			linux-*)
-				host_cpu=$(uname -m)
-				case ${host_cpu} in
-					i[34567]86) host_cpu=x86 ;;
-				esac
-				basedir=/opt/${qnx_target}/host/linux/x86/usr
+				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/qnx6
 			;;
 		esac ;;
 	win32)
-		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win32/x86}
+		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win32/${cpu}}
 		basedir=${tooldir}/usr
 		;;
 	*)
