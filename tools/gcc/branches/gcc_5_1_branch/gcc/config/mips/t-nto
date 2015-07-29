@@ -1,0 +1,7 @@
+T_CPPFLAGS=-DTARGET_ALIAS=\"$(target_alias)\"
+
+MULTILIB_OPTIONS = fPIC EL 
+MULTILIB_DIRNAMES = pic le
+MULTILIB_MATCHES = fpic=shared
+
+MULTILIB_EXCEPTIONS = mno-shared/fPIC
