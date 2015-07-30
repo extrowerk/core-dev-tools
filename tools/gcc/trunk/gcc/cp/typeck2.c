@@ -843,7 +843,7 @@ store_init_value (tree decl, tree init, vec<tree, va_gc>** cleanups, int flags)
       TREE_CONSTANT (decl) = const_init && decl_maybe_constant_var_p (decl);
     }
 
-  if (cxx_dialect >= cxx14)
+  if (cxx_dialect >= cxx14 && CLASS_TYPE_P (strip_array_types (type)))
     /* Handle aggregate NSDMI in non-constant initializers, too.  */
     value = replace_placeholders (value, decl);
 
@@ -958,10 +958,13 @@ check_narrowing (tree type, tree init, tsubst_flags_t complain)
 	}
       else if (complain & tf_error)
 	{
+	  int savederrorcount = errorcount;
 	  global_dc->pedantic_errors = 1;
 	  pedwarn (EXPR_LOC_OR_LOC (init, input_location), OPT_Wnarrowing,
-		   "narrowing conversion of %qE from %qT to %qT inside { }",
-		   init, ftype, type);
+		   "narrowing conversion of %qE from %qT to %qT "
+		   "inside { }", init, ftype, type);
+	  if (errorcount == savederrorcount)
+	    ok = true;
 	  global_dc->pedantic_errors = flag_pedantic_errors;
 	}
     }
@@ -1092,6 +1095,19 @@ digest_init_r (tree type, tree init, bool nested, int flags,
 	      || TREE_CODE (type) == RECORD_TYPE
 	      || TREE_CODE (type) == UNION_TYPE
 	      || TREE_CODE (type) == COMPLEX_TYPE);
+
+  /* "If T is a class type and the initializer list has a single
+     element of type cv U, where U is T or a class derived from T,
+     the object is initialized from that element."  */
+  if (cxx_dialect >= cxx11
+      && BRACE_ENCLOSED_INITIALIZER_P (init)
+      && CONSTRUCTOR_NELTS (init) == 1
+      && (CLASS_TYPE_P (type) || VECTOR_TYPE_P (type)))
+    {
+      tree elt = CONSTRUCTOR_ELT (init, 0)->value;
+      if (reference_related_p (type, TREE_TYPE (elt)))
+	init = elt;
+    }
 
   if (BRACE_ENCLOSED_INITIALIZER_P (init)
       && !TYPE_NON_AGGREGATE_CLASS (type))
