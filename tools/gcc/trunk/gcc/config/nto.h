@@ -44,16 +44,20 @@ do { \
 #define QNX_SYSTEM_INCLUDES \
 "%{!nostdinc: \
 -isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
-%{!nostdinc++: \
+-isysroot %$QNX_TARGET/}"
+
+#define CPLUSPLUS_CPP_SPEC \
+CPP_SPEC \
+"%{!nostdinc++: \
 %{stdlib=libcpp|stdlib=libcpp-ne: \
  -isystem %$QNX_TARGET/usr/include/cpp/c/ \
  -isystem %$QNX_TARGET/usr/include/cpp \
 } \
-%{!stdlib=libcpp: \
+%{stdlib=libcpp-ne: -D_NO_EX } \
+%{!stdlib=libcpp*: \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward } } \
--isysroot %$QNX_TARGET/}"
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward } }" 
 
 /* Don't assume anything about the header files.  */
 #undef NO_IMPLICIT_EXTERN_C
