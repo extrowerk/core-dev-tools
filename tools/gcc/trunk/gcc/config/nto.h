@@ -46,6 +46,7 @@ do { \
 -isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
 -isysroot %$QNX_TARGET/}"
 
+#undef CPLUSPLUS_CPP_SPEC
 #define CPLUSPLUS_CPP_SPEC \
 CPP_SPEC \
 "%{!nostdinc++: \
