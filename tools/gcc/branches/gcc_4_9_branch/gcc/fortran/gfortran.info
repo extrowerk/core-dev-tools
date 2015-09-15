@@ -5925,7 +5925,7 @@ File: gfortran.info,  Node: C_ASSOCIATED,  Next: C_F_POINTER,  Prev: BTEST,  Up:
 ============================================
 
 _Description_:
-     'C_ASSOCIATED(c_prt_1[, c_ptr_2])' determines the status of the C
+     'C_ASSOCIATED(c_ptr_1[, c_ptr_2])' determines the status of the C
      pointer C_PTR_1 or if C_PTR_1 is associated with the target
      C_PTR_2.
 
@@ -5936,7 +5936,7 @@ _Class_:
      Inquiry function
 
 _Syntax_:
-     'RESULT = C_ASSOCIATED(c_prt_1[, c_ptr_2])'
+     'RESULT = C_ASSOCIATED(c_ptr_1[, c_ptr_2])'
 
 _Arguments_:
      C_PTR_1     Scalar of the type 'C_PTR' or 'C_FUNPTR'.

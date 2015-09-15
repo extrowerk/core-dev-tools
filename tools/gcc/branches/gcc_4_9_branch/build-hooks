@@ -3,8 +3,8 @@ targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
-qnx_target=qnx800
-qnx_target_version=8.0.0
+qnx_target=qnx660
+qnx_target_version=6.6.0
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
