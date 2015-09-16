@@ -124,9 +124,9 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --disable-fixed-point"
 			;;
 		armeabi)
-			configure_opts="${configure_opts} --with-float=softfp"
+			configure_opts="${configure_opts} --with-float=hard"
 			configure_opts="${configure_opts} --with-arch=armv7-a"
-			configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+			configure_opts="${configure_opts} --with-fpu=vfpv3"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		armeabihf)
