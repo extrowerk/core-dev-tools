@@ -1,8 +1,8 @@
 srcdir=${PWD}/..
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
-qnx_target_version=6.7.0
-qnx_target=qnx670
+qnx_target_version=7.0.0
+qnx_target=qnx700
 cpu_target=`echo ${nto_target} | sed 's/nto//'`
 
 if [ ${nto_target} != ntomulti ]; then
