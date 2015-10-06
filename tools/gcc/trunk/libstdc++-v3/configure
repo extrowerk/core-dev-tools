@@ -64969,7 +64969,7 @@ $as_echo "$ac_ld_relro" >&6; }
 
     fi
     ;;
-  *-qnx6* | *-qnx8*)
+  *-qnx[678]*)
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
 
 
