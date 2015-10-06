@@ -39,26 +39,26 @@ function hook_preconfigure {
         case ${SYSNAME} in
         nto)
                 case "${nto_target}" in
-                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx6/x86}}
+                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx7/x86}}
 			execdir=${TOOL_PATH}/usr ;;
-                *)      execdir=/usr/${qnx_target}/host/qnx6/${cpu}/usr ;;
+                *)      execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr ;;
                 esac
                 ;;
         linux)
 		case  $host_target in 
 		nto*) 
 			CPPFLAGS=	
-			execdir=/usr/${qnx_target}/host/qnx6/${cpu}/usr/ 
-			sysroot=/usr/${qnx_target}/target/qnx6
+			execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr/ 
+			sysroot=/usr/${qnx_target}/target/qnx7
 		;;
 		
 		linux*)
 			execdir=/opt/${qnx_target}/host/linux/${cpu}/usr
-			sysroot=/opt/${qnx_target}/target/qnx6
+			sysroot=/opt/${qnx_target}/target/qnx7
 		;;
 		win32*) 
 			execdir=/c/${qnx_target}/host/win32/${cpu}/usr
-			sysroot=/c/${qnx_target}/target/qnx6
+			sysroot=/c/${qnx_target}/target/qnx7
                 ;;
                 darwin*)
                         execdir=/host/darwin/${cpu}/usr
