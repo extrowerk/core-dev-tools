@@ -66,7 +66,10 @@ case ${TARGET_SYSNAME} in
 	      qnx6.[2345].*)
 		    host_cpu_canonical=i386
 		    ;;
-	      qnx6.[6].* | qnx7*)
+	      qnx6.[6].*) 
+		    host_cpu_canonical=i486
+		    ;;
+	      qnx7*)
 		    host_cpu_canonical=i586
 		    ;;
 	      qnx*)
@@ -240,7 +243,17 @@ function hook_preconfigure {
   case ${TARGET_SYSNAME} in
     nto*)
       root_dir="/usr"
-      install_sysname="qnx7"
+      case ${qnx_sdp_version} in
+	qnx7*)
+	      install_sysname="qnx7"
+	      ;;
+	qnx6*)
+	      install_sysname="qnx6"
+	      ;;
+	*) echo "Uknown sdp version: ${qnx_sdp_version}"
+	      ;;
+      esac
+
       # Our makefiles hard code 6.5.0 CC
       unset CC
       ;;
