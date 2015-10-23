@@ -29,7 +29,7 @@ darwin*)
 	py_exec_prefix="${python_root}"
 	;;
 linux*)
-	gdb_prereq_dir=${PWD}/../../../gdb-prereq/linux
+	gdb_prereq_dir=${PWD}/../../../gdb-prereq/linux/${PYTHON_CPU}
 	# For testing, it is convenient to be able to run gdb from build directory
 	ln -fs ${gdb_prereq_dir}/python27 ..
 	python_root=${gdb_prereq_dir}/python27
@@ -38,7 +38,7 @@ linux*)
 	py_libs="-L${python_root}/lib -lpython${python_ver}"
 	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
 	# This is needed to automatically setup PYTHONHOME env. var.
-	py_exec_prefix="${prefix}/python27"
+	py_exec_prefix="../python27"
 	;;
 *)
 	echo "Not configured for python"
