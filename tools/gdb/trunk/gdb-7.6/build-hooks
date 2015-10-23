@@ -63,10 +63,10 @@ case ${TARGET_SYSNAME} in
 	    ;;
       x86*)
 	    case ${qnx_sdp_version} in
-	      qnx6.[2345].*)
+	      qnx6.[234].*)
 		    host_cpu_canonical=i386
 		    ;;
-	      qnx6.[6].*) 
+	      qnx6.[56].*) 
 		    host_cpu_canonical=i486
 		    ;;
 	      qnx7*)
@@ -151,9 +151,20 @@ case ${TARGET_SYSNAME} in
     configure_host="--host=${host}"
     ;;
   linux)
-    PYTHON_CPU=${host_cpu}
-    # PYTHON_CPU is used in python-config-cross.sh
-    export PYTHON_CPU
+    case ${qnx_sdp_version} in
+      qnx6.6*)
+	PYTHON_CPU=${host_cpu}
+	# PYTHON_CPU is used in python-config-cross.sh
+	export PYTHON_CPU
+      ;;
+      qnx7*)
+        PYTHON_CPU=${host_cpu}
+	# PYTHON_CPU is used in python-config-cross.sh
+	export PYTHON_CPU
+      ;;
+      *)
+      ;;
+    esac
     ;;
   *)
     host=""
