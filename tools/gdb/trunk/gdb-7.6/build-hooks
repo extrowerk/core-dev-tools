@@ -63,8 +63,11 @@ case ${TARGET_SYSNAME} in
 	    ;;
       x86*)
 	    case ${qnx_sdp_version} in
-	      qnx6.[234].*)
+	      qnx6.[2345].*)
 		    host_cpu_canonical=i386
+		    ;;
+	      qnx6.[6].* | qnx7*)
+		    host_cpu_canonical=i586
 		    ;;
 	      qnx*)
 		    host_cpu_canonical=i486
@@ -113,8 +116,10 @@ case ${target_os_cpu_variant} in
     ;;
   ntox86*)
     case ${qnx_sdp_version} in
-      6.[234].*) target_cpu=i386 ;;
-      *) target_cpu=i486 ;;
+      qnx6.[234].*) target_cpu=i386 ;;
+      qnx6.6*) target_cpu=i486 ;;
+      qnx7.*) target_cpu=i586 ;;
+      *) target_cpu=??? ;;
     esac
     target_platform="pc"
     ;;
@@ -141,6 +146,11 @@ case ${TARGET_SYSNAME} in
   nto)
     host=${host_cpu_canonical}-${host_platform}-${target_os}-${qnx_sdp_version}${qnx_abiext_host}
     configure_host="--host=${host}"
+    ;;
+  linux)
+    PYTHON_CPU=${host_cpu}
+    # PYTHON_CPU is used in python-config-cross.sh
+    export PYTHON_CPU
     ;;
   *)
     host=""
@@ -189,12 +199,15 @@ function hook_preconfigure {
 	  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
 	  ;;
 	linux*)
-	  # rpath must be reserved so it can be changed with chrpath
 	  if [ "${OFFICIAL_BUILD}" != "" ]; then
 		# For official builds, we provide python install for building
 		with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
-		CFLAGS="${CFLAGS} -m32"
-		LDFLAGS="${LDFLAGS} -m32 -Wl,-rpath=_ORIGIN/../python27/lib"
+		if [ "${host_cpu}" = "x86" ] ; then
+		  CFLAGS="${CFLAGS} -m32"
+		  LDFLAGS="${LDFLAGS} -m32"
+		fi
+		# rpath must be reserved so it can be changed with chrpath
+		LDFLAGS="${LDFLAGS} -Wl,-rpath=_ORIGIN/../python27/lib"
 	  else
 		# Let configure decide; if there is python available, then
 		# it will use it.
@@ -227,7 +240,7 @@ function hook_preconfigure {
   case ${TARGET_SYSNAME} in
     nto*)
       root_dir="/usr"
-      install_sysname="qnx6"
+      install_sysname="qnx7"
       # Our makefiles hard code 6.5.0 CC
       unset CC
       ;;

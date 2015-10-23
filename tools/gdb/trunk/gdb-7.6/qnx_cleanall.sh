@@ -21,11 +21,11 @@ if [ "${YES_CLEAN}" != "1" ]; then
   PRINT_HELP=1
 fi
 
-RMARG="linux-x86-*/[!G]* nto-x86-*/[!G]* win32-x86-*/[!G]* darwin-x86-*/[!G]* nto-arm-*/[!G]*"
+RMARG="linux-x86*/[!G]* nto-x86-*/[!G]* win32-x86-*/[!G]* darwin-x86-*/[!G]* nto-arm-*/[!G]*"
 
 if [ "$OSTOCLEAN" ]; then
   case $OSTOCLEAN in
-    linux) RMARG="linux-x86-*/[!G]*"
+    linux) RMARG="linux-x86*/[!G]*"
       ;;
     nto) RMARG="nto-*-*/[!G]*"
       ;;
