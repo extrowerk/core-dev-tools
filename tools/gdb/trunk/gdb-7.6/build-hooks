@@ -122,7 +122,7 @@ case ${target_os_cpu_variant} in
       qnx6.[234].*) target_cpu=i386 ;;
       qnx6.6*) target_cpu=i486 ;;
       qnx7.*) target_cpu=i586 ;;
-      *) target_cpu=??? ;;
+      *) target_cpu=i486 ;;
     esac
     target_platform="pc"
     ;;
