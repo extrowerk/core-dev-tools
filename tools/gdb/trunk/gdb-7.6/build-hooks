@@ -255,6 +255,9 @@ function hook_preconfigure {
     nto*)
       root_dir="/usr"
       case ${qnx_sdp_version} in
+	qnx8*) # For NDK build
+	      install_sysname="qnx6"
+	      ;;
 	qnx7*)
 	      install_sysname="qnx7"
 	      ;;
