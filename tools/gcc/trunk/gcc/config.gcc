@@ -1042,20 +1042,11 @@ arm*-*-netbsdelf*)
 	extra_options="${extra_options} netbsd.opt netbsd-elf.opt"
 	tmake_file="${tmake_file} arm/t-arm"
 	;;
-arm*-*-nto-qnx*)
+arm*-*-nto-qnx*eabi*)
 	tm_file="dbxelf.h tm-dwarf2.h elfos.h nto-stdint.h arm/elf.h arm/aout.h"
-	tmake_file="${tmake_file} arm/t-arm arm/t-nto"
+	tm_file="$tm_file nto.h arm/bpabi.h arm/nto-eabi.h arm/arm.h"
+	tmake_file="${tmake_file} arm/t-arm arm/t-nto arm/t-bpabi"
 	extra_options="${extra_options} arm/nto.opt"
-	need_64bit_hwint=yes
-	case ${target} in
-	arm*-*-qnx*eabi*)
-		tm_file="$tm_file nto.h arm/bpabi.h arm/nto-eabi.h arm/arm.h"
-		tmake_file="${tmake_file} arm/t-bpabi"
-		;;
-	*)
-		tm_file="$tm_file arm/arm.h nto.h arm/nto.h"
-	;;
-	esac
 	case x${enable_threads} in
 	x | xyes | xpthreads | xposix)
 		thread_file='posix'

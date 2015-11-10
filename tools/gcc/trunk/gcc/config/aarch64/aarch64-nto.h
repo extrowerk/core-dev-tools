@@ -44,7 +44,8 @@ along with GCC; see the file COPYING3.  If not see
    %{!static: \
      %{rdynamic:-export-dynamic}} \
    --dynamic-linker /usr/lib/ldqnx-64.so.2} \
- -X %{EB:-EB} %{!EB:-EL} %{EL:-EL}"
+ -X %{EB:-EB} %{!EB:-EL} %{EL:-EL} " \
+  QNX_SYSTEM_LIBDIRS
 
 #define QNX_SYSTEM_LIBDIRS \
 "-L %$QNX_TARGET/aarch64%{EB:be}%{!EB:le}/lib/gcc/%v1.%v2.%v3 \
@@ -58,7 +59,6 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef LIB_SPEC
 #define LIB_SPEC \
-  QNX_SYSTEM_LIBDIRS \
   "%{!symbolic: -lc -Bstatic %{static|nopie: -lc;:-lcS}}"
 
 #undef  CPP_SPEC
