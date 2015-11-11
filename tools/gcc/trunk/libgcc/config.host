@@ -383,15 +383,11 @@ arm*-*-freebsd*)                # ARM FreeBSD EABI
 arm*-*-netbsdelf*)
 	tmake_file="$tmake_file arm/t-arm arm/t-netbsd t-slibgcc-gld-nover"
 	;;
-arm*-*-nto-qnx*)
+arm*-*-qnx*eabi*)
 	tmake_file="${tmake_file} arm/t-arm arm/t-nto"
-	case ${host} in
-	arm*-*-qnx*eabi*)
-		tmake_file="${tmake_file} arm/t-bpabi"
-		tm_file="$tm_file arm/bpabi-lib.h"
-		unwind_header=config/arm/unwind-arm.h
-		;;
-	esac
+	tmake_file="${tmake_file} arm/t-bpabi"
+	tm_file="$tm_file arm/bpabi-lib.h"
+	unwind_header=config/arm/unwind-arm.h
 	;;
 arm*-*-linux*)			# ARM GNU/Linux with ELF
 	tmake_file="${tmake_file} arm/t-arm t-fixedpoint-gnu-prefix"
