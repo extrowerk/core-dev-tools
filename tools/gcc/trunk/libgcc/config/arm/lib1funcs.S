@@ -404,7 +404,12 @@ SYM (\name):
 
 /* Function start macros.  Variants for ARM and Thumb.  */
 
-#ifdef __thumb__
+/* Force ARM mode for _dvmd_nto as the div by zero handler is ARM only */
+#if defined(__QNXNTO__) && defined(L_dvmd_nto)
+#define THUMB_FUNC
+#define THUMB_CODE
+#define THUMB_SYNTAX
+#elif defined(__thumb__)
 #define THUMB_FUNC .thumb_func
 #define THUMB_CODE .force_thumb
 # if defined(__thumb2__)
@@ -1387,7 +1392,6 @@ LSYM(Lover12):
         WEAK aeabi_ldiv0
         ARM_FUNC_START aeabi_idiv0
         ARM_FUNC_START aeabi_ldiv0
-        FUNC_ALIAS div0 aeabi_ldiv0
 #else
         ARM_FUNC_START div0
 #endif
@@ -1398,7 +1402,6 @@ LSYM(Lover12):
 #ifdef __ARM_EABI__
         FUNC_END aeabi_ldiv0
         FUNC_END aeabi_idiv0
-        FUNC_END div0
 #else
         FUNC_END div0
 #endif
