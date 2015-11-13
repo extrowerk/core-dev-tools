@@ -28,6 +28,10 @@
 // Neutrino has pthread routines in libc so weak routines are not needed 
 #define _GLIBCXX_GTHREAD_USE_WEAK 0
 
+#define _GTHREAD_USE_MUTEX_INIT_FUNC 
+#define _GTHREAD_USE_RECURSIVE_MUTEX_INIT_FUNC
+#define _GTHREAD_USE_COND_INIT_FUNC
+
 // System-specific #define, typedefs, corrections, etc, go here.  This
 
 #endif
