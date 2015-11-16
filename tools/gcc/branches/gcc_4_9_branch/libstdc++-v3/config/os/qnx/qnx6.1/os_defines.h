@@ -1,6 +1,6 @@
 // Specific definitions for QNX 6.1  -*- C++ -*-
 
-// Copyright (C) 2002-2014 Free Software Foundation, Inc.
+// Copyright (C) 2002-2015 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -28,7 +28,10 @@
 // Neutrino has pthread routines in libc so weak routines are not needed 
 #define _GLIBCXX_GTHREAD_USE_WEAK 0
 
+#define _GTHREAD_USE_MUTEX_INIT_FUNC 
+#define _GTHREAD_USE_RECURSIVE_MUTEX_INIT_FUNC
+#define _GTHREAD_USE_COND_INIT_FUNC
+
 // System-specific #define, typedefs, corrections, etc, go here.  This
-#define _QNX_SOURCE 1
 
 #endif
