@@ -9,7 +9,6 @@ if [ ${nto_target} != ntomulti ]; then
 
   case $cpu_target in
 	x86) cpu_string=i586 ;;
-	armeabihf) nto_target=ntoarm; cpu_string=arm; os_variant=eabihf ;;
 	armeabi) nto_target=ntoarm; cpu_string=arm; os_variant=eabi ;;
         *) cpu_string=$cpu_target ;;
   esac 
@@ -58,6 +57,10 @@ function hook_preconfigure {
 		;;
 		win32*) 
 			execdir=/c/${qnx_target}/host/win32/${cpu}/usr
+			sysroot=/c/${qnx_target}/target/qnx7
+                ;;
+		win64*) 
+			execdir=/c/${qnx_target}/host/win64/${cpu}/usr
 			sysroot=/c/${qnx_target}/target/qnx7
                 ;;
                 darwin*)
