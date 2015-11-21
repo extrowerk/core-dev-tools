@@ -31,7 +31,7 @@ case ${SYSNAME} in
 nto)
 	make_CC="gcc"
 	;;
-win32)
+win*)
 	QNXSDK_HOST_LDFLAGS="-Wl,--stack=$STACKSIZE"
 	;;
 esac
@@ -58,6 +58,10 @@ function hook_preconfigure {
 			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
 			qnxtarget=/c/${qnx_target}/target/qnx7/
 			;;
+			win64-*) 	
+			basedir=/c/${qnx_target}/host/win64/${cpu}/usr
+			qnxtarget=/c/${qnx_target}/target/qnx7/
+			;;
 			nto-*)
 			CPPFLAGS=
 			basedir=/usr/${qnx_target}/host/qnx7/${cpu}/usr
@@ -76,6 +80,10 @@ function hook_preconfigure {
 		esac ;;
 	win32)
 		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win32/${cpu}}
+		basedir=${tooldir}/usr
+		;;
+	win64)
+		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win64/${cpu}}
 		basedir=${tooldir}/usr
 		;;
 	*)
@@ -175,7 +183,7 @@ function hook_postmake {
 
 function hook_pinfo {
 	case ${SYSNAME} in
-	win32)	exe_suffix=".exe" 	;;
+	win*)	exe_suffix=".exe" 	;;
 	*)	exe_suffix=""		;;
 	esac
 
