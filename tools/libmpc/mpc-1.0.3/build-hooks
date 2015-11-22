@@ -6,6 +6,7 @@ function hook_preconfigure {
 			nto*) INSTALL_ROOT=${INSTALL_ROOT_nto} ;;
 			linux*) INSTALL_ROOT=${INSTALL_ROOT_linux} ;;
 			win32*) INSTALL_ROOT=${INSTALL_ROOT_win32} ;;
+			win64*) INSTALL_ROOT=${INSTALL_ROOT_win64} ;;
 			darwin*) INSTALL_ROOT=${INSTALL_ROOT_darwin} ;;
 		esac
 	fi
@@ -13,6 +14,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --prefix=${prefix}"
 	configure_opts="${configure_opts} --disable-shared"
 	export CPPFLAGS="${CPPFLAGS} -I${prefix}/include"
+	export LDFLAGS="${LDFLAGS} -L${prefix}/lib"
 }
 
 function hook_premake {
