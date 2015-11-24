@@ -3,14 +3,14 @@ targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
 
-qnx_target=qnx700
-qnx_target_version=7.0.0
+qnx_target=qnx650
+qnx_target_version=6.5.0
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
 cpu_string=`echo ${nto_target} | sed 's/nto//'`
 
 case ${cpu_string} in
-	x86)		targetarch=i586 ;;
+	x86)		targetarch=i486 ;;
 	armeabi*)	targetarch=arm
 			nto_target=ntoarm
 			os_variant=eabi
@@ -42,9 +42,9 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx7/${cpu}}}
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx6/${cpu}}}
 				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/${qnx_target}/host/qnx7/${cpu}/usr ;;
+		*)		basedir=/usr/${qnx_target}/host/qnx6/${cpu}/usr ;;
 		esac
 		;;
 	darwin)
@@ -56,26 +56,26 @@ function hook_preconfigure {
 		case "${host_target}" in
 			win32-*) 	
 			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/qnx7/
+			qnxtarget=/c/${qnx_target}/target/qnx6/
 			;;
 			win64-*) 	
 			basedir=/c/${qnx_target}/host/win64/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/qnx7/
+			qnxtarget=/c/${qnx_target}/target/qnx6/
 			;;
 			nto-*)
 			CPPFLAGS=
-			basedir=/usr/${qnx_target}/host/qnx7/${cpu}/usr
-			qnxtarget=/usr/${qnx_target}/target/qnx7
+			basedir=/usr/${qnx_target}/host/qnx6/${cpu}/usr
+			qnxtarget=/usr/${qnx_target}/target/qnx6
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			darwin-*)
 			basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
-			qnxtarget=/Developer/SDKs/${qnx_target}/target/qnx7
+			qnxtarget=/Developer/SDKs/${qnx_target}/target/qnx6
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
-				qnxtarget=/opt/${qnx_target}/target/qnx7
+				qnxtarget=/opt/${qnx_target}/target/qnx6
 			;;
 		esac ;;
 	win32)
@@ -120,7 +120,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
 	configure_opts="${configure_opts} --enable-gnu-indirect-function"
-	configure_opts="${configure_opts} --enable-stack-protector"
+	#configure_opts="${configure_opts} --enable-stack-protector"
 
 	case ${cpu_string} in
 		x86*)
@@ -131,16 +131,8 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --disable-fixed-point"
 			;;
 		armeabi)
-			configure_opts="${configure_opts} --with-float=hard"
 			configure_opts="${configure_opts} --with-arch=armv7-a"
 			configure_opts="${configure_opts} --with-fpu=vfpv3"
-			configure_opts="${configure_opts} --with-mode=thumb"
-			;;
-		armeabihf)
-			configure_opts="${configure_opts} --with-float=hard"
-			configure_opts="${configure_opts} --with-arch=armv7-a"
-			configure_opts="${configure_opts} --with-fpu=vfpv3"
-			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		*)	;;
 	esac

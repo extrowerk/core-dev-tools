@@ -61,6 +61,7 @@ QNX_SYSTEM_INCLUDES \
 
 #undef LIB_SPEC
 #define LIB_SPEC \
+  QNX_SYSTEM_LIBDIRS \
   "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef LINK_SPEC
@@ -80,8 +81,7 @@ QNX_SYSTEM_INCLUDES \
    %{!shared: \
      %{!static: \
        %{rdynamic:-export-dynamic}} \
-     --dynamic-linker /usr/lib/ldqnx.so.2} " \
-   QNX_SYSTEM_LIBDIRS
+     --dynamic-linker /usr/lib/ldqnx.so.2}"
 
 #undef SIZE_TYPE
 #define SIZE_TYPE "unsigned int"
