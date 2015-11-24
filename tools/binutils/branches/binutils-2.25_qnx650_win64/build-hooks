@@ -1,14 +1,14 @@
 srcdir=${PWD}/..
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
-qnx_target_version=7.0.0
-qnx_target=qnx700
+qnx_target_version=6.5.0
+qnx_target=qnx650
 cpu_target=`echo ${nto_target} | sed 's/nto//'`
 
 if [ ${nto_target} != ntomulti ]; then
 
   case $cpu_target in
-	x86) cpu_string=i586 ;;
+	x86) cpu_string=i486 ;;
 	armeabi) nto_target=ntoarm; cpu_string=arm; os_variant=eabi ;;
         *) cpu_string=$cpu_target ;;
   esac 
@@ -38,30 +38,30 @@ function hook_preconfigure {
         case ${SYSNAME} in
         nto)
                 case "${nto_target}" in
-                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx7/x86}}
+                nto*)   TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx6/x86}}
 			execdir=${TOOL_PATH}/usr ;;
-                *)      execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr ;;
+                *)      execdir=/usr/${qnx_target}/host/qnx6/${cpu}/usr ;;
                 esac
                 ;;
         linux)
 		case  $host_target in 
 		nto*) 
-			CPPFLAGS=	
-			execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr/ 
-			sysroot=/usr/${qnx_target}/target/qnx7
+			#CPPFLAGS=	
+			execdir=/usr/${qnx_target}/host/qnx6/${cpu}/usr/ 
+			sysroot=/usr/${qnx_target}/target/qnx6
 		;;
 		
 		linux*)
 			execdir=/opt/${qnx_target}/host/linux/${cpu}/usr
-			sysroot=/opt/${qnx_target}/target/qnx7
+			sysroot=/opt/${qnx_target}/target/qnx6
 		;;
 		win32*) 
 			execdir=/c/${qnx_target}/host/win32/${cpu}/usr
-			sysroot=/c/${qnx_target}/target/qnx7
+			sysroot=/c/${qnx_target}/target/qnx6
                 ;;
 		win64*) 
 			execdir=/c/${qnx_target}/host/win64/${cpu}/usr
-			sysroot=/c/${qnx_target}/target/qnx7
+			sysroot=/c/${qnx_target}/target/qnx6
                 ;;
                 darwin*)
                         execdir=/host/darwin/${cpu}/usr
@@ -79,7 +79,6 @@ function hook_preconfigure {
 
 
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
-	configure_opts="${configure_opts} --enable-gold"
 	configure_opts="${configure_opts} --enable-plugins"
 	configure_opts="${configure_opts} --disable-werror"
 	configure_opts="${configure_opts} --disable-nls"
