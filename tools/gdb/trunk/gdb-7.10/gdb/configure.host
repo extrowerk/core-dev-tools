@@ -83,6 +83,8 @@ case "${host}" in
 
 aarch64*-*-linux*)	gdb_host=linux ;;
 
+aarch64-*-nto*)	gdb_host=nto ;;
+
 alpha*-*-linux*)	gdb_host=alpha-linux ;;
 alpha*-*-freebsd* | alpha*-*-kfreebsd*-gnu)
 			gdb_host=fbsd ;;

@@ -54,6 +54,9 @@ case ${TARGET_SYSNAME} in
     qnx_abiext_host=""
     host_platform="unknown"
     case ${host_cpu}${host_cpu_endian}${host_cpu_variant} in
+      aarch64*)
+            host_cpu_canonical=aarch64
+	    ;;
       arm*v7*)
 	    qnx_abiext_host=eabi
 	    host_cpu_canonical=arm
@@ -107,6 +110,10 @@ target_platform=""
 target_cpu=""
 target_os="nto"
 case ${target_os_cpu_variant} in
+  ntoaarch64*)
+	target_cpu="aarch64"
+	target_platform="unknown"
+    ;;
   ntoarm*v7*)
     target_cpu="arm"
     qnx_abiext_target="eabi"
@@ -240,7 +247,17 @@ function hook_preconfigure {
   case ${TARGET_SYSNAME} in
     nto*)
       root_dir="/usr"
-      install_sysname="qnx6"
+      case ${qnx_sdp_version} in
+	qnx7*)
+	      install_sysname="qnx7"
+	      ;;
+	qnx6*)
+	      install_sysname="qnx6"
+	      ;;
+	*) echo "Uknown sdp version: ${qnx_sdp_version}"
+	      ;;
+      esac
+
       # Our makefiles hard code 6.5.0 CC
       unset CC
       ;;
@@ -328,5 +345,5 @@ function hook_postmake {
 
 function hook_pinfo {
   cd gdb
-  gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.6"
+  gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 7.10"
 }

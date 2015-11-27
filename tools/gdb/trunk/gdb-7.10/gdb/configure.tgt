@@ -49,6 +49,12 @@ aarch64*-*-linux*)
 	build_gdbserver=yes
 	;;
 
+aarch64*-*-nto*)
+	# Target: AArch64 nto (QNX)
+	gdb_target_obs="aarch64-tdep.o aarch64-nto-tdep.o solib-svr4.o \
+			nto-tdep.o"
+	;;
+
 alpha*-*-linux*)
 	# Target: Little-endian Alpha running Linux
 	gdb_target_obs="alpha-tdep.o alpha-mdebug-tdep.o alpha-linux-tdep.o \
