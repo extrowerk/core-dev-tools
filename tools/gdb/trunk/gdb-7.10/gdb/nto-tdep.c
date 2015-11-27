@@ -889,10 +889,6 @@ qnx_filename_cmp (const char *s1, const char *s2, size_t n)
   return 0;
 }
 
-/* NTO Core handling.  */
-
-extern struct gdbarch *core_gdbarch;
-
 /* Add thread status for the given gdb_thread_id.  */
 
 static void
@@ -1043,6 +1039,127 @@ nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
     }
 }
 
+static void
+nto_core_add_thread_status_info (pid_t core_pid, int gdb_thread_id,
+				 const nto_procfs_status *ps)
+{
+  struct thread_info *ti;
+  ptid_t ptid;
+  struct private_thread_info *priv;
+  enum bfd_endian byte_order;
+
+  byte_order = gdbarch_byte_order (target_gdbarch ());
+ 
+  /* See corelow, function add_to_thread_list for details on pid.  */
+  ptid = ptid_build (core_pid, 0, gdb_thread_id);
+  ti = find_thread_ptid (ptid);
+  if(!ti)
+    {
+      warning ("Thread with gdb id %d not found.\n", gdb_thread_id);
+      return;
+    }
+  priv = malloc (sizeof (*priv));
+  if (priv == NULL)
+    {
+      warning ("Out of memory.\n");
+      return;
+    }
+  memset (priv, 0, sizeof (*priv));
+  ti->priv = priv;
+  ti->private_dtor = nto_private_thread_info_dtor;
+  if (IS_64BIT ())
+    {
+      priv->tid
+	= extract_unsigned_integer ((gdb_byte *)&ps->_64.tid,
+				    sizeof (ps->_64.tid),
+				    byte_order);
+      priv->state
+	= extract_unsigned_integer ((gdb_byte *)&ps->_64.state,
+				    sizeof (ps->_64.state),
+				    byte_order);
+      priv->flags
+	= extract_unsigned_integer ((gdb_byte *)&ps->_64.flags,
+				    sizeof (ps->_64.flags),
+				    byte_order);
+      priv->siginfo = malloc (sizeof (ps->_64.info64));
+    }
+  else
+    {
+      /* 32 bit */
+      priv->tid
+	= extract_unsigned_integer ((gdb_byte *)&ps->_32.tid,
+				    sizeof (ps->_32.tid),
+				    byte_order);
+      priv->state
+	= extract_unsigned_integer ((gdb_byte *)&ps->_32.state,
+				    sizeof (ps->_32.state),
+				    byte_order);
+      priv->flags
+	= extract_unsigned_integer ((gdb_byte *)&ps->_32.flags,
+				    sizeof (ps->_32.flags),
+				    byte_order);
+      priv->siginfo = malloc (sizeof (ps->_32.info));
+    }
+  if (priv->siginfo == NULL)
+    {
+      warning ("Out of memory.\n");
+      return;
+    }
+  nto_get_siginfo_from_procfs_status (ps, priv->siginfo);
+}
+
+/* Add thread statuses read from qnx notes.  */
+static void
+nto_core_add_thread_private_data (bfd *abfd, asection *sect, void *notused)
+{
+  const char *sectname;
+  unsigned int sectsize;
+  const char qnx_core_status[] = ".qnx_core_status/";
+  const unsigned int qnx_sectnamelen = 17;/* strlen (qnx_core_status).  */
+  const char warning_msg[] = "Unable to read %s section from core.\n";
+  int gdb_thread_id;
+  nto_procfs_status status;
+  int len;
+  const int is_elf64 = IS_64BIT();
+
+  sectname = bfd_get_section_name (abfd, sect);
+  sectsize = bfd_section_size (abfd, sect);
+  if (sectsize > (is_elf64? sizeof (status._64): sizeof (status._32)))
+    sectsize = (is_elf64? sizeof (status._64) : sizeof (status._32));
+
+  if (strncmp (sectname, qnx_core_status, qnx_sectnamelen) != 0)
+    return;
+
+  if (bfd_seek (abfd, sect->filepos, SEEK_SET) != 0)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  len = bfd_bread ((gdb_byte *)&status, sectsize, abfd);
+  if (len != sectsize)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  gdb_thread_id = atoi (sectname + qnx_sectnamelen);
+  nto_core_add_thread_status_info (elf_tdata (abfd)->core->pid, gdb_thread_id,
+				   &status);
+}
+static void (*original_core_open) (char *, int);
+static void (*original_core_close) (int);
+
+/* When opening a core, we do not want to set inferior hooks.  */
+static struct target_so_ops backup_so_ops;
+
+struct target_ops nto_core_ops;
+
+struct auxv_buf
+{
+  LONGEST len;
+  LONGEST len_read; /* For passing result. Can be len, 0, or -1  */
+  gdb_byte *readbuf;
+};
+
 /* Read AUXV from initial_stack.  */
 LONGEST
 nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
@@ -1124,6 +1241,152 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
         break;
     }
   return len_read;
+}
+
+
+/* Read AUXV from note.  */
+static void
+nto_core_read_auxv_from_note (bfd *abfd, asection *sect, void *pauxv_buf)
+{
+  struct auxv_buf *auxv_buf = (struct auxv_buf *)pauxv_buf;
+  const char *sectname;
+  unsigned int sectsize;
+  const char qnx_core_info[] = ".qnx_core_info/";
+  const unsigned int qnx_sectnamelen = 14;/* strlen (qnx_core_status).  */
+  const char warning_msg[] = "Unable to read %s section from core.\n";
+  nto_procfs_info info;
+  int len;
+  gdb_byte *buff; /* For skipping over argc, argv and envp-s */
+  CORE_ADDR initial_stack, base_address;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+
+  sectname = bfd_get_section_name (abfd, sect);
+  sectsize = bfd_section_size (abfd, sect);
+  if (sectsize > sizeof (info))
+    sectsize = sizeof (info);
+
+  if (strncmp (sectname, qnx_core_info, qnx_sectnamelen) != 0) 
+    return;
+
+  if (bfd_seek (abfd, sect->filepos, SEEK_SET) != 0)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  len = bfd_bread ((gdb_byte *)&info, sectsize, abfd);
+  if (len != sectsize)
+    {
+      warning (warning_msg, sectname);
+      return;
+    }
+  initial_stack = extract_unsigned_integer
+    ((gdb_byte *)&info.initial_stack, sizeof (info.initial_stack), byte_order);
+  base_address = extract_unsigned_integer
+    ((gdb_byte *)&info.base_address, sizeof (info.base_address), byte_order);
+  buff = auxv_buf->readbuf;
+
+  auxv_buf->len_read = nto_read_auxv_from_initial_stack
+    (initial_stack, auxv_buf->readbuf, auxv_buf->len, IS_64BIT()? 16 : 8);
+
+}
+
+static enum target_xfer_status
+nto_core_xfer_partial (struct target_ops *ops, enum target_object object,
+		       const char *annex, gdb_byte *readbuf,
+		       const gdb_byte *writebuf, ULONGEST offset, ULONGEST len,
+		       ULONGEST *xfered_len)
+{
+  if (object == TARGET_OBJECT_AUXV
+      && readbuf)
+    {
+      struct auxv_buf auxv_buf;
+      ssize_t tempread;
+
+      auxv_buf.len = len;
+      auxv_buf.len_read = 0;
+      auxv_buf.readbuf = readbuf;
+
+      bfd_map_over_sections (core_bfd, nto_core_read_auxv_from_note, &auxv_buf);
+
+      tempread = min (len, auxv_buf.len_read) - offset;
+
+      if (tempread < 0)
+	return TARGET_XFER_E_IO;
+
+      if (offset)
+	memmove (auxv_buf.readbuf, &auxv_buf.readbuf[offset], tempread);
+
+      *xfered_len = tempread;
+      return (tempread ? TARGET_XFER_OK : TARGET_XFER_EOF);
+    }
+  else if (object == TARGET_OBJECT_SIGNAL_INFO
+	   && readbuf)
+    {
+      struct thread_info *ti;
+
+      ti = find_thread_ptid (inferior_ptid);
+      if (!ti)
+        {
+	  warning ("Thread with gdb id %ld not found.\n", ptid_get_tid (inferior_ptid));
+	  return 0;
+        }
+      if (!ti->priv)
+	{
+	  warning (_("Thread with gdb id %ld does not have thread private data - siginfo not available\n"),
+		   ptid_get_tid (inferior_ptid));
+	  return 0;
+	}
+      if ((offset + len) > sizeof (nto_siginfo_t))
+	{
+	  if (offset <= sizeof (nto_siginfo_t))
+	    len = sizeof (nto_siginfo_t) - offset;
+	  else
+	    len = 0;
+	}
+
+      memcpy (readbuf, (char *)ti->priv->siginfo + offset, len);
+      *xfered_len = len;
+      return len ? TARGET_XFER_OK : TARGET_XFER_EOF;
+    }
+
+
+  /* In any other case, try default code.  */
+  return nto_core_ops.to_xfer_partial (ops, object, annex, readbuf,
+					    writebuf, offset, len, xfered_len);
+}
+
+static void
+nto_core_open (char *filename, int from_tty)
+{
+  /* Backup target_so_ops.  */
+  backup_so_ops = *current_target_so_ops;
+
+  nto_trace (0) ("%s (%s)\n", __func__, filename);
+  nto_core_ops.to_open (filename, from_tty);
+  /* Now we need to load additional thread status information stored
+     in qnx notes.  */
+  if (core_bfd)
+    bfd_map_over_sections (core_bfd, nto_core_add_thread_private_data, NULL);
+}
+/* FIXME */
+static void
+nto_core_close (struct target_ops *ops)
+{
+  nto_core_ops.to_close (ops);
+}
+
+extern struct target_ops *core_target;
+static void
+init_nto_core_ops (void)
+{
+  gdb_assert (core_target != NULL && core_target->to_shortname != NULL 
+	      && !!"core_ops must be initialized first!");
+  nto_core_ops = *core_target;
+  core_target->to_extra_thread_info = nto_extra_thread_info;
+  core_target->to_open = nto_core_open;
+  core_target->to_close = nto_core_close;
+  core_target->to_xfer_partial = nto_core_xfer_partial;
+  core_target->to_pid_to_str = nto_pid_to_str;
 }
 
 int
@@ -1425,6 +1688,10 @@ void
 _initialize_nto_tdep (void)
 {
   nto_gdbarch_ops = gdbarch_data_register_pre_init (nto_gdbarch_init);
+  foo_initialize_corelow ();
+  init_nto_core_ops ();
+
+  nto_trace (0) ("%s ()\n", __func__);
 
   nto_inferior_data_reg
     = register_inferior_data_with_cleanup (NULL, nto_inferior_data_cleanup);

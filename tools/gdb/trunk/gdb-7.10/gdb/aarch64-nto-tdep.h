@@ -27,6 +27,7 @@
 
 #ifndef __QNXNTO__
 typedef uint64_t _Uint64t;
+typedef uint32_t _Uint32t;
 #endif
 
 /* From aarch64/context.h.  */
@@ -107,5 +108,16 @@ typedef struct aarch64_cpu_registers {
 
 #define	AARCH32_REG_SP		AARCH32_REG_R13
 #define	AARCH32_REG_LR		AARCH32_REG_R14
+
+typedef struct {
+	_Uint64t	qlo;
+	_Uint64t	qhi;
+} aarch64_qreg_t;
+
+typedef struct aarch64_fpu_registers {
+	aarch64_qreg_t	reg[32];
+	_Uint32t		fpsr;
+	_Uint32t		fpcr;
+} AARCH64_FPU_REGISTERS __attribute__((__aligned__(16)));
 
 #endif /* aarch64-nto-tdep.h */
