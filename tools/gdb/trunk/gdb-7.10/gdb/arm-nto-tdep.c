@@ -813,6 +813,7 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   *nto_ops = arm_nto_ops;
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
+  set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
 }
 
 extern initialize_file_ftype _initialize_armnto_tdep;

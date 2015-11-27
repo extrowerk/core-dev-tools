@@ -381,6 +381,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   *nto_ops = i386_nto_ops;
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
+  set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
