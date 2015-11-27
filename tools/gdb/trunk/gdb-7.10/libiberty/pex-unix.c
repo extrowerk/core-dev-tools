@@ -392,7 +392,7 @@ pex_child_error (struct pex_obj *obj, const char *executable,
 
 extern char **environ;
 
-#if defined(HAVE_SPAWNVE) && defined(HAVE_SPAWNVPE)
+#if defined(HAVE_SPAWNVE) && defined(HAVE_SPAWNVPE) && !defined(__QNXNTO__)
 /* Implementation of pex->exec_child using the Cygwin spawn operation.  */
 
 /* Subroutine of pex_unix_exec_child.  Move OLD_FD to a new file descriptor

@@ -510,6 +510,10 @@ struct mips_elf_link_hash_table
      The function returns the new section on success, otherwise it
      returns null.  */
   asection *(*add_stub_section) (const char *, asection *, asection *);
+#ifdef __QNXTARGET__
+  /* True if we're generating MIPS plts and we don't want any abicalls stubs */
+  bfd_boolean no_fn_stubs;
+#endif
 
   /* Small local sym cache.  */
   struct sym_cache sym_cache;
@@ -8983,6 +8987,29 @@ _bfd_mips_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
 
   hmips = (struct mips_elf_link_hash_entry *) h;
 
+#ifdef __QNXTARGET__
+  /*
+   * If using the new PLTs, and our binary calls a function but does not reference it's address,
+   * then we would normally get a .MIPS.stubs style stub.
+   *
+   * This is a problem if a shared library refers to it's address (say, for setting a function pointer),
+   * since then we have the canonical address essentially being the mips stub, which is local to the
+   * executable object (and hence needs the correct $gp).
+   *
+   * Since the linker can't easily tell whether the symbol is going to be referred to by a DSO, we have
+   * to assume the worst and force a PLT to be used.
+   */
+  if (htab->use_plts_and_copy_relocs
+         && !bfd_link_pic (info)
+         && h->type == STT_FUNC
+         && !hmips->has_static_relocs)
+   {
+     hmips->has_static_relocs = TRUE;
+     hmips->no_fn_stub = TRUE;
+     h->pointer_equality_needed = TRUE;
+   }
+#endif
+
   /* If there are call relocations against an externally-defined symbol,
      see whether we can create a MIPS lazy-binding stub for it.  We can
      only do this if all references to the function are through call
@@ -13906,6 +13933,17 @@ _bfd_mips_vxworks_link_hash_table_create (bfd *abfd)
     }
   return ret;
 }
+
+#ifdef __QNXTARGET__
+/* A function that the linker calls if we are using PLTs
+   and copy relocs, but don't want abicalls style stubs  */
+
+void
+_bfd_mips_elf_no_fn_stubs (struct bfd_link_info *info)
+{
+  mips_elf_hash_table (info)->no_fn_stubs = TRUE;
+}
+#endif
 
 /* A function that the linker calls if we are allowed to use PLTs
    and copy relocs.  */
