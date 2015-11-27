@@ -318,6 +318,11 @@ amd64nto_sigcontext_addr (struct frame_info *this_frame)
   return ptrctx;
 }
 
+static int
+amd64nto_breakpoint_size (CORE_ADDR addr)
+{
+  return 0;
+}
 
 static struct nto_target_ops amd64_nto_ops;
 
@@ -333,6 +338,7 @@ init_x86_64nto_ops (void)
   amd64_nto_ops.regset_fill = x86_64nto_regset_fill;
   amd64_nto_ops.fetch_link_map_offsets =
     nto_generic_svr4_fetch_link_map_offsets;
+  amd64_nto_ops.breakpoint_size = amd64nto_breakpoint_size;
 }
 
 static void
@@ -419,9 +425,4 @@ _initialize_x86_64nto_tdep (void)
 {
   gdbarch_register_osabi (bfd_arch_i386, bfd_mach_x86_64,
 			  GDB_OSABI_QNXNTO, amd64_nto_init_abi);
-}
-
-int nto_breakpoint_size (CORE_ADDR addr)
-{
-  return 0;
 }
