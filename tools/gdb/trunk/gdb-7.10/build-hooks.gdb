@@ -126,7 +126,8 @@ case ${target_os_cpu_variant} in
     case ${qnx_sdp_version} in
       qnx6.[234].*) target_cpu=i386 ;;
       qnx6.[56].*) target_cpu=i486 ;;
-      *) target_cpu=i586 ;;
+      *) target_cpu=i586
+      ${configure_opts} = "${configure_opts} --enable_64_bit_bfd=yes" ;;
     esac
     target_platform="pc"
     ;;
@@ -230,7 +231,7 @@ function hook_preconfigure {
       ;;
   esac
 
-  configure_opts="${configure_host} ${configure_target}"
+  configure_opts="${configure_opts} ${configure_host} ${configure_target}"
   configure_opts="${configure_opts} --without-expat"
   configure_opts="${configure_opts} --with-bugurl=no"
 

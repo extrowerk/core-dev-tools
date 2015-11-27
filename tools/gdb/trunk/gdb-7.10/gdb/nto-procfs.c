@@ -1215,6 +1215,13 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
   const char *inferior_io_terminal = get_inferior_io_terminal ();
   struct inferior *inf;
 
+  /* Stuff some information.  */
+  if (!nto_cpuinfo_valid)
+    {
+      nto_cpuinfo_flags = SYSPAGE_ENTRY (cpuinfo)->flags;
+      nto_cpuinfo_valid = 1;
+    }
+
   argv = xmalloc (((strlen (allargs) + 1) / (unsigned) 2 + 2) *
 		  sizeof (*argv));
   argv[0] = get_exec_file (1);
@@ -1587,10 +1594,6 @@ _initialize_procfs (void)
 
   /* Initially, make sure all signals are reported.  */
   sigfillset (&run.trace);
-
-  /* Stuff some information.  */
-  nto_cpuinfo_flags = SYSPAGE_ENTRY (cpuinfo)->flags;
-  nto_cpuinfo_valid = 1;
 
   add_info ("pidlist", procfs_pidlist, _("pidlist"));
   add_info ("meminfo", procfs_meminfo, _("memory information"));
