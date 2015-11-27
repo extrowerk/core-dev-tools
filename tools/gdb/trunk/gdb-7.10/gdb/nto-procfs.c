@@ -1039,7 +1039,8 @@ procfs_insert_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tgt)
 {
   bp_tgt->placed_address = bp_tgt->reqstd_address;
-  return procfs_breakpoint (bp_tgt->placed_address, _DEBUG_BREAK_EXEC, 0);
+  return procfs_breakpoint (bp_tgt->placed_address, _DEBUG_BREAK_EXEC,
+			    nto_breakpoint_size (bp_tgt->placed_address));
 }
 
 static int
@@ -1410,7 +1411,7 @@ procfs_store_registers (struct target_ops *ops,
 	  if (dev_set == -1)
 	    continue;
 
-	  if (nto_regset_fill (regcache, regset, (char *) &reg) == -1)
+	  if (nto_regset_fill (regcache, regset, (gdb_byte *) &reg) == -1)
 	    continue;
 
 	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
