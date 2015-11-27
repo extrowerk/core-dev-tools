@@ -77,13 +77,18 @@ gdb_signal_to_string (enum gdb_signal sig)
 const char *
 gdb_signal_to_name (enum gdb_signal sig)
 {
+  static char signame[50];
+
   if ((int) sig >= GDB_SIGNAL_FIRST && (int) sig <= GDB_SIGNAL_LAST
       && signals[sig].name != NULL)
     return signals[sig].name;
   else
-    /* I think the code which prints this will always print it along
-       with the string, so no need to be verbose (very old comment).  */
-    return "?";
+    {
+      /* I think the code which prints this will always print it along
+	 with the string, so no need to be verbose (very old comment).  */
+      snprintf (signame, sizeof (signame), "? (%d)", sig);
+      return signame;
+    }
 }
 
 /* Given a name, return its signal.  */
@@ -299,6 +304,13 @@ gdb_signal_from_host (int hostsig)
 #if defined (SIGPRIO)
   if (hostsig == SIGPRIO)
     return GDB_SIGNAL_PRIO;
+#endif
+
+#ifdef __QNXTARGET__
+#if defined (SIGSELECT)
+  if (hostsig == SIGSELECT)
+    return GDB_SIGNAL_SELECT;
+#endif
 #endif
 
   /* Mach exceptions.  Assumes that the values for EXC_ are positive! */
@@ -552,6 +564,13 @@ do_gdb_signal_to_host (enum gdb_signal oursig,
 #if defined (SIGPRIO)
     case GDB_SIGNAL_PRIO:
       return SIGPRIO;
+#endif
+
+#ifdef __QNXTARGET__
+#if defined (SIGSELECT)
+    case GDB_SIGNAL_SELECT:
+      return SIGSELECT;
+#endif
 #endif
 
       /* Mach exceptions.  Assumes that the values for EXC_ are positive! */
