@@ -98,6 +98,9 @@ case ${TARGET_SYSNAME} in
   win32)
     host=win32
     ;;
+  win64)
+    host=win64
+    ;;
   *)
     echo "Could not recognize host: ${host_os}"
     Error 1
@@ -216,6 +219,9 @@ export TARGET_SYSNAME
 function hook_preconfigure {
   # determine if no python support is desired
   case ${TARGET_SYSNAME} in
+	win64*)
+	  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+	  ;;
 	win32*)
 	  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
 	  ;;
