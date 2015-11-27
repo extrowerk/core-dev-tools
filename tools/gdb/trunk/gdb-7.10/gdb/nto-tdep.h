@@ -223,4 +223,6 @@ extern struct gdbarch_data *nto_gdbarch_ops;
 
 extern int nto_gdb_signal_to_target (struct gdbarch *gdbarch,
 				     enum gdb_signal signal);
+extern enum gdb_signal nto_gdb_signal_from_target (struct gdbarch *gdbarch,
+						   int nto_signal);
 #endif

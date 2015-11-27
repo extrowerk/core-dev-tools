@@ -415,6 +415,7 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
+  set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
 }
 
 

@@ -245,6 +245,7 @@ aarch64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   *nto_ops = aarch64_nto_ops;
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
+  set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
 
   /* Initialize this lazily, to avoid an initialization order
      dependency on solib-svr4.c's _initialize routine.  */
