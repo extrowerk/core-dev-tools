@@ -284,7 +284,7 @@ function hook_preconfigure {
       # Our makefiles hard code 6.5.0 CC
       unset CC
       ;;
-    win32*)
+    win*)
       root_dir="/c"
       ;;
     darwin*)
