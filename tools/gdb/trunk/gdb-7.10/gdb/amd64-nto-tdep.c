@@ -405,6 +405,8 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_solib_ops (gdbarch, &nto_svr4_so_ops);
 
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
+
+  set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
 }
 
 
