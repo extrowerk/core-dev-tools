@@ -96,6 +96,7 @@ arm*-*-linux*)		gdb_host=linux ;;
 arm*-*-netbsdelf* | arm*-*-knetbsd*-gnu)
 			gdb_host=nbsdelf ;;
 arm*-*-openbsd*)	gdb_host=nbsdelf ;;
+arm*-*-nto*)		gdb_host=nto ;;
 
 hppa*-*-linux*)		gdb_host=linux ;;
 hppa*-*-netbsd*)	gdb_host=nbsd ;;

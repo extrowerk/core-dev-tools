@@ -31,6 +31,8 @@
 
 struct nto_target_ops
 {
+  int internal_debugging;
+
 /* The CPUINFO flags from the remote.  Currently used by
    i386 for fxsave but future proofing other hosts.
    This is initialized in procfs_attach or nto_start_remote
@@ -73,10 +75,16 @@ struct nto_target_ops
    Neutrino target.  */
   enum gdb_osabi (*is_nto_target) (bfd *abfd);
 
-
 /* Used on arm to determine breakpoint size: thumb/arm.  */
   int (*breakpoint_size) (CORE_ADDR addr);
+
+/* Variant specific directory extension. e.g. -spe, -v7... */
+  const char *(*variant_directory_suffix)(void);
+
+/* Read description. */
+  const struct target_desc *(*read_description) (struct target_ops *ops);
 };
+
 
 #define target_nto_gdbarch_data ((struct nto_target_ops *)gdbarch_data (target_gdbarch (), nto_gdbarch_ops))
 #define nto_cpuinfo_flags (target_nto_gdbarch_data->cpuinfo_flags)
@@ -95,9 +103,26 @@ struct nto_target_ops
 
 #define nto_register_area (target_nto_gdbarch_data->register_area)
 
+#define nto_internal_debugging (target_nto_gdbarch_data->internal_debugging)
+
 #define nto_regset_fill (target_nto_gdbarch_data->regset_fill)
 
 #define nto_breakpoint_size (target_nto_gdbarch_data->breakpoint_size)
+
+#define nto_variant_directory_suffix (target_nto_gdbarch_data->variant_directory_suffix)
+
+#define ntoops_read_description (target_nto_gdbarch_data->read_description)
+
+#define nto_trace(level) \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered ("nto: "); \
+  if ((nto_internal_debugging & 0xFF) <= (level)) {} else \
+    printf_unfiltered
+
+#define NTO_ALL_REGS (-1)
+#define RAW_SUPPLY_IF_NEEDED(regcache, whichreg, dataptr) \
+  {if (!(NTO_ALL_REGS == regno || regno == (whichreg))) {} \
+    else regcache_raw_supply (regcache, whichreg, dataptr); }
 
 /* Keep this consistant with neutrino syspage.h.  */
 enum
