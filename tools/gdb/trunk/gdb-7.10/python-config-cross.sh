@@ -19,6 +19,16 @@ win32*)
 	# This is needed to automatically setup PYTHONHOME env. var.
 	py_exec_prefix="${prefix}/bin"
 	;;
+win64*)
+	gdb_prereq_dir=${PWD}/../../../gdb-prereq/win64
+	python_root=${gdb_prereq_dir}/Python27
+	python_ver=2.7
+	py_include="-I${python_root}/include -I${python_root}/include/python${python_ver} -DWINVER=0x0500 "
+	py_libs="-L${python_root}/libs  -lpython27"
+	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
+	# This is needed to automatically setup PYTHONHOME env. var.
+	py_exec_prefix="${prefix}/bin"
+	;;
 darwin*)
 	python_ver=2.7
 	python_root=/usr/darwin/x86_64-apple-darwin/x86_64-apple-darwin/
