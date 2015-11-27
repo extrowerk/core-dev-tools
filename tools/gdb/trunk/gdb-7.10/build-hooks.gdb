@@ -164,6 +164,22 @@ case ${TARGET_SYSNAME} in
     host=${host_cpu_canonical}-${host_platform}-${target_os}-${qnx_sdp_version}${qnx_abiext_host}
     configure_host="--host=${host}"
     ;;
+  linux)
+    case ${qnx_sdp_version} in
+      qnx6.6*)
+	PYTHON_CPU=${host_cpu}
+	# PYTHON_CPU is used in python-config-cross.sh
+	export PYTHON_CPU
+      ;;
+      qnx7*)
+        PYTHON_CPU=${host_cpu}
+	# PYTHON_CPU is used in python-config-cross.sh
+	export PYTHON_CPU
+      ;;
+      *)
+      ;;
+    esac
+    ;;
   *)
     host=""
     configure_host=""
@@ -215,8 +231,7 @@ function hook_preconfigure {
 	  if [ "${OFFICIAL_BUILD}" != "" ]; then
 		# For official builds, we provide python install for building
 		with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
-		CFLAGS="${CFLAGS} -m32"
-		LDFLAGS="${LDFLAGS} -m32 -Wl,-rpath=_ORIGIN/../python27/lib"
+		LDFLAGS="${LDFLAGS} -Wl,-rpath=_ORIGIN/../python27/lib"
 	  else
 		# Let configure decide; if there is python available, then
 		# it will use it.
