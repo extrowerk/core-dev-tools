@@ -331,6 +331,8 @@ init_x86_64nto_ops (void)
   amd64_nto_ops.supply_regset = x86_64nto_supply_regset;
   amd64_nto_ops.register_area = x86_64nto_register_area;
   amd64_nto_ops.regset_fill = x86_64nto_regset_fill;
+  amd64_nto_ops.fetch_link_map_offsets =
+    nto_generic_svr4_fetch_link_map_offsets;
 }
 
 static void
@@ -382,7 +384,7 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 #endif
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_lp64_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Initialize this lazily, to avoid an initialization order
      dependency on solib-svr4.c's _initialize routine.  */

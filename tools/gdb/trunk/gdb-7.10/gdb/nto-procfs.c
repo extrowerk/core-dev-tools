@@ -58,16 +58,16 @@ static procfs_run run;
 static ptid_t do_attach (ptid_t ptid);
 
 static int procfs_can_use_hw_breakpoint (struct target_ops *self,
-					 enum bptype, int, int);
+					 int, int, int);
 
 static int procfs_insert_hw_watchpoint (struct target_ops *self,
 					CORE_ADDR addr, int len,
-					enum target_hw_bp_type type,
+					int type,
 					struct expression *cond);
 
 static int procfs_remove_hw_watchpoint (struct target_ops *self,
 					CORE_ADDR addr, int len,
-					enum target_hw_bp_type type,
+					int type,
 					struct expression *cond);
 
 static int procfs_stopped_by_watchpoint (struct target_ops *ops);
@@ -867,13 +867,13 @@ procfs_fetch_registers (struct target_ops *ops,
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset (regcache, (char *) &reg.greg);
+    nto_supply_gregset (regcache, (gdb_byte *) &reg.greg);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset (regcache, (char *) &reg.fpreg);
+    nto_supply_fpregset (regcache, (gdb_byte *) &reg.fpreg);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset (regcache, (char *) &reg.altreg);
+    nto_supply_altregset (regcache, (gdb_byte *) &reg.altreg);
 }
 
 /* Helper for procfs_xfer_partial that handles memory transfers.
@@ -1632,8 +1632,7 @@ procfs_hw_watchpoint (int addr, int len, enum target_hw_bp_type type)
 
 static int
 procfs_can_use_hw_breakpoint (struct target_ops *self,
-			      enum bptype type,
-			      int cnt, int othertype)
+			      int type, int cnt, int othertype)
 {
   return 1;
 }
@@ -1641,7 +1640,7 @@ procfs_can_use_hw_breakpoint (struct target_ops *self,
 static int
 procfs_remove_hw_watchpoint (struct target_ops *self,
 			     CORE_ADDR addr, int len,
-			     enum target_hw_bp_type type,
+			     int type,
 			     struct expression *cond)
 {
   return procfs_hw_watchpoint (addr, -1, type);
@@ -1650,7 +1649,7 @@ procfs_remove_hw_watchpoint (struct target_ops *self,
 static int
 procfs_insert_hw_watchpoint (struct target_ops *self,
 			     CORE_ADDR addr, int len,
-			     enum target_hw_bp_type type,
+			     int type,
 			     struct expression *cond)
 {
   return procfs_hw_watchpoint (addr, len, type);

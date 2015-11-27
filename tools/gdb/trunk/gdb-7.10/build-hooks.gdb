@@ -55,7 +55,7 @@ case ${TARGET_SYSNAME} in
     host_platform="unknown"
     case ${host_cpu}${host_cpu_endian}${host_cpu_variant} in
       aarch64*)
-            host_cpu_canonical=aarch64
+	    host_cpu_canonical=aarch64
 	    ;;
       arm*v7*)
 	    qnx_abiext_host=eabi
@@ -64,18 +64,18 @@ case ${TARGET_SYSNAME} in
       arm*)
 	    host_cpu_canonical=arm
 	    ;;
-	  x86_64*)
-		host_cpu_canonical=x86_64
-		host_platform="pc"
+      x86_64*)
+	    host_cpu_canonical=x86_64
+	    host_platform="pc"
 	    ;;
       x86*)
 	    case ${qnx_sdp_version} in
 	      qnx6.[234].*)
 		    host_cpu_canonical=i386
 		    ;;
-		  qnx6.[56].*)
+	      qnx6.[56].*)
 		    host_cpu_canonical=i486
-			;;
+		    ;;
 	      qnx*)
 		    host_cpu_canonical=i586
 		    ;;
@@ -84,8 +84,8 @@ case ${TARGET_SYSNAME} in
 	    esac
 	    host_platform="pc"
 	    ;;
-	  ppc*)
-		host_cpu_canonical=powerpc
+      ppc*)
+	    host_cpu_canonical=powerpc
 	    ;;
     esac
     ;;
@@ -109,10 +109,11 @@ qnx_abiext_target=""
 target_platform=""
 target_cpu=""
 target_os="nto"
+configure_opts=""
 case ${target_os_cpu_variant} in
   ntoaarch64*)
-	target_cpu="aarch64"
-	target_platform="unknown"
+    target_cpu="aarch64"
+    target_platform="unknown"
     ;;
   ntoarm*v7*)
     target_cpu="arm"
@@ -127,14 +128,15 @@ case ${target_os_cpu_variant} in
     ;;
   ntox86_64*)
     target_cpu=x86_64
-	target_platform="pc"
+    target_platform="pc"
     ;;
   ntox86*)
     case ${qnx_sdp_version} in
       qnx6.[234].*) target_cpu=i386 ;;
       qnx6.[56].*) target_cpu=i486 ;;
       *) target_cpu=i586
-      ${configure_opts} = "${configure_opts} --enable_64_bit_bfd=yes" ;;
+      configure_opts="--enable-64-bit-bfd=yes"
+      ;;
     esac
     target_platform="pc"
     ;;

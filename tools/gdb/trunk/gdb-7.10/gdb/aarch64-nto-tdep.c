@@ -213,6 +213,8 @@ init_aarch64nto_ops (void)
   aarch64_nto_ops.supply_regset = aarch64nto_supply_regset;
   aarch64_nto_ops.register_area = aarch64nto_register_area;
   aarch64_nto_ops.regset_fill = aarch64nto_regset_fill;
+  aarch64_nto_ops.fetch_link_map_offsets =
+    nto_generic_svr4_fetch_link_map_offsets;
 }
 
 static void
@@ -230,7 +232,7 @@ aarch64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   nto_initialize_signals ();
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_lp64_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   nto_ops = gdbarch_data (gdbarch, nto_gdbarch_ops);
   *nto_ops = aarch64_nto_ops;
