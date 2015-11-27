@@ -340,6 +340,11 @@ case "${target}" in
 			srv_xmlfiles="$srv_i386_xmlfiles $srv_amd64_xmlfiles"
 			srv_mingw=yes
 			;;
+  x86_64-*-nto*)	srv_regobj="$srv_amd64_regobj"
+			srv_tgtobj="nto-low.o nto-x86_64-low.o"
+			srv_xmlfiles="$srv_amd64_xmlfiles"
+			srv_qnx="yes"
+			;;
   x86_64-*-cygwin*)	srv_regobj="$srv_amd64_regobj"
 			srv_tgtobj="x86-low.o x86-dregs.o i387-fp.o win32-low.o win32-i386-low.o"
 			srv_xmlfiles="$srv_i386_xmlfiles"

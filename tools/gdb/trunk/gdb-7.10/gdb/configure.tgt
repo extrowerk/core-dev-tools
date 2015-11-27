@@ -211,6 +211,7 @@ x86_64-*-nto*)
 	# Target: x86_64 running qnx6
 	gdb_target_obs="i386-tdep.o i387-tdep.o amd64-tdep.o amd64-nto-tdep.o \
 			i386-nto-tdep.o nto-tdep.o solib-svr4.o"
+	build_gdbserver=yes
 	;;
 i[34567]86-*-solaris2.1[0-9]* | x86_64-*-solaris2.1[0-9]*)
 	# Target: Solaris x86_64
