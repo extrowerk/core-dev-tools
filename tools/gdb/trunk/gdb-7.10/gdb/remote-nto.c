@@ -3113,8 +3113,10 @@ nto_to_insert_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
       return 0;
     }
 
+  bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
+
   return nto_insert_breakpoint (ops, bp_tg_inf->placed_address,
-				bp_tg_inf->shadow_contents);
+								bp_tg_inf->shadow_contents);
 }
 
 
