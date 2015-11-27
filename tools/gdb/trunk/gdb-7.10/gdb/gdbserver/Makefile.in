@@ -166,6 +166,8 @@ SFILES=	$(srcdir)/gdbreplay.c $(srcdir)/inferiors.c $(srcdir)/dll.c \
 	$(srcdir)/linux-x86-low.c \
 	$(srcdir)/linux-xtensa-low.c \
 	$(srcdir)/linux-tile-low.c \
+	$(srcdir)/nto-low.c \
+	$(srcdir)/nto-x86-low.c \
 	$(srcdir)/win32-arm-low.c $(srcdir)/win32-i386-low.c \
 	$(srcdir)/win32-low.c $(srcdir)/wincecompat.c \
 	$(srcdir)/hostio.c $(srcdir)/hostio-errno.c \
