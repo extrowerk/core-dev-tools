@@ -1454,13 +1454,13 @@ procfs_pass_signals (struct target_ops *self,
 {
   int signo;
 
-  sigfillset (&run.trace);
+  sigemptyset (&run.trace);
 
-  for (signo = 1; signo < NSIG; signo++)
+  for (signo = 1; signo < _SIGMAX; signo++)
     {
       int target_signo = gdb_signal_from_host (signo);
-      if (target_signo < numsigs && pass_signals[target_signo])
-        sigdelset (&run.trace, signo);
+      if (target_signo < numsigs && !pass_signals[target_signo])
+        sigaddset (&run.trace, signo);
     }
 }
 
