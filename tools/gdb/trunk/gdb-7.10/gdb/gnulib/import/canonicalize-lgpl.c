@@ -290,6 +290,10 @@ __realpath (const char *name, char *resolved)
                   errno = saved_errno;
                   goto error;
                 }
+#ifdef __QNXTARGET__
+	      /* Workaround JI1338733 */
+	      n = strlen (buf);
+#endif
               buf[n] = '\0';
 
               if (!extra_buf)
