@@ -21,7 +21,7 @@ if [ "${YES_CLEAN}" != "1" ]; then
   PRINT_HELP=1
 fi
 
-RMARG="linux-x86-*/[!G]* nto-*-*/[!G]* win32-x86-*/[!G]* win64-x86-*/[!G]* darwin-x86-*/[!G]*"
+RMARG="linux-x86_64-*/[!G]* nto-*-*/[!G]* win32-x86-*/[!G]* win64-x86_64-*/[!G]* darwin-x86_64-*/[!G]*"
 
 if [ "$OSTOCLEAN" ]; then
   case $OSTOCLEAN in
@@ -31,9 +31,9 @@ if [ "$OSTOCLEAN" ]; then
       ;;
     win32) RMARG="win32-x86-*/[!G]*"
       ;;
-    win64) RMARG="win64-x86-*/[!G]*"
+    win64) RMARG="win64-x86_64-*/[!G]*"
       ;;
-    darwin) RMARG="darwin-x86-*/[!G]*"
+    darwin) RMARG="darwin-x86_64-*/[!G]*"
       ;;
     *)
       PRINT_HELP=1 ;;
