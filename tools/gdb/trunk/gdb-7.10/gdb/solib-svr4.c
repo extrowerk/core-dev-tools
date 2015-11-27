@@ -237,7 +237,7 @@ has_lm_dynamic_from_link_map (void)
   return lmo->l_ld_offset >= 0;
 }
 
-static CORE_ADDR
+CORE_ADDR
 lm_addr_check (const struct so_list *so, bfd *abfd)
 {
   if (!so->lm_info->l_addr_p)
