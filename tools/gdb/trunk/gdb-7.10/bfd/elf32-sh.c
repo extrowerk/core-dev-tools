@@ -7430,11 +7430,14 @@ sh_elf_encode_eh_address (bfd *abfd,
 #define ELF_MACHINE_CODE	EM_SH
 #ifdef __QNXTARGET__
 #define ELF_MAXPAGESIZE		0x1000
+#define ELF_COMMONPAGESIZE	0x1000
 #else
 #define ELF_MAXPAGESIZE		0x80
 #endif
 
+#ifndef __QNXTARGET__
 #define elf_symbol_leading_char '_'
+#endif
 
 #define bfd_elf32_bfd_reloc_type_lookup	sh_elf_reloc_type_lookup
 #define bfd_elf32_bfd_reloc_name_lookup \
