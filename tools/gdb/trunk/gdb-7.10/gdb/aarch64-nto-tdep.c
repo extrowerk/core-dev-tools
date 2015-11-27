@@ -207,6 +207,53 @@ aarch64nto_breakpoint_size (CORE_ADDR addr)
   return 0;
 }
 
+/* Register maps.  */
+
+static const struct regcache_map_entry aarch64_nto_gregmap[] =
+  {
+    { 31, AARCH64_X0_REGNUM, 8 }, /* x0 ... x30 */
+    { 1, AARCH64_SP_REGNUM, 8 },
+    { 1, AARCH64_PC_REGNUM, 8 },
+    { 1, AARCH64_CPSR_REGNUM, 8 },
+    { 0 }
+  };
+
+static const struct regcache_map_entry aarch64_nto_fpregmap[] =
+  {
+    { 32, AARCH64_V0_REGNUM, 16 }, /* v0 ... v31 */
+    { 1, AARCH64_FPSR_REGNUM, 4 },
+    { 1, AARCH64_FPCR_REGNUM, 4 },
+    { 0 }
+  };
+
+/* Register set definitions.  */
+
+const struct regset aarch64_nto_gregset =
+  {
+    aarch64_nto_gregmap,
+    regcache_supply_regset, regcache_collect_regset
+  };
+
+const struct regset aarch64_nto_fpregset =
+  {
+    aarch64_nto_fpregmap,
+    regcache_supply_regset, regcache_collect_regset
+  };
+
+/* Implement the "regset_from_core_section" gdbarch method.  */
+
+static void
+aarch64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
+					  iterate_over_regset_sections_cb *cb,
+					  void *cb_data,
+					  const struct regcache *regcache)
+{
+  cb (".reg", sizeof (AARCH64_CPU_REGISTERS), &aarch64_nto_gregset,
+      NULL, cb_data);
+  cb (".reg2", sizeof (AARCH64_FPU_REGISTERS), &aarch64_nto_fpregset,
+      NULL, cb_data);
+}
+
 static struct nto_target_ops aarch64_nto_ops;
 
 static void
@@ -275,6 +322,8 @@ aarch64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   // TODO: set_gdbarch_regset_from_core_section (gdbarch,
 	// TODO:				aarch64_nto_regset_from_core_section);
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, aarch64_nto_iterate_over_regset_sections);
 }
 
 
