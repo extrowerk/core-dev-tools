@@ -232,7 +232,7 @@ function hook_preconfigure {
   esac
 
   configure_opts="${configure_opts} ${configure_host} ${configure_target}"
-  configure_opts="${configure_opts} --without-expat"
+#  configure_opts="${configure_opts} --without-expat"
   configure_opts="${configure_opts} --with-bugurl=no"
 
   install_sysname=${TARGET_SYSNAME}
@@ -278,7 +278,7 @@ function hook_preconfigure {
   configure_opts="${configure_opts} --disable-nls"
   configure_opts="${configure_opts} --disable-tui"
   configure_opts="${configure_opts} --disable-sim --without-sim"
-  configure_opts="${configure_opts} --with-expat=no"
+#configure_opts="${configure_opts} --with-expat=no"
   configure_opts="${configure_opts} --disable-werror"
   if [ "${nopython_program_suffix}" != "" ]; then
     configure_opts="${configure_opts} --program-suffix=${nopython_program_suffix}"
@@ -314,7 +314,7 @@ function hook_postmake {
   case ${TARGET_SYSNAME} in
     nto*)
       echo "Setting stack limit to 4M..."
-      ldrel -L -S 4M gdb/gdb
+      elfnote -L -S 4M gdb/gdb
       ;;
     linux*)
       if [ "${OFFICIAL_BUILD}" != "" ]; then
