@@ -190,4 +190,6 @@ void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
 /* gdbarch specific data with nto target specific functions. */
 extern struct gdbarch_data *nto_gdbarch_ops;
 
+extern int nto_gdb_signal_to_target (struct gdbarch *gdbarch,
+				     enum gdb_signal signal);
 #endif
