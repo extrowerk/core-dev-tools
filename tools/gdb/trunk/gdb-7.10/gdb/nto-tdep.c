@@ -57,6 +57,8 @@ typedef union nto_siginfo_t {
 #define nto_si_fltip	si_fltip
 #define nto_si_addr	si_addr
 #define nto_si_bdslot	si_bdslot
+#else
+#include "nto-share/debug.h"
 #endif
 
 struct nto_target_ops current_nto_target;
@@ -651,11 +653,9 @@ nto_initialize_signals (void)
   signal_pass_update (gdb_signal_from_name ("SIG45"), 1);
 
   /* By default we don't want to stop on these two, but we do want to pass.  */
-#if defined(SIGSELECT)
-  signal_stop_update (SIGSELECT, 0);
-  signal_print_update (SIGSELECT, 0);
-  signal_pass_update (SIGSELECT, 1);
-#endif
+  signal_stop_update (GDB_SIGNAL_SELECT, 0);
+  signal_print_update (GDB_SIGNAL_SELECT, 0);
+  signal_pass_update (GDB_SIGNAL_SELECT, 1);
 
 #if defined(SIGPHOTON)
   signal_stop_update (SIGPHOTON, 0);
