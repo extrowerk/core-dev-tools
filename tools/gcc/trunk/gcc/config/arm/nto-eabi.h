@@ -44,6 +44,11 @@ do {                                            \
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/usr/lib:\
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/opt/lib "
 
+#undef LINK_LIBGCC_SPEC
+#define LINK_LIBGCC_SPEC \
+  "%D " \
+  QNX_SYSTEM_LIBDIRS
+
 #undef LIB_SPEC
 #define LIB_SPEC \
   "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
@@ -74,8 +79,7 @@ do {                                            \
      %{rdynamic:-export-dynamic}} \
    --dynamic-linker /usr/lib/ldqnx.so.2} \
  -m armnto -X \
- %{EB:-EB} %{!EB:-EL} %{EL:-EL} " \
- QNX_SYSTEM_LIBDIRS
+ %{EB:-EB} %{!EB:-EL} %{EL:-EL} "
 
 #undef CPP_APCS_PC_DEFAULT_SPEC
 #define CPP_APCS_PC_DEFAULT_SPEC "-D__APCS_32__"

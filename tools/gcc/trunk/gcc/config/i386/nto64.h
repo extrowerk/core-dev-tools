@@ -70,8 +70,7 @@ QNX_SYSTEM_INCLUDES \
       %{rdynamic:-export-dynamic} \
       %{" SPEC_32 ":%{!dynamic-linker:-dynamic-linker " NTO_DYNAMIC_LINKER32 "}} \
       %{" SPEC_64 ":%{!dynamic-linker:-dynamic-linker " NTO_DYNAMIC_LINKER64 "}}} \
-    %{static:-static}} " \
-  QNX_SYSTEM_LIBDIRS
+    %{static:-static}} "
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
@@ -117,6 +116,11 @@ QNX_SYSTEM_INCLUDES \
 %$QNX_TARGET/x86_64/lib:\
 %$QNX_TARGET/x86_64/usr/lib:\
 %$QNX_TARGET/x86_64/opt/lib} "
+
+#undef LINK_LIBGCC_SPEC
+#define LINK_LIBGCC_SPEC \
+  "%D " \
+  QNX_SYSTEM_LIBDIRS
 
 #undef LIB_SPEC
 #define LIB_SPEC \
