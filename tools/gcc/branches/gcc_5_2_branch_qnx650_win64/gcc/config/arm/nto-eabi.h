@@ -44,9 +44,13 @@ do {                                            \
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/usr/lib:\
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/opt/lib "
 
+#undef LINK_LIBGCC_SPEC
+#define LINK_LIBGCC_SPEC \
+  "%D " \
+  QNX_SYSTEM_LIBDIRS
+
 #undef LIB_SPEC
 #define LIB_SPEC \
-  QNX_SYSTEM_LIBDIRS \
   "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef LIBGCC_SPEC
