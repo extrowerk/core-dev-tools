@@ -34,3 +34,5 @@ OTHER_READONLY_SECTIONS="
 
 # ARM does not support .s* sections.
 NO_SMALL_DATA=yes
+
+COMPILE_IN=yes
