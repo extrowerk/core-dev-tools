@@ -50,6 +50,11 @@ Boston, MA 02111-1307, USA.  */
 %$QNX_TARGET/sh%{EB:be}%{!EB:le}/usr/lib:\
 %$QNX_TARGET/sh%{EB:be}%{!EB:le}/opt/lib "
 
+#undef LINK_LIBGCC_SPEC
+#define LINK_LIBGCC_SPEC \
+  "%D " \
+  QNX_SYSTEM_LIBDIRS
+
 #undef SUBTARGET_CPP_SPEC
 #define SUBTARGET_CPP_SPEC \
 QNX_SYSTEM_INCLUDES " \
@@ -127,7 +132,6 @@ do                                                                     \
 
 #undef  LIB_SPEC
 #define LIB_SPEC \
-QNX_SYSTEM_LIBDIRS \
 "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef  STARTFILE_SPEC

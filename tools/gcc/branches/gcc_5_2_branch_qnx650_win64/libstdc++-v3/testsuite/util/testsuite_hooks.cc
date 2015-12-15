@@ -38,10 +38,12 @@
 
 // If we have <sys/types.h>, <sys/ipc.h>, and <sys/sem.h>, then assume
 // that System V semaphores are available.
+#if !defined(__QNXNTO__)
 #if defined(_GLIBCXX_HAVE_SYS_TYPES_H)		\
     && defined(_GLIBCXX_HAVE_SYS_IPC_H)		\
     && defined(_GLIBCXX_HAVE_SYS_SEM_H)
 #define _GLIBCXX_SYSV_SEM
+#endif
 #endif
 
 #ifdef _GLIBCXX_SYSV_SEM

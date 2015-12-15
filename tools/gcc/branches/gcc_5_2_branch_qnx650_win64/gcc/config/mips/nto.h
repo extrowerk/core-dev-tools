@@ -35,9 +35,13 @@ Boston, MA 02111-1307, USA.  */
 %$QNX_TARGET/mips%{EL:le}%{!EL:be}/usr/lib:\
 %$QNX_TARGET/mips%{EL:le}%{!EL:be}/opt/lib "
 
+#undef LINK_LIBGCC_SPEC
+#define LINK_LIBGCC_SPEC \
+  "%D " \
+  QNX_SYSTEM_LIBDIRS
+
 #undef LIB_SPEC
 #define LIB_SPEC \
-  QNX_SYSTEM_LIBDIRS \
   "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef LIBGCC_SPEC
