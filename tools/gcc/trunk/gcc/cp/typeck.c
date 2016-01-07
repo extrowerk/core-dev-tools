@@ -6476,7 +6476,8 @@ build_static_cast_1 (tree type, tree expr, bool c_cast_p,
       if (flag_sanitize & SANITIZE_VPTR)
 	{
 	  tree ubsan_check
-	    = cp_ubsan_maybe_instrument_downcast (input_location, type, expr);
+	    = cp_ubsan_maybe_instrument_downcast (input_location, type,
+						  intype, expr);
 	  if (ubsan_check)
 	    expr = ubsan_check;
 	}
@@ -6617,7 +6618,8 @@ build_static_cast_1 (tree type, tree expr, bool c_cast_p,
       if (flag_sanitize & SANITIZE_VPTR)
 	{
 	  tree ubsan_check
-	    = cp_ubsan_maybe_instrument_downcast (input_location, type, expr);
+	    = cp_ubsan_maybe_instrument_downcast (input_location, type,
+						  intype, expr);
 	  if (ubsan_check)
 	    expr = ubsan_check;
 	}
