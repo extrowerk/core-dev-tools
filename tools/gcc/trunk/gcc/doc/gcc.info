@@ -1,5 +1,5 @@
 This is doc/gcc.info, produced by makeinfo version 4.12 from
-/space/rguenther/gcc-5.2.0/gcc-5.2.0/gcc/doc/gcc.texi.
+/space/rguenther/gcc-5.3.0/gcc-5.3.0/gcc/doc/gcc.texi.
 
 Copyright (C) 1988-2015 Free Software Foundation, Inc.
 
@@ -59,7 +59,7 @@ Introduction
 
 This manual documents how to use the GNU compilers, as well as their
 features and incompatibilities, and how to report bugs.  It corresponds
-to the compilers (GCC) version 5.2.0.  The internals of the GNU
+to the compilers (GCC) version 5.3.0.  The internals of the GNU
 compilers, including how to port them to new targets and some
 information about how to write front ends for new languages, are
 documented in a separate manual.  *Note Introduction: (gccint)Top.
@@ -5222,25 +5222,26 @@ program or GCC:
      Enable AddressSanitizer, a fast memory error detector.  Memory
      access instructions are instrumented to detect out-of-bounds and
      use-after-free bugs.  See
-     `http://code.google.com/p/address-sanitizer/' for more details.
-     The run-time behavior can be influenced using the `ASAN_OPTIONS'
-     environment variable; see
-     `https://code.google.com/p/address-sanitizer/wiki/Flags#Run-time_flags'
+     `https://github.com/google/sanitizers/wiki/AddressSanitizer' for
+     more details.  The run-time behavior can be influenced using the
+     `ASAN_OPTIONS' environment variable.  When set to `help=1', the
+     available options are shown at startup of the instrumended
+     program.  See
+     `https://github.com/google/sanitizers/wiki/AddressSanitizerFlags#run-time-flags'
      for a list of supported options.
 
 `-fsanitize=kernel-address'
      Enable AddressSanitizer for Linux kernel.  See
-     `http://code.google.com/p/address-sanitizer/wiki/AddressSanitizerForKernel'
-     for more details.
+     `https://github.com/google/kasan/wiki' for more details.
 
 `-fsanitize=thread'
      Enable ThreadSanitizer, a fast data race detector.  Memory access
      instructions are instrumented to detect data race bugs.  See
-     `http://code.google.com/p/thread-sanitizer/' for more details. The
-     run-time behavior can be influenced using the `TSAN_OPTIONS'
-     environment variable; see
-     `https://code.google.com/p/thread-sanitizer/wiki/Flags' for a list
-     of supported options.
+     `https://github.com/google/sanitizers/wiki#threadsanitizer' for
+     more details. The run-time behavior can be influenced using the
+     `TSAN_OPTIONS' environment variable; see
+     `https://github.com/google/sanitizers/wiki/ThreadSanitizerFlags'
+     for a list of supported options.
 
 `-fsanitize=leak'
      Enable LeakSanitizer, a memory leak detector.  This option only
@@ -5248,7 +5249,7 @@ program or GCC:
      `-fsanitize=address' nor `-fsanitize=thread' is used.  In that
      case the executable is linked against a library that overrides
      `malloc' and other allocator functions.  See
-     `https://code.google.com/p/address-sanitizer/wiki/LeakSanitizer'
+     `https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer'
      for more details.  The run-time behavior can be influenced using
      the `LSAN_OPTIONS' environment variable.
 
@@ -19484,7 +19485,7 @@ These `-m' options are supported on the SPARC:
 `-mno-user-mode'
      Do not generate code that can only run in supervisor mode.  This
      is relevant only for the `casa' instruction emitted for the LEON3
-     processor.  The default is `-mno-user-mode'.
+     processor.  This is the default.
 
 `-mno-faster-structs'
 `-mfaster-structs'
@@ -33155,9 +33156,9 @@ functions map any run-time value to `__ATOMIC_SEQ_CST' rather than
 invoke a runtime library call or inline a switch statement.  This is
 standard compliant, safe, and the simplest approach for now.
 
- The memory model parameter is a signed int, but only the lower 8 bits
+ The memory model parameter is a signed int, but only the lower 16 bits
 are reserved for the memory model.  The remainder of the signed int is
-reserved for future use and should be 0.  Use of the predefined atomic
+reserved for target use and should be 0.  Use of the predefined atomic
 values ensures proper usage.
 
  -- Built-in Function: TYPE __atomic_load_n (TYPE *ptr, int memmodel)
@@ -38987,6 +38988,30 @@ some common extended mnemonics of the HTM instructions:
      unsigned int __builtin_tendall (void)
      unsigned int __builtin_tresume (void)
      unsigned int __builtin_tsuspend (void)
+
+ Note that the semantics of the above HTM builtins are required to mimic
+the locking semantics used for critical sections.  Builtins that are
+used to create a new transaction or restart a suspended transaction
+must have lock acquisition like semantics while those builtins that end
+or suspend a transaction must have lock release like semantics.
+Specifically, this must mimic lock semantics as specified by C++11, for
+example: Lock acquisition is as-if an execution of
+__atomic_exchange_n(&globallock,1,__ATOMIC_ACQUIRE) that returns 0, and
+lock release is as-if an execution of
+__atomic_store(&globallock,0,__ATOMIC_RELEASE), with globallock being an
+implicit implementation-defined lock used for all transactions.  The HTM
+instructions associated with with the builtins inherently provide the
+correct acquisition and release hardware barriers required.  However,
+the compiler must also be prohibited from moving loads and stores across
+the builtins in a way that would violate their semantics.  This has been
+accomplished by adding memory barriers to the associated HTM
+instructions (which is a conservative approach to provide acquire and
+release semantics).  Earlier versions of the compiler did not treat the
+HTM instructions as memory barriers.  A `__TM_FENCE__' macro has been
+added, which can be used to determine whether the current compiler
+treats HTM instructions as memory barriers or not.  This allows the
+user to explicitly add memory barriers to their code when using an
+older version of the compiler.
 
  The following set of built-in functions are available to gain access
 to the HTM specific special purpose registers.
@@ -48583,33 +48608,33 @@ look up both forms.
 * c:                                     Overall Options.    (line  164)
 * client_name:                           Darwin Options.     (line  196)
 * compatibility_version:                 Darwin Options.     (line  196)
-* coverage:                              Debugging Options.  (line  723)
+* coverage:                              Debugging Options.  (line  724)
 * current_version:                       Darwin Options.     (line  196)
 * D:                                     Preprocessor Options.
                                                              (line   46)
-* d:                                     Debugging Options.  (line  855)
-* dA:                                    Debugging Options.  (line 1060)
-* da:                                    Debugging Options.  (line 1057)
+* d:                                     Debugging Options.  (line  856)
+* dA:                                    Debugging Options.  (line 1061)
+* da:                                    Debugging Options.  (line 1058)
 * dD <1>:                                Preprocessor Options.
                                                              (line  628)
-* dD:                                    Debugging Options.  (line 1064)
+* dD:                                    Debugging Options.  (line 1065)
 * dead_strip:                            Darwin Options.     (line  196)
 * dependency-file:                       Darwin Options.     (line  196)
-* dH:                                    Debugging Options.  (line 1068)
+* dH:                                    Debugging Options.  (line 1069)
 * dI:                                    Preprocessor Options.
                                                              (line  637)
 * dM:                                    Preprocessor Options.
                                                              (line  612)
 * dN:                                    Preprocessor Options.
                                                              (line  634)
-* dP:                                    Debugging Options.  (line 1076)
-* dp:                                    Debugging Options.  (line 1071)
+* dP:                                    Debugging Options.  (line 1077)
+* dp:                                    Debugging Options.  (line 1072)
 * dU:                                    Preprocessor Options.
                                                              (line  641)
-* dumpmachine:                           Debugging Options.  (line 1674)
-* dumpspecs:                             Debugging Options.  (line 1682)
-* dumpversion:                           Debugging Options.  (line 1678)
-* dx:                                    Debugging Options.  (line 1080)
+* dumpmachine:                           Debugging Options.  (line 1675)
+* dumpspecs:                             Debugging Options.  (line 1683)
+* dumpversion:                           Debugging Options.  (line 1679)
+* dx:                                    Debugging Options.  (line 1081)
 * dylib_file:                            Darwin Options.     (line  196)
 * dylinker_install_name:                 Darwin Options.     (line  196)
 * dynamic:                               Darwin Options.     (line  196)
@@ -48634,7 +48659,7 @@ look up both forms.
 * falign-loops:                          Optimize Options.   (line 1602)
 * fallow-parameterless-variadic-functions: C Dialect Options.
                                                              (line  192)
-* fasan-shadow-offset:                   Debugging Options.  (line  348)
+* fasan-shadow-offset:                   Debugging Options.  (line  349)
 * fassociative-math:                     Optimize Options.   (line 2125)
 * fasynchronous-unwind-tables:           Code Gen Options.   (line  146)
 * fauto-inc-dec:                         Optimize Options.   (line  530)
@@ -48650,30 +48675,30 @@ look up both forms.
 * fcheck-data-deps:                      Optimize Options.   (line 1201)
 * fcheck-new:                            C++ Dialect Options.
                                                              (line   74)
-* fcheck-pointer-bounds:                 Debugging Options.  (line  387)
-* fchkp-check-incomplete-type:           Debugging Options.  (line  427)
-* fchkp-check-read:                      Debugging Options.  (line  477)
-* fchkp-check-write:                     Debugging Options.  (line  481)
-* fchkp-first-field-has-own-bounds:      Debugging Options.  (line  438)
-* fchkp-instrument-calls:                Debugging Options.  (line  489)
-* fchkp-instrument-marked-only:          Debugging Options.  (line  493)
-* fchkp-narrow-bounds:                   Debugging Options.  (line  431)
-* fchkp-narrow-to-innermost-array:       Debugging Options.  (line  444)
-* fchkp-optimize:                        Debugging Options.  (line  449)
-* fchkp-store-bounds:                    Debugging Options.  (line  485)
+* fcheck-pointer-bounds:                 Debugging Options.  (line  388)
+* fchkp-check-incomplete-type:           Debugging Options.  (line  428)
+* fchkp-check-read:                      Debugging Options.  (line  478)
+* fchkp-check-write:                     Debugging Options.  (line  482)
+* fchkp-first-field-has-own-bounds:      Debugging Options.  (line  439)
+* fchkp-instrument-calls:                Debugging Options.  (line  490)
+* fchkp-instrument-marked-only:          Debugging Options.  (line  494)
+* fchkp-narrow-bounds:                   Debugging Options.  (line  432)
+* fchkp-narrow-to-innermost-array:       Debugging Options.  (line  445)
+* fchkp-optimize:                        Debugging Options.  (line  450)
+* fchkp-store-bounds:                    Debugging Options.  (line  486)
 * fchkp-treat-zero-dynamic-size-as-infinite: Debugging Options.
-                                                             (line  470)
-* fchkp-use-fast-string-functions:       Debugging Options.  (line  453)
-* fchkp-use-nochk-string-functions:      Debugging Options.  (line  457)
-* fchkp-use-static-bounds:               Debugging Options.  (line  461)
-* fchkp-use-static-const-bounds:         Debugging Options.  (line  465)
-* fchkp-use-wrappers:                    Debugging Options.  (line  498)
+                                                             (line  471)
+* fchkp-use-fast-string-functions:       Debugging Options.  (line  454)
+* fchkp-use-nochk-string-functions:      Debugging Options.  (line  458)
+* fchkp-use-static-bounds:               Debugging Options.  (line  462)
+* fchkp-use-static-const-bounds:         Debugging Options.  (line  466)
+* fchkp-use-wrappers:                    Debugging Options.  (line  499)
 * fcilkplus:                             C Dialect Options.  (line  288)
 * fcombine-stack-adjustments:            Optimize Options.   (line  892)
 * fcommon:                               Variable Attributes.
                                                              (line  106)
-* fcompare-debug:                        Debugging Options.  (line  511)
-* fcompare-debug-second:                 Debugging Options.  (line  537)
+* fcompare-debug:                        Debugging Options.  (line  512)
+* fcompare-debug-second:                 Debugging Options.  (line  538)
 * fcompare-elim:                         Optimize Options.   (line 1941)
 * fcond-mismatch:                        C Dialect Options.  (line  352)
 * fconserve-stack:                       Optimize Options.   (line  907)
@@ -48688,12 +48713,12 @@ look up both forms.
 * fcx-fortran-rules:                     Optimize Options.   (line 2238)
 * fcx-limited-range:                     Optimize Options.   (line 2226)
 * fdata-sections:                        Optimize Options.   (line 2356)
-* fdbg-cnt:                              Debugging Options.  (line  776)
-* fdbg-cnt-list:                         Debugging Options.  (line  773)
+* fdbg-cnt:                              Debugging Options.  (line  777)
+* fdbg-cnt-list:                         Debugging Options.  (line  774)
 * fdce:                                  Optimize Options.   (line  536)
 * fdebug-cpp:                            Preprocessor Options.
                                                              (line  525)
-* fdebug-prefix-map:                     Debugging Options.  (line  631)
+* fdebug-prefix-map:                     Debugging Options.  (line  632)
 * fdebug-types-section:                  Debugging Options.  (line   79)
 * fdeclone-ctor-dtor:                    Optimize Options.   (line  559)
 * fdeduce-init-list:                     C++ Dialect Options.
@@ -48714,126 +48739,126 @@ look up both forms.
                                                              (line   88)
 * fdirectives-only:                      Preprocessor Options.
                                                              (line  473)
-* fdisable-:                             Debugging Options.  (line  786)
+* fdisable-:                             Debugging Options.  (line  787)
 * fdollars-in-identifiers <1>:           Interoperation.     (line  141)
 * fdollars-in-identifiers:               Preprocessor Options.
                                                              (line  495)
 * fdse:                                  Optimize Options.   (line  540)
 * fdump-ada-spec:                        Overall Options.    (line  363)
-* fdump-class-hierarchy:                 Debugging Options.  (line 1115)
-* fdump-final-insns:                     Debugging Options.  (line  505)
+* fdump-class-hierarchy:                 Debugging Options.  (line 1116)
+* fdump-final-insns:                     Debugging Options.  (line  506)
 * fdump-go-spec:                         Overall Options.    (line  373)
-* fdump-ipa:                             Debugging Options.  (line 1123)
-* fdump-noaddr:                          Debugging Options.  (line 1084)
-* fdump-passes:                          Debugging Options.  (line 1141)
-* fdump-rtl-alignments:                  Debugging Options.  (line  876)
-* fdump-rtl-all:                         Debugging Options.  (line 1057)
-* fdump-rtl-asmcons:                     Debugging Options.  (line  879)
-* fdump-rtl-auto_inc_dec:                Debugging Options.  (line  883)
-* fdump-rtl-barriers:                    Debugging Options.  (line  887)
-* fdump-rtl-bbpart:                      Debugging Options.  (line  890)
-* fdump-rtl-bbro:                        Debugging Options.  (line  893)
-* fdump-rtl-btl2:                        Debugging Options.  (line  897)
-* fdump-rtl-bypass:                      Debugging Options.  (line  901)
-* fdump-rtl-ce1:                         Debugging Options.  (line  912)
-* fdump-rtl-ce2:                         Debugging Options.  (line  912)
-* fdump-rtl-ce3:                         Debugging Options.  (line  912)
-* fdump-rtl-combine:                     Debugging Options.  (line  904)
-* fdump-rtl-compgotos:                   Debugging Options.  (line  907)
-* fdump-rtl-cprop_hardreg:               Debugging Options.  (line  916)
-* fdump-rtl-csa:                         Debugging Options.  (line  919)
-* fdump-rtl-cse1:                        Debugging Options.  (line  923)
-* fdump-rtl-cse2:                        Debugging Options.  (line  923)
-* fdump-rtl-dbr:                         Debugging Options.  (line  930)
-* fdump-rtl-dce:                         Debugging Options.  (line  927)
-* fdump-rtl-dce1:                        Debugging Options.  (line  934)
-* fdump-rtl-dce2:                        Debugging Options.  (line  934)
-* fdump-rtl-dfinish:                     Debugging Options.  (line 1053)
-* fdump-rtl-dfinit:                      Debugging Options.  (line 1053)
-* fdump-rtl-eh:                          Debugging Options.  (line  938)
-* fdump-rtl-eh_ranges:                   Debugging Options.  (line  941)
-* fdump-rtl-expand:                      Debugging Options.  (line  944)
-* fdump-rtl-fwprop1:                     Debugging Options.  (line  948)
-* fdump-rtl-fwprop2:                     Debugging Options.  (line  948)
-* fdump-rtl-gcse1:                       Debugging Options.  (line  953)
-* fdump-rtl-gcse2:                       Debugging Options.  (line  953)
-* fdump-rtl-init-regs:                   Debugging Options.  (line  957)
-* fdump-rtl-initvals:                    Debugging Options.  (line  960)
-* fdump-rtl-into_cfglayout:              Debugging Options.  (line  963)
-* fdump-rtl-ira:                         Debugging Options.  (line  966)
-* fdump-rtl-jump:                        Debugging Options.  (line  969)
-* fdump-rtl-loop2:                       Debugging Options.  (line  972)
-* fdump-rtl-mach:                        Debugging Options.  (line  976)
-* fdump-rtl-mode_sw:                     Debugging Options.  (line  980)
-* fdump-rtl-outof_cfglayout:             Debugging Options.  (line  986)
-* fdump-rtl-PASS:                        Debugging Options.  (line  855)
-* fdump-rtl-peephole2:                   Debugging Options.  (line  989)
-* fdump-rtl-postreload:                  Debugging Options.  (line  992)
-* fdump-rtl-pro_and_epilogue:            Debugging Options.  (line  995)
-* fdump-rtl-ree:                         Debugging Options.  (line 1003)
-* fdump-rtl-regclass:                    Debugging Options.  (line 1053)
-* fdump-rtl-rnreg:                       Debugging Options.  (line  983)
-* fdump-rtl-sched1:                      Debugging Options.  (line  999)
-* fdump-rtl-sched2:                      Debugging Options.  (line  999)
-* fdump-rtl-seqabstr:                    Debugging Options.  (line 1006)
-* fdump-rtl-shorten:                     Debugging Options.  (line 1009)
-* fdump-rtl-sibling:                     Debugging Options.  (line 1012)
-* fdump-rtl-sms:                         Debugging Options.  (line 1023)
-* fdump-rtl-split1:                      Debugging Options.  (line 1019)
-* fdump-rtl-split2:                      Debugging Options.  (line 1019)
-* fdump-rtl-split3:                      Debugging Options.  (line 1019)
-* fdump-rtl-split4:                      Debugging Options.  (line 1019)
-* fdump-rtl-split5:                      Debugging Options.  (line 1019)
-* fdump-rtl-stack:                       Debugging Options.  (line 1027)
-* fdump-rtl-subreg1:                     Debugging Options.  (line 1033)
-* fdump-rtl-subreg2:                     Debugging Options.  (line 1033)
-* fdump-rtl-subregs_of_mode_finish:      Debugging Options.  (line 1053)
-* fdump-rtl-subregs_of_mode_init:        Debugging Options.  (line 1053)
-* fdump-rtl-unshare:                     Debugging Options.  (line 1037)
-* fdump-rtl-vartrack:                    Debugging Options.  (line 1040)
-* fdump-rtl-vregs:                       Debugging Options.  (line 1043)
-* fdump-rtl-web:                         Debugging Options.  (line 1046)
-* fdump-statistics:                      Debugging Options.  (line 1145)
-* fdump-translation-unit:                Debugging Options.  (line 1106)
-* fdump-tree:                            Debugging Options.  (line 1157)
-* fdump-tree-alias:                      Debugging Options.  (line 1296)
-* fdump-tree-all:                        Debugging Options.  (line 1381)
-* fdump-tree-ccp:                        Debugging Options.  (line 1300)
-* fdump-tree-cfg:                        Debugging Options.  (line 1284)
-* fdump-tree-ch:                         Debugging Options.  (line 1288)
-* fdump-tree-copyprop:                   Debugging Options.  (line 1316)
-* fdump-tree-copyrename:                 Debugging Options.  (line 1357)
-* fdump-tree-dce:                        Debugging Options.  (line 1324)
-* fdump-tree-dom:                        Debugging Options.  (line 1337)
-* fdump-tree-dse:                        Debugging Options.  (line 1342)
-* fdump-tree-forwprop:                   Debugging Options.  (line 1352)
-* fdump-tree-fre:                        Debugging Options.  (line 1312)
-* fdump-tree-gimple:                     Debugging Options.  (line 1279)
-* fdump-tree-nrv:                        Debugging Options.  (line 1362)
-* fdump-tree-optimized:                  Debugging Options.  (line 1276)
-* fdump-tree-original:                   Debugging Options.  (line 1273)
-* fdump-tree-phiopt:                     Debugging Options.  (line 1347)
-* fdump-tree-pre:                        Debugging Options.  (line 1308)
-* fdump-tree-sink:                       Debugging Options.  (line 1333)
-* fdump-tree-slp:                        Debugging Options.  (line 1372)
-* fdump-tree-sra:                        Debugging Options.  (line 1328)
-* fdump-tree-ssa:                        Debugging Options.  (line 1292)
-* fdump-tree-store_copyprop:             Debugging Options.  (line 1320)
-* fdump-tree-storeccp:                   Debugging Options.  (line 1304)
-* fdump-tree-vect:                       Debugging Options.  (line 1367)
-* fdump-tree-vrp:                        Debugging Options.  (line 1377)
-* fdump-unnumbered:                      Debugging Options.  (line 1094)
-* fdump-unnumbered-links:                Debugging Options.  (line 1100)
-* fdwarf2-cfi-asm:                       Debugging Options.  (line  635)
+* fdump-ipa:                             Debugging Options.  (line 1124)
+* fdump-noaddr:                          Debugging Options.  (line 1085)
+* fdump-passes:                          Debugging Options.  (line 1142)
+* fdump-rtl-alignments:                  Debugging Options.  (line  877)
+* fdump-rtl-all:                         Debugging Options.  (line 1058)
+* fdump-rtl-asmcons:                     Debugging Options.  (line  880)
+* fdump-rtl-auto_inc_dec:                Debugging Options.  (line  884)
+* fdump-rtl-barriers:                    Debugging Options.  (line  888)
+* fdump-rtl-bbpart:                      Debugging Options.  (line  891)
+* fdump-rtl-bbro:                        Debugging Options.  (line  894)
+* fdump-rtl-btl2:                        Debugging Options.  (line  898)
+* fdump-rtl-bypass:                      Debugging Options.  (line  902)
+* fdump-rtl-ce1:                         Debugging Options.  (line  913)
+* fdump-rtl-ce2:                         Debugging Options.  (line  913)
+* fdump-rtl-ce3:                         Debugging Options.  (line  913)
+* fdump-rtl-combine:                     Debugging Options.  (line  905)
+* fdump-rtl-compgotos:                   Debugging Options.  (line  908)
+* fdump-rtl-cprop_hardreg:               Debugging Options.  (line  917)
+* fdump-rtl-csa:                         Debugging Options.  (line  920)
+* fdump-rtl-cse1:                        Debugging Options.  (line  924)
+* fdump-rtl-cse2:                        Debugging Options.  (line  924)
+* fdump-rtl-dbr:                         Debugging Options.  (line  931)
+* fdump-rtl-dce:                         Debugging Options.  (line  928)
+* fdump-rtl-dce1:                        Debugging Options.  (line  935)
+* fdump-rtl-dce2:                        Debugging Options.  (line  935)
+* fdump-rtl-dfinish:                     Debugging Options.  (line 1054)
+* fdump-rtl-dfinit:                      Debugging Options.  (line 1054)
+* fdump-rtl-eh:                          Debugging Options.  (line  939)
+* fdump-rtl-eh_ranges:                   Debugging Options.  (line  942)
+* fdump-rtl-expand:                      Debugging Options.  (line  945)
+* fdump-rtl-fwprop1:                     Debugging Options.  (line  949)
+* fdump-rtl-fwprop2:                     Debugging Options.  (line  949)
+* fdump-rtl-gcse1:                       Debugging Options.  (line  954)
+* fdump-rtl-gcse2:                       Debugging Options.  (line  954)
+* fdump-rtl-init-regs:                   Debugging Options.  (line  958)
+* fdump-rtl-initvals:                    Debugging Options.  (line  961)
+* fdump-rtl-into_cfglayout:              Debugging Options.  (line  964)
+* fdump-rtl-ira:                         Debugging Options.  (line  967)
+* fdump-rtl-jump:                        Debugging Options.  (line  970)
+* fdump-rtl-loop2:                       Debugging Options.  (line  973)
+* fdump-rtl-mach:                        Debugging Options.  (line  977)
+* fdump-rtl-mode_sw:                     Debugging Options.  (line  981)
+* fdump-rtl-outof_cfglayout:             Debugging Options.  (line  987)
+* fdump-rtl-PASS:                        Debugging Options.  (line  856)
+* fdump-rtl-peephole2:                   Debugging Options.  (line  990)
+* fdump-rtl-postreload:                  Debugging Options.  (line  993)
+* fdump-rtl-pro_and_epilogue:            Debugging Options.  (line  996)
+* fdump-rtl-ree:                         Debugging Options.  (line 1004)
+* fdump-rtl-regclass:                    Debugging Options.  (line 1054)
+* fdump-rtl-rnreg:                       Debugging Options.  (line  984)
+* fdump-rtl-sched1:                      Debugging Options.  (line 1000)
+* fdump-rtl-sched2:                      Debugging Options.  (line 1000)
+* fdump-rtl-seqabstr:                    Debugging Options.  (line 1007)
+* fdump-rtl-shorten:                     Debugging Options.  (line 1010)
+* fdump-rtl-sibling:                     Debugging Options.  (line 1013)
+* fdump-rtl-sms:                         Debugging Options.  (line 1024)
+* fdump-rtl-split1:                      Debugging Options.  (line 1020)
+* fdump-rtl-split2:                      Debugging Options.  (line 1020)
+* fdump-rtl-split3:                      Debugging Options.  (line 1020)
+* fdump-rtl-split4:                      Debugging Options.  (line 1020)
+* fdump-rtl-split5:                      Debugging Options.  (line 1020)
+* fdump-rtl-stack:                       Debugging Options.  (line 1028)
+* fdump-rtl-subreg1:                     Debugging Options.  (line 1034)
+* fdump-rtl-subreg2:                     Debugging Options.  (line 1034)
+* fdump-rtl-subregs_of_mode_finish:      Debugging Options.  (line 1054)
+* fdump-rtl-subregs_of_mode_init:        Debugging Options.  (line 1054)
+* fdump-rtl-unshare:                     Debugging Options.  (line 1038)
+* fdump-rtl-vartrack:                    Debugging Options.  (line 1041)
+* fdump-rtl-vregs:                       Debugging Options.  (line 1044)
+* fdump-rtl-web:                         Debugging Options.  (line 1047)
+* fdump-statistics:                      Debugging Options.  (line 1146)
+* fdump-translation-unit:                Debugging Options.  (line 1107)
+* fdump-tree:                            Debugging Options.  (line 1158)
+* fdump-tree-alias:                      Debugging Options.  (line 1297)
+* fdump-tree-all:                        Debugging Options.  (line 1382)
+* fdump-tree-ccp:                        Debugging Options.  (line 1301)
+* fdump-tree-cfg:                        Debugging Options.  (line 1285)
+* fdump-tree-ch:                         Debugging Options.  (line 1289)
+* fdump-tree-copyprop:                   Debugging Options.  (line 1317)
+* fdump-tree-copyrename:                 Debugging Options.  (line 1358)
+* fdump-tree-dce:                        Debugging Options.  (line 1325)
+* fdump-tree-dom:                        Debugging Options.  (line 1338)
+* fdump-tree-dse:                        Debugging Options.  (line 1343)
+* fdump-tree-forwprop:                   Debugging Options.  (line 1353)
+* fdump-tree-fre:                        Debugging Options.  (line 1313)
+* fdump-tree-gimple:                     Debugging Options.  (line 1280)
+* fdump-tree-nrv:                        Debugging Options.  (line 1363)
+* fdump-tree-optimized:                  Debugging Options.  (line 1277)
+* fdump-tree-original:                   Debugging Options.  (line 1274)
+* fdump-tree-phiopt:                     Debugging Options.  (line 1348)
+* fdump-tree-pre:                        Debugging Options.  (line 1309)
+* fdump-tree-sink:                       Debugging Options.  (line 1334)
+* fdump-tree-slp:                        Debugging Options.  (line 1373)
+* fdump-tree-sra:                        Debugging Options.  (line 1329)
+* fdump-tree-ssa:                        Debugging Options.  (line 1293)
+* fdump-tree-store_copyprop:             Debugging Options.  (line 1321)
+* fdump-tree-storeccp:                   Debugging Options.  (line 1305)
+* fdump-tree-vect:                       Debugging Options.  (line 1368)
+* fdump-tree-vrp:                        Debugging Options.  (line 1378)
+* fdump-unnumbered:                      Debugging Options.  (line 1095)
+* fdump-unnumbered-links:                Debugging Options.  (line 1101)
+* fdwarf2-cfi-asm:                       Debugging Options.  (line  636)
 * fearly-inlining:                       Optimize Options.   (line  292)
-* feliminate-dwarf2-dups:                Debugging Options.  (line  550)
+* feliminate-dwarf2-dups:                Debugging Options.  (line  551)
 * feliminate-unused-debug-symbols:       Debugging Options.  (line   67)
-* feliminate-unused-debug-types:         Debugging Options.  (line 1686)
+* feliminate-unused-debug-types:         Debugging Options.  (line 1687)
 * femit-class-debug-always:              Debugging Options.  (line   71)
-* femit-struct-debug-baseonly:           Debugging Options.  (line  555)
-* femit-struct-debug-detailed:           Debugging Options.  (line  582)
-* femit-struct-debug-reduced:            Debugging Options.  (line  568)
-* fenable-:                              Debugging Options.  (line  786)
+* femit-struct-debug-baseonly:           Debugging Options.  (line  556)
+* femit-struct-debug-detailed:           Debugging Options.  (line  583)
+* femit-struct-debug-reduced:            Debugging Options.  (line  569)
+* fenable-:                              Debugging Options.  (line  787)
 * fexceptions:                           Code Gen Options.   (line  108)
 * fexcess-precision:                     Optimize Options.   (line 2053)
 * fexec-charset:                         Preprocessor Options.
@@ -48936,11 +48961,11 @@ look up both forms.
 * flto-report:                           Optimize Options.   (line 1892)
 * flto-report-wpa:                       Optimize Options.   (line 1900)
 * fmax-errors:                           Warning Options.    (line   18)
-* fmem-report:                           Debugging Options.  (line  659)
-* fmem-report-wpa:                       Debugging Options.  (line  663)
+* fmem-report:                           Debugging Options.  (line  660)
+* fmem-report-wpa:                       Debugging Options.  (line  664)
 * fmerge-all-constants:                  Optimize Options.   (line  367)
 * fmerge-constants:                      Optimize Options.   (line  357)
-* fmerge-debug-strings:                  Debugging Options.  (line  624)
+* fmerge-debug-strings:                  Debugging Options.  (line  625)
 * fmessage-length:                       Language Independent Options.
                                                              (line   14)
 * fmodulo-sched:                         Optimize Options.   (line  378)
@@ -48963,28 +48988,28 @@ look up both forms.
 * fno-builtin:                           C Dialect Options.  (line  213)
 * fno-canonical-system-headers:          Preprocessor Options.
                                                              (line  502)
-* fno-check-pointer-bounds:              Debugging Options.  (line  387)
-* fno-chkp-check-incomplete-type:        Debugging Options.  (line  427)
-* fno-chkp-check-read:                   Debugging Options.  (line  477)
-* fno-chkp-check-write:                  Debugging Options.  (line  481)
-* fno-chkp-first-field-has-own-bounds:   Debugging Options.  (line  438)
-* fno-chkp-instrument-calls:             Debugging Options.  (line  489)
-* fno-chkp-instrument-marked-only:       Debugging Options.  (line  493)
-* fno-chkp-narrow-bounds:                Debugging Options.  (line  431)
-* fno-chkp-narrow-to-innermost-array:    Debugging Options.  (line  444)
-* fno-chkp-optimize:                     Debugging Options.  (line  449)
-* fno-chkp-store-bounds:                 Debugging Options.  (line  485)
+* fno-check-pointer-bounds:              Debugging Options.  (line  388)
+* fno-chkp-check-incomplete-type:        Debugging Options.  (line  428)
+* fno-chkp-check-read:                   Debugging Options.  (line  478)
+* fno-chkp-check-write:                  Debugging Options.  (line  482)
+* fno-chkp-first-field-has-own-bounds:   Debugging Options.  (line  439)
+* fno-chkp-instrument-calls:             Debugging Options.  (line  490)
+* fno-chkp-instrument-marked-only:       Debugging Options.  (line  494)
+* fno-chkp-narrow-bounds:                Debugging Options.  (line  432)
+* fno-chkp-narrow-to-innermost-array:    Debugging Options.  (line  445)
+* fno-chkp-optimize:                     Debugging Options.  (line  450)
+* fno-chkp-store-bounds:                 Debugging Options.  (line  486)
 * fno-chkp-treat-zero-dynamic-size-as-infinite: Debugging Options.
-                                                             (line  470)
-* fno-chkp-use-fast-string-functions:    Debugging Options.  (line  453)
-* fno-chkp-use-nochk-string-functions:   Debugging Options.  (line  457)
-* fno-chkp-use-static-bounds:            Debugging Options.  (line  461)
-* fno-chkp-use-static-const-bounds:      Debugging Options.  (line  465)
-* fno-chkp-use-wrappers:                 Debugging Options.  (line  498)
+                                                             (line  471)
+* fno-chkp-use-fast-string-functions:    Debugging Options.  (line  454)
+* fno-chkp-use-nochk-string-functions:   Debugging Options.  (line  458)
+* fno-chkp-use-static-bounds:            Debugging Options.  (line  462)
+* fno-chkp-use-static-const-bounds:      Debugging Options.  (line  466)
+* fno-chkp-use-wrappers:                 Debugging Options.  (line  499)
 * fno-common <1>:                        Variable Attributes.
                                                              (line  106)
 * fno-common:                            Code Gen Options.   (line  229)
-* fno-compare-debug:                     Debugging Options.  (line  511)
+* fno-compare-debug:                     Debugging Options.  (line  512)
 * fno-debug-types-section:               Debugging Options.  (line   79)
 * fno-default-inline:                    Inline.             (line   71)
 * fno-defer-pop:                         Optimize Options.   (line  187)
@@ -48992,10 +49017,10 @@ look up both forms.
                                                              (line   94)
 * fno-diagnostics-show-option:           Language Independent Options.
                                                              (line   88)
-* fno-dwarf2-cfi-asm:                    Debugging Options.  (line  635)
+* fno-dwarf2-cfi-asm:                    Debugging Options.  (line  636)
 * fno-elide-constructors:                C++ Dialect Options.
                                                              (line  123)
-* fno-eliminate-unused-debug-types:      Debugging Options.  (line 1686)
+* fno-eliminate-unused-debug-types:      Debugging Options.  (line 1687)
 * fno-enforce-eh-specs:                  C++ Dialect Options.
                                                              (line  129)
 * fno-ext-numeric-literals:              C++ Dialect Options.
@@ -49028,7 +49053,7 @@ look up both forms.
 * fno-local-ivars:                       Objective-C and Objective-C++ Dialect Options.
                                                              (line  153)
 * fno-math-errno:                        Optimize Options.   (line 2090)
-* fno-merge-debug-strings:               Debugging Options.  (line  624)
+* fno-merge-debug-strings:               Debugging Options.  (line  625)
 * fno-nil-receivers:                     Objective-C and Objective-C++ Dialect Options.
                                                              (line   49)
 * fno-nonansi-builtins:                  C++ Dialect Options.
@@ -49043,8 +49068,8 @@ look up both forms.
                                                              (line  230)
 * fno-rtti:                              C++ Dialect Options.
                                                              (line  247)
-* fno-sanitize-recover:                  Debugging Options.  (line  353)
-* fno-sanitize=all:                      Debugging Options.  (line  343)
+* fno-sanitize-recover:                  Debugging Options.  (line  354)
+* fno-sanitize=all:                      Debugging Options.  (line  344)
 * fno-sched-interblock:                  Optimize Options.   (line  736)
 * fno-sched-spec:                        Optimize Options.   (line  741)
 * fno-set-stack-executable:              x86 Windows Options.
@@ -49061,8 +49086,8 @@ look up both forms.
 * fno-unsigned-bitfields:                C Dialect Options.  (line  390)
 * fno-use-cxa-get-exception-ptr:         C++ Dialect Options.
                                                              (line  307)
-* fno-var-tracking-assignments:          Debugging Options.  (line 1592)
-* fno-var-tracking-assignments-toggle:   Debugging Options.  (line 1603)
+* fno-var-tracking-assignments:          Debugging Options.  (line 1593)
+* fno-var-tracking-assignments-toggle:   Debugging Options.  (line 1604)
 * fno-weak:                              C++ Dialect Options.
                                                              (line  421)
 * fno-working-directory:                 Preprocessor Options.
@@ -49091,7 +49116,7 @@ look up both forms.
 * fopenacc:                              C Dialect Options.  (line  264)
 * fopenmp:                               C Dialect Options.  (line  276)
 * fopenmp-simd:                          C Dialect Options.  (line  284)
-* fopt-info:                             Debugging Options.  (line 1387)
+* fopt-info:                             Debugging Options.  (line 1388)
 * foptimize-sibling-calls:               Optimize Options.   (line  236)
 * foptimize-strlen:                      Optimize Options.   (line  241)
 * force_cpusubtype_ALL:                  Darwin Options.     (line  135)
@@ -49115,23 +49140,23 @@ look up both forms.
 * fplan9-extensions:                     C Dialect Options.  (line  331)
 * fplugin:                               Overall Options.    (line  351)
 * fplugin-arg:                           Overall Options.    (line  359)
-* fpost-ipa-mem-report:                  Debugging Options.  (line  669)
-* fpre-ipa-mem-report:                   Debugging Options.  (line  667)
+* fpost-ipa-mem-report:                  Debugging Options.  (line  670)
+* fpre-ipa-mem-report:                   Debugging Options.  (line  668)
 * fpredictive-commoning:                 Optimize Options.   (line 1409)
 * fprefetch-loop-arrays:                 Optimize Options.   (line 1416)
 * fpreprocessed:                         Preprocessor Options.
                                                              (line  506)
 * fprofile-arcs <1>:                     Other Builtins.     (line  264)
-* fprofile-arcs:                         Debugging Options.  (line  708)
+* fprofile-arcs:                         Debugging Options.  (line  709)
 * fprofile-correction:                   Optimize Options.   (line 1960)
 * fprofile-dir:                          Optimize Options.   (line 1967)
 * fprofile-generate:                     Optimize Options.   (line 1977)
 * fprofile-reorder-functions:            Optimize Options.   (line 2280)
-* fprofile-report:                       Debugging Options.  (line  673)
+* fprofile-report:                       Debugging Options.  (line  674)
 * fprofile-use:                          Optimize Options.   (line 1990)
 * fprofile-values:                       Optimize Options.   (line 2271)
 * fpu:                                   RX Options.         (line   17)
-* frandom-seed:                          Debugging Options.  (line 1486)
+* frandom-seed:                          Debugging Options.  (line 1487)
 * freciprocal-math:                      Optimize Options.   (line 2141)
 * frecord-gcc-switches:                  Code Gen Options.   (line  268)
 * free:                                  Optimize Options.   (line  618)
@@ -49146,34 +49171,34 @@ look up both forms.
                                                              (line   54)
 * frepo:                                 C++ Dialect Options.
                                                              (line  242)
-* freport-bug:                           Debugging Options.  (line 1090)
+* freport-bug:                           Debugging Options.  (line 1091)
 * frerun-cse-after-loop:                 Optimize Options.   (line  459)
 * freschedule-modulo-scheduled-loops:    Optimize Options.   (line  835)
 * frounding-math:                        Optimize Options.   (line 2187)
-* fsanitize-recover:                     Debugging Options.  (line  353)
-* fsanitize-undefined-trap-on-error:     Debugging Options.  (line  380)
+* fsanitize-recover:                     Debugging Options.  (line  354)
+* fsanitize-undefined-trap-on-error:     Debugging Options.  (line  381)
 * fsanitize=address:                     Debugging Options.  (line  199)
-* fsanitize=alignment:                   Debugging Options.  (line  287)
-* fsanitize=bool:                        Debugging Options.  (line  323)
-* fsanitize=bounds:                      Debugging Options.  (line  281)
-* fsanitize=enum:                        Debugging Options.  (line  327)
-* fsanitize=float-cast-overflow:         Debugging Options.  (line  304)
-* fsanitize=float-divide-by-zero:        Debugging Options.  (line  298)
-* fsanitize=integer-divide-by-zero:      Debugging Options.  (line  244)
-* fsanitize=kernel-address:              Debugging Options.  (line  209)
-* fsanitize=leak:                        Debugging Options.  (line  223)
-* fsanitize=nonnull-attribute:           Debugging Options.  (line  312)
-* fsanitize=null:                        Debugging Options.  (line  258)
-* fsanitize=object-size:                 Debugging Options.  (line  293)
-* fsanitize=return:                      Debugging Options.  (line  266)
-* fsanitize=returns-nonnull-attribute:   Debugging Options.  (line  318)
-* fsanitize=shift:                       Debugging Options.  (line  238)
-* fsanitize=signed-integer-overflow:     Debugging Options.  (line  272)
-* fsanitize=thread:                      Debugging Options.  (line  214)
-* fsanitize=undefined:                   Debugging Options.  (line  233)
-* fsanitize=unreachable:                 Debugging Options.  (line  248)
-* fsanitize=vla-bound:                   Debugging Options.  (line  254)
-* fsanitize=vptr:                        Debugging Options.  (line  332)
+* fsanitize=alignment:                   Debugging Options.  (line  288)
+* fsanitize=bool:                        Debugging Options.  (line  324)
+* fsanitize=bounds:                      Debugging Options.  (line  282)
+* fsanitize=enum:                        Debugging Options.  (line  328)
+* fsanitize=float-cast-overflow:         Debugging Options.  (line  305)
+* fsanitize=float-divide-by-zero:        Debugging Options.  (line  299)
+* fsanitize=integer-divide-by-zero:      Debugging Options.  (line  245)
+* fsanitize=kernel-address:              Debugging Options.  (line  211)
+* fsanitize=leak:                        Debugging Options.  (line  224)
+* fsanitize=nonnull-attribute:           Debugging Options.  (line  313)
+* fsanitize=null:                        Debugging Options.  (line  259)
+* fsanitize=object-size:                 Debugging Options.  (line  294)
+* fsanitize=return:                      Debugging Options.  (line  267)
+* fsanitize=returns-nonnull-attribute:   Debugging Options.  (line  319)
+* fsanitize=shift:                       Debugging Options.  (line  239)
+* fsanitize=signed-integer-overflow:     Debugging Options.  (line  273)
+* fsanitize=thread:                      Debugging Options.  (line  215)
+* fsanitize=undefined:                   Debugging Options.  (line  234)
+* fsanitize=unreachable:                 Debugging Options.  (line  249)
+* fsanitize=vla-bound:                   Debugging Options.  (line  255)
+* fsanitize=vptr:                        Debugging Options.  (line  333)
 * fsched-critical-path-heuristic:        Optimize Options.   (line  801)
 * fsched-dep-count-heuristic:            Optimize Options.   (line  828)
 * fsched-group-heuristic:                Optimize Options.   (line  795)
@@ -49185,7 +49210,7 @@ look up both forms.
 * fsched-spec-load-dangerous:            Optimize Options.   (line  760)
 * fsched-stalled-insns:                  Optimize Options.   (line  766)
 * fsched-stalled-insns-dep:              Optimize Options.   (line  776)
-* fsched-verbose:                        Debugging Options.  (line 1496)
+* fsched-verbose:                        Debugging Options.  (line 1497)
 * fsched2-use-superblocks:               Optimize Options.   (line  785)
 * fschedule-fusion:                      Optimize Options.   (line 2307)
 * fschedule-insns:                       Optimize Options.   (line  717)
@@ -49227,7 +49252,7 @@ look up both forms.
 * fstack-protector-all:                  Optimize Options.   (line 2398)
 * fstack-protector-explicit:             Optimize Options.   (line 2406)
 * fstack-protector-strong:               Optimize Options.   (line 2401)
-* fstack-usage:                          Debugging Options.  (line  677)
+* fstack-usage:                          Debugging Options.  (line  678)
 * fstack_reuse:                          Code Gen Options.   (line   21)
 * fstats:                                C++ Dialect Options.
                                                              (line  267)
@@ -49245,9 +49270,9 @@ look up both forms.
                                                              (line  281)
 * ftemplate-depth:                       C++ Dialect Options.
                                                              (line  285)
-* ftest-coverage:                        Debugging Options.  (line  764)
+* ftest-coverage:                        Debugging Options.  (line  765)
 * fthread-jumps:                         Optimize Options.   (line  425)
-* ftime-report:                          Debugging Options.  (line  655)
+* ftime-report:                          Debugging Options.  (line  656)
 * ftls-model:                            Code Gen Options.   (line  538)
 * ftracer:                               Optimize Options.   (line 2315)
 * ftrack-macro-expansion:                Preprocessor Options.
@@ -49309,9 +49334,9 @@ look up both forms.
 * fuse-ld=bfd:                           Link Options.       (line   25)
 * fuse-ld=gold:                          Link Options.       (line   28)
 * fuse-linker-plugin:                    Optimize Options.   (line 1904)
-* fvar-tracking:                         Debugging Options.  (line 1582)
-* fvar-tracking-assignments:             Debugging Options.  (line 1592)
-* fvar-tracking-assignments-toggle:      Debugging Options.  (line 1603)
+* fvar-tracking:                         Debugging Options.  (line 1583)
+* fvar-tracking-assignments:             Debugging Options.  (line 1593)
+* fvar-tracking-assignments-toggle:      Debugging Options.  (line 1604)
 * fvariable-expansion-in-unroller:       Optimize Options.   (line 1397)
 * fvect-cost-model:                      Optimize Options.   (line 1353)
 * fverbose-asm:                          Code Gen Options.   (line  259)
@@ -51026,7 +51051,7 @@ look up both forms.
 * Os:                                    Optimize Options.   (line  149)
 * P:                                     Preprocessor Options.
                                                              (line  648)
-* p:                                     Debugging Options.  (line  639)
+* p:                                     Debugging Options.  (line  640)
 * pagezero_size:                         Darwin Options.     (line  196)
 * param:                                 Optimize Options.   (line 2438)
 * pass-exit-codes:                       Overall Options.    (line  150)
@@ -51045,29 +51070,29 @@ look up both forms.
                                                              (line  180)
 * pedantic-errors <4>:                   Warning Options.    (line  124)
 * pedantic-errors:                       Standards.          (line   16)
-* pg:                                    Debugging Options.  (line  645)
+* pg:                                    Debugging Options.  (line  646)
 * pie:                                   Link Options.       (line  105)
 * pipe:                                  Overall Options.    (line  215)
 * prebind:                               Darwin Options.     (line  196)
 * prebind_all_twolevel_modules:          Darwin Options.     (line  196)
-* print-file-name:                       Debugging Options.  (line 1607)
-* print-libgcc-file-name:                Debugging Options.  (line 1641)
-* print-multi-directory:                 Debugging Options.  (line 1613)
-* print-multi-lib:                       Debugging Options.  (line 1618)
-* print-multi-os-directory:              Debugging Options.  (line 1625)
-* print-multiarch:                       Debugging Options.  (line 1634)
+* print-file-name:                       Debugging Options.  (line 1608)
+* print-libgcc-file-name:                Debugging Options.  (line 1642)
+* print-multi-directory:                 Debugging Options.  (line 1614)
+* print-multi-lib:                       Debugging Options.  (line 1619)
+* print-multi-os-directory:              Debugging Options.  (line 1626)
+* print-multiarch:                       Debugging Options.  (line 1635)
 * print-objc-runtime-info:               Objective-C and Objective-C++ Dialect Options.
                                                              (line  217)
-* print-prog-name:                       Debugging Options.  (line 1638)
-* print-search-dirs:                     Debugging Options.  (line 1649)
-* print-sysroot:                         Debugging Options.  (line 1662)
-* print-sysroot-headers-suffix:          Debugging Options.  (line 1669)
+* print-prog-name:                       Debugging Options.  (line 1639)
+* print-search-dirs:                     Debugging Options.  (line 1650)
+* print-sysroot:                         Debugging Options.  (line 1663)
+* print-sysroot-headers-suffix:          Debugging Options.  (line 1670)
 * private_bundle:                        Darwin Options.     (line  196)
 * pthread <1>:                           Solaris 2 Options.  (line   38)
 * pthread:                               RS/6000 and PowerPC Options.
                                                              (line  824)
 * pthreads:                              Solaris 2 Options.  (line   32)
-* Q:                                     Debugging Options.  (line  651)
+* Q:                                     Debugging Options.  (line  652)
 * Qn:                                    System V Options.   (line   18)
 * Qy:                                    System V Options.   (line   14)
 * rdynamic:                              Link Options.       (line  111)
@@ -51077,8 +51102,8 @@ look up both forms.
 * s:                                     Link Options.       (line  118)
 * S <1>:                                 Link Options.       (line   20)
 * S:                                     Overall Options.    (line  175)
-* save-temps:                            Debugging Options.  (line 1514)
-* save-temps=obj:                        Debugging Options.  (line 1540)
+* save-temps:                            Debugging Options.  (line 1515)
+* save-temps=obj:                        Debugging Options.  (line 1541)
 * sectalign:                             Darwin Options.     (line  196)
 * sectcreate:                            Darwin Options.     (line  196)
 * sectobjectsymbols:                     Darwin Options.     (line  196)
@@ -51125,7 +51150,7 @@ look up both forms.
                                                              (line  701)
 * target-help:                           Overall Options.    (line  230)
 * threads:                               HPPA Options.       (line  198)
-* time:                                  Debugging Options.  (line 1555)
+* time:                                  Debugging Options.  (line 1556)
 * tno-android-cc:                        GNU/Linux Options.  (line   31)
 * tno-android-ld:                        GNU/Linux Options.  (line   35)
 * traditional <1>:                       Incompatibilities.  (line    6)
@@ -52647,7 +52672,7 @@ Keyword Index
                                                              (line  515)
 * gcc_struct variable attribute, x86:    Variable Attributes.
                                                              (line  536)
-* gcov:                                  Debugging Options.  (line  722)
+* gcov:                                  Debugging Options.  (line  723)
 * gettext:                               Other Builtins.     (line    6)
 * global offset table:                   Code Gen Options.   (line  280)
 * global register after longjmp:         Global Reg Vars.    (line   65)
@@ -52659,7 +52684,7 @@ Keyword Index
                                                              (line  136)
 * Go:                                    G++ and GCC.        (line    6)
 * goto with computed label:              Labels as Values.   (line    6)
-* gprof:                                 Debugging Options.  (line  644)
+* gprof:                                 Debugging Options.  (line  645)
 * grouping options:                      Invoking GCC.       (line   26)
 * H in constraint:                       Simple Constraints. (line   98)
 * half-precision floating point:         Half-Precision.     (line    6)
@@ -53194,7 +53219,7 @@ Keyword Index
                                                              (line 1322)
 * Pointer Bounds Checker builtins:       Pointer Bounds Checker builtins.
                                                              (line    6)
-* Pointer Bounds Checker options:        Debugging Options.  (line  387)
+* Pointer Bounds Checker options:        Debugging Options.  (line  388)
 * pointer to member function:            Bound member functions.
                                                              (line    6)
 * pointers to arrays:                    Pointers to Arrays. (line    6)
@@ -53261,7 +53286,7 @@ Keyword Index
                                                              (line    6)
 * printf:                                Other Builtins.     (line    6)
 * printf_unlocked:                       Other Builtins.     (line    6)
-* prof:                                  Debugging Options.  (line  638)
+* prof:                                  Debugging Options.  (line  639)
 * progmem variable attribute, AVR:       Variable Attributes.
                                                              (line  319)
 * promotion of formal parameters:        Function Prototypes.
@@ -53827,324 +53852,324 @@ Node: Objective-C and Objective-C++ Dialect Options130662
 Node: Language Independent Options141898
 Node: Warning Options146716
 Node: Debugging Options225149
-Node: Optimize Options296345
-Ref: Type-punning359608
-Node: Preprocessor Options448399
-Ref: Wtrigraphs453181
-Ref: dashMF457929
-Ref: fdollars-in-identifiers468793
-Node: Assembler Options479036
-Node: Link Options479728
-Ref: Link Options-Footnote-1493256
-Node: Directory Options493590
-Node: Spec Files500152
-Node: Target Options522023
-Node: Submodel Options522422
-Node: AArch64 Options524187
-Node: Adapteva Epiphany Options529927
-Node: ARC Options535878
-Node: ARM Options548317
-Node: AVR Options566004
-Node: Blackfin Options587298
-Node: C6X Options595313
-Node: CRIS Options596856
-Node: CR16 Options600600
-Node: Darwin Options601507
-Node: DEC Alpha Options608948
-Node: FR30 Options620536
-Node: FRV Options621101
-Node: GNU/Linux Options627820
-Node: H8/300 Options629081
-Node: HPPA Options630531
-Node: IA-64 Options639720
-Node: LM32 Options647765
-Node: M32C Options648289
-Node: M32R/D Options649563
-Node: M680x0 Options653109
-Node: MCore Options667155
-Node: MeP Options668658
-Node: MicroBlaze Options672618
-Node: MIPS Options675414
-Node: MMIX Options708935
-Node: MN10300 Options711417
-Node: Moxie Options713960
-Node: MSP430 Options714448
-Node: NDS32 Options717952
-Node: Nios II Options719846
-Node: Nvidia PTX Options730023
-Node: PDP-11 Options730415
-Node: picoChip Options732112
-Node: PowerPC Options734253
-Node: RL78 Options734474
-Node: RS/6000 and PowerPC Options735322
-Node: RX Options775650
-Node: S/390 and zSeries Options783000
-Node: Score Options791558
-Node: SH Options792400
-Node: Solaris 2 Options813294
-Node: SPARC Options814822
-Node: SPU Options828103
-Node: System V Options833040
-Node: TILE-Gx Options833866
-Node: TILEPro Options834884
-Node: V850 Options835388
-Node: VAX Options842080
-Node: Visium Options842618
-Node: VMS Options844926
-Node: VxWorks Options845740
-Node: x86 Options846892
-Node: x86 Windows Options890475
-Node: Xstormy16 Options893275
-Node: Xtensa Options893569
-Node: zSeries Options897894
-Node: Code Gen Options898090
-Node: Environment Variables928914
-Node: Precompiled Headers936915
-Node: C Implementation942923
-Node: Translation implementation944612
-Node: Environment implementation945204
-Node: Identifiers implementation945759
-Node: Characters implementation946846
-Node: Integers implementation950497
-Node: Floating point implementation952383
-Node: Arrays and pointers implementation955448
-Ref: Arrays and pointers implementation-Footnote-1956907
-Node: Hints implementation957031
-Node: Structures unions enumerations and bit-fields implementation958518
-Node: Qualifiers implementation960743
-Node: Declarators implementation962523
-Node: Statements implementation962865
-Node: Preprocessing directives implementation963192
-Node: Library functions implementation965514
-Node: Architecture implementation966164
-Node: Locale-specific behavior implementation967806
-Node: C++ Implementation968111
-Node: Conditionally-supported behavior969393
-Node: Exception handling970011
-Node: C Extensions970420
-Node: Statement Exprs975578
-Node: Local Labels980054
-Node: Labels as Values983027
-Ref: Labels as Values-Footnote-1985552
-Node: Nested Functions985735
-Node: Constructing Calls989693
-Node: Typeof994411
-Node: Conditionals998339
-Node: __int128999229
-Node: Long Long999753
-Node: Complex1001229
-Node: Floating Types1003818
-Node: Half-Precision1004938
-Node: Decimal Float1007120
-Node: Hex Floats1008975
-Node: Fixed-Point1010011
-Node: Named Address Spaces1013293
-Ref: AVR Named Address Spaces1013974
-Node: Zero Length1019180
-Node: Empty Structures1022219
-Node: Variable Length1022625
-Node: Variadic Macros1025481
-Node: Escaped Newlines1027859
-Node: Subscripting1028720
-Node: Pointer Arith1029446
-Node: Pointers to Arrays1030020
-Node: Initializers1030764
-Node: Compound Literals1031265
-Node: Designated Inits1034612
-Node: Case Ranges1038350
-Node: Cast to Union1039031
-Node: Mixed Declarations1040122
-Node: Function Attributes1040632
-Node: Label Attributes1134480
-Node: Attribute Syntax1136324
-Node: Function Prototypes1146538
-Node: C++ Comments1148319
-Node: Dollar Signs1148838
-Node: Character Escapes1149303
-Node: Variable Attributes1149597
-Ref: AVR Variable Attributes1163318
-Ref: MeP Variable Attributes1168683
-Ref: x86 Variable Attributes1171253
-Node: Type Attributes1176292
-Ref: MeP Type Attributes1191541
-Ref: PowerPC Type Attributes1191815
-Ref: SPU Type Attributes1192676
-Ref: x86 Type Attributes1192967
-Node: Alignment1193655
-Node: Inline1195025
-Node: Volatiles1200000
-Node: Using Assembly Language with C1202900
-Node: Basic Asm1204104
-Node: Extended Asm1208238
-Ref: Volatile1212035
-Ref: AssemblerTemplate1216107
-Ref: OutputOperands1220332
-Ref: InputOperands1227234
-Ref: Clobbers1231459
-Ref: GotoLabels1234755
-Ref: x86Operandmodifiers1236888
-Ref: x86floatingpointasmoperands1239132
-Node: Constraints1242462
-Node: Simple Constraints1243568
-Node: Multi-Alternative1250893
-Node: Modifiers1252900
-Node: Machine Constraints1256404
-Node: Asm Labels1312867
-Node: Explicit Reg Vars1314565
-Node: Global Reg Vars1316186
-Node: Local Reg Vars1320686
-Node: Size of an asm1323806
-Node: Alternate Keywords1325051
-Node: Incomplete Enums1326550
-Node: Function Names1327306
-Node: Return Address1328909
-Node: Vector Extensions1332416
-Node: Offsetof1339701
-Node: __sync Builtins1340542
-Node: __atomic Builtins1346018
-Node: Integer Overflow Builtins1357621
-Node: x86 specific memory model extensions for transactional memory1361751
-Node: Object Size Checking1363020
-Node: Pointer Bounds Checker builtins1368526
-Node: Cilk Plus Builtins1374532
-Node: Other Builtins1375448
-Node: Target Builtins1405092
-Node: AArch64 Built-in Functions1406584
-Node: Alpha Built-in Functions1407039
-Node: Altera Nios II Built-in Functions1410087
-Node: ARC Built-in Functions1414072
-Node: ARC SIMD Built-in Functions1419283
-Node: ARM iWMMXt Built-in Functions1428179
-Node: ARM C Language Extensions (ACLE)1435175
-Node: ARM Floating Point Status and Control Intrinsics1436452
-Node: AVR Built-in Functions1436928
-Node: Blackfin Built-in Functions1440027
-Node: FR-V Built-in Functions1440646
-Node: Argument Types1441512
-Node: Directly-mapped Integer Functions1443266
-Node: Directly-mapped Media Functions1444350
-Node: Raw read/write Functions1451384
-Node: Other Built-in Functions1452298
-Node: MIPS DSP Built-in Functions1453484
-Node: MIPS Paired-Single Support1465982
-Node: MIPS Loongson Built-in Functions1467481
-Node: Paired-Single Arithmetic1474001
-Node: Paired-Single Built-in Functions1474949
-Node: MIPS-3D Built-in Functions1477616
-Node: Other MIPS Built-in Functions1482993
-Node: MSP430 Built-in Functions1483998
-Node: NDS32 Built-in Functions1485399
-Node: picoChip Built-in Functions1486692
-Node: PowerPC Built-in Functions1488036
-Node: PowerPC AltiVec/VSX Built-in Functions1491743
-Node: PowerPC Hardware Transactional Memory Built-in Functions1631534
-Node: RX Built-in Functions1638507
-Node: S/390 System z Built-in Functions1642540
-Node: SH Built-in Functions1647777
-Node: SPARC VIS Built-in Functions1649505
-Node: SPU Built-in Functions1655109
-Node: TI C6X Built-in Functions1656925
-Node: TILE-Gx Built-in Functions1657949
-Node: TILEPro Built-in Functions1659066
-Node: x86 Built-in Functions1660164
-Node: x86 transactional memory intrinsics1719699
-Node: Target Format Checks1722919
-Node: Solaris Format Checks1723351
-Node: Darwin Format Checks1723777
-Node: Pragmas1724595
-Node: ARM Pragmas1725331
-Node: M32C Pragmas1725934
-Node: MeP Pragmas1727008
-Node: RS/6000 and PowerPC Pragmas1729077
-Node: Darwin Pragmas1729818
-Node: Solaris Pragmas1730885
-Node: Symbol-Renaming Pragmas1732046
-Node: Structure-Packing Pragmas1733660
-Node: Weak Pragmas1735309
-Node: Diagnostic Pragmas1736043
-Node: Visibility Pragmas1739150
-Node: Push/Pop Macro Pragmas1739835
-Node: Function Specific Option Pragmas1740807
-Node: Loop-Specific Pragmas1742652
-Node: Unnamed Fields1743742
-Node: Thread-Local1745940
-Node: C99 Thread-Local Edits1748045
-Node: C++98 Thread-Local Edits1750057
-Node: Binary constants1753501
-Node: C++ Extensions1754172
-Node: C++ Volatiles1755883
-Node: Restricted Pointers1758231
-Node: Vague Linkage1759822
-Node: C++ Interface1763446
-Ref: C++ Interface-Footnote-11767239
-Node: Template Instantiation1767375
-Node: Bound member functions1773961
-Node: C++ Attributes1775493
-Node: Function Multiversioning1779930
-Node: Namespace Association1781745
-Node: Type Traits1783125
-Node: Java Exceptions1789613
-Node: Deprecated Features1791003
-Node: Backwards Compatibility1793968
-Node: Objective-C1795320
-Node: GNU Objective-C runtime API1795929
-Node: Modern GNU Objective-C runtime API1796936
-Node: Traditional GNU Objective-C runtime API1799373
-Node: Executing code before main1800101
-Node: What you can and what you cannot do in +load1802843
-Node: Type encoding1805215
-Node: Legacy type encoding1810291
-Node: @encode1811382
-Node: Method signatures1811927
-Node: Garbage Collection1813922
-Node: Constant string objects1816611
-Node: compatibility_alias1819119
-Node: Exceptions1819845
-Node: Synchronization1822556
-Node: Fast enumeration1823740
-Node: Using fast enumeration1824052
-Node: c99-like fast enumeration syntax1825263
-Node: Fast enumeration details1825966
-Node: Fast enumeration protocol1828307
-Node: Messaging with the GNU Objective-C runtime1831459
-Node: Dynamically registering methods1832830
-Node: Forwarding hook1834521
-Node: Compatibility1837561
-Node: Gcov1844128
-Node: Gcov Intro1844663
-Node: Invoking Gcov1847381
-Node: Gcov and Optimization1861627
-Node: Gcov Data Files1864627
-Node: Cross-profiling1866022
-Node: Gcov-tool1867873
-Node: Gcov-tool Intro1868296
-Node: Invoking Gcov-tool1870257
-Node: Trouble1872805
-Node: Actual Bugs1874222
-Node: Interoperation1874669
-Node: Incompatibilities1881561
-Node: Fixed Headers1889712
-Node: Standard Libraries1891375
-Node: Disappointments1892747
-Node: C++ Misunderstandings1897105
-Node: Static Definitions1897916
-Node: Name lookup1898969
-Ref: Name lookup-Footnote-11903747
-Node: Temporaries1903934
-Node: Copy Assignment1905910
-Node: Non-bugs1907717
-Node: Warnings and Errors1918224
-Node: Bugs1919986
-Node: Bug Criteria1920453
-Node: Bug Reporting1922663
-Node: Service1922884
-Node: Contributing1923703
-Node: Funding1924443
-Node: GNU Project1926932
-Node: Copying1927578
-Node: GNU Free Documentation License1965106
-Node: Contributors1990243
-Node: Option Index2029011
-Node: Keyword Index2249768
+Node: Optimize Options296467
+Ref: Type-punning359730
+Node: Preprocessor Options448521
+Ref: Wtrigraphs453303
+Ref: dashMF458051
+Ref: fdollars-in-identifiers468915
+Node: Assembler Options479158
+Node: Link Options479850
+Ref: Link Options-Footnote-1493378
+Node: Directory Options493712
+Node: Spec Files500274
+Node: Target Options522145
+Node: Submodel Options522544
+Node: AArch64 Options524309
+Node: Adapteva Epiphany Options530049
+Node: ARC Options536000
+Node: ARM Options548439
+Node: AVR Options566126
+Node: Blackfin Options587420
+Node: C6X Options595435
+Node: CRIS Options596978
+Node: CR16 Options600722
+Node: Darwin Options601629
+Node: DEC Alpha Options609070
+Node: FR30 Options620658
+Node: FRV Options621223
+Node: GNU/Linux Options627942
+Node: H8/300 Options629203
+Node: HPPA Options630653
+Node: IA-64 Options639842
+Node: LM32 Options647887
+Node: M32C Options648411
+Node: M32R/D Options649685
+Node: M680x0 Options653231
+Node: MCore Options667277
+Node: MeP Options668780
+Node: MicroBlaze Options672740
+Node: MIPS Options675536
+Node: MMIX Options709057
+Node: MN10300 Options711539
+Node: Moxie Options714082
+Node: MSP430 Options714570
+Node: NDS32 Options718074
+Node: Nios II Options719968
+Node: Nvidia PTX Options730145
+Node: PDP-11 Options730537
+Node: picoChip Options732234
+Node: PowerPC Options734375
+Node: RL78 Options734596
+Node: RS/6000 and PowerPC Options735444
+Node: RX Options775772
+Node: S/390 and zSeries Options783122
+Node: Score Options791680
+Node: SH Options792522
+Node: Solaris 2 Options813416
+Node: SPARC Options814944
+Node: SPU Options828213
+Node: System V Options833150
+Node: TILE-Gx Options833976
+Node: TILEPro Options834994
+Node: V850 Options835498
+Node: VAX Options842190
+Node: Visium Options842728
+Node: VMS Options845036
+Node: VxWorks Options845850
+Node: x86 Options847002
+Node: x86 Windows Options890585
+Node: Xstormy16 Options893385
+Node: Xtensa Options893679
+Node: zSeries Options898004
+Node: Code Gen Options898200
+Node: Environment Variables929024
+Node: Precompiled Headers937025
+Node: C Implementation943033
+Node: Translation implementation944722
+Node: Environment implementation945314
+Node: Identifiers implementation945869
+Node: Characters implementation946956
+Node: Integers implementation950607
+Node: Floating point implementation952493
+Node: Arrays and pointers implementation955558
+Ref: Arrays and pointers implementation-Footnote-1957017
+Node: Hints implementation957141
+Node: Structures unions enumerations and bit-fields implementation958628
+Node: Qualifiers implementation960853
+Node: Declarators implementation962633
+Node: Statements implementation962975
+Node: Preprocessing directives implementation963302
+Node: Library functions implementation965624
+Node: Architecture implementation966274
+Node: Locale-specific behavior implementation967916
+Node: C++ Implementation968221
+Node: Conditionally-supported behavior969503
+Node: Exception handling970121
+Node: C Extensions970530
+Node: Statement Exprs975688
+Node: Local Labels980164
+Node: Labels as Values983137
+Ref: Labels as Values-Footnote-1985662
+Node: Nested Functions985845
+Node: Constructing Calls989803
+Node: Typeof994521
+Node: Conditionals998449
+Node: __int128999339
+Node: Long Long999863
+Node: Complex1001339
+Node: Floating Types1003928
+Node: Half-Precision1005048
+Node: Decimal Float1007230
+Node: Hex Floats1009085
+Node: Fixed-Point1010121
+Node: Named Address Spaces1013403
+Ref: AVR Named Address Spaces1014084
+Node: Zero Length1019290
+Node: Empty Structures1022329
+Node: Variable Length1022735
+Node: Variadic Macros1025591
+Node: Escaped Newlines1027969
+Node: Subscripting1028830
+Node: Pointer Arith1029556
+Node: Pointers to Arrays1030130
+Node: Initializers1030874
+Node: Compound Literals1031375
+Node: Designated Inits1034722
+Node: Case Ranges1038460
+Node: Cast to Union1039141
+Node: Mixed Declarations1040232
+Node: Function Attributes1040742
+Node: Label Attributes1134590
+Node: Attribute Syntax1136434
+Node: Function Prototypes1146648
+Node: C++ Comments1148429
+Node: Dollar Signs1148948
+Node: Character Escapes1149413
+Node: Variable Attributes1149707
+Ref: AVR Variable Attributes1163428
+Ref: MeP Variable Attributes1168793
+Ref: x86 Variable Attributes1171363
+Node: Type Attributes1176402
+Ref: MeP Type Attributes1191651
+Ref: PowerPC Type Attributes1191925
+Ref: SPU Type Attributes1192786
+Ref: x86 Type Attributes1193077
+Node: Alignment1193765
+Node: Inline1195135
+Node: Volatiles1200110
+Node: Using Assembly Language with C1203010
+Node: Basic Asm1204214
+Node: Extended Asm1208348
+Ref: Volatile1212145
+Ref: AssemblerTemplate1216217
+Ref: OutputOperands1220442
+Ref: InputOperands1227344
+Ref: Clobbers1231569
+Ref: GotoLabels1234865
+Ref: x86Operandmodifiers1236998
+Ref: x86floatingpointasmoperands1239242
+Node: Constraints1242572
+Node: Simple Constraints1243678
+Node: Multi-Alternative1251003
+Node: Modifiers1253010
+Node: Machine Constraints1256514
+Node: Asm Labels1312977
+Node: Explicit Reg Vars1314675
+Node: Global Reg Vars1316296
+Node: Local Reg Vars1320796
+Node: Size of an asm1323916
+Node: Alternate Keywords1325161
+Node: Incomplete Enums1326660
+Node: Function Names1327416
+Node: Return Address1329019
+Node: Vector Extensions1332526
+Node: Offsetof1339811
+Node: __sync Builtins1340652
+Node: __atomic Builtins1346128
+Node: Integer Overflow Builtins1357732
+Node: x86 specific memory model extensions for transactional memory1361862
+Node: Object Size Checking1363131
+Node: Pointer Bounds Checker builtins1368637
+Node: Cilk Plus Builtins1374643
+Node: Other Builtins1375559
+Node: Target Builtins1405203
+Node: AArch64 Built-in Functions1406695
+Node: Alpha Built-in Functions1407150
+Node: Altera Nios II Built-in Functions1410198
+Node: ARC Built-in Functions1414183
+Node: ARC SIMD Built-in Functions1419394
+Node: ARM iWMMXt Built-in Functions1428290
+Node: ARM C Language Extensions (ACLE)1435286
+Node: ARM Floating Point Status and Control Intrinsics1436563
+Node: AVR Built-in Functions1437039
+Node: Blackfin Built-in Functions1440138
+Node: FR-V Built-in Functions1440757
+Node: Argument Types1441623
+Node: Directly-mapped Integer Functions1443377
+Node: Directly-mapped Media Functions1444461
+Node: Raw read/write Functions1451495
+Node: Other Built-in Functions1452409
+Node: MIPS DSP Built-in Functions1453595
+Node: MIPS Paired-Single Support1466093
+Node: MIPS Loongson Built-in Functions1467592
+Node: Paired-Single Arithmetic1474112
+Node: Paired-Single Built-in Functions1475060
+Node: MIPS-3D Built-in Functions1477727
+Node: Other MIPS Built-in Functions1483104
+Node: MSP430 Built-in Functions1484109
+Node: NDS32 Built-in Functions1485510
+Node: picoChip Built-in Functions1486803
+Node: PowerPC Built-in Functions1488147
+Node: PowerPC AltiVec/VSX Built-in Functions1491854
+Node: PowerPC Hardware Transactional Memory Built-in Functions1631645
+Node: RX Built-in Functions1640136
+Node: S/390 System z Built-in Functions1644169
+Node: SH Built-in Functions1649406
+Node: SPARC VIS Built-in Functions1651134
+Node: SPU Built-in Functions1656738
+Node: TI C6X Built-in Functions1658554
+Node: TILE-Gx Built-in Functions1659578
+Node: TILEPro Built-in Functions1660695
+Node: x86 Built-in Functions1661793
+Node: x86 transactional memory intrinsics1721328
+Node: Target Format Checks1724548
+Node: Solaris Format Checks1724980
+Node: Darwin Format Checks1725406
+Node: Pragmas1726224
+Node: ARM Pragmas1726960
+Node: M32C Pragmas1727563
+Node: MeP Pragmas1728637
+Node: RS/6000 and PowerPC Pragmas1730706
+Node: Darwin Pragmas1731447
+Node: Solaris Pragmas1732514
+Node: Symbol-Renaming Pragmas1733675
+Node: Structure-Packing Pragmas1735289
+Node: Weak Pragmas1736938
+Node: Diagnostic Pragmas1737672
+Node: Visibility Pragmas1740779
+Node: Push/Pop Macro Pragmas1741464
+Node: Function Specific Option Pragmas1742436
+Node: Loop-Specific Pragmas1744281
+Node: Unnamed Fields1745371
+Node: Thread-Local1747569
+Node: C99 Thread-Local Edits1749674
+Node: C++98 Thread-Local Edits1751686
+Node: Binary constants1755130
+Node: C++ Extensions1755801
+Node: C++ Volatiles1757512
+Node: Restricted Pointers1759860
+Node: Vague Linkage1761451
+Node: C++ Interface1765075
+Ref: C++ Interface-Footnote-11768868
+Node: Template Instantiation1769004
+Node: Bound member functions1775590
+Node: C++ Attributes1777122
+Node: Function Multiversioning1781559
+Node: Namespace Association1783374
+Node: Type Traits1784754
+Node: Java Exceptions1791242
+Node: Deprecated Features1792632
+Node: Backwards Compatibility1795597
+Node: Objective-C1796949
+Node: GNU Objective-C runtime API1797558
+Node: Modern GNU Objective-C runtime API1798565
+Node: Traditional GNU Objective-C runtime API1801002
+Node: Executing code before main1801730
+Node: What you can and what you cannot do in +load1804472
+Node: Type encoding1806844
+Node: Legacy type encoding1811920
+Node: @encode1813011
+Node: Method signatures1813556
+Node: Garbage Collection1815551
+Node: Constant string objects1818240
+Node: compatibility_alias1820748
+Node: Exceptions1821474
+Node: Synchronization1824185
+Node: Fast enumeration1825369
+Node: Using fast enumeration1825681
+Node: c99-like fast enumeration syntax1826892
+Node: Fast enumeration details1827595
+Node: Fast enumeration protocol1829936
+Node: Messaging with the GNU Objective-C runtime1833088
+Node: Dynamically registering methods1834459
+Node: Forwarding hook1836150
+Node: Compatibility1839190
+Node: Gcov1845757
+Node: Gcov Intro1846292
+Node: Invoking Gcov1849010
+Node: Gcov and Optimization1863256
+Node: Gcov Data Files1866256
+Node: Cross-profiling1867651
+Node: Gcov-tool1869502
+Node: Gcov-tool Intro1869925
+Node: Invoking Gcov-tool1871886
+Node: Trouble1874434
+Node: Actual Bugs1875851
+Node: Interoperation1876298
+Node: Incompatibilities1883190
+Node: Fixed Headers1891341
+Node: Standard Libraries1893004
+Node: Disappointments1894376
+Node: C++ Misunderstandings1898734
+Node: Static Definitions1899545
+Node: Name lookup1900598
+Ref: Name lookup-Footnote-11905376
+Node: Temporaries1905563
+Node: Copy Assignment1907539
+Node: Non-bugs1909346
+Node: Warnings and Errors1919853
+Node: Bugs1921615
+Node: Bug Criteria1922082
+Node: Bug Reporting1924292
+Node: Service1924513
+Node: Contributing1925332
+Node: Funding1926072
+Node: GNU Project1928561
+Node: Copying1929207
+Node: GNU Free Documentation License1966735
+Node: Contributors1991872
+Node: Option Index2030640
+Node: Keyword Index2251397
 
 End Tag Table
