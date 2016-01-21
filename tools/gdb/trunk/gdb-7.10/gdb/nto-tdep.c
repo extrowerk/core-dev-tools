@@ -1677,8 +1677,8 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
   int i;
   for (i = GDB_SIGNAL_0; i < GDB_SIGNAL_LAST; ++i)
     {
-      enum gdb_signal temp = nto_gdb_signal_to_target (gdbarch, i);
-      if (temp != 0)
+      int tgtsig = nto_gdb_signal_to_target (gdbarch, i);
+      if (tgtsig == nto_signal)
 	return i;
     }
   return GDB_SIGNAL_UNKNOWN;
