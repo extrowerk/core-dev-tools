@@ -1,3 +1,17 @@
+2015-12-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* version.in: Set GDB version number to 7.10.1.
+
+2014-11-28  Pedro Alves  <palves@redhat.com>
+
+	* cp-name-parser.y (conversion_op): Use
+	DEMANGLE_COMPONENT_CONVERSION instead of DEMANGLE_COMPONENT_CAST.
+
+2015-11-26  Markus Metzger  <markus.t.metzger@intel.com>
+
+	PR 19297
+	* btrace.c (btrace_enable): Check whether HAVE_LIBIPT is defined.
+
 2015-10-21  Aleksandar Ristovski  <aristovski@qnx.com>
 
 	* gdb/nto-tdep.c (QNX_NOTE_NAME, QNX_INFO_SECT_NAME): New defines.
