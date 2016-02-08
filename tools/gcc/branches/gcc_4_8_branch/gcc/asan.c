@@ -911,11 +911,7 @@ asan_clear_shadow (rtx shadow_mem, HOST_WIDE_INT len)
   end = force_reg (Pmode, plus_constant (Pmode, addr, len));
   emit_label (top_label);
 
-#if defined(TARGET_THUMB) || defined(TARGET_ARM)
-  emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, const0_rtx)));
-#else
   emit_move_insn (shadow_mem, const0_rtx);
-#endif
   tmp = expand_simple_binop (Pmode, PLUS, addr, GEN_INT (4), addr,
                              true, OPTAB_LIB_WIDEN);
   if (tmp != addr)
@@ -988,6 +984,14 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
   str_cst = asan_pp_string ();
 
   /* Emit the prologue sequence.  */
+  /* Align base if target is STRICT_ALIGNMENT.  */
+  if (STRICT_ALIGNMENT)
+    base = expand_binop (Pmode, and_optab, base,
+			 gen_int_mode (-((GET_MODE_ALIGNMENT (SImode)
+					  << ASAN_SHADOW_SHIFT)
+					 / BITS_PER_UNIT), Pmode), NULL_RTX,
+			 1, OPTAB_DIRECT);
+
   base = expand_binop (Pmode, add_optab, base, GEN_INT (base_offset),
 		       NULL_RTX, 1, OPTAB_DIRECT);
   mem = gen_rtx_MEM (ptr_mode, base);
@@ -1004,6 +1008,8 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 	      && (ASAN_RED_ZONE_SIZE >> ASAN_SHADOW_SHIFT) == 4);
   shadow_mem = gen_rtx_MEM (SImode, shadow_base);
   set_mem_alias_set (shadow_mem, asan_shadow_set);
+  if (STRICT_ALIGNMENT)
+    set_mem_align (shadow_mem, (GET_MODE_ALIGNMENT (SImode)));
   prev_offset = base_offset;
   for (l = length; l; l -= 2)
     {
@@ -1030,11 +1036,7 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 	      }
 	    else
 	      shadow_bytes[i] = ASAN_STACK_MAGIC_PARTIAL;
-#if defined(TARGET_THUMB) || defined(TARGET_ARM)
-        emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, asan_shadow_cst (shadow_bytes))));
-#else
-        emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
-#endif
+	  emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
 	  offset = aoff;
 	}
       while (offset <= offsets[l - 2] - ASAN_RED_ZONE_SIZE)
@@ -1044,11 +1046,7 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 				       >> ASAN_SHADOW_SHIFT);
 	  prev_offset = offset;
 	  memset (shadow_bytes, cur_shadow_byte, 4);
-#if defined(TARGET_THUMB) || defined(TARGET_ARM)
-      emit_insn (gen_unaligned_storesi (shadow_mem, force_reg (SImode, asan_shadow_cst (shadow_bytes))));
-#else
-      emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
-#endif
+	  emit_move_insn (shadow_mem, asan_shadow_cst (shadow_bytes));
 	  offset += ASAN_RED_ZONE_SIZE;
 	}
       cur_shadow_byte = ASAN_STACK_MAGIC_MIDDLE;
@@ -1060,6 +1058,10 @@ asan_emit_stack_protection (rtx base, HOST_WIDE_INT *offsets, tree *decls,
 
   shadow_mem = gen_rtx_MEM (BLKmode, shadow_base);
   set_mem_alias_set (shadow_mem, asan_shadow_set);
+
+  if (STRICT_ALIGNMENT)
+    set_mem_align (shadow_mem, (GET_MODE_ALIGNMENT (SImode)));
+
   prev_offset = base_offset;
   last_offset = base_offset;
   last_size = 0;
