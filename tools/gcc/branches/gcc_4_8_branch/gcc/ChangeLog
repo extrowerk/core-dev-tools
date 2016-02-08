@@ -465,6 +465,17 @@
 	* gimplify.c (gimple_regimplify_operands): Update the
 	re-gimplifed stmt.
 
+2014-04-22  Lin Zuojian  <manjian2006@gmail.com>
+
+	PR middle-end/60281
+	* asan.c (asan_emit_stack_protection): Force the base to align to
+	appropriate bits if STRICT_ALIGNMENT.  Set shadow_mem align to
+	appropriate bits if STRICT_ALIGNMENT.
+	* cfgexpand.c (expand_stack_vars): Set base_align appropriately
+	when asan is on.
+	(expand_used_vars): Leave a space in the stack frame for alignment
+	if STRICT_ALIGNMENT.
+
 2014-04-21  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
 	Back port from the trunk, subversion id 209546.
