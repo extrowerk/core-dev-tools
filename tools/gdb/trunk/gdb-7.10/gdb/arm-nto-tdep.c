@@ -28,6 +28,7 @@
 #include "solib-svr4.h"
 #include "arm-tdep.h"
 #include "nto-tdep.h"
+#include "arm-nto-tdep.h"
 #include "osabi.h"
 
 #include "trad-frame.h"
@@ -63,7 +64,6 @@
 
 #define ALT_REGSET_SIZE (ARM_NTO_WMMX_WR_REGSIZE * 16 \
 			 + NTO_STATUS_REGISTER_SIZE * 6)
-
 
 static void
 armnto_supply_reg_gregset (struct regcache *regcache, int regno,
@@ -761,6 +761,50 @@ nto_arm_software_single_step (struct frame_info *frame)
 static const gdb_byte arm_nto_thumb2_le_breakpoint[] = { 0xfe, 0xde, 0xff, 0xe7 };
 static const gdb_byte arm_nto_thumb_le_breakpoint[] = { 0xfe, 0xde };
 
+/* Register maps.  */
+
+static const struct regcache_map_entry arm_nto_gregmap[] =
+  {
+    { 16, ARM_A1_REGNUM, 4 }, /* r0 ... r15 */
+    { 1, ARM_PS_REGNUM, 4 },
+    { 0 }
+  };
+
+static const struct regcache_map_entry arm_nto_fpregmap[] =
+  {
+    { 32, ARM_D0_REGNUM, 8 }, /* d0 ... d31 */
+    { 1, ARM_FPSCR_REGNUM, 4 },
+    { 0 }
+  };
+
+/* Register set definitions.  */
+
+const struct regset arm_nto_gregset =
+  {
+    arm_nto_gregmap,
+    regcache_supply_regset, regcache_collect_regset
+  };
+
+const struct regset arm_nto_fpregset =
+  {
+    arm_nto_fpregmap,
+    regcache_supply_regset, regcache_collect_regset
+  };
+
+/* Implement the "regset_from_core_section" gdbarch method.  */
+
+static void
+arm_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
+					  iterate_over_regset_sections_cb *cb,
+					  void *cb_data,
+					  const struct regcache *regcache)
+{
+  cb (".reg", sizeof (ARM_CPU_REGISTERS), &arm_nto_gregset,
+      NULL, cb_data);
+  cb (".reg2", sizeof (ARM_FPU_REGISTERS), &arm_nto_fpregset,
+      NULL, cb_data);
+}
+
 static void
 armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
@@ -796,6 +840,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   // set_gdbarch_software_single_step (gdbarch, nto_arm_software_single_step);
 
   // TODO: set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, arm_nto_iterate_over_regset_sections);
 
   if (tdep->arm_abi == ARM_ABI_AAPCS)
     {
