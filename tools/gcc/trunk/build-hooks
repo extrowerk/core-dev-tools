@@ -156,7 +156,18 @@ function hook_preconfigure {
 		if test -n "${USE_ROOT_nto}"; then 
 			op ln -sP ${USE_ROOT_nto}/usr/include ${basedir}/${target}/include
 		fi
-	fi	
+	fi
+
+	# Pick up deps from the local stage, if it exists.
+	case ${TARGET_SYSNAME} in
+		nto*) LOCAL_ROOT=${INSTALL_ROOT_nto} ;;
+		linux*) LOCAL_ROOT=${INSTALL_ROOT_linux} ;;
+		win32*) LOCAL_ROOT=${INSTALL_ROOT_win32} ;;
+		win64*) LOCAL_ROOT=${INSTALL_ROOT_win64} ;;
+		darwin*) LOCAL_ROOT=${INSTALL_ROOT_darwin} ;;
+	esac
+	export CPPFLAGS="${CPPFLAGS} -I${LOCAL_ROOT}/${cpudir%-*}/usr/include"
+	export LDFLAGS="${LDFLAGS} -L${LOCAL_ROOT}/${cpudir%-*}/usr/lib"
 }
 
 function hook_premake {
