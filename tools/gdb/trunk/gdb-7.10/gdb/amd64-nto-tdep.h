@@ -48,6 +48,8 @@
 #define  X86_64_SS     19
 
 #ifndef __QNXNTO__
+typedef uint8_t _Uint8t;
+typedef uint32_t _Uint32t;
 typedef uint64_t _Uint64t;
 #endif
 
@@ -73,15 +75,23 @@ typedef struct x86_64_cpu_registers {
                 r13,
                 r14,
                 r15;
-    _Uint64t    rcr2;
-    _Uint64t    rerr;
-    _Uint64t    rip,
-                cs,
-                rflags;
-    _Uint64t    rsp,
-                ss;
+    _Uint64t    rip;
+    _Uint32t    cs;
+    _Uint32t    rsvd1;
+    _Uint64t    rflags;
+    _Uint64t    rsp;
+    _Uint32t    ss;
 } X86_64_CPU_REGISTERS;
 
-
+typedef struct fsave_area_64 {
+    _Uint32t fpu_control_word;
+    _Uint32t fpu_status_word;
+    _Uint32t fpu_tag_word;
+    _Uint32t fpu_ip;
+    _Uint32t fpu_cs;
+    _Uint32t fpu_op;
+    _Uint32t fpu_ds;
+    _Uint8t  st_regs[80];
+} X86_64_NDP_REGISTERS;
 
 #endif /* amd64-nto-tdep.h */
