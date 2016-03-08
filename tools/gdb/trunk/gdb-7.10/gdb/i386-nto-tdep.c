@@ -80,7 +80,7 @@ i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   gdb_assert (tdep->gregset_reg_offset == i386nto_gregset_reg_offset);
-  i386_gregset.supply_regset (&i386_gregset, regcache, -1,
+  i386_supply_gregset (&i386_gregset, regcache, -1,
 			      gpregs, NUM_GPREGS * 4);
 }
 
@@ -121,6 +121,47 @@ i386nto_regset_id (int regno)
     return NTO_REG_FLOAT; /* We store xmm registers in fxsave_area.  */
 
   return -1;			/* Error.  */
+}
+
+static void
+i386_nto_supply_fpregset (const struct regset *regset,
+                       struct regcache *regcache,
+		       int regnum, const void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+  i387_supply_fxsave (regcache, regnum, fpregs);
+}
+
+static void
+i386_nto_collect_fpregset (const struct regset *regset,
+			const struct regcache *regcache,
+			int regnum, void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+  i387_collect_fxsave (regcache, regnum, fpregs);
+}
+
+static const struct regset i386_nto_fpregset =
+  {
+    NULL, i386_nto_supply_fpregset, i386_nto_collect_fpregset, REGSET_VARIABLE_SIZE
+  };
+
+static void
+i386_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
+				   iterate_over_regset_sections_cb *cb,
+				   void *cb_data,
+				   const struct regcache *regcache)
+{
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  cb (".reg", tdep->sizeof_gregset, &i386_gregset, NULL, cb_data);
+  cb (".reg2", tdep->sizeof_fpregset, &i386_nto_fpregset, NULL, cb_data);
 }
 
 static int
@@ -382,6 +423,9 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
   set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
+
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, i386_nto_iterate_over_regset_sections);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */

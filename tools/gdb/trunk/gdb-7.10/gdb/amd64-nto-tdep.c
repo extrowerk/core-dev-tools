@@ -46,7 +46,6 @@
 #endif
 
 
-
 static int
 x86_64nto_gregset_reg_offset[] =
 {
@@ -136,6 +135,47 @@ x86_64nto_regset_id (int regno)
     return NTO_REG_FLOAT;
 
   return -1;			/* Error.  */
+}
+
+static void
+amd64_nto_supply_fpregset (const struct regset *regset,
+                       struct regcache *regcache,
+		       int regnum, const void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+  amd64_supply_fxsave (regcache, regnum, fpregs);
+}
+
+static void
+amd64_nto_collect_fpregset (const struct regset *regset,
+			const struct regcache *regcache,
+			int regnum, void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+  amd64_collect_fxsave (regcache, regnum, fpregs);
+}
+
+static const struct regset amd64_nto_fpregset =
+  {
+    NULL, amd64_nto_supply_fpregset, amd64_nto_collect_fpregset, REGSET_VARIABLE_SIZE
+  };
+
+static void
+amd64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
+					  iterate_over_regset_sections_cb *cb,
+					  void *cb_data,
+					  const struct regcache *regcache)
+{
+  cb (".reg", sizeof (X86_64_CPU_REGISTERS), &i386_gregset,
+      NULL, cb_data);
+  cb (".reg2", sizeof (X86_64_NDP_REGISTERS), &amd64_nto_fpregset,
+      NULL, cb_data);
 }
 
 static int
@@ -416,6 +456,9 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
   set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
+
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, amd64_nto_iterate_over_regset_sections);
 }
 
 
