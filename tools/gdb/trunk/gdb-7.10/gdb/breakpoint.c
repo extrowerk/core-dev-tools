@@ -379,6 +379,19 @@ breakpoint_commands (struct breakpoint *b)
 
 static int breakpoint_proceeded;
 
+#ifdef __QNXTARGET__
+extern CORE_ADDR svr4_r_debug_state (void);
+/* Return 1 if r_rdevent is RT_CONSISTENT */
+static int
+stop_on_this_shlib_event (void)
+{
+  const int state = svr4_r_debug_state ();
+
+  /* Stop only if debug state is consistent */
+  return state == 0;
+}
+#endif /* __QNXTARGET__ */
+
 const char *
 bpdisp_text (enum bpdisp disp)
 {
@@ -5584,7 +5597,14 @@ bpstat_stop_status (struct address_space *aspace,
     {
       if (bs->breakpoint_at && bs->breakpoint_at->type == bp_shlib_event)
 	{
+#ifdef __QNXTARGET__
+	  if (stop_on_this_shlib_event ())
+	    {
+	      handle_solib_event ();
+	    }
+#else /* !__QNXTARGET__ */
 	  handle_solib_event ();
+#endif /* __QNXTARGET__ */
 	  break;
 	}
     }

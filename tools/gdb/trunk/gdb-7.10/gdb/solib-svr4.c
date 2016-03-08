@@ -45,6 +45,17 @@
 #include "auxv.h"
 #include "gdb_bfd.h"
 #include "probe.h"
+#include "rsp-low.h"
+
+#if defined(__QNXTARGET__)
+#include "nto-tdep.h"
+#include "nto-share/qnx_linkmap_note.h"
+#endif
+
+#ifdef TODO__QNXTARGET__
+/* Allow using core_bfd if exec_bfd is not present.  */
+#define exec_bfd ((exec_bfd != NULL) ? exec_bfd : core_bfd)
+#endif
 
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);
@@ -70,6 +81,9 @@ struct lm_info
 
     /* Values read in from inferior's fields of the same name.  */
     CORE_ADDR l_ld, l_next, l_prev, l_name;
+#ifdef __QNXTARGET__
+    CORE_ADDR l_path;
+#endif
   };
 
 /* On SVR4 systems, a list of symbols in the dynamic linker where
@@ -180,6 +194,12 @@ svr4_same_1 (const char *gdb_so_name, const char *inferior_so_name)
       && strcmp (inferior_so_name, "/lib/sparcv9/ld.so.1") == 0)
     return 1;
 
+#ifdef __QNXTARGET__
+  if (strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0
+      && strcmp (inferior_so_name, "libc.so.3") == 0)
+    return 1;
+#endif /* __QNXTARGET__ */
+
   return 0;
 }
 
@@ -222,6 +242,10 @@ lm_info_read (CORE_ADDR lm_addr)
 					       ptr_type);
       lm_info->l_name = extract_typed_address (&lm[lmo->l_name_offset],
 					       ptr_type);
+#ifdef __QNXTARGET__
+      lm_info->l_path = extract_typed_address (&lm[lmo->l_path_offset],
+					       ptr_type);
+#endif
     }
 
   do_cleanups (back_to);
@@ -807,9 +831,15 @@ elf_locate_base (void)
     }
 
   /* Find DT_DEBUG.  */
+#ifndef __QNXTARGET__
   if (scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr)
       || scan_dyntag_auxv (DT_DEBUG, &dyn_ptr))
     return dyn_ptr;
+#else /* __QNXTARGET__ */
+  if ((scan_dyntag_auxv (DT_DEBUG, &dyn_ptr)
+       || scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr))
+      && dyn_ptr != 0) return dyn_ptr;
+#endif /* __QNXTARGET__ */
 
   /* This may be a static executable.  Look for the symbol
      conventionally named _r_debug, as a last resort.  */
@@ -1108,6 +1138,12 @@ svr4_copy_library_list (struct so_list *src)
       newobj->lm_info = xmalloc (sizeof (struct lm_info));
       memcpy (newobj->lm_info, src->lm_info, sizeof (struct lm_info));
 
+      if (newobj->build_id != NULL)
+	{
+	  newobj->build_id = xmalloc (src->build_idsz);
+	  memcpy (newobj->build_id, src->build_id, src->build_idsz);
+	}
+
       newobj->next = NULL;
       *link = newobj;
       link = &newobj->next;
@@ -1135,6 +1171,9 @@ library_list_start_library (struct gdb_xml_parser *parser,
   ULONGEST *lmp = xml_find_attribute (attributes, "lm")->value;
   ULONGEST *l_addrp = xml_find_attribute (attributes, "l_addr")->value;
   ULONGEST *l_ldp = xml_find_attribute (attributes, "l_ld")->value;
+  const struct gdb_xml_value *const att_build_id
+    = xml_find_attribute (attributes, "build-id");
+  const char *const hex_build_id = att_build_id ? att_build_id->value : NULL;
   struct so_list *new_elem;
 
   new_elem = XCNEW (struct so_list);
@@ -1146,6 +1185,27 @@ library_list_start_library (struct gdb_xml_parser *parser,
   strncpy (new_elem->so_name, name, sizeof (new_elem->so_name) - 1);
   new_elem->so_name[sizeof (new_elem->so_name) - 1] = 0;
   strcpy (new_elem->so_original_name, new_elem->so_name);
+
+  if (hex_build_id != NULL)
+    {
+      const size_t hex_build_id_len = strlen (hex_build_id); 
+
+      if (hex_build_id_len > 0)
+	{
+	  new_elem->build_id = xmalloc (hex_build_id_len / 2);
+	  new_elem->build_idsz = hex2bin (hex_build_id, new_elem->build_id,
+					  hex_build_id_len);
+	  if (new_elem->build_idsz != (hex_build_id_len / 2))
+	    {
+	      warning (_("Gdbserver returned invalid hex encoded build_id '%s'"
+			 "(%zu/%zu)\n"),
+		       hex_build_id, hex_build_id_len, new_elem->build_idsz);
+	      xfree (new_elem->build_id);
+	      new_elem->build_id = NULL;
+	      new_elem->build_idsz = 0;
+	    }
+	}
+    }
 
   *list->tailp = new_elem;
   list->tailp = &new_elem->next;
@@ -1180,6 +1240,7 @@ static const struct gdb_xml_attribute svr4_library_attributes[] =
   { "lm", GDB_XML_AF_NONE, gdb_xml_parse_attr_ulongest, NULL },
   { "l_addr", GDB_XML_AF_NONE, gdb_xml_parse_attr_ulongest, NULL },
   { "l_ld", GDB_XML_AF_NONE, gdb_xml_parse_attr_ulongest, NULL },
+  { "build-id", GDB_XML_AF_OPTIONAL, NULL, NULL },
   { NULL, GDB_XML_AF_NONE, NULL, NULL }
 };
 
@@ -1366,6 +1427,36 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
       /* Extract this shared object's name.  */
       target_read_string (newobj->lm_info->l_name, &buffer,
 			  SO_NAME_MAX_PATH_SIZE - 1, &errcode);
+
+#ifdef __QNXTARGET__
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+      /* Always get l_path and stuff it in so_original_name. */
+	{
+	  /* Try l_path */
+	  char *pathbuff = NULL;
+	  int err;
+
+	  target_read_string (newobj->lm_info->l_path, &pathbuff,
+			      PATH_MAX - 1, &err);
+	  if (err == 0 && pathbuff != NULL)
+	    {
+	      if (errcode != 0)
+		{
+		  if (svr4_same_1 (pathbuff, "libc.so.3"))
+		    buffer = xstrdup ("libc.so.3");
+		  else
+		    buffer = xstrdup (lbasename (pathbuff));
+		  errcode = 0;
+		}
+	      strncpy (newobj->so_original_name, pathbuff,
+		       SO_NAME_MAX_PATH_SIZE - 1);
+	    }
+	  xfree (pathbuff);
+	}
+#endif /* __QNXTARGET__ */
+
       if (errcode != 0)
 	{
 	  /* If this entry's l_name address matches that of the
@@ -1381,7 +1472,9 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
 
       strncpy (newobj->so_name, buffer, SO_NAME_MAX_PATH_SIZE - 1);
       newobj->so_name[SO_NAME_MAX_PATH_SIZE - 1] = '\0';
+#ifndef __QNXTARGET__
       strcpy (newobj->so_original_name, newobj->so_name);
+#endif
       xfree (buffer);
 
       /* If this entry has no name, or its name matches the name
@@ -1400,6 +1493,182 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
 
   return 1;
 }
+
+#ifdef __QNXTARGET__
+#define BFD_QNT_LINK_MAP	11
+#define BFD_QNT_LINK_MAP_SEC_NAME ".qnx_link_map"
+
+#define SWAP_UINT(var_ui, byte_order) \
+  extract_unsigned_integer ((gdb_byte *)&var_ui, \
+			    sizeof (var_ui), byte_order);
+
+static struct qnx_link_map_64
+swap_link_map (const gdb_byte *const lm)
+{
+  struct qnx_link_map_64 ret;
+
+  struct link_map_offsets *lmo = nto_generic_svr4_fetch_link_map_offsets ();
+  struct type *ptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
+
+  ret.l_addr = extract_typed_address (&lm[lmo->l_addr_offset],
+                                                    ptr_type);
+  ret.l_name = extract_typed_address (&lm[lmo->l_name_offset],
+                                                    ptr_type);
+  ret.l_ld = extract_typed_address (&lm[lmo->l_ld_offset],
+                                                    ptr_type);
+  ret.l_next = extract_typed_address (&lm[lmo->l_next_offset],
+                                                    ptr_type);
+  ret.l_prev = extract_typed_address (&lm[lmo->l_prev_offset],
+                                                    ptr_type);
+  ret.l_path = extract_typed_address (&lm[lmo->l_path_offset],
+                                                    ptr_type);
+  ret.l_refname = 0; /* unused */
+  ret.l_loaded  = 0; /* unused */
+
+  return ret;
+}
+
+static struct qnx_linkmap_note_header
+swap_header (const struct qnx_linkmap_note_header *const hp)
+{
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+  struct qnx_linkmap_note_header header;
+
+  header.version      = SWAP_UINT (hp->version, byte_order);
+  header.linkmapsz    = SWAP_UINT (hp->linkmapsz, byte_order);
+  header.strtabsz     = SWAP_UINT (hp->strtabsz, byte_order);
+  header.buildidtabsz = SWAP_UINT (hp->buildidtabsz, byte_order);
+  return header;
+}
+
+static struct qnx_linkmap_note_buildid *
+get_buildid_at (const struct qnx_linkmap_note_buildid *const buildidtab,
+                const size_t buildidtabsz, const size_t index)
+{
+    enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+    const struct qnx_linkmap_note_buildid *buildid;
+    size_t n;
+
+    for (n = 0, buildid = buildidtab; (uintptr_t)buildid < (uintptr_t)buildidtab + buildidtabsz; n++) {
+        uint16_t descsz;
+	uint16_t desctype;
+
+	descsz = SWAP_UINT (buildid->descsz, byte_order);
+	desctype = SWAP_UINT (buildid->desctype, byte_order);
+
+        if (index == n) {
+	  struct qnx_linkmap_note_buildid *const ptr
+	    = xcalloc (1, descsz + sizeof (descsz) + sizeof (desctype));
+
+	  ptr->descsz = descsz;
+	  ptr->desctype = desctype;
+	  memcpy (ptr->desc, buildid->desc, descsz);
+	  return ptr;
+	}
+        buildid = (struct qnx_linkmap_note_buildid *)((char *)buildid + sizeof(uint32_t) + descsz);
+    }
+    return NULL;
+}
+
+static struct so_list *
+nto_solist_from_qnx_linkmap_note (void)
+{
+  struct so_list *head = NULL;
+  struct so_list **tailp = NULL;
+  const asection *qnt_link_map_sect;
+  struct qnx_linkmap_note *qlmp;
+  struct qnx_linkmap_note_header header;
+  const char *strtab;
+  const gdb_byte *lmtab;
+  const struct qnx_linkmap_note_buildid *buildidtab;
+  int n;
+  size_t r_debug_sz = IS_64BIT() ? sizeof(struct qnx_r_debug_64) : sizeof(struct qnx_r_debug_32);
+  size_t linkmap_sz = IS_64BIT() ? sizeof(struct qnx_link_map_64) : sizeof(struct qnx_link_map_32);
+
+  if (core_bfd == NULL)
+    return NULL;
+
+  /* Load link map from .qnx_link_map  */
+  qnt_link_map_sect = bfd_get_section_by_name (core_bfd,
+					       BFD_QNT_LINK_MAP_SEC_NAME);
+  if (qnt_link_map_sect == NULL)
+    return NULL;
+
+  qlmp = xmalloc (bfd_get_section_size (qnt_link_map_sect));
+  bfd_get_section_contents (core_bfd, (asection *)qnt_link_map_sect, qlmp, 0,
+			    bfd_get_section_size (qnt_link_map_sect));
+
+  header = swap_header (&qlmp->header);
+
+  strtab = (char *) &qlmp->data[qlmp->header.linkmapsz >> 2];
+  lmtab = (gdb_byte *) &qlmp->data[(r_debug_sz + 3) >> 2];
+  buildidtab = (struct qnx_linkmap_note_buildid *) &qlmp->data
+    [((header.linkmapsz + 3) >> 2) + ((header.strtabsz + 3) >> 2)];
+
+  for (n = 0; (n+1)*linkmap_sz <= header.linkmapsz; n++)
+    {
+      const struct qnx_link_map_64 lm = swap_link_map (lmtab+n*linkmap_sz);
+
+      /* First static exe? */
+      if (lm.l_next == lm.l_prev && lm.l_next == 1U)
+	/* Artificial entry; skip it. */
+	continue;
+
+      if (lm.l_name < header.strtabsz)
+	{
+	  const char *soname = &strtab[lm.l_name];
+	  const char *path = &strtab[lm.l_path];
+	  struct so_list *new_elem;
+	  int compressedpath = 0;
+	  struct qnx_linkmap_note_buildid *bldid;
+
+	  if (lm.l_prev == 0
+	      && (strcmp (soname, "PIE") == 0 || strcmp (soname, "EXE") == 0))
+	    /* Executable entry, skip it. */
+	    continue;
+
+	  new_elem = xzalloc (sizeof (struct so_list));
+	  new_elem->lm_info = xzalloc (sizeof (struct lm_info));
+	  new_elem->lm_info->lm_addr = 0;
+	  new_elem->lm_info->l_addr_p = 1; /* Do not calculate l_addr. */
+	  new_elem->lm_info->l_addr = lm.l_addr;
+	  /* On QNX we always set l_addr to image base address. */
+	  new_elem->lm_info->l_addr_inferior = lm.l_addr;
+	  new_elem->lm_info->l_ld = lm.l_ld;
+
+	  strncpy (new_elem->so_name, soname, sizeof (new_elem->so_name) - 1);
+	  new_elem->so_name [sizeof (new_elem->so_name) - 1] = 0;
+	  compressedpath = path[strlen(path)-1] == '/';
+	  snprintf (new_elem->so_original_name,
+		    sizeof (new_elem->so_original_name),
+		    "%s%s", path, compressedpath ? soname : "");
+
+	  new_elem->addr_low = lm.l_addr;
+	  new_elem->addr_high = lm.l_addr;
+
+	  bldid = get_buildid_at (buildidtab, header.buildidtabsz, n);
+	  if (bldid != NULL && bldid->descsz != 0)
+	    {
+	      new_elem->build_idsz = bldid->descsz;
+	      new_elem->build_id = xcalloc (1, bldid->descsz);
+	      memcpy (new_elem->build_id, bldid->desc, bldid->descsz);
+	      xfree (bldid);
+	    }
+
+	  if (head == NULL)
+	    head = new_elem;
+	  else
+	    *tailp = new_elem;
+	  tailp = &new_elem->next;
+	}
+    }
+
+  xfree (qlmp);
+
+  return head;
+}
+
+#endif /* __QNXTARGET__ */
 
 /* Read the full list of currently loaded shared objects directly
    from the inferior, without referring to any libraries read and
@@ -1434,6 +1703,12 @@ svr4_current_sos_direct (struct svr4_info *info)
       return library_list.head ? library_list.head : svr4_default_sos ();
     }
 
+#ifdef __QNXTARGET__
+  head = nto_solist_from_qnx_linkmap_note ();
+  if (head != NULL)
+    return head;
+#endif
+
   /* Always locate the debug struct, in case it has moved.  */
   info->debug_base = 0;
   locate_base (info);
@@ -1443,12 +1718,16 @@ svr4_current_sos_direct (struct svr4_info *info)
   if (! info->debug_base)
     return svr4_default_sos ();
 
+#ifndef __QNXTARGET__
   /* Assume that everything is a library if the dynamic loader was loaded
      late by a static executable.  */
   if (exec_bfd && bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
     ignore_first = 0;
   else
     ignore_first = 1;
+#else
+    ignore_first = 1;
+#endif /* !__QNXTARGET__ */
 
   back_to = make_cleanup (svr4_free_library_list, &head);
 
@@ -1971,6 +2250,23 @@ svr4_handle_solib_event (void)
   discard_cleanups (old_chain);
 }
 
+#ifdef __QNXTARGET__
+static int
+cmp_host_to_target_word (bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr)
+{
+  unsigned host_word, target_word;
+
+  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0
+      || bfd_bread ((gdb_byte*)&host_word, sizeof (host_word), abfd)
+	 != sizeof (host_word))
+    return -1;
+  if (target_read_memory(target_addr, (gdb_byte*)&target_word,
+			 sizeof (target_word)))
+    return -1;
+  return (host_word-target_word);
+}
+#endif /* __QNXTARGET__ */
+
 /* Helper function for svr4_update_solib_event_breakpoints.  */
 
 static int
@@ -2301,7 +2597,23 @@ enable_break (struct svr4_info *info, int from_tty)
 	{
 	}
       END_CATCH
-
+#ifdef __QNXTARGET__
+      if (tmp_bfd == NULL)
+	{
+	  /* Internal knowledge: */
+	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0)
+	    {
+	      /* We "know" it's libc.so.3 */
+	      tmp_bfd = solib_bfd_open ("libc.so.3");
+	      if (tmp_bfd != NULL)
+		{
+		  /* Change interp name. */
+		  xfree (interp_name);
+		  interp_name = xstrdup ("libc.so.3");
+		}
+	    }
+	}
+#endif
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
 
@@ -2412,6 +2724,41 @@ enable_break (struct svr4_info *info, int from_tty)
 	    break;
 	}
 
+#ifdef __QNXTARGET__
+      if (sym_addr == 0 && load_addr_found)
+	{
+	  CORE_ADDR r_debug_sym_addr;
+	  const struct link_map_offsets *const lmo
+	    = svr4_fetch_link_map_offsets ();
+
+	  /* Unrelocated: */
+	  r_debug_sym_addr = gdb_bfd_lookup_symbol (tmp_bfd,
+						    cmp_name_and_sec_flags,
+						    (void *) "_r_debug");
+	  if (r_debug_sym_addr != 0)
+	    {
+	      gdb_byte r_brk_addr[8];
+              unsigned ptr_bytes = IS_64BIT() ? 8 : 4;
+
+	      if (target_read_memory (load_addr + r_debug_sym_addr + lmo->r_brk_offset,
+				      r_brk_addr, ptr_bytes == 0))
+		{
+		  CORE_ADDR target_r_brk_addr
+		    = extract_unsigned_integer (r_brk_addr, ptr_bytes,
+					gdbarch_byte_order (target_gdbarch ()));
+
+		  /* Is target_r_brk_addr in ldd text segment?
+		     If so, it's relocated already. */
+		  if (target_r_brk_addr >= info->interp_text_sect_low
+		      && target_r_brk_addr < info->interp_text_sect_high)
+		    sym_addr = target_r_brk_addr - load_addr;
+		  else
+		    sym_addr = target_r_brk_addr;
+		}
+	    }
+	}
+#endif /* __QNXTARGET__ */
+
       if (sym_addr != 0)
 	/* Convert 'sym_addr' from a function pointer to an address.
 	   Because we pass tmp_bfd_target instead of the current
@@ -2419,6 +2766,17 @@ enable_break (struct svr4_info *info, int from_tty)
 	sym_addr = gdbarch_convert_from_func_ptr_addr (target_gdbarch (),
 						       sym_addr,
 						       tmp_bfd_target);
+
+#ifdef __QNXTARGET__
+	if (sym_addr != 0
+	    && cmp_host_to_target_word (tmp_bfd, sym_addr,
+					sym_addr+load_addr) != 0)
+	  /* This warning is being parsed by the IDE, the 
+	   * format should not change without consultations with 
+	   * IDE team.  */
+	  warning ("Host file %s does not match target file %s",
+		   interp_name, so ? so->so_original_name : "<?>");
+#endif /* __QNXTARGET__ */
 
       /* We're done with both the temporary bfd and target.  Closing
          the target closes the underlying bfd, because it holds the
@@ -3235,6 +3593,41 @@ elf_lookup_lib_symbol (struct objfile *objfile,
 
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
+
+#ifdef __QNXTARGET__
+CORE_ADDR svr4_fetch_r_debug (void);
+int svr4_r_debug_state (void);
+
+CORE_ADDR
+svr4_fetch_r_debug (void)
+{
+  struct svr4_info *const info = get_svr4_info ();
+
+  return locate_base (info);
+}
+
+/* Fetch state of r_debug structure */
+int svr4_r_debug_state (void)
+{
+  const CORE_ADDR address = svr4_fetch_r_debug ();
+  gdb_byte myaddr[128];
+  unsigned int len = sizeof (myaddr);
+  struct link_map_offsets *lmo = svr4_fetch_link_map_offsets ();
+  unsigned int rt_state;
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+
+  if (!lmo || address == 0)
+    return 1;
+
+  if (target_read_memory (address, myaddr, len))
+    return 1;
+
+  rt_state = extract_unsigned_integer (&myaddr[lmo->r_state_offset],
+				       lmo->r_state_size, byte_order);
+
+  return rt_state;
+}
+#endif /* __QNXTARGET__ */
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 

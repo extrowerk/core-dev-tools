@@ -75,6 +75,16 @@ struct so_list
        There may not be just one (e.g. if two segments are relocated
        differently); but this is only used for "info sharedlibrary".  */
     CORE_ADDR addr_low, addr_high;
+
+    /* Build id in raw format, contains verbatim contents of
+       .note.gnu.build-id note data.  This is actual
+       BUILD_ID which comes either from the remote target via qXfer
+       packet or via reading target memory.  Therefore, it may differ
+       from the build-id of the associated bfd.  In a normal
+       scenario, this so would soon lose its abfd due to failed
+       validation.  */
+    size_t build_idsz;
+    gdb_byte *build_id;
   };
 
 struct target_so_ops
