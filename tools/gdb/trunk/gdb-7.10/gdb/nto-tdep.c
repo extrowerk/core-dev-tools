@@ -392,12 +392,12 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo32.r_version_size = 4;
       lmo32.r_map_offset = 4;
       lmo32.r_brk_offset = 8;
-#ifdef EXTENDED_LINK_MAP
+
       lmo32.r_state_offset = 12;
       lmo32.r_state_size = 4;
       lmo32.r_rdevent_offset = 24;
       lmo32.r_rdevent_size = 4;
-#endif
+
       lmo32.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
 				    show up twice.  */
 
@@ -413,9 +413,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo32.l_next_offset = 12;
 
       lmo32.l_prev_offset = 16;
-#ifdef EXTENDED_LINK_MAP
+
       lmo32.l_path_offset = 28;
-#endif
     }
   if (lmp64 == NULL)
     {
@@ -426,12 +425,12 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo64.r_version_size = 4;
       lmo64.r_map_offset = 8;
       lmo64.r_brk_offset = 16;
-#ifdef EXTENDED_LINK_MAP
+
       lmo64.r_state_offset = 24;
       lmo64.r_state_size = 4;
       lmo64.r_rdevent_offset = 48;
       lmo64.r_rdevent_size = 4;
-#endif
+
       lmo64.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
 				    show up twice.  */
 
@@ -447,9 +446,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo64.l_next_offset = 24;
 
       lmo64.l_prev_offset = 32;
-#ifdef EXTENDED_LINK_MAP
+
       lmo64.l_path_offset = 56;
-#endif
     }
 
   if (IS_64BIT())

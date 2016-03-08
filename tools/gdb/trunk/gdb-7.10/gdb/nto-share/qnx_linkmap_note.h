@@ -105,18 +105,18 @@ struct qnx_linkmap_note_linkmap_64
     struct qnx_link_map_64 r_map[0];
 };
 
-#if __PTR_BITS__ == 32
+#if __SIZEOF_POINTER__ == 4
     /* Native structure. */
 #   define qnx_r_debug              qnx_r_debug_32
 #   define qnx_linkmap_note_linkmap qnx_linkmap_note_linkmap_32
 #   define qnx_link_map             qnx_link_map_32
-#elif __PTR_BITS__ == 64
+#elif __SIZEOF_POINTER__ == 8
     /* Native structure. */
 #   define qnx_r_debug              qnx_r_debug_64
 #   define qnx_linkmap_note_linkmap qnx_linkmap_note_linkmap_64
 #   define qnx_link_map             qnx_link_map_64
 #else
-#error __PTR_BITS__ not setup correctly
+#error Expected value for __SIZEOF_POINTER__
 #endif
 
 enum qnx_linkmap_note_buildid_type
