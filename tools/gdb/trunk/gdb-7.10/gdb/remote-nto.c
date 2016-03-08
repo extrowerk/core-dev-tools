@@ -746,7 +746,7 @@ getpkt (DScomm_t *const recv, const int forever)
   return 0;
 }
 
-void
+static void
 nto_send_init (DScomm_t *const tran, unsigned cmd, const unsigned subcmd, const unsigned chan)
 {
   static unsigned char mid;
@@ -2421,20 +2421,11 @@ nto_store_registers (struct target_ops *ops,
       if (len < 1)
 	continue;
 
-      /* Fetch the regset and copy it to our outgoing data before we fill
-	 it with gdb's registers.  This avoids the possibility of sending
-	 garbage to the remote.  */
-      if (!fetch_regs (regcache, regset, 0))
-	continue;
-
-      memcpy (tran.pkt.regwr.data, recv.pkt.okdata.data,
-	      sizeof (recv.pkt.okdata.data));
-
+      nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
+      tran.pkt.regwr.offset = 0;
       if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data) == -1)
 	continue;
 
-      nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
-      tran.pkt.regwr.offset = 0;
       nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
     }
 }
