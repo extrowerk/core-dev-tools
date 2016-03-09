@@ -93,11 +93,16 @@ function hook_preconfigure {
 	esac
 
 	case ${target} in
-	*nto-qnx*)	
+	*nto-qnx*)
 		configure_opts="${configure_opts} --enable-cheaders=c"
 		configure_opts="${configure_opts} --with-as=${target}-as"
 		configure_opts="${configure_opts} --with-ld=${target}-ld"
-	esac 
+	esac
+
+	case ${target} in
+	*nto-qnx6.[0-9]*)
+		configure_opts="${configure_opts} --with-default-libstdcxx-abi=gcc4-compatible"
+	esac
 
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
 	configure_opts="${configure_opts} --disable-werror"
