@@ -166,8 +166,13 @@ function hook_premake {
 
 function hook_postmake {
 	if [ ${TARGET_SYSNAME} = nto ]; then
-		ldrel -L -S $STACKSIZE gcc/cc1
-		ldrel -L -S $STACKSIZE gcc/cc1plus
+		if which elfnote >/dev/null; then
+			elfnote -L -S $STACKSIZE gcc/cc1
+			elfnote -L -S $STACKSIZE gcc/cc1plus
+		else
+			ldrel -L -S $STACKSIZE gcc/cc1
+			ldrel -L -S $STACKSIZE gcc/cc1plus
+		fi			
 		echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
 		${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
 		# If we are mips weaken the be variant
