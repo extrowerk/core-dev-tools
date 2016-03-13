@@ -178,6 +178,10 @@ struct target_so_ops
        NULL, in which case no specific preprocessing is necessary
        for this target.  */
     void (*handle_event) (void);
+
+    /* Return 0 if SO does not match target SO it is supposed to
+       represent.  Return 1 otherwise.  */
+    int (*validate) (const struct so_list *so);
   };
 
 /* Free the memory associated with a (so_list *).  */

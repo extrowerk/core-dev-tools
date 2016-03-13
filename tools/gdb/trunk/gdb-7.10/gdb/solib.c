@@ -560,6 +560,19 @@ solib_map_sections (struct so_list *so)
     error (_("Shared library file name is too long."));
   strcpy (so->so_name, bfd_get_filename (abfd));
 
+#ifdef __QNXTARGET__
+  gdb_assert (ops->validate != NULL);
+
+  if (ops->validate != NULL && !ops->validate (so))
+    {
+      warning (_("Shared object \"%s\" could not be validated "
+		 "and will be ignored."), so->so_name);
+      gdb_bfd_unref (so->abfd);
+      so->abfd = NULL;
+      return 0;
+    }
+#endif /* __QNXTARGET__ */
+
   if (build_section_table (abfd, &so->sections, &so->sections_end))
     {
       error (_("Can't find the file sections in `%s': %s"),
@@ -1062,6 +1075,22 @@ info_sharedlibrary_command (char *pattern, int from_tty)
   struct cleanup *table_cleanup;
   struct gdbarch *gdbarch = target_gdbarch ();
   struct ui_out *uiout = current_uiout;
+#ifdef __QNXTARGET__
+  int verbose = 0;
+
+  if (pattern)
+    {
+      /* Check if there are options */
+      if (strstr(pattern, "-v") == pattern) {
+	verbose = 1;
+	pattern = pattern + strlen ("-v");
+	while (*pattern == ' ' || *pattern == '\t')
+	  pattern++;
+	if (*pattern == '\0')
+	  pattern = NULL;
+      }
+    }
+#endif
 
   if (pattern)
     {
@@ -1105,6 +1134,9 @@ info_sharedlibrary_command (char *pattern, int from_tty)
   for (so = so_list_head; so; so = so->next)
     {
       struct cleanup *lib_cleanup;
+#ifdef __QNXTARGET__
+      char buff[SO_NAME_MAX_PATH_SIZE * 2 + 100];
+#endif
 
       if (! so->so_name[0])
 	continue;
@@ -1135,6 +1167,15 @@ info_sharedlibrary_command (char *pattern, int from_tty)
 	ui_out_field_string (uiout, "syms-read", 
 			     so->symbols_loaded ? "Yes" : "No");
 
+#ifdef __QNXTARGET__
+      if (verbose)
+	{
+	  snprintf (buff, sizeof (buff), "%s (%s)", so->so_name,
+		    so->so_original_name);
+	  ui_out_field_string (uiout, "name", buff);
+	}
+      else
+#endif /* __QNXTARGET__ */
       ui_out_field_string (uiout, "name", so->so_name);
 
       ui_out_text (uiout, "\n");
