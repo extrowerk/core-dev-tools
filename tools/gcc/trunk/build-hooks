@@ -52,7 +52,6 @@ function hook_preconfigure {
 		basedir=${QNX_HOST}/usr
 		;;
 	linux)
-		configure_opts="${configure_opts} --build=i686-pc-linux-gnu"
 		case "${host_target}" in
 			win32-*) 	
 			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
@@ -157,17 +156,6 @@ function hook_preconfigure {
 			op ln -sP ${USE_ROOT_nto}/usr/include ${basedir}/${target}/include
 		fi
 	fi
-
-	# Pick up deps from the local stage, if it exists.
-	case ${TARGET_SYSNAME} in
-		nto*) LOCAL_ROOT=${INSTALL_ROOT_nto} ;;
-		linux*) LOCAL_ROOT=${INSTALL_ROOT_linux} ;;
-		win32*) LOCAL_ROOT=${INSTALL_ROOT_win32} ;;
-		win64*) LOCAL_ROOT=${INSTALL_ROOT_win64} ;;
-		darwin*) LOCAL_ROOT=${INSTALL_ROOT_darwin} ;;
-	esac
-	export CPPFLAGS="${CPPFLAGS} -I${LOCAL_ROOT}/${cpudir%-*}/usr/include"
-	export LDFLAGS="${LDFLAGS} -L${LOCAL_ROOT}/${cpudir%-*}/usr/lib"
 }
 
 function hook_premake {
