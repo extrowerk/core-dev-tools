@@ -63,19 +63,19 @@ unset gmp_lib_path GMP_CFLAGS GMP_CC
 AC_ARG_WITH(gmp_include,
    [  --with-gmp-include=DIR  GMP include directory ],
    MPFR_PARSE_DIRECTORY(["$withval"],[withval])
-   CPPFLAGS="$CPPFLAGS -I$withval")
+   MPFR_CPPFLAGS="$MPFR_CPPFLAGS -I$withval")
 AC_ARG_WITH(gmp_lib,
    [  --with-gmp-lib=DIR      GMP lib directory ], [
    MPFR_PARSE_DIRECTORY(["$withval"],[withval])
-   LDFLAGS="$LDFLAGS -L$withval"
+   MPFR_LDFLAGS="$MPFR_LDFLAGS -L$withval"
    gmp_lib_path="$withval"
   ])
 AC_ARG_WITH(gmp,
    [  --with-gmp=DIR          GMP install directory ], [
    MPFR_PARSE_DIRECTORY(["$withval"],[withval])
    if test -z "$with_gmp_lib" && test -z "$with_gmp_include" ; then
-      CPPFLAGS="$CPPFLAGS -I$withval/include"
-      LDFLAGS="$LDFLAGS -L$withval/lib"
+      MPFR_CPPFLAGS="$MPFR_CPPFLAGS -I$withval/include"
+      MPFR_LDFLAGS="$MPFR_LDFLAGS -L$withval/lib"
       gmp_lib_path="$withval/lib"
    else
       AC_MSG_FAILURE([Do not use --with-gmp and --with-gmp-include/--with-gmp-lib options simultaneously.])
@@ -87,8 +87,8 @@ AC_ARG_WITH(gmp_build,
    [
    MPFR_PARSE_DIRECTORY(["$withval"],[withval])
    if test -z "$gmp_lib_path" && test -z "$with_gmp_include" ; then
-      CPPFLAGS="$CPPFLAGS -I$withval -I$withval/tune"
-      LDFLAGS="$LDFLAGS -L$withval -L$withval/.libs -L$withval/tune"
+      MPFR_CPPFLAGS="$MPFR_CPPFLAGS -I$withval -I$withval/tune"
+      MPFR_LDFLAGS="$MPFR_LDFLAGS -L$withval -L$withval/.libs -L$withval/tune"
       gmp_lib_path="$withval$PATH_SEPARATOR$withval/.libs$PATH_SEPARATOR$withval/tune"
       if test -r $withval/Makefile ; then
          GMP_CFLAGS=`$SED -n 's/^CFLAGS = //p' $withval/Makefile`
@@ -100,7 +100,7 @@ AC_ARG_WITH(gmp_build,
            ?*) GMP_SOURCE="$withval/$GMP_SOURCE" ;;
          esac
          if test -d "$GMP_SOURCE" ; then
-            CPPFLAGS="$CPPFLAGS -I$GMP_SOURCE -I$GMP_SOURCE/tune"
+            MPFR_CPPFLAGS="$MPFR_CPPFLAGS -I$GMP_SOURCE -I$GMP_SOURCE/tune"
          fi
       fi
       use_gmp_build=yes
@@ -166,6 +166,11 @@ AC_ARG_ENABLE(tests-timeout,
       *)    AC_MSG_ERROR([bad value for --enable-tests-timeout]) ;;
      esac])
 
+
+OLD_LDLFAGS=$LDFLAGS
+LDFLAGS="$MPFR_LDFLAGS $LDFLAGS"
+OLD_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="$MPFR_CPPFLAGS $CPPFLAGS"
 
 dnl
 dnl Setup CC and CFLAGS
@@ -410,6 +415,7 @@ dnl
 dnl Incidentally, libtool does generate an import library libmpfr.dll.a,
 dnl but it's "ar" format and cannot be used by the MS linker.  There
 dnl doesn't seem to be any GNU tool for generating or converting to .lib.
+AC_SUBST(MPFR_CPPFLAGS)
 AC_SUBST(MPFR_LDFLAGS)
 AC_SUBST(LIBMPFR_LDFLAGS)
 LT_INIT(win32-dll)
@@ -572,7 +578,9 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([[
     AC_MSG_WARN([CC="$CC"])
     AC_MSG_WARN([CFLAGS="$CFLAGS"])
     AC_MSG_WARN([CPPFLAGS="$CPPFLAGS"])
+    AC_MSG_WARN([MPFR_CPPFLAGS="$MPFR_CPPFLAGS"])
     AC_MSG_WARN([LDFLAGS="$LDFLAGS"])
+    AC_MSG_WARN([MPFR_LDFLAGS="$MPFR_LDFLAGS"])
     AC_MSG_WARN([LIBS="$LIBS"])
     AC_MSG_WARN([Temporary LD_RUN_PATH was "$LD_RUN_PATH".])
     AC_MSG_WARN([==========================================================])
@@ -594,6 +602,9 @@ AC_CHECK_FUNCS([__gmpn_rootrem __gmpn_sbpi1_divappr_q])
 
 dnl End of tests which need to link with GMP.
 fi
+
+CPPFLAGS=$OLD_CPPFLAGS
+LDFLAGS=$OLD_LDFLAGS
 
 dnl Remove also many MACROS (AC_DEFINE) which are unused by MPFR
 dnl and polluate (and slow down because libtool has to parse them) the build.

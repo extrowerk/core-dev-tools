@@ -57,6 +57,7 @@ buildopt.c digamma.c bernoulli.c isregular.c set_flt.c get_flt.c	\
 scale2.c set_z_exp.c ai.c gammaonethird.c ieee_floats.h			\
 grandom.c
 
+libmpfr_la_CPPFLAGS = $(MPFR_CPPFLAGS)
 libmpfr_la_LIBADD = @LIBOBJS@
 
 # Libtool -version-info CURRENT[:REVISION[:AGE]] for libmpfr.la

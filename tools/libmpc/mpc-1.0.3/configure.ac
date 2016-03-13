@@ -38,18 +38,18 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_ARG_WITH([mpfr_include],
             [AC_HELP_STRING([--with-mpfr-include=DIR],
                             [MPFR include directory])],
-            [CPPFLAGS="-I$withval $CPPFLAGS"])
+            [MPC_CPPFLAGS="-I$withval $MPC_CPPFLAGS"])
 AC_ARG_WITH([mpfr_lib],
             [AC_HELP_STRING([--with-mpfr-lib=DIR],
                             [MPFR lib directory])],
-            [LDFLAGS="-L$withval $LDFLAGS"])
+            [MPC_LDFLAGS="-L$withval $MPC_LDFLAGS"])
 AC_ARG_WITH([mpfr],
             [AC_HELP_STRING([--with-mpfr=DIR],
                            [MPFR install directory])],
             [
             if test -z "$with_mpfr_include" -a -z "$with_mpfr_lib" ; then
-               CPPFLAGS="-I$withval/include $CPPFLAGS"
-               LDFLAGS="-L$withval/lib $LDFLAGS"
+               MPC_CPPFLAGS="-I$withval/include $MPC_CPPFLAGS"
+               MPC_LDFLAGS="-L$withval/lib $MPC_LDFLAGS"
             else
                AC_MSG_FAILURE([Do not use --with-mpfr and --with-mpfr-include/--with-mpfr-lib options simultaneously.])
             fi
@@ -57,18 +57,18 @@ AC_ARG_WITH([mpfr],
 AC_ARG_WITH([gmp_include],
             [AC_HELP_STRING([--with-gmp-include=DIR],
                             [GMP include directory])],
-            [CPPFLAGS="-I$withval $CPPFLAGS"])
+            [MPC_CPPFLAGS="-I$withval $MPC_CPPFLAGS"])
 AC_ARG_WITH([gmp_lib],
             [AC_HELP_STRING([--with-gmp-lib=DIR],
                             [GMP lib directory])],
-            [LDFLAGS="-L$withval $LDFLAGS"])
+            [MPC_LDFLAGS="-L$withval $MPC_LDFLAGS"])
 AC_ARG_WITH([gmp],
             [AC_HELP_STRING([--with-gmp=DIR],
                            [GMP install directory])],
             [
             if test -z "$with_gmp_lib" -a -z "$with_gmp_include" ; then
-               CPPFLAGS="-I$withval/include $CPPFLAGS"
-               LDFLAGS="-L$withval/lib $LDFLAGS"
+               MPC_CPPFLAGS="-I$withval/include $MPC_CPPFLAGS"
+               MPC_LDFLAGS="-L$withval/lib $MPC_LDFLAGS"
             else
                AC_MSG_FAILURE([Do not use --with-gmp and --with-gmp-include/--with-gmp-lib options simultaneously.])
             fi
@@ -113,6 +113,11 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # Set up LibTool
 LT_INIT
+
+OLD_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="$MPC_CPPFLAGS $CPPFLAGS"
+OLD_LDFLAGS=$LDFLAGS
+LDFLAGS="$MPC_LDFLAGS $LDFLAGS"
 
 # Check GMP Header
 AC_MSG_CHECKING(for gmp.h)
@@ -221,8 +226,13 @@ AS_IF([test "x$enable_logging" = "xyes"],
        ]
      )
 
-# Configs for Windows DLLs
+LDFLAGS=$OLD_LDFLAGS
+CPPFLAGS=$OLD_CPPFLAGS
+
 AC_SUBST(MPC_LDFLAGS)
+AC_SUBST(MPC_CPPFLAGS)
+
+# Configs for Windows DLLs
 AC_LIBTOOL_WIN32_DLL
 case $host in
   *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2*)
