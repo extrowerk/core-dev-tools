@@ -64,7 +64,8 @@ function hook_preconfigure {
 			sysroot=/c/${qnx_target}/target/qnx7
                 ;;
                 darwin*)
-                        execdir=/host/darwin/${cpu}/usr
+			execdir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
+			sysroot=/Developer/SDKs/${qnx_target}/target/qnx7
                 ;;
 		esac
 	;;
