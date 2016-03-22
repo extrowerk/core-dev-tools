@@ -59,9 +59,22 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef LIBCPP
 #define LIBCPP "cpp"
 #endif
+#ifndef LIBCPP_STATIC
+#define LIBCPP_STATIC NULL
+#endif
 
 #ifndef LIBCPP_NE
 #define LIBCPP_NE "cpp-ne"
+#endif
+#ifndef LIBCPP_NE_STATIC
+#define LIBCPP_NE_STATIC NULL
+#endif
+
+#ifndef LIBCXX
+#define LIBCXX "c++"
+#endif
+#ifndef LIBCXX_STATIC
+#define LIBCXX_STATIC NULL
 #endif
 
 void
@@ -81,12 +94,11 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
      2  means libstdc++ is needed and should be linked statically.  */
   int library = 0;
 
-  /* What do with libcpp:
-     -1  means we should not link in libcpp if it is needed
-     0  means we should link in libcpp if it is needed
-     1  means libcpp is needed and should be linked in.
-     2  means libcpp-ne is needed and should be linked statically.  */
-  int library_cpp = 0;
+  /* What C++ library to link against  */
+  const char *library_cpp = NULL;
+
+  /* What support library is needed when statically linking  */
+  const char *library_cpp_static = LIBSTDCXX_STATIC;
 
   /* The number of arguments being added to what's in argv, other than
      libraries.  We use this to track the number of times we've inserted
@@ -222,13 +234,21 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 	  library = library >= 0 ? 2 : library;
 	  args[i] |= SKIPOPT;
 	  break;
+	case OPT_stdlib_libstdc__:
+	  library_cpp = NULL; /* use default */
+	  library_cpp_static = LIBSTDCXX_STATIC;
+	  break;
 	case OPT_stdlib_libcpp:
-	  library = -1;
-	  library_cpp = 1;
+	  library_cpp = LIBCPP;
+	  library_cpp_static = LIBCPP_STATIC;
 	  break;
 	case OPT_stdlib_libcpp_ne:
-	  library = -1;
-	  library_cpp = 2;
+	  library_cpp = LIBCPP_NE;
+	  library_cpp_static = LIBCPP_NE_STATIC;
+	  break;
+	case OPT_stdlib_libc__:
+	  library_cpp = LIBCXX;
+	  library_cpp_static = LIBCXX_STATIC;
 	  break;
 	case OPT_SPECIAL_input_file:
 	  {
@@ -365,15 +385,25 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 	  j++;
 	}
 #endif
-      generate_option (OPT_l,
-		       saw_profile_flag ? LIBSTDCXX_PROFILE : LIBSTDCXX, 1,
-		       CL_DRIVER, &new_decoded_options[j]);
-      added_libraries++;
-      j++;
-      /* Add target-dependent static library, if necessary.  */
-      if ((static_link || library > 1) && LIBSTDCXX_STATIC != NULL)
+      if (library_cpp == NULL)
 	{
-	  generate_option (OPT_l, LIBSTDCXX_STATIC, 1,
+	  generate_option (OPT_l,
+			   saw_profile_flag ? LIBSTDCXX_PROFILE : LIBSTDCXX, 1,
+			   CL_DRIVER, &new_decoded_options[j]);
+	  added_libraries++;
+	  j++;
+	}
+      else
+	{
+	  generate_option (OPT_l, library_cpp, 1,
+			   CL_DRIVER, &new_decoded_options[j]);
+	  added_libraries++;
+	  j++;
+	}
+      /* Add target-dependent static library, if necessary.  */
+      if ((static_link || library > 1) && library_cpp_static != NULL)
+	{
+	  generate_option (OPT_l, library_cpp_static, 1,
 			   CL_DRIVER, &new_decoded_options[j]);
 	  added_libraries++;
 	  j++;
@@ -386,14 +416,6 @@ lang_specific_driver (struct cl_decoded_option **in_decoded_options,
 	  j++;
 	}
 #endif
-    }
-  if (library_cpp > 0)
-    {
-      generate_option (OPT_l,
-		       library_cpp > 1 ? LIBCPP_NE : LIBCPP, 1,
-		       CL_DRIVER, &new_decoded_options[j]);
-      added_libraries++;
-      j++;
     }
   if (saw_math)
     new_decoded_options[j++] = *saw_math;

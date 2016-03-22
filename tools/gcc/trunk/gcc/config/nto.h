@@ -55,10 +55,15 @@ CPP_SPEC \
  -isystem %$QNX_TARGET/usr/include/cpp \
 } \
 %{stdlib=libcpp-ne: -D_NO_EX } \
-%{!stdlib=libcpp*: \
+%{stdlib=libc++: \
+ -isystem %$QNX_TARGET/usr/include/c++/v1 \
+} \
+%{!stdlib=libcpp*:%{!stdlib=libc++: \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
- -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward } }" 
+ -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
+}} \
+}" 
 
 /* Don't assume anything about the header files.  */
 #undef NO_IMPLICIT_EXTERN_C
@@ -139,3 +144,7 @@ do {                                            \
 #if defined(HAVE_LD_EH_FRAME_HDR)
 #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
 #endif
+
+/* Static libcpp/libcpp-ne need to link with libcxa */
+#define LIBCPP_STATIC "cxa"
+#define LIBCPP_NE_STATIC "cxa"
