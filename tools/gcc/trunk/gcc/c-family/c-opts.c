@@ -591,6 +591,7 @@ c_common_handle_option (size_t scode, const char *arg, int value,
 
     case OPT_stdlib_libcpp:
     case OPT_stdlib_libcpp_ne:
+    case OPT_stdlib_libc__:
     case OPT_nostdinc__:
       std_cxx_inc = false;
       break;

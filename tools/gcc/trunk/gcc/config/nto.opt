@@ -48,15 +48,19 @@ rpath=
 Driver JoinedOrMissing
 
 stdlib=libcpp
-C++ 
+C++
 Use Dinkumware C++ library
 
 stdlib=libcpp-ne
-C++ 
+C++
 Use Dinkumware C++ library with no exceptions
 
 stdlib=libstdc++
-C++ 
-Use GNU libstdc++ library 
+C++
+Use GNU libstdc++ library
+
+stdlib=libc++
+C++
+Use LLVM libc++ library
 
 ; This comment is to ensure we retain the blank line above.
