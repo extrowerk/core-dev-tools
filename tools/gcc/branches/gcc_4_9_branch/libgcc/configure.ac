@@ -340,7 +340,10 @@ AC_CACHE_CHECK([for __attribute__((visibility("hidden")))],
     ])
 
 if test $libgcc_cv_hidden_visibility_attribute = yes; then
-    vis_hide='-fvisibility=hidden -DHIDE_EXPORTS'
+    case ${host} in
+    *qnx6.[[0-9]]*) vis_hide= ;;
+    *) vis_hide='-fvisibility=hidden -DHIDE_EXPORTS' ;;
+    esac
 else
     vis_hide=
 fi

@@ -3836,7 +3836,10 @@ fi
 $as_echo "$libgcc_cv_hidden_visibility_attribute" >&6; }
 
 if test $libgcc_cv_hidden_visibility_attribute = yes; then
-    vis_hide='-fvisibility=hidden -DHIDE_EXPORTS'
+    case ${host} in
+    *qnx6.[0-9]*) vis_hide= ;;
+    *) vis_hide='-fvisibility=hidden -DHIDE_EXPORTS' ;;
+    esac
 else
     vis_hide=
 fi
