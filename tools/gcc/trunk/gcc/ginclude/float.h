@@ -123,9 +123,21 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define LDBL_MIN	__LDBL_MIN__
 
 /* Addition rounds to 0: zero, 1: nearest, 2: +inf, 3: -inf, -1: unknown.  */
+#if defined(__QNXNTO__)
+#if defined(__cplusplus)
+extern "C" {
+#endif
+int _Fltrounds(void);
+#if defined(__cplusplus)
+}
+#endif
+#undef FLT_ROUNDS
+#define FLT_ROUNDS	(_Fltrounds())
+#else
 /* ??? This is supposed to change with calls to fesetround in <fenv.h>.  */
 #undef FLT_ROUNDS
 #define FLT_ROUNDS 1
+#endif
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 /* The floating-point expression evaluation method.
