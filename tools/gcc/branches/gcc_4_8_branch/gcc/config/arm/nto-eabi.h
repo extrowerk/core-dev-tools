@@ -125,3 +125,8 @@ do {                                            \
 #define DEFAULT_STRUCTURE_SIZE_BOUNDARY 8
 
 #define USE_OLD_ATBASE
+
+#define SUBTARGET_OVERRIDE_OPTIONS		\
+	NTO_OVERRIDE_ALIGNED_ACCESS
+
+#define NTO_OVERRIDE_ALIGNED_ACCESS
