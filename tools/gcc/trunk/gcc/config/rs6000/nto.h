@@ -148,7 +148,7 @@ QNX_SYSTEM_INCLUDES \
 "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef	LIBGCC_SPEC
-#define	LIBGCC_SPEC "libgcc.a%s"
+#define	LIBGCC_SPEC "-lgcc"
 
 #undef BOOL_TYPE_SIZE
 #define BOOL_TYPE_SIZE POINTER_SIZE
