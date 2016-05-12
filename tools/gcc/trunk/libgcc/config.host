@@ -338,7 +338,7 @@ aarch64*-*-linux*)
 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
 	;;
 aarch64*-*-qnx*)
-	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
+	tmake_file="${tmake_file} ${cpu_type}/t-aarch64 t-eh-dw2-dip"
 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp"
 	;;
 alpha*-*-linux*)
