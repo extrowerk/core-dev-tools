@@ -100,6 +100,15 @@ function hook_preconfigure {
 	esac
 
 	case ${target} in
+	*nto-qnx6.[0-5]*)
+		configure_opts="${configure_opts} --enable-gnu-indirect-function=no"
+		;;
+	*)
+		configure_opts="${configure_opts} --enable-gnu-indirect-function=yes"
+		;;
+	esac
+
+	case ${target} in
 	*nto-qnx6.[0-9]*)
 		configure_opts="${configure_opts} --with-default-libstdcxx-abi=gcc4-compatible"
 	esac
@@ -124,7 +133,6 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-shared"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
-	configure_opts="${configure_opts} --enable-gnu-indirect-function"
 	#configure_opts="${configure_opts} --enable-stack-protector"
 
 	case ${cpu_string} in
