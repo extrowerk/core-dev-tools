@@ -814,8 +814,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Deal with our strange signals.  */
   nto_initialize_signals ();
 
-  set_solib_svr4_fetch_link_map_offsets (gdbarch,
-					 svr4_ilp32_fetch_link_map_offsets);
+  set_solib_svr4_fetch_link_map_offsets
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Our loader handles solib relocations slightly differently than svr4.  */
   svr4_so_ops.relocate_section_addresses = nto_relocate_section_addresses;
