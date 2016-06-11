@@ -46,6 +46,18 @@ do { \
 -isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
 -isysroot %$QNX_TARGET/}"
 
+#define DEFAULT_STDLIB_SPEC "|!stdlib=*"
+#if DEFAULT_STDLIB_LIBSTDCXX
+#define NTO_EXTRA_LIBSTDCXX_SPEC DEFAULT_STDLIB_SPEC
+#define NTO_EXTRA_LIBCXX_SPEC ""
+#elif DEFAULT_STDLIB_LIBCXX
+#define NTO_EXTRA_LIBCXX_SPEC DEFAULT_STDLIB_SPEC
+#define NTO_EXTRA_LIBSTDCXX_SPEC ""
+#else
+#define NTO_EXTRA_LIBSTDCXX_SPEC ""
+#define NTO_EXTRA_LIBCXX_SPEC ""
+#endif
+
 #undef CPLUSPLUS_CPP_SPEC
 #define CPLUSPLUS_CPP_SPEC \
 CPP_SPEC \
@@ -55,14 +67,14 @@ CPP_SPEC \
  -isystem %$QNX_TARGET/usr/include/cpp \
 } \
 %{stdlib=libcpp-ne: -D_NO_EX } \
-%{stdlib=libc++: \
+%{stdlib=libc++" NTO_EXTRA_LIBCXX_SPEC ": \
  -isystem %$QNX_TARGET/usr/include/c++/v1 \
 } \
-%{!stdlib=libcpp*:%{!stdlib=libc++: \
+%{stdlib=libstdc++" NTO_EXTRA_LIBSTDCXX_SPEC ": \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3 \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/" DEFAULT_TARGET_MACHINE " \
  -isystem %$QNX_TARGET/usr/include/c++/%v1.%v2.%v3/backward \
-}} \
+} \
 }" 
 
 /* Don't assume anything about the header files.  */
@@ -145,6 +157,17 @@ do {                                            \
 #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
 #endif
 
-/* Static libcpp/libcpp-ne need to link with libcxa */
-#define LIBCPP_STATIC "cxa"
-#define LIBCPP_NE_STATIC "cxa"
+/* Remove the default C++ headers so we can select via -stdlib */
+#undef GPLUSPLUS_INCLUDE_DIR
+#undef GPLUSPLUS_TOOL_INCLUDE_DIR
+#undef GPLUSPLUS_BACKWARD_INCLUDE_DIR
+
+/* Define LIBSTDCXX so we can select the implementation baded on -stdlib */
+extern const char *nto_select_libstdcxx(void);
+#define LIBSTDCXX nto_select_libstdcxx()
+#define LIBSTDCXX_PROFILE LIBSTDCXX
+extern const char *nto_select_libstdcxx_static(void);
+#define LIBSTDCXX_STATIC nto_select_libstdcxx_static()
+
+extern void nto_handle_cxx_option (size_t code, const char *arg);
+#define TARGET_HANDLE_CXX_OPTION nto_handle_cxx_option
