@@ -96,11 +96,14 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --enable-cheaders=c"
 		configure_opts="${configure_opts} --with-as=${target}-as"
 		configure_opts="${configure_opts} --with-ld=${target}-ld"
+		;;
 	esac
 
 	case ${target} in
 	*nto-qnx6.[0-9]*)
-		configure_opts="${configure_opts} --with-default-libstdcxx-abi=gcc4-compatible"
+		configure_opts="${configure_opts} --with-default-libstdcxx-abi=gcc4-compatible" ;;
+	*)
+		configure_opts="${configure_opts} --enable-cxx-flags=-nostdinc++" ;;
 	esac
 
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
