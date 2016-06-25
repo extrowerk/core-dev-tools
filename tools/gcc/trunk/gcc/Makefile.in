@@ -850,7 +850,7 @@ BUGURL_TEXI := @REPORT_BUGS_TEXI@
 
 ifdef REVISION_c
 REVISION_s  := \
-  "\"$(if $(DEVPHASE_c)$(filter-out 0,$(PATCHLEVEL_c)), $(REVISION_c))\""
+  "\"$(if $(DEVPHASE_c)$(filter-out 0,$(PATCHLEVEL_c))$(findstring qnx,$(target)), $(REVISION_c))\""
 else
 REVISION_s  := "\"\""
 endif
