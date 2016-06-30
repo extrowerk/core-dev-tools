@@ -1061,6 +1061,11 @@ arm*-*-nto-qnx*eabi*)
 	tm_file="$tm_file nto.h arm/bpabi.h arm/nto-eabi.h arm/arm.h"
 	tmake_file="${tmake_file} arm/t-arm arm/t-nto arm/t-bpabi"
 	extra_options="${extra_options} arm/nto.opt"
+	case ${target} in
+	*-qnx6.[0-5].*)
+		tm_file="$tm_file arm/nto-aligned.h"
+		;;
+	esac
 	case x${enable_threads} in
 	x | xyes | xpthreads | xposix)
 		thread_file='posix'
