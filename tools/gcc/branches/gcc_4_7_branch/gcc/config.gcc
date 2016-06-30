@@ -865,6 +865,11 @@ arm*-*-nto-qnx*)
 		tm_file="$tm_file arm/arm.h nto.h arm/nto.h"
 	    ;;
 	esac
+	case ${target} in
+	*-qnx6.[0-5].*)
+		tm_file="$tm_file arm/nto-aligned.h"
+		;;
+	esac
         case x${enable_threads} in
         x | xyes | xpthreads | xposix)
                 thread_file='posix'
