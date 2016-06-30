@@ -4979,6 +4979,7 @@ rs6000_file_start (void)
       switch_to_section (text_section);
     }
 
+#if 0 /* QNXNTO: this currently breaks options like -mcpu=405 */
 #ifdef USING_ELFOS_H
   if (rs6000_default_cpu == 0 || rs6000_default_cpu[0] == '\0'
       || !global_options_set.x_rs6000_cpu_index)
@@ -4999,6 +5000,7 @@ rs6000_file_start (void)
       else
 	fputs ("ppc\n", asm_out_file);
     }
+#endif
 #endif
 }
 
