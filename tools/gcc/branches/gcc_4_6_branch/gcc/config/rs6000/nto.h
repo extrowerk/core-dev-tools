@@ -143,7 +143,7 @@ QNX_SYSTEM_LIBDIRS \
 "%{!symbolic: -lc -Bstatic %{!shared: -lc} %{shared:-lcS}}"
 
 #undef	LIBGCC_SPEC
-#define	LIBGCC_SPEC "libgcc.a%s"
+#define	LIBGCC_SPEC "-lgcc"
 
 #undef BOOL_TYPE_SIZE
 #define BOOL_TYPE_SIZE POINTER_SIZE
