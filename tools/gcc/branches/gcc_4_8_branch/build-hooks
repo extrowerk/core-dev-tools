@@ -95,6 +95,15 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --with-ld=${target}-ld"
 	esac 
 
+	case ${target} in
+	*nto-qnx6.[0-5]*)
+		configure_opts="${configure_opts} --enable-gnu-indirect-function=no"
+		;;
+	*)
+		configure_opts="${configure_opts} --enable-gnu-indirect-function=yes"
+		;;
+	esac
+
 	configure_opts="${configure_opts} --with-sysroot=$QNX_TARGET/"
 	configure_opts="${configure_opts} --disable-werror"
  	configure_opts="${configure_opts} --libdir=${basedir}/lib"
@@ -116,7 +125,6 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-shared"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
-	configure_opts="${configure_opts} --enable-gnu-indirect-function"
 	configure_opts="${configure_opts} --enable-stack-protector"
 
 	case ${cpu_string} in
