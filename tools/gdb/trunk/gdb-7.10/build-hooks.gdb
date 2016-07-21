@@ -237,7 +237,7 @@ function hook_preconfigure {
 	  if [ "${OFFICIAL_BUILD}" != "" ]; then
 		# For official builds, we provide python install for building
 		with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
-		LDFLAGS="${LDFLAGS} -Wl,-rpath=_ORIGIN/../python27/lib"
+		LDFLAGS="${LDFLAGS} -Wl,-rpath=_ORIGIN/../python27/lib:_ORIGIN/../lib"
 	  else
 		# Let configure decide; if there is python available, then
 		# it will use it.
@@ -360,7 +360,7 @@ function hook_postmake {
       if [ "${OFFICIAL_BUILD}" != "" ]; then
 	# Build machine must have chrpath and make it
 	# available in $PATH
-	chrpath -r \$ORIGIN/../python27/lib gdb/gdb
+	chrpath -r \$ORIGIN/../python27/lib:\$ORIGIN/../lib gdb/gdb
       fi
       ;;
   esac
