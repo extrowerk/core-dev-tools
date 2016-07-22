@@ -37,7 +37,7 @@ darwin*)
 	py_libs="-L${python_root}/lib -lpython${python_ver}"
 	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
 	# This is needed to automatically setup PYTHONHOME env. var.
-	py_exec_prefix="${python_root}"
+	py_exec_prefix="${prefix}"
 	;;
 linux*)
 	gdb_prereq_dir=${PWD}/../../../gdb-prereq/linux/${PYTHON_CPU}
@@ -49,7 +49,7 @@ linux*)
 	py_libs="-L${python_root}/lib -lpython${python_ver}"
 	# py_exec_prefix sets up WITH_PYTHON_PATH in config.h
 	# This is needed to automatically setup PYTHONHOME env. var.
-	py_exec_prefix="${prefix}/python27"
+	py_exec_prefix="${prefix}"
 	;;
 *)
 	echo "Not configured for python"
