@@ -1,5 +1,5 @@
 /* Support for the generic parts of most COFF variants, for BFD.
-   Copyright (C) 1990-2014 Free Software Foundation, Inc.
+   Copyright (C) 1990-2015 Free Software Foundation, Inc.
    Written by Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -966,7 +966,7 @@ handle_COMDAT (bfd * abfd,
 	  /* All 3 branches use this.  */
 	  symname = _bfd_coff_internal_syment_name (abfd, &isym, buf);
 
-	  /* PR 17512 file: 078-11867-0.004  */ 
+	  /* PR 17512 file: 078-11867-0.004  */
 	  if (symname == NULL)
 	    {
 	      _bfd_error_handler (_("%B: unable to load COMDAT section name"), abfd);
@@ -1355,6 +1355,10 @@ CODE_FRAGMENT
 .  {* PE section symbol.  *}
 .  COFF_SYMBOL_PE_SECTION
 .};
+.
+.typedef asection * (*coff_gc_mark_hook_fn)
+.  (asection *, struct bfd_link_info *, struct internal_reloc *,
+.   struct coff_link_hash_entry *, struct internal_syment *);
 .
 Special entry points for gdb to swap in coff symbol table parts:
 .typedef struct
@@ -3206,7 +3210,7 @@ coff_compute_section_file_positions (bfd * abfd)
 	{
 	  coff_symbol_type *cf;
 
-	  cf = coff_symbol_from (abfd, *symp);
+	  cf = coff_symbol_from (*symp);
 	  if (cf != NULL
 	      && cf->native != NULL
 	      && cf->native->is_sym
@@ -3904,7 +3908,7 @@ coff_write_object_contents (bfd * abfd)
 	      /* See if this is the section symbol.  */
 	      if (strcmp ((*psym)->name, current->name) == 0)
 		{
-		  csym = coff_symbol_from (abfd, *psym);
+		  csym = coff_symbol_from (*psym);
 		  if (csym == NULL
 		      || csym->native == NULL
 		      || ! csym->native->is_sym
@@ -4075,6 +4079,8 @@ coff_write_object_contents (bfd * abfd)
   if (bfd_get_section_by_name (abfd, _LOADER) != NULL)
     internal_f.f_flags |= F_DYNLOAD;
 #endif
+
+  memset (&internal_a, 0, sizeof internal_a);
 
   /* Set up architecture-dependent stuff.  */
   {
@@ -4684,7 +4690,7 @@ coff_slurp_line_table (bfd *abfd, asection *asect)
 	      *p++ = &lineno_cache[i];
 
 	  BFD_ASSERT ((unsigned int) (p - func_table) == nbr_func);
-	  
+
 	  /* Sort by functions.  */
 	  qsort (func_table, nbr_func, sizeof (alent *), coff_sort_func_alent);
 
@@ -5155,7 +5161,7 @@ coff_classify_symbol (bfd *abfd,
 	  asection *sec;
 	  char * name;
  	  char buf[SYMNMLEN + 1];
- 
+
 	  name = _bfd_coff_internal_syment_name (abfd, syment, buf)
  	  sec = coff_section_from_bfd_index (abfd, syment->n_scnum);
 	  if (sec != NULL && name != NULL
@@ -5228,7 +5234,7 @@ SUBSUBSECTION
       coffsym = (obj_symbols (abfd)				\
 		 + (cache_ptr->sym_ptr_ptr - symbols));		\
     else if (ptr)						\
-      coffsym = coff_symbol_from (abfd, ptr);			\
+      coffsym = coff_symbol_from (ptr);				\
     if (coffsym != NULL						\
 	&& coffsym->native->is_sym				\
 	&& coffsym->native->u.syment.n_scnum == 0)		\
@@ -5997,7 +6003,7 @@ static bfd_coff_backend_data bigobj_swap_table =
 #endif
 
 #ifndef coff_bfd_gc_sections
-#define coff_bfd_gc_sections		    bfd_generic_gc_sections
+#define coff_bfd_gc_sections		    bfd_coff_gc_sections
 #endif
 
 #ifndef coff_bfd_lookup_section_flags
