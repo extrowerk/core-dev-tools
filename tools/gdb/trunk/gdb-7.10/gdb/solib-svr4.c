@@ -197,7 +197,8 @@ svr4_same_1 (const char *gdb_so_name, const char *inferior_so_name)
     return 1;
 
 #ifdef __QNXTARGET__
-  if (strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0
+  if ((strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0
+      || strcmp (gdb_so_name, "/usr/lib/ldqnx-64.so.2") == 0)
       && strcmp (inferior_so_name, "libc.so.3") == 0)
     return 1;
 #endif /* __QNXTARGET__ */
@@ -2713,7 +2714,8 @@ enable_break (struct svr4_info *info, int from_tty)
       if (tmp_bfd == NULL)
 	{
 	  /* Internal knowledge: */
-	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0)
+	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0 ||
+	      strcmp (interp_name, "/usr/lib/ldqnx-64.so.2") == 0)
 	    {
 	      /* We "know" it's libc.so.3 */
 	      tmp_bfd = solib_bfd_open ("libc.so.3");
