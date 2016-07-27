@@ -37,15 +37,13 @@
 
 #ifdef __MINGW32__
 #include <time.h>
-#ifndef uid_t
-typedef int uid_t;
-#endif
-#ifndef gid_t
-typedef unsigned int gid_t;
-#endif
 #endif // __MINGW32__
 
 #include <stdint.h>
+
+typedef int32_t nto_pid_t;
+typedef int32_t nto_uid_t;
+typedef int32_t nto_gid_t;
 
 enum Elf_nto_note_types
 {
@@ -90,10 +88,10 @@ typedef struct _siginfo32 {
     union {
         int             __pad[7];
         struct {
-            pid_t           __pid;
+            nto_pid_t       __pid;
             union {
                 struct {
-                    uid_t           __uid;
+                    nto_uid_t       __uid;
                     union __sigval32 __value;
                 }               __kill;     /* si_code <= 0 SI_FROMUSER */
                 struct {
@@ -119,10 +117,10 @@ typedef struct _siginfo64 {
     union {
         int             __pad[7];
         struct {
-            pid_t           __pid;
+            nto_pid_t       __pid;
             union {
                 struct {
-                    uid_t           __uid;
+                    nto_uid_t       __uid;
                     union __sigval64 __value;
                 }               __kill;     /* si_code <= 0 SI_FROMUSER */
                 struct {
@@ -209,22 +207,22 @@ __BEGIN_DECLS
 
 typedef struct _debug_process_info
 {
-  pid_t pid;
-  pid_t parent;
+  nto_pid_t pid;
+  nto_pid_t parent;
   unsigned flags;
   unsigned umask;
-  pid_t child;
-  pid_t sibling;
-  pid_t pgrp;
-  pid_t sid;
+  nto_pid_t child;
+  nto_pid_t sibling;
+  nto_pid_t pgrp;
+  nto_pid_t sid;
   uint64_t base_address;
   uint64_t initial_stack;
-  uid_t uid;
-  gid_t gid;
-  uid_t euid;
-  gid_t egid;
-  uid_t suid;
-  gid_t sgid;
+  nto_uid_t uid;
+  nto_gid_t gid;
+  nto_uid_t euid;
+  nto_gid_t egid;
+  nto_uid_t suid;
+  nto_gid_t sgid;
   nto_sigset_t sig_ignore;
   nto_sigset_t sig_queue;
   nto_sigset_t sig_pending;
@@ -244,7 +242,7 @@ typedef struct _debug_process_info
 
 typedef struct _debug_thread_info32
 {
-  pid_t pid;
+  nto_pid_t pid;
   unsigned tid;
   unsigned flags;
   unsigned short why;
@@ -281,7 +279,7 @@ typedef struct _debug_thread_info32
     struct
     {
       unsigned nid;
-      pid_t pid;
+      nto_pid_t pid;
       int coid;
       int chid;
       int scoid;
@@ -292,7 +290,7 @@ typedef struct _debug_thread_info32
     } channel;
     struct
     {
-      pid_t pid;
+      nto_pid_t pid;
       unsigned flags;
       int64_t vaddr;
     } waitpage;
@@ -306,7 +304,7 @@ typedef struct _debug_thread_info32
     }          thread_event;
     struct
     {
-      pid_t  child;
+      nto_pid_t  child;
     }          fork_event;
     uint64_t filler[4];
   } blocked;
@@ -321,7 +319,7 @@ typedef struct _debug_thread_info32
 
 typedef struct _debug_thread_info64
 {
-  pid_t pid;
+  nto_pid_t pid;
   unsigned tid;
   unsigned flags;
   unsigned short why;
@@ -357,7 +355,7 @@ typedef struct _debug_thread_info64
     struct
     {
       unsigned nid;
-      pid_t pid;
+      nto_pid_t pid;
       int coid;
       int chid;
       int scoid;
@@ -368,7 +366,7 @@ typedef struct _debug_thread_info64
     } channel;
     struct
     {
-      pid_t pid;
+      nto_pid_t pid;
       unsigned flags;
       uint64_t vaddr;
     } waitpage;
@@ -380,7 +378,7 @@ typedef struct _debug_thread_info64
 	unsigned tid;
     }	  thread_event;
     struct {
-	pid_t child;
+	nto_pid_t child;
     }	  fork_event;
     uint64_t filler[4];
   } blocked;
