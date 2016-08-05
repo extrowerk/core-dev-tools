@@ -86,6 +86,7 @@ proc g++_include_flags { paths } {
     set odir [lookfor_file ${gccpath} libstdc++-v3]
     if { ${odir} != "" } {
       append flags [exec sh ${odir}/scripts/testsuite_flags --build-includes]  
+      append flags [exec sh ${odir}/scripts/testsuite_flags --cxxflags]  
     }
 
     return "$flags"
