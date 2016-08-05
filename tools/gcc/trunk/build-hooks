@@ -113,7 +113,7 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --enable-cheaders=c"
 		;;
 	*)
-		configure_opts="${configure_opts} --enable-cxx-flags=-nostdinc++"
+		configure_opts="${configure_opts} --enable-cxx-flags=-stdlib=libstdc++"
 		configure_opts="${configure_opts} --enable-cheaders=c_global"
 		;;
 	esac
