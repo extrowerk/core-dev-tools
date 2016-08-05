@@ -6574,7 +6574,8 @@ canonicalize_type_argument (tree arg, tsubst_flags_t complain)
   tree canon = strip_typedefs (arg, &removed_attributes);
   if (removed_attributes
       && (complain & tf_warning))
-    warning (OPT_Wattributes, "ignoring attributes on template argument %qT", arg);
+    warning (OPT_Wignored_attributes,
+	     "ignoring attributes on template argument %qT", arg);
   return canon;
 }
 
