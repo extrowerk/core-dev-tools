@@ -316,12 +316,6 @@ aarch64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
 
-  //TODO: set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
-
-  // TODO: set_gdbarch_core_regset_sections (gdbarch, aarch64_nto_regset_sections);
-
-  // TODO: set_gdbarch_regset_from_core_section (gdbarch,
-	// TODO:				aarch64_nto_regset_from_core_section);
   set_gdbarch_iterate_over_regset_sections
     (gdbarch, aarch64_nto_iterate_over_regset_sections);
 }

@@ -826,9 +826,6 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* Our linker code is in libc.  */
   svr4_so_ops.in_dynsym_resolve_code = arm_nto_in_dynsym_resolve_code;
 
-  /* register core handler */
-  //TODO:set_gdbarch_regset_from_core_section (gdbarch, 
-        //                            armnto_regset_from_core_section);
   set_solib_ops (gdbarch, &svr4_so_ops);
 
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
@@ -837,9 +834,8 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   frame_unwind_append_unwinder (gdbarch, &arm_nto_sigtramp_unwind);
 
   /* Our single step is broken. Use software. */
-  // set_gdbarch_software_single_step (gdbarch, nto_arm_software_single_step);
+  set_gdbarch_software_single_step (gdbarch, nto_arm_software_single_step);
 
-  // TODO: set_gdbarch_core_pid_to_str (gdbarch, nto_gdbarch_core_pid_to_str);
   set_gdbarch_iterate_over_regset_sections
     (gdbarch, arm_nto_iterate_over_regset_sections);
 
