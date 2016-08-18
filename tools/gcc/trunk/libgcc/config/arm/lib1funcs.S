@@ -1396,7 +1396,9 @@ LSYM(Lover12):
         ARM_FUNC_START div0
 #endif
 
+#ifndef __ARM_EABI__
         ldr     lr, [sp], #4
+#endif
         .word   0xe7fffffe
         RET
 #ifdef __ARM_EABI__
