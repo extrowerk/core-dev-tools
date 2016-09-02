@@ -31,6 +31,7 @@
 #include "solib-svr4.h"
 #include "gdbcore.h"
 #include "objfiles.h"
+#include "gdb/signals.h"
 
 #define QNX_NOTE_NAME	"QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"
@@ -565,6 +566,83 @@ nto_inferior_data (struct inferior *const inferior)
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
 extern initialize_file_ftype _initialize_nto_tdep;
+
+int
+nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
+{
+  switch (signal)
+    {
+    case GDB_SIGNAL_0:
+      return 0;
+    case GDB_SIGNAL_HUP:
+      return 1; /* SIGHUP */
+    case GDB_SIGNAL_INT:
+      return 2;   /* interrupt */
+    case GDB_SIGNAL_QUIT:
+      return 3;   /* quit */
+    case GDB_SIGNAL_ILL:
+      return 4;   /* illegal instruction (not reset when caught) */
+    case GDB_SIGNAL_TRAP:
+      return 5;   /* trace trap (not reset when caught) */
+    case GDB_SIGNAL_ABRT:
+      return 6;   /* used by abort */
+    case GDB_SIGNAL_EMT:
+      return 7;   /* EMT instruction */
+    case GDB_SIGNAL_FPE:
+      return 8;   /* floating point exception */
+    case GDB_SIGNAL_KILL:
+      return 9;   /* kill (cannot be caught or ignored) */
+    case GDB_SIGNAL_BUS:
+      return 10;  /* bus error */
+    case GDB_SIGNAL_SEGV:
+      return 11;  /* segmentation violation */
+    case GDB_SIGNAL_SYS:
+      return 12;  /* bad argument to system call */
+    case GDB_SIGNAL_PIPE:
+      return 13;  /* write on pipe with no reader */
+    case GDB_SIGNAL_ALRM:
+      return 14;  /* real-time alarm clock */
+    case GDB_SIGNAL_TERM:
+      return 15;  /* software termination signal from kill */
+    case GDB_SIGNAL_USR1:
+      return 16;  /* user defined signal 1 */
+    case GDB_SIGNAL_USR2:
+      return 17;  /* user defined signal 2 */
+    case GDB_SIGNAL_CHLD:
+      return 18;  /* death of child */
+    case GDB_SIGNAL_PWR:
+      return 19;  /* power-fail restart */
+    case GDB_SIGNAL_WINCH:
+      return 20;  /* window change */
+    case GDB_SIGNAL_URG:
+      return 21;  /* urgent condition on I/O channel */
+    case GDB_SIGNAL_POLL:
+    case GDB_SIGNAL_IO:
+      return 22;  /* System V name for SIGIO */
+    case GDB_SIGNAL_STOP:
+      return 23;  /* sendable stop signal not from tty */
+    case GDB_SIGNAL_TSTP:
+      return 24;  /* stop signal from tty */
+    case GDB_SIGNAL_CONT:
+      return 25;  /* continue a stopped process */
+    case GDB_SIGNAL_TTIN:
+      return 26;  /* attempted background tty read */
+    case GDB_SIGNAL_TTOU:
+      return 27;  /* attempted background tty write */
+    case GDB_SIGNAL_VTALRM:
+      return 28;  /* virtual timer expired */
+    case GDB_SIGNAL_PROF:
+      return 29;  /* profileing timer expired */
+    case GDB_SIGNAL_XCPU:
+      return 30;  /* exceded cpu limit */
+    case GDB_SIGNAL_XFSZ:
+      return 31;  /* exceded file size limit */
+    case GDB_SIGNAL_SELECT:
+      return 57;
+    default:
+      return 0;
+    }
+}
 
 void
 _initialize_nto_tdep (void)
