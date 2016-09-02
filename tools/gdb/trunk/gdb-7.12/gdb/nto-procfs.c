@@ -159,7 +159,7 @@ procfs_open_1 (struct target_ops *ops, const char *arg, int from_tty)
     }
   cleanups = make_cleanup_close (fd);
 
-  sysinfo = (void *) buffer;
+  sysinfo = (procfs_sysinfo *) buffer;
   if (devctl (fd, DCMD_PROC_SYSINFO, sysinfo, sizeof buffer, 0) != EOK)
     {
       printf_filtered ("Error getting size: %d (%s)\n", errno,
@@ -169,7 +169,7 @@ procfs_open_1 (struct target_ops *ops, const char *arg, int from_tty)
   else
     {
       total_size = sysinfo->total_size;
-      sysinfo = alloca (total_size);
+      sysinfo = (procfs_sysinfo *) alloca (total_size);
       if (sysinfo == NULL)
 	{
 	  printf_filtered ("Memory error: %d (%s)\n", errno,
@@ -248,9 +248,9 @@ update_thread_private_data_name (struct thread_info *new_thread,
   newnamelen = strlen (newname);
   if (!new_thread->priv)
     {
-      new_thread->priv = xmalloc (offsetof (struct private_thread_info,
-					       name)
-				     + newnamelen + 1);
+      size_t priv_sz = offsetof (struct private_thread_info, name)
+			 + newnamelen + 1;
+      new_thread->priv = (struct private_thread_info *) xmalloc (priv_sz);
       memcpy (new_thread->priv->name, newname, newnamelen + 1);
     }
   else if (strcmp (newname, new_thread->priv->name) != 0)
@@ -258,11 +258,12 @@ update_thread_private_data_name (struct thread_info *new_thread,
       /* Reallocate if neccessary.  */
       int oldnamelen = strlen (new_thread->priv->name);
 
-      if (oldnamelen < newnamelen)
-	new_thread->priv = xrealloc (new_thread->priv,
-					offsetof (struct private_thread_info,
-						  name)
-					+ newnamelen + 1);
+      if (oldnamelen < newnamelen) {
+	size_t priv_sz = offsetof (struct private_thread_info, name)
+			   + newnamelen + 1;
+	new_thread->priv
+	  = (struct private_thread_info *) xrealloc (new_thread->priv, priv_sz);
+      }
       memcpy (new_thread->priv->name, newname, newnamelen + 1);
     }
 }
@@ -347,7 +348,7 @@ procfs_update_thread_list (struct target_ops *ops)
 static void
 do_closedir_cleanup (void *dir)
 {
-  closedir (dir);
+  closedir ((DIR*) dir);
 }
 
 static void
@@ -748,7 +749,7 @@ procfs_wait (struct target_ops *ops,
   sigset_t set;
   siginfo_t info;
   procfs_status status;
-  static int exit_signo = 0;	/* To track signals that cause termination.  */
+  static enum gdb_signal exit_signo = GDB_SIGNAL_0;	/* To track signals that cause termination.  */
 
   ourstatus->kind = TARGET_WAITKIND_SPURIOUS;
 
@@ -756,7 +757,7 @@ procfs_wait (struct target_ops *ops,
     {
       ourstatus->kind = TARGET_WAITKIND_STOPPED;
       ourstatus->value.sig = GDB_SIGNAL_0;
-      exit_signo = 0;
+      exit_signo = GDB_SIGNAL_0;
       return null_ptid;
     }
 
@@ -794,14 +795,14 @@ procfs_wait (struct target_ops *ops,
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  ourstatus->value.sig =
 	    gdb_signal_from_host (status.info.si_signo);
-	  exit_signo = 0;
+	  exit_signo = GDB_SIGNAL_0;
 	  break;
 	case _DEBUG_WHY_FAULTED:
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  if (status.info.si_signo == SIGTRAP)
 	    {
-	      ourstatus->value.sig = 0;
-	      exit_signo = 0;
+	      ourstatus->value.sig = GDB_SIGNAL_0;
+	      exit_signo = GDB_SIGNAL_0;
 	    }
 	  else
 	    {
@@ -828,7 +829,7 @@ procfs_wait (struct target_ops *ops,
 		ourstatus->kind = TARGET_WAITKIND_EXITED;
 		ourstatus->value.integer = WEXITSTATUS (waitval);
 	      }
-	    exit_signo = 0;
+	    exit_signo = GDB_SIGNAL_0;
 	    break;
 	  }
 
@@ -836,7 +837,7 @@ procfs_wait (struct target_ops *ops,
 	  /* We are assuming a requested stop is due to a SIGINT.  */
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  ourstatus->value.sig = GDB_SIGNAL_INT;
-	  exit_signo = 0;
+	  exit_signo = GDB_SIGNAL_0;
 	  break;
 	}
     }
@@ -915,7 +916,7 @@ procfs_xfer_partial (struct target_ops *ops, enum target_object object,
 	  const unsigned int sizeof_auxv_t = sizeof (auxv_t);
 	  const unsigned int sizeof_tempbuf = 20 * sizeof_auxv_t;
 	  int tempread;
-	  gdb_byte *const tempbuf = alloca (sizeof_tempbuf);
+	  gdb_byte *const tempbuf = (gdb_byte *) alloca (sizeof_tempbuf);
 
 	  if (tempbuf == NULL)
 	    return TARGET_XFER_E_IO;
@@ -954,7 +955,7 @@ procfs_detach (struct target_ops *ops, const char *args, int from_tty)
   int siggnal = 0;
   int pid;
 
-  target_announce_detach ();
+  target_announce_detach (from_tty);
 
   if (args)
     siggnal = atoi (args);
@@ -1168,7 +1169,7 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
   const char *inferior_io_terminal = get_inferior_io_terminal ();
   struct inferior *inf;
 
-  argv = xmalloc (((strlen (allargs) + 1) / (unsigned) 2 + 2) *
+  argv = (char **) xmalloc (((strlen (allargs) + 1) / (unsigned) 2 + 2) *
 		  sizeof (*argv));
   argv[0] = get_exec_file (1);
   if (!argv[0])

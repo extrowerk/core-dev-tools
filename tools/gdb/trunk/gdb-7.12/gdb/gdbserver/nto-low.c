@@ -60,7 +60,7 @@ struct nto_inferior
   char nto_procfs_path[PATH_MAX];
   int ctl_fd;
   pid_t pid;
-  int exit_signo; /* For tracking exit status.  */
+  enum gdb_signal exit_signo; /* For tracking exit status.  */
 };
 
 static struct nto_inferior nto_inferior;
@@ -562,8 +562,8 @@ nto_wait (ptid_t ptid,
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  if (status.info.si_signo == SIGTRAP)
 	    {
-	      ourstatus->value.sig = 0;
-	      nto_inferior.exit_signo = 0;
+	      ourstatus->value.sig = GDB_SIGNAL_0;
+	      nto_inferior.exit_signo = GDB_SIGNAL_0;
 	    }
 	  else
 	    {
@@ -591,7 +591,7 @@ nto_wait (ptid_t ptid,
 		ourstatus->kind = TARGET_WAITKIND_EXITED;
 		ourstatus->value.integer = WEXITSTATUS (waitval);
 	      }
-	    nto_inferior.exit_signo = 0;
+	    nto_inferior.exit_signo = GDB_SIGNAL_0;
 	    break;
 	  }
 
@@ -600,7 +600,7 @@ nto_wait (ptid_t ptid,
 	  /* We are assuming a requested stop is due to a SIGINT.  */
 	  ourstatus->kind = TARGET_WAITKIND_STOPPED;
 	  ourstatus->value.sig = GDB_SIGNAL_INT;
-	  nto_inferior.exit_signo = 0;
+	  nto_inferior.exit_signo = GDB_SIGNAL_0;
 	  break;
 	}
     }
