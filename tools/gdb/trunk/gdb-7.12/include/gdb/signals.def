@@ -196,7 +196,13 @@ SET (GDB_EXC_BREAKPOINT, 150, "EXC_BREAKPOINT", "Breakpoint")
 
 SET (GDB_SIGNAL_LIBRT, 151, "SIGLIBRT", "librt internal signal")
 
+#ifdef __QNXTARGET__
+SET (GDB_SIGNAL_SELECT, 152, "SIGSELECT", "Data available")
+SET (GDB_SIGNAL_LAST, 153, NULL, "GDB_SIGNAL_LAST")
+#else /* ! __QNXTARGET__ */
+
 /* If you are adding a new signal, add it just above this comment.  */
 
 /* Last and unused enum value, for sizing arrays, etc.  */
 SET (GDB_SIGNAL_LAST, 152, NULL, "GDB_SIGNAL_LAST")
+#endif /* ! __QNXTARGET__ */
