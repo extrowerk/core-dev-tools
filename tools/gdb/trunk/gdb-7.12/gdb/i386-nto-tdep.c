@@ -362,6 +362,8 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
         = nto_in_dynsym_resolve_code;
     }
   set_solib_ops (gdbarch, &nto_svr4_so_ops);
+
+  set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
