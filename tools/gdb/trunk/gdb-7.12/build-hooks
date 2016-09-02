@@ -1,0 +1,8 @@
+if [ ! -f ../build-hooks.${PROJECT} ]; then
+	echo "Error: Building in unified tree and PROJECT var not set to gdb or binutils."
+	exit 1;
+else
+	. ../build-hooks.${PROJECT}
+fi
+
+
