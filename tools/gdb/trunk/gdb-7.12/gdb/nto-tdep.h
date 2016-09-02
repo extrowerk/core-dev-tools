@@ -186,4 +186,6 @@ struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
 extern int nto_gdb_signal_to_target (struct gdbarch *gdbarch,
 				     enum gdb_signal signal);
+extern enum gdb_signal nto_gdb_signal_from_target (struct gdbarch *gdbarch,
+						   int nto_signal);
 #endif
