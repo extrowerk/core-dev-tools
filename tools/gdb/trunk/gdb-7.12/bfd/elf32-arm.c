@@ -13113,7 +13113,9 @@ elf32_arm_merge_eabi_attributes (bfd *ibfd, bfd *obfd)
 		 follow the requirement of the input.  */
 	      if (out_attr[i].i == 0)
 		{
-		  BFD_ASSERT (out_attr[Tag_ABI_HardFP_use].i == 0);
+		/*  Remove assert as binutils 2.19.1 generated */
+		/*  Tag_ABI_HardFP_use without Tag_FP_arch */
+		/*  BFD_ASSERT (out_attr[Tag_ABI_HardFP_use].i == 0); */
 		  out_attr[i].i = in_attr[i].i;
 		  out_attr[Tag_ABI_HardFP_use].i
 		    = in_attr[Tag_ABI_HardFP_use].i;
@@ -13123,7 +13125,9 @@ elf32_arm_merge_eabi_attributes (bfd *ibfd, bfd *obfd)
 		 nothing.  */
 	      else if (in_attr[i].i == 0)
 		{
-		  BFD_ASSERT (in_attr[Tag_ABI_HardFP_use].i == 0);
+		/*  Remove assert as binutils 2.19.1 generated */
+		/*  Tag_ABI_HardFP_use without Tag_FP_arch */
+		/*  BFD_ASSERT (in_attr[Tag_ABI_HardFP_use].i == 0); */
 		  break;
 		}
 
@@ -18780,6 +18784,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 	  flags_compatible = FALSE;
 	}
 
+#ifndef __QNXTARGET__
       if ((in_flags & EF_ARM_VFP_FLOAT) != (out_flags & EF_ARM_VFP_FLOAT))
 	{
 	  if (in_flags & EF_ARM_VFP_FLOAT)
@@ -18793,7 +18798,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 
 	  flags_compatible = FALSE;
 	}
-
+#endif
       if ((in_flags & EF_ARM_MAVERICK_FLOAT) != (out_flags & EF_ARM_MAVERICK_FLOAT))
 	{
 	  if (in_flags & EF_ARM_MAVERICK_FLOAT)
@@ -18809,6 +18814,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 	}
 
 #ifdef EF_ARM_SOFT_FLOAT
+#ifndef __QNXTARGET__
       if ((in_flags & EF_ARM_SOFT_FLOAT) != (out_flags & EF_ARM_SOFT_FLOAT))
 	{
 	  /* We can allow interworking between code that is VFP format
@@ -18831,6 +18837,7 @@ elf32_arm_merge_private_bfd_data (bfd * ibfd, bfd * obfd)
 	      flags_compatible = FALSE;
 	    }
 	}
+#endif
 #endif
 
       /* Interworking mismatch is only a warning.  */

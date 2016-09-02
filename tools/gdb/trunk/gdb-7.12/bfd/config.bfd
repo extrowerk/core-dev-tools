@@ -582,6 +582,7 @@ case "${targ}" in
   i[3-7]86-*-nto*)
     targ_defvec=i386_elf32_vec
     targ_selvecs="iamcu_elf32_vec i386_coff_vec"
+    targ_cflags=-D__QNXTARGET__
     ;;
   i[3-7]86-*-aros*)
     targ_defvec=i386_elf32_vec
@@ -1105,6 +1106,11 @@ case "${targ}" in
     targ_defvec=mips_elf32_be_vec
     targ_selvecs="mips_elf32_le_vec mips_elf64_be_vec mips_elf64_le_vec mips_ecoff_be_vec mips_ecoff_le_vec"
     ;;
+  mips*-*-nto*)
+    targ_defvec=mips_elf32_trad_be_vec
+    targ_selvecs="mips_elf32_trad_le_vec mips_elf64_trad_be_vec mips_elf64_trad_le_vec"
+    targ_cflags=-D__QNXTARGET__
+    ;;
   mips64*el-*-linux*)
     targ_defvec=mips_elf32_ntrad_le_vec
     targ_selvecs="mips_elf32_ntrad_be_vec mips_elf32_trad_le_vec mips_elf32_trad_be_vec mips_elf64_trad_le_vec mips_elf64_trad_be_vec"
@@ -1338,6 +1344,7 @@ case "${targ}" in
   powerpc-*-nto*)
     targ_defvec=powerpc_elf32_vec
     targ_selvecs="rs6000_xcoff_vec powerpc_elf32_le_vec powerpc_boot_vec"
+    targ_cflags=-D__QNXTARGET__
     ;;
   powerpc-*-vxworks* | powerpc-*-windiss*)
     targ_defvec=powerpc_elf32_vxworks_vec
@@ -1511,6 +1518,7 @@ case "${targ}" in
     targ_defvec=sh_elf32_vec
     targ_selvecs="sh_elf32_le_vec sh_coff_vec sh_coff_le_vec sh_coff_small_vec sh_coff_small_le_vec"
     targ_underscore=yes
+    targ_cflags=-D__QNXTARGET__
     ;;
   sh*-*-openbsd*)
     targ_defvec=sh_elf32_nbsd_le_vec
