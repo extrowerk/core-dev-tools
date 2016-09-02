@@ -644,6 +644,19 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
     }
 }
 
+enum gdb_signal
+nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
+{
+  int i;
+  for (i = GDB_SIGNAL_0; i < GDB_SIGNAL_LAST; ++i)
+    {
+      int tgtsig = nto_gdb_signal_to_target (gdbarch, (enum gdb_signal)i);
+      if (tgtsig == nto_signal)
+	return (enum gdb_signal)i;
+    }
+  return GDB_SIGNAL_UNKNOWN;
+}
+
 void
 _initialize_nto_tdep (void)
 {
