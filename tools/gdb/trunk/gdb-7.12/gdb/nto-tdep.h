@@ -97,8 +97,6 @@ extern struct nto_target_ops current_nto_target;
 #define nto_fetch_link_map_offsets \
 (current_nto_target.fetch_link_map_offsets)
 
-#define nto_is_nto_target (current_nto_target.is_nto_target)
-
 /* Keep this consistant with neutrino syspage.h.  */
 enum
 {
