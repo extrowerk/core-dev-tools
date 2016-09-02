@@ -516,6 +516,17 @@ default_print_auxv_entry (struct gdbarch *gdbarch, struct ui_file *file,
 	   AUXV_FORMAT_HEX);
       TAG (AT_SUN_AUXFLAGS,
 	   _("AF_SUN_ flags passed from the kernel"), AUXV_FORMAT_HEX);
+#ifdef __QNXTARGET__
+#undef TAG
+#define TAG(tag, nme, text, kind) \
+      case tag: name = nme; description = text; format = kind; break
+      TAG (45, "AT_INTP_DEVICE", _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (46, "AT_INTP_INODE", _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (47, "AT_EXEFILE", _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (48, "AT_LIBPATH", _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (49, "AT_DATA", _("QNX Extension"), AUXV_FORMAT_HEX);
+#undef TAG
+#endif /* __QNXTARGET__ */
     }
 
   fprint_auxv_entry (file, name, description, format, type, val);
