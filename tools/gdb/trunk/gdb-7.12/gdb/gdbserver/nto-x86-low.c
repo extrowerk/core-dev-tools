@@ -42,7 +42,7 @@ nto_x86_register_offset (int gdbregno)
 {
   if (gdbregno >= 0 && gdbregno < 16)
     {
-      X86_CPU_REGISTERS *dummy = (void*)0;
+      X86_CPU_REGISTERS *dummy = (X86_CPU_REGISTERS *) 0;
       /* GPRs  */
       switch (gdbregno)
 	{
