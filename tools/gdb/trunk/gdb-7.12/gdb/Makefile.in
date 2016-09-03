@@ -648,7 +648,7 @@ ALL_64_TARGET_OBS = \
 	alphabsd-tdep.o alphafbsd-tdep.o alpha-linux-tdep.o alpha-mdebug-tdep.o \
 	alphanbsd-tdep.o alphaobsd-tdep.o alpha-tdep.o \
 	amd64fbsd-tdep.o amd64-darwin-tdep.o amd64-dicos-tdep.o \
-	amd64-linux-tdep.o amd64nbsd-tdep.o \
+	amd64-linux-tdep.o amd64nbsd-tdep.o amd64-nto-tdep.o \
 	amd64obsd-tdep.o amd64-sol2-tdep.o amd64-tdep.o amd64-windows-tdep.o \
 	ia64-linux-tdep.o ia64-vms-tdep.o ia64-tdep.o \
 	mips64obsd-tdep.o \
@@ -1706,6 +1706,7 @@ ALLDEPFILES = \
 	i386-darwin-tdep.c i386-darwin-nat.c \
 	i386-dicos-tdep.c \
 	i386-linux-tdep.c x86-nat.c \
+	i386-nto-tdep.c amd64-nto-tdep.c \
 	i386-sol2-nat.c i386-sol2-tdep.c \
 	i386gnu-nat.c i386gnu-tdep.c \
 	ia64-linux-nat.c ia64-linux-tdep.c ia64-tdep.c ia64-vms-tdep.c \
@@ -1733,6 +1734,7 @@ ALLDEPFILES = \
 	nds32-tdep.c \
 	nios2-tdep.c nios2-linux-tdep.c \
 	nbsd-nat.c nbsd-tdep.c obsd-nat.c obsd-tdep.c \
+	nto-tdep.c \
 	posix-hdep.c common/posix-strerror.c \
 	ppc-sysv-tdep.c ppc-linux-nat.c ppc-linux-tdep.c ppc64-tdep.c \
 	ppcfbsd-nat.c ppcfbsd-tdep.c \

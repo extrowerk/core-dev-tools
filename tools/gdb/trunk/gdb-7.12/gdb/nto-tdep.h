@@ -99,9 +99,6 @@ struct nto_target_ops
 
 #define nto_breakpoint_size (target_nto_gdbarch_data->breakpoint_size)
 
-#define nto_fetch_link_map_offsets \
-(target_nto_gdbarch_data->fetch_link_map_offsets)
-
 /* Keep this consistant with neutrino syspage.h.  */
 enum
 {
@@ -111,6 +108,7 @@ enum
   CPUTYPE_SPARE,
   CPUTYPE_ARM,
   CPUTYPE_SH,
+  CPUTYPE_X86_64,
   CPUTYPE_UNKNOWN
 };
 
@@ -181,6 +179,8 @@ void nto_dummy_supply_regset (struct regcache *regcache, char *regs);
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
 char *nto_extra_thread_info (struct target_ops *self, struct thread_info *);
+
+struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 
 LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
 					  gdb_byte *readbuf,
