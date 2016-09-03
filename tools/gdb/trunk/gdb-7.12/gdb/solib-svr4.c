@@ -1495,6 +1495,7 @@ svr4_current_sos_direct (struct svr4_info *info)
   if (lm)
     svr4_read_so_list (lm, 0, &link_ptr, ignore_first);
 
+#ifndef __QNXTARGET__ /* not needed and assumes ld->prev == NULL */
   /* On Solaris, the dynamic linker is not in the normal list of
      shared objects, so make sure we pick it up too.  Having
      symbol information for the dynamic linker is quite crucial
@@ -1502,6 +1503,7 @@ svr4_current_sos_direct (struct svr4_info *info)
   lm = solib_svr4_r_ldsomap (info);
   if (lm)
     svr4_read_so_list (lm, 0, &link_ptr, 0);
+#endif
 
   discard_cleanups (back_to);
 
