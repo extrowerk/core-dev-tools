@@ -137,6 +137,7 @@ struct private_thread_info
   short tid;
   unsigned char state;
   unsigned char flags;
+  void *siginfo; // cached from core file read
   char name[1];
 };
 
@@ -181,6 +182,12 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
 					  LONGEST len, size_t sizeof_auxv_t);
 
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
+
+struct type *nto_get_siginfo_type (struct gdbarch *);
+
+void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
+
+#define IS_64BIT() (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word == 64)
 
 extern int nto_gdb_signal_to_target (struct gdbarch *gdbarch,
 				     enum gdb_signal signal);
