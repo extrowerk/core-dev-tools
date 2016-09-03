@@ -72,6 +72,9 @@ struct nto_target_ops
 /* Used by nto_elf_osabi_sniffer to determine if we're connected to an
    Neutrino target.  */
   enum gdb_osabi (*is_nto_target) (bfd *abfd);
+
+/* Used on arm to determine breakpoint size: thumb/arm.  */
+  int (*breakpoint_size) (CORE_ADDR addr);
 };
 
 #define target_nto_gdbarch_data ((struct nto_target_ops *)gdbarch_data (target_gdbarch (), nto_gdbarch_ops))
@@ -93,6 +96,8 @@ struct nto_target_ops
 #define nto_register_area (target_nto_gdbarch_data->register_area)
 
 #define nto_regset_fill (target_nto_gdbarch_data->regset_fill)
+
+#define nto_breakpoint_size (target_nto_gdbarch_data->breakpoint_size)
 
 #define nto_fetch_link_map_offsets \
 (target_nto_gdbarch_data->fetch_link_map_offsets)
