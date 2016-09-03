@@ -1448,27 +1448,6 @@ procfs_pass_signals (struct target_ops *self,
     }
 }
 
-static char *
-procfs_pid_to_str (struct target_ops *ops, ptid_t ptid)
-{
-  static char buf[1024];
-  int pid, tid, n;
-  struct tidinfo *tip;
-
-  pid = ptid_get_pid (ptid);
-  tid = ptid_get_tid (ptid);
-
-  n = snprintf (buf, 1023, "process %d", pid);
-
-#if 0				/* NYI */
-  tip = procfs_thread_info (pid, tid);
-  if (tip != NULL)
-    snprintf (&buf[n], 1023, " (state = 0x%02x)", tip->state);
-#endif
-
-  return buf;
-}
-
 /* to_can_run implementation for "target procfs".  Note this really
   means "can this target be the default run target", which there can
   be only one, and we make it be "target native" like other ports.
@@ -1537,7 +1516,7 @@ init_procfs_targets (void)
   t->to_pass_signals = procfs_pass_signals;
   t->to_thread_alive = procfs_thread_alive;
   t->to_update_thread_list = procfs_update_thread_list;
-  t->to_pid_to_str = procfs_pid_to_str;
+  t->to_pid_to_str = nto_pid_to_str;
   t->to_interrupt = procfs_interrupt;
   t->to_have_continuable_watchpoint = 1;
   t->to_extra_thread_info = nto_extra_thread_info;

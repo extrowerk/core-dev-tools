@@ -576,6 +576,42 @@ nto_initialize_signals (void)
 #endif
 }
 
+char *
+nto_pid_to_str (struct target_ops *ops, ptid_t ptid)
+{
+  static char buf[1024];
+  int pid, tid;
+  char thread_id[50];
+  char thread_name[17];
+  struct thread_info *ti;
+
+  pid = ptid_get_pid (ptid);
+  tid = ptid_get_tid (ptid);
+
+  ti = find_thread_ptid (ptid);
+  if (ti && ti->priv && ti->priv->name[0])
+    {
+      int n;
+
+      n = snprintf (thread_name, ARRAY_SIZE (thread_name), "%s",
+		    ti->priv->name);
+      if (n >= ARRAY_SIZE (thread_name))
+	/* Name did not fit, append ellipses.  */
+	snprintf (&thread_name [ARRAY_SIZE (thread_name) - 4], 4, "%s",
+		  "...");
+      snprintf (thread_id, ARRAY_SIZE (thread_id), " tid %d name \"%s\"",
+		tid, thread_name);
+    }
+  else if (tid > 0)
+    snprintf (thread_id, ARRAY_SIZE (thread_id), " tid %d", tid);
+  else
+    thread_id[0] = '\0';
+
+  snprintf (buf, sizeof(buf), "pid %d%s", pid, thread_id);
+
+  return buf;
+}
+
 void
 nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
 {

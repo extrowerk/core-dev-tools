@@ -186,6 +186,8 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
 					  gdb_byte *readbuf,
 					  LONGEST len, size_t sizeof_auxv_t);
 
+char *nto_pid_to_str (struct target_ops *ops, ptid_t);
+
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
 struct type *nto_get_siginfo_type (struct gdbarch *);
