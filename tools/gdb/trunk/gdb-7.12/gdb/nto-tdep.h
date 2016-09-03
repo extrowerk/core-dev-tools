@@ -74,28 +74,28 @@ struct nto_target_ops
   enum gdb_osabi (*is_nto_target) (bfd *abfd);
 };
 
-extern struct nto_target_ops current_nto_target;
+#define target_nto_gdbarch_data ((struct nto_target_ops *)gdbarch_data (target_gdbarch (), nto_gdbarch_ops))
 
-#define nto_cpuinfo_flags (current_nto_target.cpuinfo_flags)
+#define nto_cpuinfo_flags (target_nto_gdbarch_data->cpuinfo_flags)
 
-#define nto_cpuinfo_valid (current_nto_target.cpuinfo_valid)
+#define nto_cpuinfo_valid (target_nto_gdbarch_data->cpuinfo_valid)
 
-#define nto_regset_id (current_nto_target.regset_id)
+#define nto_regset_id (target_nto_gdbarch_data->regset_id)
 
-#define nto_supply_gregset (current_nto_target.supply_gregset)
+#define nto_supply_gregset (target_nto_gdbarch_data->supply_gregset)
 
-#define nto_supply_fpregset (current_nto_target.supply_fpregset)
+#define nto_supply_fpregset (target_nto_gdbarch_data->supply_fpregset)
 
-#define nto_supply_altregset (current_nto_target.supply_altregset)
+#define nto_supply_altregset (target_nto_gdbarch_data->supply_altregset)
 
-#define nto_supply_regset (current_nto_target.supply_regset)
+#define nto_supply_regset (target_nto_gdbarch_data->supply_regset)
 
-#define nto_register_area (current_nto_target.register_area)
+#define nto_register_area (target_nto_gdbarch_data->register_area)
 
-#define nto_regset_fill (current_nto_target.regset_fill)
+#define nto_regset_fill (target_nto_gdbarch_data->regset_fill)
 
 #define nto_fetch_link_map_offsets \
-(current_nto_target.fetch_link_map_offsets)
+(target_nto_gdbarch_data->fetch_link_map_offsets)
 
 /* Keep this consistant with neutrino syspage.h.  */
 enum
@@ -188,6 +188,9 @@ struct type *nto_get_siginfo_type (struct gdbarch *);
 void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
 
 #define IS_64BIT() (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word == 64)
+
+/* gdbarch specific data with nto target specific functions. */
+extern struct gdbarch_data *nto_gdbarch_ops;
 
 extern int nto_gdb_signal_to_target (struct gdbarch *gdbarch,
 				     enum gdb_signal signal);

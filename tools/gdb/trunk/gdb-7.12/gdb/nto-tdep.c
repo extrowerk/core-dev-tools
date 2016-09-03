@@ -61,8 +61,6 @@ typedef union nto_siginfo_t {
 #include "nto-share/debug.h"
 #endif
 
-struct nto_target_ops current_nto_target;
-
 static char default_nto_target[] = "";
 
 static const struct inferior_data *nto_inferior_data_reg;
@@ -846,6 +844,17 @@ nto_inferior_data (struct inferior *const inferior)
 /* Provide a prototype to silence -Wmissing-prototypes.  */
 extern initialize_file_ftype _initialize_nto_tdep;
 
+struct gdbarch_data *nto_gdbarch_ops;
+
+static void *
+nto_gdbarch_init (struct obstack *obstack)
+{
+  struct nto_target_ops *ops;
+
+  ops = OBSTACK_ZALLOC (obstack, struct nto_target_ops);
+  return ops;
+}
+
 int
 nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
 {
@@ -939,6 +948,8 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
 void
 _initialize_nto_tdep (void)
 {
+  nto_gdbarch_ops = gdbarch_data_register_pre_init (nto_gdbarch_init);
+
   nto_inferior_data_reg
     = register_inferior_data_with_cleanup (NULL, nto_inferior_data_cleanup);
 
