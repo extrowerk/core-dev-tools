@@ -2675,6 +2675,7 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
      looking at a different file than the one used by the kernel - for
      instance, "gdb program" connected to "gdbserver :PORT ld.so program".  */
 
+#ifndef __QNXTARGET__ /* the way our corefiles are created, these checks will fail.. */
   if (bfd_get_flavour (exec_bfd) == bfd_target_elf_flavour)
     {
       /* Be optimistic and clear OK only if GDB was able to verify the headers
@@ -2977,6 +2978,7 @@ svr4_exec_displacement (CORE_ADDR *displacementp)
       if (!ok)
 	return 0;
     }
+#endif /* !__QNXTARGET__ */
 
   if (info_verbose)
     {
