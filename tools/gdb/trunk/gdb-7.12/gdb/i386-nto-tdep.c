@@ -317,7 +317,7 @@ init_i386nto_ops (void)
   i386_nto_ops.register_area = i386nto_register_area;
   i386_nto_ops.regset_fill = i386nto_regset_fill;
   i386_nto_ops.fetch_link_map_offsets =
-    svr4_ilp32_fetch_link_map_offsets;
+    nto_generic_svr4_fetch_link_map_offsets;
   i386_nto_ops.breakpoint_size = i386nto_breakpoint_size;
 }
 

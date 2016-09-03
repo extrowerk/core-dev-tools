@@ -377,6 +377,74 @@ nto_parse_redirection (char *pargv[], const char **pin, const char **pout,
   return argv;
 }
 
+struct link_map_offsets *
+nto_generic_svr4_fetch_link_map_offsets (void)
+{
+  static struct link_map_offsets lmo32;
+  static struct link_map_offsets *lmp32 = NULL;
+  static struct link_map_offsets lmo64;
+  static struct link_map_offsets *lmp64 = NULL;
+
+  if (lmp32 == NULL)
+    {
+      lmp32 = &lmo32;
+
+      /* r_debug structure.  */
+      lmo32.r_version_offset = 0;
+      lmo32.r_version_size = 4;
+      lmo32.r_map_offset = 4;
+      lmo32.r_brk_offset = 8;
+
+      lmo32.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
+				    show up twice.  */
+
+      /* Link map.  */
+      lmo32.link_map_size = 32;	/* The actual size is 552 bytes, but
+				   this is all we need.  */
+      lmo32.l_addr_offset = 0;
+
+      lmo32.l_name_offset = 4;
+
+      lmo32.l_ld_offset = 8;
+
+      lmo32.l_next_offset = 12;
+
+      lmo32.l_prev_offset = 16;
+    }
+  if (lmp64 == NULL)
+    {
+      lmp64 = &lmo64;
+
+      /* r_debug structure.  */
+      lmo64.r_version_offset = 0;
+      lmo64.r_version_size = 4;
+      lmo64.r_map_offset = 8;
+      lmo64.r_brk_offset = 16;
+
+      lmo64.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
+				    show up twice.  */
+
+      /* Link map.  */
+      lmo64.link_map_size = 64;
+
+      lmo64.l_addr_offset = 0;
+
+      lmo64.l_name_offset = 8;
+
+      lmo64.l_ld_offset = 16;
+
+      lmo64.l_next_offset = 24;
+
+      lmo64.l_prev_offset = 32;
+    }
+
+  if (IS_64BIT())
+    return lmp64;
+  else
+    return lmp32;
+}
+
+
 /* The struct lm_info, lm_addr, and nto_truncate_ptr are copied from
    solib-svr4.c to support nto_relocate_section_addresses
    which is different from the svr4 version.  */
@@ -407,8 +475,10 @@ lm_addr (struct so_list *so)
 {
   if (so->lm_info->l_addr == (CORE_ADDR)-1)
     {
-      struct link_map_offsets *lmo = nto_fetch_link_map_offsets ();
-      struct type *ptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
+      struct link_map_offsets *lmo =
+	nto_generic_svr4_fetch_link_map_offsets ();
+      struct type *ptr_type =
+	builtin_type (target_gdbarch ())->builtin_data_ptr;
 
       so->lm_info->l_addr =
 	extract_typed_address (so->lm_info->lm + lmo->l_addr_offset, ptr_type);
