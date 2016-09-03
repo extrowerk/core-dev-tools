@@ -298,17 +298,19 @@ i386nto_sigcontext_addr (struct frame_info *this_frame)
   return ptrctx;
 }
 
+static struct nto_target_ops i386_nto_ops;
+
 static void
 init_i386nto_ops (void)
 {
-  nto_regset_id = i386nto_regset_id;
-  nto_supply_gregset = i386nto_supply_gregset;
-  nto_supply_fpregset = i386nto_supply_fpregset;
-  nto_supply_altregset = nto_dummy_supply_regset;
-  nto_supply_regset = i386nto_supply_regset;
-  nto_register_area = i386nto_register_area;
-  nto_regset_fill = i386nto_regset_fill;
-  nto_fetch_link_map_offsets =
+  i386_nto_ops.regset_id = i386nto_regset_id;
+  i386_nto_ops.supply_gregset = i386nto_supply_gregset;
+  i386_nto_ops.supply_fpregset = i386nto_supply_fpregset;
+  i386_nto_ops.supply_altregset = nto_dummy_supply_regset;
+  i386_nto_ops.supply_regset = i386nto_supply_regset;
+  i386_nto_ops.register_area = i386nto_register_area;
+  i386_nto_ops.regset_fill = i386nto_regset_fill;
+  i386_nto_ops.fetch_link_map_offsets =
     svr4_ilp32_fetch_link_map_offsets;
 }
 
@@ -317,6 +319,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
   static struct target_so_ops nto_svr4_so_ops;
+  struct nto_target_ops *nto_ops;
 
   /* Deal with our strange signals.  */
   nto_initialize_signals ();
@@ -364,6 +367,9 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_solib_ops (gdbarch, &nto_svr4_so_ops);
 
   set_gdbarch_get_siginfo_type (gdbarch, nto_get_siginfo_type);
+
+  nto_ops = (struct nto_target_ops *) gdbarch_data (gdbarch, nto_gdbarch_ops);
+  *nto_ops = i386_nto_ops;
 
   set_gdbarch_gdb_signal_to_target (gdbarch, nto_gdb_signal_to_target);
   set_gdbarch_gdb_signal_from_target (gdbarch, nto_gdb_signal_from_target);
