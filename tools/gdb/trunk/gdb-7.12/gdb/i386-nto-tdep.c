@@ -298,6 +298,12 @@ i386nto_sigcontext_addr (struct frame_info *this_frame)
   return ptrctx;
 }
 
+static int
+i386nto_breakpoint_size (CORE_ADDR addr)
+{
+  return 0;
+}
+
 static struct nto_target_ops i386_nto_ops;
 
 static void
@@ -312,6 +318,7 @@ init_i386nto_ops (void)
   i386_nto_ops.regset_fill = i386nto_regset_fill;
   i386_nto_ops.fetch_link_map_offsets =
     svr4_ilp32_fetch_link_map_offsets;
+  i386_nto_ops.breakpoint_size = i386nto_breakpoint_size;
 }
 
 static void
