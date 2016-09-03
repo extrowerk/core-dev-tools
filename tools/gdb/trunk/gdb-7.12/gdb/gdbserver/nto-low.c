@@ -640,8 +640,11 @@ nto_fetch_registers (struct regcache *regcache, int regno)
 	    {
 	      const unsigned int registeroffset
 		= the_low_target.register_offset (regno);
-	      supply_register (regcache, regno,
-			       ((char *)&greg) + registeroffset);
+	      if (registeroffset == -1)
+		TRACE ("Register %d not known\n");
+	      else
+		supply_register (regcache, regno,
+				 ((char *)&greg) + registeroffset);
 	    }
 	}
       else
@@ -683,7 +686,10 @@ nto_store_registers (struct regcache *regcache, int regno)
     {
       const unsigned int regoffset
 	= the_low_target.register_offset (regno);
-      collect_register (regcache, regno, ((char *)&greg) + regoffset);
+      if (regoffset == -1)
+	TRACE ("Register %d not known\n");
+      else
+	collect_register (regcache, regno, ((char *)&greg) + regoffset);
     }
   err = devctl (nto_inferior.ctl_fd, DCMD_PROC_SETGREG, &greg, sizeof (greg),
 		0);
