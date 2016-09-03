@@ -36,21 +36,161 @@
 #define QNX_NOTE_NAME	"QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"
 
-#ifdef __CYGWIN__
-#include <sys/cygwin.h>
-#endif
-
-#ifdef __CYGWIN__
-static char default_nto_target[] = "C:\\QNXsdk\\target\\qnx6";
-#elif defined(__sun__) || defined(linux)
-static char default_nto_target[] = "/opt/QNXsdk/target/qnx6";
+#ifdef __QNXNTO__
+#include <sys/debug.h>
+typedef debug_process_t nto_procfs_info;
+typedef union nto_procfs_status {
+  debug_thread32_t _32;
+  debug_thread64_t _64;
+} nto_procfs_status;
+typedef union nto_siginfo_t {
+  __siginfo32_t _32;
+  __siginfo64_t _64;
+} nto_siginfo_t;
+#define nto_si_pid	si_pid
+#define nto_si_uid	si_uid
+#define nto_si_value	si_value
+#define nto_si_utime	si_utime
+#define nto_si_status	si_status
+#define nto_si_stime	si_stime
+#define nto_si_fltno	si_fltno
+#define nto_si_fltip	si_fltip
+#define nto_si_addr	si_addr
+#define nto_si_bdslot	si_bdslot
 #else
-static char default_nto_target[] = "";
+#include "nto-share/debug.h"
 #endif
 
 struct nto_target_ops current_nto_target;
 
+static char default_nto_target[] = "";
+
 static const struct inferior_data *nto_inferior_data_reg;
+
+static struct gdbarch_data *nto_gdbarch_data_handle;
+
+struct nto_gdbarch_data
+  {
+    struct type *siginfo_type;
+  };
+
+static void *
+init_nto_gdbarch_data (struct gdbarch *gdbarch)
+{
+  return GDBARCH_OBSTACK_ZALLOC (gdbarch, struct nto_gdbarch_data);
+}
+
+static struct nto_gdbarch_data *
+get_nto_gdbarch_data (struct gdbarch *gdbarch)
+{
+  return (nto_gdbarch_data *) gdbarch_data (gdbarch, nto_gdbarch_data_handle);
+}
+
+struct type *
+nto_get_siginfo_type (struct gdbarch *gdbarch)
+{
+  struct nto_gdbarch_data *nto_gdbarch_data;
+  struct type *int_type, *uint_type, *long_type, *void_ptr_type;
+  struct type *uid_type, *pid_type;
+  struct type *sigval_type, *clock_type;
+  struct type *siginfo_type, *sidata_type;
+  struct type *siproc_type, *sipdata_type, *type;
+
+  nto_gdbarch_data = get_nto_gdbarch_data (gdbarch);
+  if (nto_gdbarch_data->siginfo_type != NULL)
+    return nto_gdbarch_data->siginfo_type;
+
+  int_type = arch_integer_type (gdbarch, gdbarch_int_bit (gdbarch),
+			 	0, "int");
+  uint_type = arch_integer_type (gdbarch, gdbarch_int_bit (gdbarch),
+				 1, "unsigned int");
+  long_type = arch_integer_type (gdbarch, gdbarch_long_bit (gdbarch),
+				 0, "long");
+  void_ptr_type = lookup_pointer_type (builtin_type (gdbarch)->builtin_void);
+
+  /* union sigval */
+  sigval_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_UNION);
+  TYPE_NAME (sigval_type) = xstrdup ("union sigval");
+  append_composite_type_field (sigval_type, "sival_int", int_type);
+  append_composite_type_field_aligned (sigval_type, "sival_ptr",
+				       void_ptr_type, TYPE_LENGTH (long_type));
+
+  /* pid_t */
+  pid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
+			TYPE_LENGTH (int_type), "pid_t");
+  TYPE_TARGET_TYPE (pid_type) = int_type;
+  TYPE_TARGET_STUB (pid_type) = 1;
+
+  /* uid_t */
+  uid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
+			TYPE_LENGTH (uint_type), "uid_t");
+  TYPE_TARGET_TYPE (uid_type) = int_type;
+  TYPE_TARGET_STUB (uid_type) = 1;
+
+  /* clock_t */
+  clock_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
+			  TYPE_LENGTH (uint_type), "clock_t");
+  TYPE_TARGET_TYPE (clock_type) = uint_type;
+  TYPE_TARGET_STUB (clock_type) = 1;
+
+  /* __data */
+  sidata_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_UNION);
+
+  /* __pad */
+  append_composite_type_field (sidata_type, "__pad",
+			       init_vector_type (int_type, 7));
+
+  /* __data.__proc */
+  siproc_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
+  append_composite_type_field (siproc_type, "__pid", pid_type);
+
+  /* __data.__pdata */
+  sipdata_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_UNION);
+
+  /* __data.__pdata.__kill */
+  type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
+  append_composite_type_field (type, "__uid", uid_type);
+  append_composite_type_field (type, "__value", sigval_type);
+  append_composite_type_field (sipdata_type, "__kill", type);
+
+  /* __data.__pdata.__chld */
+  type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
+  append_composite_type_field (type, "__utime", clock_type);
+  append_composite_type_field (type, "__status", int_type);
+  append_composite_type_field (type, "__stime", clock_type);
+  append_composite_type_field_aligned (sipdata_type, "__chld", type,
+				       TYPE_LENGTH (long_type));
+  append_composite_type_field_aligned (siproc_type, "__pdata", sipdata_type,
+				       TYPE_LENGTH (long_type));
+  append_composite_type_field_aligned (sidata_type, "__proc", siproc_type,
+				       TYPE_LENGTH (long_type));
+
+  /* __data.__fault */
+  type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
+  append_composite_type_field (type, "__fltno", int_type);
+  append_composite_type_field_aligned (type, "__fltip", void_ptr_type,
+				       TYPE_LENGTH (long_type));
+  append_composite_type_field_aligned (type, "__addr", void_ptr_type,
+				       TYPE_LENGTH (long_type));
+  append_composite_type_field_aligned (type, "__bdslot", int_type,
+				       TYPE_LENGTH (long_type));
+  append_composite_type_field_aligned (sidata_type, "__fault", type,
+				       TYPE_LENGTH (long_type));
+
+  /* struct siginfo */
+  siginfo_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
+  TYPE_NAME (siginfo_type) = xstrdup ("siginfo");
+  append_composite_type_field (siginfo_type, "si_signo", int_type);
+  append_composite_type_field (siginfo_type, "si_code", int_type);
+  append_composite_type_field (siginfo_type, "si_errno", int_type);
+  append_composite_type_field_aligned (siginfo_type,
+				       "__data", sidata_type,
+				       TYPE_LENGTH (long_type));
+
+  nto_gdbarch_data->siginfo_type = siginfo_type;
+
+  return siginfo_type;
+}
 
 static char *
 nto_target (void)
@@ -438,6 +578,147 @@ nto_initialize_signals (void)
 #endif
 }
 
+void
+nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
+{
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+  __siginfo32_t *dst32 = (__siginfo32_t *)siginfo;
+  __siginfo64_t *dst64 = (__siginfo64_t *)siginfo;
+  const nto_procfs_status *status = (const nto_procfs_status *)ps;
+  const __siginfo32_t *src32 = &status->_32.info;
+  const __siginfo64_t *src64 = &status->_64.info64;
+  struct type *ptr_t = builtin_type (target_gdbarch ())->builtin_data_ptr;
+
+  memset (dst64, 0, IS_64BIT() ? sizeof (__siginfo64_t)
+			       : sizeof (__siginfo32_t));
+
+  if (IS_64BIT ())
+    {
+      dst64->si_signo = extract_signed_integer ((gdb_byte *)&src64->si_signo,
+						sizeof (src64->si_signo),
+						byte_order);
+      dst64->si_code = extract_signed_integer ((gdb_byte *)&src64->si_code,
+					       sizeof (src64->si_code),
+					       byte_order);
+      if (dst64->si_code == 127) // SI_NOINFO
+	return;
+
+      dst64->si_errno = extract_signed_integer ((gdb_byte *)&src64->si_errno,
+						sizeof (src64->si_errno),
+						byte_order);
+
+      if (dst64->si_code <= 0) // SI_FROMUSER
+	{
+	  dst64->nto_si_pid
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
+				      sizeof (src64->nto_si_pid), byte_order);
+	  dst64->nto_si_uid
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_uid,
+				      sizeof (src64->nto_si_uid), byte_order);
+	  dst64->nto_si_value.sival_ptr
+	    = extract_typed_address ((gdb_byte *)&src64->nto_si_value, ptr_t);
+	}
+      else if (dst64->si_signo
+	       == gdbarch_gdb_signal_to_target (target_gdbarch (),
+						GDB_SIGNAL_CHLD))
+	{
+	  dst64->nto_si_pid
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
+				      sizeof (src64->nto_si_pid), byte_order);
+	  dst64->nto_si_utime
+	    = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_utime,
+					sizeof (src64->nto_si_utime),
+					byte_order);
+	  dst64->nto_si_status
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_status,
+				      sizeof (src64->nto_si_status), \
+				      byte_order);
+	  dst64->nto_si_stime
+	    = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_stime,
+					sizeof (src64->nto_si_stime),
+					byte_order);
+	}
+      else
+	{
+	  dst64->nto_si_fltno
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_fltno,
+				      sizeof (src64->nto_si_fltno),
+				      byte_order);
+	  dst64->nto_si_fltip
+	    = extract_typed_address ((gdb_byte *)&src64->nto_si_fltip, ptr_t);
+	  dst64->nto_si_addr
+	    = extract_typed_address ((gdb_byte *)&src64->nto_si_addr, ptr_t);
+	  dst64->nto_si_bdslot
+	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_bdslot,
+				      sizeof (src64->nto_si_bdslot),
+				      byte_order);
+	}
+    }
+  else
+    {
+      dst32->si_signo = extract_signed_integer ((gdb_byte *)&src32->si_signo,
+						sizeof (src32->si_signo),
+						byte_order);
+      dst32->si_code = extract_signed_integer ((gdb_byte *)&src32->si_code,
+					       sizeof (src32->si_code),
+					       byte_order);
+      if (dst32->si_code == 127) // SI_NOINFO
+	return;
+
+      dst32->si_errno = extract_signed_integer ((gdb_byte *)&src32->si_errno,
+						sizeof (src32->si_errno),
+						byte_order);
+
+      if (dst32->si_code <= 0) // SI_FROMUSER
+	{
+	  dst32->nto_si_pid
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
+				      sizeof (src32->nto_si_pid), byte_order);
+	  dst32->nto_si_uid
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_uid,
+				      sizeof (src32->nto_si_uid), byte_order);
+	  dst32->nto_si_value.sival_ptr
+	    = extract_typed_address ((gdb_byte *)&src32->nto_si_value, ptr_t);
+	}
+      else if (dst32->si_signo
+	       == gdbarch_gdb_signal_to_target (target_gdbarch (),
+						GDB_SIGNAL_CHLD))
+	{
+	  dst32->nto_si_pid
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
+				      sizeof (src32->nto_si_pid), byte_order);
+	  dst32->nto_si_utime
+	    = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_utime,
+					sizeof (src32->nto_si_utime),
+					byte_order);
+	  dst32->nto_si_status
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_status,
+				      sizeof (src32->nto_si_status),
+				      byte_order);
+	  dst32->nto_si_stime
+	    = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_stime,
+					sizeof (src32->nto_si_stime),
+					byte_order);
+	}
+      else
+	{
+	  dst32->nto_si_fltno
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_fltno,
+				      sizeof (src32->nto_si_fltno),
+				      byte_order);
+	  dst32->nto_si_fltip
+	    = extract_typed_address ((gdb_byte *)&src32->nto_si_fltip, ptr_t);
+	  dst32->nto_si_addr
+	    = extract_typed_address ((gdb_byte *)&src32->nto_si_addr, ptr_t);
+	  dst32->nto_si_bdslot
+	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_bdslot,
+				      sizeof (src32->nto_si_bdslot),
+				      byte_order);
+	}
+    }
+}
+
+
 /* Read AUXV from initial_stack.  */
 LONGEST
 nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
@@ -660,4 +941,7 @@ _initialize_nto_tdep (void)
 {
   nto_inferior_data_reg
     = register_inferior_data_with_cleanup (NULL, nto_inferior_data_cleanup);
+
+  nto_gdbarch_data_handle =
+    gdbarch_data_register_post_init (init_nto_gdbarch_data);
 }

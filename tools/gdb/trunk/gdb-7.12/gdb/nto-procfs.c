@@ -906,6 +906,42 @@ procfs_xfer_partial (struct target_ops *ops, enum target_object object,
     {
     case TARGET_OBJECT_MEMORY:
       return procfs_xfer_memory (readbuf, writebuf, offset, len, xfered_len);
+    case TARGET_OBJECT_SIGNAL_INFO:
+      if (readbuf != NULL)
+	{
+	  union nto_procfs_status
+	    {
+	      debug_thread32_t _32;
+	      debug_thread64_t _64;
+	    } status;
+	  union nto_siginfo_t
+	    {
+	      __siginfo32_t _32;
+	      __siginfo64_t _64;
+	    } siginfo;
+	  const size_t sizeof_status = IS_64BIT() ? sizeof (status._64)
+						  : sizeof (status._32);
+	  const size_t sizeof_siginfo = IS_64BIT() ? sizeof (siginfo._64)
+						   : sizeof (siginfo._32);
+	  int err;
+	  LONGEST mylen = len;
+
+	  if ((err = devctl (ctl_fd, DCMD_PROC_STATUS, &status, sizeof_status,
+			     0)) != EOK)
+	    return TARGET_XFER_E_IO;
+	  if ((offset + mylen) > sizeof (siginfo))
+	    {
+	      if (offset < sizeof_siginfo)
+		mylen = sizeof (siginfo) - offset;
+	      else
+		return TARGET_XFER_EOF;
+	    }
+	  nto_get_siginfo_from_procfs_status (&status, &siginfo);
+	  memcpy (readbuf, (gdb_byte *)&siginfo + offset, mylen);
+	  *xfered_len = len;
+	  return len? TARGET_XFER_OK : TARGET_XFER_EOF;
+	}
+      /* Fallthru */
     case TARGET_OBJECT_AUXV:
       if (readbuf != NULL)
 	{
