@@ -101,6 +101,11 @@ arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
 	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o armnbsd-tdep.o \
 			solib-svr4.o"
 	;;
+arm*-*-nto*)
+	# Target: nto/arm
+	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o solib-svr4.o \
+			arm-nto-tdep.o nto-tdep.o"
+	;;
 arm*-*-openbsd*)
 	# Target: OpenBSD/arm
 	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o armbsd-tdep.o \
