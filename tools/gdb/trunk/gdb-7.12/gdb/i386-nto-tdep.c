@@ -351,7 +351,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
 
   set_solib_svr4_fetch_link_map_offsets
-    (gdbarch, svr4_ilp32_fetch_link_map_offsets);
+    (gdbarch, nto_generic_svr4_fetch_link_map_offsets);
 
   /* Initialize this lazily, to avoid an initialization order
      dependency on solib-svr4.c's _initialize routine.  */
