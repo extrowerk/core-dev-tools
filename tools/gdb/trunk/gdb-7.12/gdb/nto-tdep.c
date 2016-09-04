@@ -61,6 +61,8 @@ typedef union nto_siginfo_t {
 #include "nto-share/debug.h"
 #endif
 
+int nto_internal_debugging;
+
 static char default_nto_target[] = "";
 
 static const struct inferior_data *nto_inferior_data_reg;
