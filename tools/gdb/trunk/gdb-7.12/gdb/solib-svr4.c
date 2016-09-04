@@ -70,6 +70,9 @@ struct lm_info
 
     /* Values read in from inferior's fields of the same name.  */
     CORE_ADDR l_ld, l_next, l_prev, l_name;
+#ifdef __QNXTARGET__
+    CORE_ADDR l_path;
+#endif
   };
 
 /* On SVR4 systems, a list of symbols in the dynamic linker where
@@ -222,6 +225,10 @@ lm_info_read (CORE_ADDR lm_addr)
 					       ptr_type);
       lm_info->l_name = extract_typed_address (&lm[lmo->l_name_offset],
 					       ptr_type);
+#ifdef __QNXTARGET__
+      lm_info->l_path = extract_typed_address (&lm[lmo->l_path_offset],
+					       ptr_type);
+#endif
     }
 
   do_cleanups (back_to);
@@ -1403,6 +1410,36 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
       /* Extract this shared object's name.  */
       target_read_string (newobj->lm_info->l_name, &buffer,
 			  SO_NAME_MAX_PATH_SIZE - 1, &errcode);
+
+#ifdef __QNXTARGET__
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+      /* Always get l_path and stuff it in so_original_name. */
+	{
+	  /* Try l_path */
+	  char *pathbuff = NULL;
+	  int err;
+
+	  target_read_string (newobj->lm_info->l_path, &pathbuff,
+			      PATH_MAX - 1, &err);
+	  if (err == 0 && pathbuff != NULL)
+	    {
+	      if (errcode != 0)
+		{
+		  if (svr4_same_1 (pathbuff, "libc.so.3"))
+		    buffer = xstrdup ("libc.so.3");
+		  else
+		    buffer = xstrdup (lbasename (pathbuff));
+		  errcode = 0;
+		}
+	      strncpy (newobj->so_original_name, pathbuff,
+		       SO_NAME_MAX_PATH_SIZE - 1);
+	    }
+	  xfree (pathbuff);
+	}
+#endif /* __QNXTARGET__ */
+
       if (errcode != 0)
 	{
 	  /* If this entry's l_name address matches that of the
@@ -1418,7 +1455,9 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
 
       strncpy (newobj->so_name, buffer, SO_NAME_MAX_PATH_SIZE - 1);
       newobj->so_name[SO_NAME_MAX_PATH_SIZE - 1] = '\0';
+#ifndef __QNXTARGET__
       strcpy (newobj->so_original_name, newobj->so_name);
+#endif
       xfree (buffer);
 
       /* If this entry has no name, or its name matches the name
