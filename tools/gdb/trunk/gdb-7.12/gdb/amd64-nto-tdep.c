@@ -92,7 +92,7 @@ nto_reg_offset (int regnum)
 }
 
 static void
-x86_64nto_supply_gregset (struct regcache *regcache, char *gregs)
+x86_64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs)
 {
   struct gdbarch *const gdbarch = get_regcache_arch (regcache);
   struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
@@ -103,13 +103,13 @@ x86_64nto_supply_gregset (struct regcache *regcache, char *gregs)
 }
 
 static void
-x86_64nto_supply_fpregset (struct regcache *regcache, char *fpregs)
+x86_64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
   amd64_supply_fxsave (regcache, -1, fpregs);
 }
 
 static void
-x86_64nto_supply_regset (struct regcache *regcache, int regset, char *data)
+x86_64nto_supply_regset (struct regcache *regcache, int regset, const gdb_byte *data)
 {
   switch (regset)
     {
@@ -301,7 +301,7 @@ x86_64nto_register_area (struct gdbarch *gdbarch, int regno, int regset,
 
 static int
 x86_64nto_regset_fill (const struct regcache *const regcache,
-		       const int regset, char *data)
+		       const int regset, gdb_byte *const data)
 {
   if (regset == NTO_REG_GENERAL)
     {
