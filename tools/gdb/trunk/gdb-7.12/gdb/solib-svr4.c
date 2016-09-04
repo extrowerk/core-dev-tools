@@ -46,6 +46,10 @@
 #include "gdb_bfd.h"
 #include "probe.h"
 
+#if defined(__QNXTARGET__)
+#include "nto-tdep.h"
+#endif
+
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);
 static void svr4_relocate_main_executable (void);
@@ -182,6 +186,13 @@ svr4_same_1 (const char *gdb_so_name, const char *inferior_so_name)
   if (strcmp (gdb_so_name, "/usr/lib/sparcv9/ld.so.1") == 0
       && strcmp (inferior_so_name, "/lib/sparcv9/ld.so.1") == 0)
     return 1;
+
+#ifdef __QNXTARGET__
+  if ((strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0
+      || strcmp (gdb_so_name, "/usr/lib/ldqnx-64.so.2") == 0)
+      && strcmp (inferior_so_name, "libc.so.3") == 0)
+    return 1;
+#endif /* __QNXTARGET__ */
 
   return 0;
 }
@@ -1525,12 +1536,16 @@ svr4_current_sos_direct (struct svr4_info *info)
   if (! info->debug_base)
     return svr4_default_sos ();
 
+#ifndef __QNXTARGET__
   /* Assume that everything is a library if the dynamic loader was loaded
      late by a static executable.  */
   if (exec_bfd && bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
     ignore_first = 0;
   else
     ignore_first = 1;
+#else
+    ignore_first = 1;
+#endif /* !__QNXTARGET__ */
 
   back_to = make_cleanup (svr4_free_library_list, &head);
 
@@ -2089,6 +2104,23 @@ svr4_handle_solib_event (void)
   discard_cleanups (old_chain);
 }
 
+#ifdef __QNXTARGET__
+static int
+cmp_host_to_target_word (bfd *abfd, CORE_ADDR host_addr, CORE_ADDR target_addr)
+{
+  unsigned host_word, target_word;
+
+  if (bfd_seek(abfd, host_addr, SEEK_SET) != 0
+      || bfd_bread ((gdb_byte*)&host_word, sizeof (host_word), abfd)
+	 != sizeof (host_word))
+    return -1;
+  if (target_read_memory(target_addr, (gdb_byte*)&target_word,
+			 sizeof (target_word)))
+    return -1;
+  return (host_word-target_word);
+}
+#endif /* __QNXTARGET__ */
+
 /* Helper function for svr4_update_solib_event_breakpoints.  */
 
 static int
@@ -2421,6 +2453,25 @@ enable_break (struct svr4_info *info, int from_tty)
 	}
       END_CATCH
 
+#ifdef __QNXTARGET__
+      if (tmp_bfd == NULL)
+	{
+	  /* Internal knowledge: */
+	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0 ||
+	      strcmp (interp_name, "/usr/lib/ldqnx-64.so.2") == 0)
+	    {
+	      /* We "know" it's libc.so.3 */
+	      tmp_bfd = solib_bfd_open ("libc.so.3");
+	      if (tmp_bfd != NULL)
+		{
+		  /* Change interp name. */
+		  xfree (interp_name);
+		  interp_name = xstrdup ("libc.so.3");
+		}
+	    }
+	}
+#endif
+
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
 
@@ -2531,6 +2582,41 @@ enable_break (struct svr4_info *info, int from_tty)
 	    break;
 	}
 
+#ifdef __QNXTARGET__
+      if (sym_addr == 0 && load_addr_found)
+	{
+	  CORE_ADDR r_debug_sym_addr;
+	  const struct link_map_offsets *const lmo
+	    = svr4_fetch_link_map_offsets ();
+
+	  /* Unrelocated: */
+	  r_debug_sym_addr = gdb_bfd_lookup_symbol (tmp_bfd,
+						    cmp_name_and_sec_flags,
+						    (void *) "_r_debug");
+	  if (r_debug_sym_addr != 0)
+	    {
+	      gdb_byte r_brk_addr[8];
+              unsigned ptr_bytes = IS_64BIT() ? 8 : 4;
+
+	      if (target_read_memory (load_addr + r_debug_sym_addr + lmo->r_brk_offset,
+				      r_brk_addr, ptr_bytes == 0))
+		{
+		  CORE_ADDR target_r_brk_addr
+		    = extract_unsigned_integer (r_brk_addr, ptr_bytes,
+					gdbarch_byte_order (target_gdbarch ()));
+
+		  /* Is target_r_brk_addr in ldd text segment?
+		     If so, it's relocated already. */
+		  if (target_r_brk_addr >= info->interp_text_sect_low
+		      && target_r_brk_addr < info->interp_text_sect_high)
+		    sym_addr = target_r_brk_addr - load_addr;
+		  else
+		    sym_addr = target_r_brk_addr;
+		}
+	    }
+	}
+#endif /* __QNXTARGET__ */
+
       if (sym_addr != 0)
 	/* Convert 'sym_addr' from a function pointer to an address.
 	   Because we pass tmp_bfd_target instead of the current
@@ -2538,6 +2624,17 @@ enable_break (struct svr4_info *info, int from_tty)
 	sym_addr = gdbarch_convert_from_func_ptr_addr (target_gdbarch (),
 						       sym_addr,
 						       tmp_bfd_target);
+
+#ifdef __QNXTARGET__
+	if (sym_addr != 0
+	    && cmp_host_to_target_word (tmp_bfd, sym_addr,
+					sym_addr+load_addr) != 0)
+	  /* This warning is being parsed by the IDE, the 
+	   * format should not change without consultations with 
+	   * IDE team.  */
+	  warning ("Host file %s does not match target file %s",
+		   interp_name, so ? so->so_original_name : "<?>");
+#endif /* __QNXTARGET__ */
 
       /* We're done with both the temporary bfd and target.  Closing
          the target closes the underlying bfd, because it holds the

@@ -33,6 +33,8 @@
 #include "objfiles.h"
 #include "gdb/signals.h"
 
+#include "gdbcmd.h"
+
 extern void foo_initialize_corelow (void);
 
 #define QNX_NOTE_NAME	"QNX"
@@ -648,6 +650,13 @@ nto_initialize_signals (void)
   signal_print_update (SIGPHOTON, 0);
   signal_pass_update (SIGPHOTON, 1);
 #endif
+}
+
+static void
+show_nto_debug (struct ui_file *file, int from_tty,
+                struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
 }
 
 char *
@@ -1383,6 +1392,19 @@ _initialize_nto_tdep (void)
 
   nto_inferior_data_reg
     = register_inferior_data_with_cleanup (NULL, nto_inferior_data_cleanup);
+
+  add_setshow_zinteger_cmd ("nto-debug", class_maintenance,
+			    &nto_internal_debugging, _("\
+Set QNX NTO internal debugging."), _("\
+Show QNX NTO internal debugging."), _("\
+When non-zero, nto specific debug info is\n\
+displayed. Different information is displayed\n\
+for different positive values."),
+			    NULL,
+			    &show_nto_debug, /* FIXME: i18n: QNX NTO internal
+				     debugging is %s.  */
+			    &setdebuglist, &showdebuglist);
+
 
   nto_gdbarch_data_handle =
     gdbarch_data_register_post_init (init_nto_gdbarch_data);
