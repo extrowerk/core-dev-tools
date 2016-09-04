@@ -401,6 +401,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo32.r_map_offset = 4;
       lmo32.r_brk_offset = 8;
 
+      lmo32.r_state_offset = 12;
+      lmo32.r_state_size = 4;
       lmo32.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
 				    show up twice.  */
 
@@ -427,6 +429,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo64.r_map_offset = 8;
       lmo64.r_brk_offset = 16;
 
+      lmo64.r_state_offset = 24;
+      lmo64.r_state_size = 4;
       lmo64.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
 				    show up twice.  */
 
