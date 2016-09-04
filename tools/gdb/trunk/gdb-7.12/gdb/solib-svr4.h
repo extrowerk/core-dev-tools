@@ -61,6 +61,11 @@ struct link_map_offsets
 
     /* Offset to l_name field in struct link_map.  */
     int l_name_offset;
+
+#ifdef __QNXTARGET__
+    /* Offset of l_path field of struct link_map.  */
+    int l_path_offset;
+#endif
   };
 
 /* set_solib_svr4_fetch_link_map_offsets() is intended to be called by
