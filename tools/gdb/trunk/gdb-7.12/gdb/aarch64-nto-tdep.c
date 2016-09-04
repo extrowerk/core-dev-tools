@@ -44,7 +44,7 @@
 
 
 static void
-aarch64nto_supply_gregset (struct regcache *regcache, char *gregs)
+aarch64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs)
 {
   int regno;
 
@@ -53,7 +53,7 @@ aarch64nto_supply_gregset (struct regcache *regcache, char *gregs)
 }
 
 static void
-aarch64nto_supply_fpregset (struct regcache *regcache, char *fpregs)
+aarch64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 {
   int regno;
 
@@ -69,7 +69,7 @@ aarch64nto_supply_fpregset (struct regcache *regcache, char *fpregs)
 
 static void
 aarch64nto_supply_regset (struct regcache *regcache, int regset,
-			  char *data)
+			  const gdb_byte *data)
 {
   switch (regset)
     {
@@ -144,7 +144,7 @@ aarch64nto_register_area (struct gdbarch *gdbarch, int regno, int regset,
 
 static int
 aarch64nto_regset_fill (const struct regcache *const regcache,
-			const int regset, char *data)
+			const int regset, gdb_byte *const data)
 {
   if (regset == NTO_REG_GENERAL)
     {

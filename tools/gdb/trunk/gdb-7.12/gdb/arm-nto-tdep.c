@@ -80,7 +80,7 @@ static struct arm_get_next_pcs_ops nto_arm_get_next_pcs_ops = {
 
 static void
 armnto_supply_reg_gregset (struct regcache *regcache, int regno,
-			   char *regs)
+			   const gdb_byte *regs)
 {
   int regi;
 
@@ -94,7 +94,7 @@ armnto_supply_reg_gregset (struct regcache *regcache, int regno,
 
 static void
 armnto_supply_reg_fpregset (struct regcache *regcache, int regno,
-			    char *regs)
+			    const gdb_byte *regs)
 {
   int regi;
   const struct gdbarch_tdep *const tdep = gdbarch_tdep (target_gdbarch ());
@@ -128,7 +128,7 @@ armnto_supply_reg_fpregset (struct regcache *regcache, int regno,
 
 static void
 armnto_supply_reg_altregset (struct regcache *regcache, int regno,
-			     char *regs)
+			     const gdb_byte *regs)
 {
     int regi;
 
@@ -147,26 +147,26 @@ armnto_supply_reg_altregset (struct regcache *regcache, int regno,
 }
 
 static void
-armnto_supply_gregset (struct regcache *regcache, char *regs)
+armnto_supply_gregset (struct regcache *regcache, const gdb_byte *regs)
 {
   armnto_supply_reg_gregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
-armnto_supply_fpregset (struct regcache *regcache, char *regs)
+armnto_supply_fpregset (struct regcache *regcache, const gdb_byte *regs)
 {
   armnto_supply_reg_fpregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
-armnto_supply_altregset (struct regcache *regcache, char *regs)
+armnto_supply_altregset (struct regcache *regcache, const gdb_byte *regs)
 {
   armnto_supply_reg_altregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
 armnto_supply_regset (struct regcache *regcache, int regset,
-		      char *data)
+		      const gdb_byte *data)
 {
   switch (regset)
     {
@@ -297,7 +297,7 @@ armnto_register_area (struct gdbarch *gdbarch,
 
 static int
 armnto_regset_fill (const struct regcache *regcache, int regset,
-		    char *data)
+		    gdb_byte *data)
 {
   int regi;
 
@@ -476,7 +476,7 @@ armnto_core_supply_gregset (const struct regset *regset,
 {
   nto_trace (0) ("%s () regnum=%d\n", __func__, regnum);
 
-  armnto_supply_reg_gregset (regcache, regnum, (char *)preg);
+  armnto_supply_reg_gregset (regcache, regnum, (const gdb_byte *)preg);
 }
 
 static void
@@ -487,7 +487,7 @@ armnto_core_supply_fpregset (const struct regset *regset,
 {
   nto_trace (0) ("%s () regnum=%d\n", __func__, regnum);
 
-  armnto_supply_reg_fpregset (regcache, regnum, (char *)preg);
+  armnto_supply_reg_fpregset (regcache, regnum, (const gdb_byte *)preg);
 }
 
 static void

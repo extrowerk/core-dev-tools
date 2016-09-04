@@ -545,7 +545,7 @@ nto_in_dynsym_resolve_code (CORE_ADDR pc)
 }
 
 void
-nto_dummy_supply_regset (struct regcache *regcache, char *regs)
+nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs)
 {
   /* Do nothing.  */
 }
