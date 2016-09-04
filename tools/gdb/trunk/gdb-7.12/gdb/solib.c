@@ -563,6 +563,19 @@ solib_map_sections (struct so_list *so)
     error (_("Shared library file name is too long."));
   strcpy (so->so_name, bfd_get_filename (abfd));
 
+#ifdef __QNXTARGET__
+  gdb_assert (ops->validate != NULL);
+
+  if (ops->validate != NULL && !ops->validate (so))
+    {
+      warning (_("Shared object \"%s\" could not be validated "
+		 "and will be ignored."), so->so_name);
+      gdb_bfd_unref (so->abfd);
+      so->abfd = NULL;
+      return 0;
+    }
+#endif /* __QNXTARGET__ */
+
   if (build_section_table (abfd, &so->sections, &so->sections_end))
     {
       error (_("Can't find the file sections in `%s': %s"),
@@ -653,6 +666,7 @@ free_so (struct so_list *so)
   clear_so (so);
   ops->free_so (so);
 
+  xfree (so->build_id);
   xfree (so);
 }
 
