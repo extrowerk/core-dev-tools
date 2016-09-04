@@ -255,7 +255,11 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
       inf->fake_pid_p = fake_pid_p;
     }
 
+#ifndef __QNXTARGET__
   ptid = ptid_build (pid, lwpid, 0);
+#else /* __QNXTARGET__ */
+  ptid = ptid_build (pid, 0, lwpid);
+#endif /* __QNXTARGET__ */
 
   add_thread (ptid);
 
@@ -520,9 +524,15 @@ get_core_register_section (struct regcache *regcache,
 
   xfree (section_name);
 
+#ifdef __QNXTARGET__
+  if (ptid_get_tid (inferior_ptid))
+    section_name = xstrprintf ("%s/%ld", name,
+			       ptid_get_tid (inferior_ptid));
+#else /* ! __QNXTARGET__ */
   if (ptid_get_lwp (inferior_ptid))
     section_name = xstrprintf ("%s/%ld", name,
 			       ptid_get_lwp (inferior_ptid));
+#endif
   else
     section_name = xstrdup (name);
 
@@ -1072,8 +1082,11 @@ init_core_ops (void)
   core_target = &core_ops;
 }
 
+#ifdef __QNXTARGET__
+extern void foo_initialize_corelow (void);
 void
-_initialize_corelow (void)
+foo_initialize_corelow (void)
+#endif
 {
   init_core_ops ();
 
