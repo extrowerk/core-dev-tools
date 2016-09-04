@@ -846,9 +846,15 @@ elf_locate_base (void)
     }
 
   /* Find DT_DEBUG.  */
+#ifndef __QNXTARGET__
   if (scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr, NULL)
       || scan_dyntag_auxv (DT_DEBUG, &dyn_ptr, NULL))
     return dyn_ptr;
+#else /* __QNXTARGET__ */
+  if ((scan_dyntag_auxv (DT_DEBUG, &dyn_ptr, NULL)
+       || scan_dyntag (DT_DEBUG, exec_bfd, &dyn_ptr, NULL))
+      && dyn_ptr != 0) return dyn_ptr;
+#endif /* __QNXTARGET__ */
 
   /* This may be a static executable.  Look for the symbol
      conventionally named _r_debug, as a last resort.  */
