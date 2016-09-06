@@ -86,6 +86,7 @@ struct nto_target_ops
 #define target_nto_gdbarch_data ((struct nto_target_ops *)gdbarch_data (target_gdbarch (), nto_gdbarch_ops))
 
 extern int nto_internal_debugging;
+extern int nto_stop_on_thread_events;
 
 #define nto_cpuinfo_flags (target_nto_gdbarch_data->cpuinfo_flags)
 
@@ -171,11 +172,47 @@ struct private_thread_info
 /* Per-inferior data, common for both procfs and remote.  */
 struct nto_inferior_data
 {
+  /* Is program loaded? */
+  int has_memory;
+
+  /* Does target has stack available? */
+  int has_stack;
+
+  /* Is it being executed? */
+  int has_execution;
+
+  /* Does it have registers? */
+  int has_registers;
+
   /* Last stopped flags result from wait function */
   unsigned int stopped_flags;
 
   /* Last known stopped PC */
   CORE_ADDR stopped_pc;
+
+  /* In case of a fork, remember child pid. */
+  int child_pid;
+
+  /* In case of a fork, is it a vfork? */
+  int vfork;
+
+  /* bind_func address needed to determine if we are in
+   * dynsym code */
+  CORE_ADDR bind_func_addr;
+
+  /* Size of __bind_func symbol */
+  size_t bind_func_sz;
+
+  /* Similar to bind_func, we want to look it up only once */
+  CORE_ADDR resolve_func_addr;
+
+  /* To avoid repeatedly looking up symbols, mark here
+   * that the lookup has been done.  If it is done,
+   * then bind_func_ptr will not be re-calculated,
+   * even if it is still zero (meaning original attempt
+   * failed).
+   */
+  int bind_func_p;
 };
 
 /* Generic functions in nto-tdep.c.  */
@@ -219,6 +256,8 @@ struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 struct type *nto_get_siginfo_type (struct gdbarch *);
 
 void nto_get_siginfo_from_procfs_status (const void *status, void *siginfo);
+
+int nto_stopped_by_watchpoint (struct target_ops *ops);
 
 #define IS_64BIT() (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word == 64)
 

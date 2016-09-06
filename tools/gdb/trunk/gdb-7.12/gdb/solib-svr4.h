@@ -94,4 +94,6 @@ extern struct link_map_offsets *svr4_lp64_fetch_link_map_offsets (void);
    SVR4 run time loader.  */
 int svr4_in_dynsym_resolve_code (CORE_ADDR pc);
 
+extern CORE_ADDR lm_addr_check (const struct so_list *so, bfd *abfd);
+
 #endif /* solib-svr4.h */

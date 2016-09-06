@@ -32,8 +32,8 @@
 #include "gdbcore.h"
 #include "objfiles.h"
 #include "gdb/signals.h"
-
 #include "gdbcmd.h"
+#include "observer.h"
 
 extern void foo_initialize_corelow (void);
 
@@ -66,6 +66,7 @@ typedef union nto_siginfo_t {
 #endif
 
 int nto_internal_debugging;
+int nto_stop_on_thread_events;
 
 static char default_nto_target[] = "";
 
@@ -228,105 +229,90 @@ nto_map_arch_to_cputype (const char *arch)
     return CPUTYPE_ARM;
   if (!strcmp (arch, "sh"))
     return CPUTYPE_SH;
+  if (!strcmp (arch, "x86_64"))
+    return CPUTYPE_X86_64;
+  if (!strcmp (arch, "???")) // FIXME: AARCH64
+    return CPUTYPE_AARCH64;
   return CPUTYPE_UNKNOWN;
+}
+
+/* Helper function, calculates architecture path, e.g.
+   /opt/qnx640/target/qnx6/ppcbe
+   It allocates string, callers must free the string using free.  */
+
+static char *
+nto_build_arch_path (void)
+{
+  const char *nto_root, *arch, *endian;
+  char *arch_path;
+  const char *variant_suffix = "";
+
+  nto_root = nto_target ();
+  if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386") == 0)
+    {
+      if (IS_64BIT())
+	arch = "x86_64";
+      else
+	arch = "x86";
+      endian = "";
+    }
+  else if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
+		   "rs6000") == 0
+	   || strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
+		   "powerpc") == 0)
+    {
+      arch = "ppc";
+      endian = "be";
+    }
+  else
+    {
+      arch = gdbarch_bfd_arch_info (target_gdbarch ())->arch_name;
+      endian = gdbarch_byte_order (target_gdbarch ())
+	       == BFD_ENDIAN_BIG ? "be" : "le";
+    }
+
+  if (nto_variant_directory_suffix)
+    variant_suffix = nto_variant_directory_suffix ();
+
+  /* In case nto_root is short, add strlen(solib)
+     so we can reuse arch_path below.  */
+  arch_path = (char *)
+    malloc (strlen (nto_root) + strlen (arch) + strlen (endian)
+	    + strlen (variant_suffix) +	2);
+  sprintf (arch_path, "%s/%s%s%s", nto_root, arch, endian, variant_suffix);
+  return arch_path;
 }
 
 int
 nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 {
-  char *buf, *arch_path, *nto_root;
-  const char *endian;
-  const char *base;
+  char *buf, *arch_path, *base;
   const char *arch;
-  int arch_len, len, ret;
-#define PATH_FMT \
-  "%s/lib:%s/usr/lib:%s/usr/photon/lib:%s/usr/photon/dll:%s/lib/dll"
+  int ret;
+#define PATH_FMT "%s/lib%c%s/usr/lib%c%s/usr/photon/lib%c" \
+		 "%s/usr/photon/dll%c%s/lib/dll%c%s"
 
-  nto_root = nto_target ();
-  if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386") == 0)
+  arch_path = nto_build_arch_path ();
+  buf = (char *) alloca (strlen (PATH_FMT) + strlen (arch_path) * 6 + 1);
+  sprintf (buf, PATH_FMT, arch_path, DIRNAME_SEPARATOR,
+	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
+	   arch_path, DIRNAME_SEPARATOR, arch_path, DIRNAME_SEPARATOR,
+	   arch_path);
+  free (arch_path);
+
+  ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, solib, o_flags, temp_pathname);
+  if (ret < 0)
     {
-      arch = "x86";
-      endian = "";
-    }
-  else if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "rs6000") == 0
-	   || strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "powerpc") == 0)
-    {
-      arch = "ppc";
-      endian = "be";
-    }
-  else
-    {
-      arch = gdbarch_bfd_arch_info (target_gdbarch ())->arch_name;
-      endian = gdbarch_byte_order (target_gdbarch ())
-	       == BFD_ENDIAN_BIG ? "be" : "le";
-    }
-
-  /* In case nto_root is short, add strlen(solib)
-     so we can reuse arch_path below.  */
-
-  arch_len = (strlen (nto_root) + strlen (arch) + strlen (endian) + 2
-	      + strlen (solib));
-  arch_path = (char *) alloca (arch_len);
-  xsnprintf (arch_path, arch_len, "%s/%s%s", nto_root, arch, endian);
-
-  len = strlen (PATH_FMT) + strlen (arch_path) * 5 + 1;
-  buf = (char *) alloca (len);
-  xsnprintf (buf, len, PATH_FMT, arch_path, arch_path, arch_path, arch_path,
-	     arch_path);
-
-  base = lbasename (solib);
-  ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_RETURN_REALPATH, base, o_flags,
-	       temp_pathname);
-  if (ret < 0 && base != solib)
-    {
-      xsnprintf (arch_path, arch_len, "/%s", solib);
-      ret = open (arch_path, o_flags, 0);
-      if (temp_pathname)
-	{
-	  if (ret >= 0)
-	    *temp_pathname = gdb_realpath (arch_path);
-	  else
-	    *temp_pathname = NULL;
-	}
+      /* Don't assume basename() isn't destructive.  */
+      base = strrchr (solib, '/');
+      if (!base)
+	base = solib;
+      else
+	base++;			/* Skip over '/'.  */
+      if (base != solib)
+	ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_SEARCH_IN_PATH, base, o_flags, temp_pathname);
     }
   return ret;
-}
-
-void
-nto_init_solib_absolute_prefix (void)
-{
-  char buf[PATH_MAX * 2], arch_path[PATH_MAX];
-  char *nto_root;
-  const char *endian;
-  const char *arch;
-
-  nto_root = nto_target ();
-  if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386") == 0)
-    {
-      arch = "x86";
-      endian = "";
-    }
-  else if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "rs6000") == 0
-	   || strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "powerpc") == 0)
-    {
-      arch = "ppc";
-      endian = "be";
-    }
-  else
-    {
-      arch = gdbarch_bfd_arch_info (target_gdbarch ())->arch_name;
-      endian = gdbarch_byte_order (target_gdbarch ())
-	       == BFD_ENDIAN_BIG ? "be" : "le";
-    }
-
-  xsnprintf (arch_path, sizeof (arch_path), "%s/%s%s", nto_root, arch, endian);
-
-  xsnprintf (buf, sizeof (buf), "set solib-absolute-prefix %s", arch_path);
-  execute_command (buf, 0);
 }
 
 char **
@@ -418,6 +404,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo32.l_next_offset = 12;
 
       lmo32.l_prev_offset = 16;
+
+      lmo32.l_path_offset = 28;
     }
   if (lmp64 == NULL)
     {
@@ -446,6 +434,8 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo64.l_next_offset = 24;
 
       lmo64.l_prev_offset = 32;
+
+      lmo64.l_path_offset = 56;
     }
 
   if (IS_64BIT())
@@ -525,6 +515,28 @@ find_load_phdr (bfd *abfd)
   return NULL;
 }
 
+static Elf_Internal_Phdr *
+find_load_phdr_2 (bfd *abfd, unsigned int p_filesz,
+		  unsigned int p_memsz, unsigned int p_flags,
+		  unsigned int p_align)
+{
+  Elf_Internal_Phdr *phdr;
+  unsigned int i;
+
+  if (!abfd || !elf_tdata (abfd))
+    return NULL;
+
+  phdr = elf_tdata (abfd)->phdr;
+  for (i = 0; i < elf_elfheader (abfd)->e_phnum; i++, phdr++)
+    {
+      if (phdr->p_type == PT_LOAD && phdr->p_flags == p_flags
+	  && phdr->p_memsz == p_memsz && phdr->p_filesz == p_filesz
+	  && phdr->p_align == p_align)
+	return phdr;
+    }
+  return NULL;
+}
+
 void
 nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
 {
@@ -534,8 +546,22 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
   Elf_Internal_Phdr *phdr = find_load_phdr (sec->the_bfd_section->owner);
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
-  sec->addr = nto_truncate_ptr (sec->addr + lm_addr (so) - vaddr);
-  sec->endaddr = nto_truncate_ptr (sec->endaddr + lm_addr (so) - vaddr);
+  sec->addr = nto_truncate_ptr (sec->addr
+			        + lm_addr_check (so, sec->the_bfd_section->owner)
+				- vaddr);
+  sec->endaddr = nto_truncate_ptr (sec->endaddr
+				   + lm_addr_check (so, sec->the_bfd_section->owner)
+				   - vaddr);
+  if (so->addr_low == 0)
+    so->addr_low = lm_addr_check (so, sec->the_bfd_section->owner);
+  if (so->addr_high < sec->endaddr)
+    so->addr_high = sec->endaddr;
+
+  /* Still can determine low. */
+  if (so->addr_low == 0) {
+    so->addr_low = lm_addr_check (so, sec->the_bfd_section->owner); /* Load base */
+    so->addr_high = so->addr_low; /* at a minimum */
+  }
 }
 
 /* This is cheating a bit because our linker code is in libc.so.  If we
@@ -543,7 +569,25 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
 int
 nto_in_dynsym_resolve_code (CORE_ADDR pc)
 {
-  if (in_plt_section (pc))
+  struct nto_inferior_data *inf_data;
+  struct inferior *inf;
+  int in_resolv = 0;
+
+  inf = current_inferior ();
+  inf_data = nto_inferior_data (inf);
+
+  if (inf_data->bind_func_p != 0)
+    {
+      const size_t bind_func_sz = inf_data->bind_func_sz ?
+				  inf_data->bind_func_sz : 80;
+      if (inf_data->bind_func_addr != 0)
+	in_resolv = (pc >= inf_data->bind_func_addr
+		     && pc < (inf_data->bind_func_addr + bind_func_sz));
+      if (!in_resolv && inf_data->resolve_func_addr != 0)
+	in_resolv = (pc == inf_data->resolve_func_addr);
+    }
+
+  if (in_resolv || in_plt_section (pc))
     return 1;
   return 0;
 }
@@ -635,6 +679,48 @@ nto_extra_thread_info (struct target_ops *self, struct thread_info *ti)
   return "";
 }
 
+
+static CORE_ADDR
+nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
+{
+  struct nto_inferior_data *const inf_data
+    = nto_inferior_data (current_inferior ());
+
+  // TODO: Proper cleanup of inf. data 
+
+  if (inf_data->bind_func_p == 0)
+    {
+      /* On Neutrino with libc 6.5.0 and later, lazy binding is performed
+       * by a function called */
+      struct objfile *objfile;
+      const struct bound_minimal_symbol resolver
+	= lookup_minimal_symbol_and_objfile ("__resolve_func");
+
+      if (resolver.minsym && resolver.objfile)
+	{
+	  const struct bound_minimal_symbol bind_f
+	    = lookup_minimal_symbol ("__bind_func", NULL, resolver.objfile);
+
+	  if (bind_f.minsym)
+	    {
+	      inf_data->bind_func_p = 1;
+	      inf_data->bind_func_addr = BMSYMBOL_VALUE_ADDRESS (bind_f);
+	      inf_data->bind_func_sz = MSYMBOL_SIZE (bind_f.minsym);
+	      inf_data->resolve_func_addr = BMSYMBOL_VALUE_ADDRESS (resolver);
+	    }
+	}
+    }
+
+  if (inf_data->bind_func_p)
+    {
+      if (inf_data->resolve_func_addr == pc)
+	return frame_unwind_caller_pc (get_current_frame ());
+    }
+
+  return 0;
+}
+
+
 void
 nto_initialize_signals (void)
 {
@@ -661,6 +747,48 @@ show_nto_debug (struct ui_file *file, int from_tty,
                 struct cmd_list_element *c, const char *value)
 {
   fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
+}
+
+static int 
+nto_print_tidinfo_callback (struct thread_info *tp, void *data)
+{
+  char star = ' ';
+  int tid = 0;
+  int state = 0;
+  int flags = 0;
+
+  if (tp)
+    {
+      if (ptid_equal (tp->ptid, inferior_ptid))
+	star = '*';
+
+      if (tp->priv)
+	{
+	  tid = tp->priv->tid;
+	  state = tp->priv->state;
+	  flags = tp->priv->flags;
+	}
+      else
+	tid = ptid_get_tid (tp->ptid);
+
+      printf_filtered ("%c%d\t%d\t%d\n", star, tid, state, flags);
+    }
+
+  return 0;
+}
+
+static void
+nto_info_tidinfo_command (char *args, int from_tty)
+{
+  char *execfile = get_exec_file (0);
+  nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__,
+		  args ? args : "(null)", from_tty);
+
+  target_update_thread_list ();
+  printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n",
+		  ptid_get_pid (inferior_ptid), execfile ? execfile : "");
+
+  iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
 
 char *
@@ -1240,6 +1368,157 @@ init_nto_core_ops (void)
   core_target->to_pid_to_str = nto_pid_to_str;
 }
 
+int
+nto_stopped_by_watchpoint (struct target_ops *const ops)
+{
+  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are 
+     stopped due to a SIGTRAP.  This assumes gdb works in 'all-stop' mode;
+     future gdb versions will likely run in 'non-stop' mode in which case 
+     we will have to store/examine statuses per thread in question.  
+     Until then, this will work fine.  */
+
+  struct inferior *inf = current_inferior ();
+  struct nto_inferior_data *inf_data;
+
+  gdb_assert (inf != NULL);
+
+  inf_data = nto_inferior_data (inf);
+
+  return inf_data->stopped_flags
+	 & (_DEBUG_FLAG_TRACE_RD
+	    | _DEBUG_FLAG_TRACE_WR
+	    | _DEBUG_FLAG_TRACE_MODIFY);
+}
+
+static void
+nto_solib_added_listener (struct so_list *solib)
+{
+  /* Check if the libraries match.
+     We compare all PT_LOAD segments.  */
+  CORE_ADDR mem_phdr_addr;
+  CORE_ADDR phdr_offs_addr;
+  gdb_byte offs_buf[8];
+  enum bfd_endian byte_order;
+
+  unsigned int offsetof_e_phoff;
+  unsigned int sizeof_e_phoff;
+  unsigned int sizeof_Elf_Phdr;
+  const unsigned int sizeof_Elf_Word = 4;
+  const unsigned int offsetof_p_type = 0;
+  unsigned int offsetof_p_filesz;
+  unsigned int offsetof_p_memsz;
+  unsigned int offsetof_p_flags;
+  unsigned int offsetof_p_align;
+  const unsigned int sizeof_p_type = 4;
+  const unsigned sizeof_p_flags = 4;
+  unsigned int sizeof_p_filesz;
+  unsigned int sizeof_p_memsz;
+  unsigned int sizeof_p_align;
+
+  switch (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word)
+    {
+    case 64:
+      offsetof_e_phoff = 32;
+      sizeof_e_phoff = 8;
+      sizeof_Elf_Phdr = 56;
+      offsetof_p_filesz = 32;
+      offsetof_p_memsz = 40;
+      offsetof_p_flags = 4;
+      offsetof_p_align = 48;
+      sizeof_p_filesz = 8;
+      sizeof_p_memsz = 8;
+      sizeof_p_align = 8;
+      break;
+    case 32:
+      offsetof_e_phoff = 28;
+      sizeof_e_phoff = 4;
+      sizeof_Elf_Phdr = 32;
+      offsetof_p_filesz = 16;
+      offsetof_p_memsz = 20;
+      offsetof_p_flags = 24;
+      offsetof_p_align = 28;
+      sizeof_p_filesz = sizeof_p_memsz = sizeof_p_align = 4;
+      break;
+    default:
+      gdb_assert (!"Unsupported number of bits per word");
+    }
+
+  phdr_offs_addr = solib->addr_low + offsetof_e_phoff;
+  byte_order = gdbarch_byte_order (target_gdbarch ());
+
+  if (target_read_memory (phdr_offs_addr, offs_buf, sizeof_e_phoff))
+    {
+      nto_trace (0) ("Could not read memory.\n");
+      return;
+    }
+
+  mem_phdr_addr =
+      solib->addr_low
+      + extract_typed_address (offs_buf,
+			       builtin_type (target_gdbarch ())->builtin_data_ptr);
+
+  while (1)
+    {
+      gdb_byte phdr_buf[sizeof_Elf_Phdr];
+      /* We compare phdr fields: p_type, p_flags, p_aign, p_filesz, p_memsz */
+      unsigned int p_type;
+      unsigned int p_filesz;
+      unsigned int p_memsz;
+      unsigned int p_flags;
+      unsigned int p_align;
+      Elf_Internal_Phdr *file_phdr;
+
+      if (target_read_memory (mem_phdr_addr, phdr_buf, sizeof_Elf_Phdr))
+	{
+	  nto_trace (0) ("Could not read phdr\n");
+	  return;
+	}
+
+      p_type = extract_unsigned_integer (&phdr_buf[offsetof_p_type],
+					 sizeof_p_type, byte_order);
+      if (p_type == PT_LOAD)
+	{
+	  p_filesz = extract_unsigned_integer (&phdr_buf[offsetof_p_filesz],
+					       sizeof_p_filesz, byte_order);
+	  p_memsz = extract_unsigned_integer (&phdr_buf[offsetof_p_memsz],
+					      sizeof_p_memsz, byte_order);
+	  p_flags = extract_unsigned_integer (&phdr_buf[offsetof_p_flags],
+					      sizeof_p_flags, byte_order);
+	  p_align = extract_unsigned_integer (&phdr_buf[offsetof_p_align],
+					      sizeof_p_align, byte_order);
+
+	  if (solib->symbols_loaded)
+	    {
+	      file_phdr = find_load_phdr_2 (solib->abfd,
+					    p_filesz, p_memsz, p_flags, p_align);
+	      if (file_phdr == NULL)
+		{
+		  /* This warning is being parsed by the IDE, the
+		   * format should not change without consultations with
+		   * IDE team.  */
+		  warning ("Host file %s does not match target file %s.",
+			   solib->so_name, solib->so_original_name);
+		  break;
+		}
+	    }
+	}
+
+      if (p_type == PT_NULL)
+	break;
+
+      mem_phdr_addr += sizeof_Elf_Phdr;
+    }
+}
+
+const struct target_desc *
+nto_read_description (struct target_ops *ops)
+{
+  if (ntoops_read_description)
+    return ntoops_read_description (ops);
+  else
+    return NULL;
+}
+
 /* Allocate new nto_inferior_data object.  */
 
 static struct nto_inferior_data *
@@ -1409,6 +1688,18 @@ for different positive values."),
 				     debugging is %s.  */
 			    &setdebuglist, &showdebuglist);
 
+  add_setshow_zinteger_cmd ("nto-stop-on-thread-events", class_support,
+			    &nto_stop_on_thread_events, _("\
+Stop on thread events ."), _("\
+Show stop on thread events setting."), _("\
+When set to 1, stop on thread created and thread destroyed events.\n"),
+			    NULL,
+			    NULL,
+			    &setlist, &showlist);
+
+  add_info ("tidinfo", nto_info_tidinfo_command, "List threads for current process." );
+
+  observer_attach_solib_loaded (nto_solib_added_listener);
 
   nto_gdbarch_data_handle =
     gdbarch_data_register_post_init (init_nto_gdbarch_data);
