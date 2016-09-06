@@ -52,6 +52,11 @@
 #include "nto-share/qnx_linkmap_note.h"
 #endif
 
+#ifdef TODO__QNXTARGET__
+/* Allow using core_bfd if exec_bfd is not present.  */
+#define exec_bfd ((exec_bfd != NULL) ? exec_bfd : core_bfd)
+#endif
+
 #define NOTE_GNU_BUILD_ID_NAME  ".note.gnu.build-id"
 
 static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
@@ -259,7 +264,7 @@ has_lm_dynamic_from_link_map (void)
   return lmo->l_ld_offset >= 0;
 }
 
-static CORE_ADDR
+CORE_ADDR
 lm_addr_check (const struct so_list *so, bfd *abfd)
 {
   if (!so->lm_info->l_addr_p)

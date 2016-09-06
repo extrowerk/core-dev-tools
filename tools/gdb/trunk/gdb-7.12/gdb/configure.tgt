@@ -54,7 +54,7 @@ aarch64*-*-linux*)
 aarch64*-*-nto*)
 	# Target: AArch64 nto (QNX)
 	gdb_target_obs="aarch64-tdep.o aarch64-nto-tdep.o solib-svr4.o \
-			nto-tdep.o aarch64-insn.o"
+			nto-tdep.o aarch64-insn.o remote-nto.o"
 	;;
 
 alpha*-*-linux*)
@@ -110,7 +110,7 @@ arm*-*-netbsd* | arm*-*-knetbsd*-gnu)
 arm*-*-nto*)
 	# Target: nto/arm
 	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o solib-svr4.o \
-			arm-nto-tdep.o nto-tdep.o"
+			arm-nto-tdep.o nto-tdep.o remote-nto.o"
 	;;
 arm*-*-openbsd*)
 	# Target: OpenBSD/arm
@@ -216,7 +216,7 @@ i[34567]86-*-openbsd*)
 i[34567]86-*-nto*)
 	# Target: Intel 386 running qnx6.
 	gdb_target_obs="i386-tdep.o i387-tdep.o solib-svr4.o \
-			i386-nto-tdep.o nto-tdep.o"
+			i386-nto-tdep.o nto-tdep.o remote-nto.o"
 	if test "x$enable_64_bit_bfd" = "xyes"; then
 	    # Target: nto x86-64
 	    gdb_target_obs="amd64-tdep.o amd64-nto-tdep.o ${gdb_target_obs}"
@@ -226,7 +226,7 @@ i[34567]86-*-nto*)
 x86_64-*-nto*)
 	# Target: x86_64 running qnx6
 	gdb_target_obs="i386-tdep.o i387-tdep.o amd64-tdep.o amd64-nto-tdep.o \
-			i386-nto-tdep.o nto-tdep.o solib-svr4.o"
+			i386-nto-tdep.o nto-tdep.o solib-svr4.o remote-nto.o"
 	build_gdbserver=yes
 	;;
 i[34567]86-*-solaris2.1[0-9]* | x86_64-*-solaris2.1[0-9]*)
