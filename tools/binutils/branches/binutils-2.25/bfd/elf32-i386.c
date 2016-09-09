@@ -738,6 +738,9 @@ struct elf_i386_link_hash_entry
   (GOT_TLS_GD_P (type) || GOT_TLS_GDESC_P (type))
   unsigned char tls_type;
 
+  /* Symbol is referenced by R_386_GOTOFF relocation.  */
+  unsigned int gotoff_ref : 1;
+
   /* Offset of the GOTPLT entry reserved for the TLS descriptor,
      starting at the end of the jump table.  */
   bfd_vma tlsdesc_got;
@@ -856,6 +859,7 @@ elf_i386_link_hash_newfunc (struct bfd_hash_entry *entry,
       eh = (struct elf_i386_link_hash_entry *) entry;
       eh->dyn_relocs = NULL;
       eh->tls_type = GOT_UNKNOWN;
+      eh->gotoff_ref = 0;
       eh->tlsdesc_got = (bfd_vma) -1;
     }
 
@@ -997,12 +1001,27 @@ elf_i386_create_dynamic_sections (bfd *dynobj, struct bfd_link_info *info)
     return FALSE;
 
   htab->sdynbss = bfd_get_linker_section (dynobj, ".dynbss");
-  if (!info->shared)
-    htab->srelbss = bfd_get_linker_section (dynobj, ".rel.bss");
-
-  if (!htab->sdynbss
-      || (!info->shared && !htab->srelbss))
+  if (!htab->sdynbss)
     abort ();
+
+  if (info->executable)
+    {
+      /* Always allow copy relocs for building executables.  */
+      asection *s = bfd_get_linker_section (dynobj, ".rel.bss");
+      if (s == NULL)
+	{
+	  const struct elf_backend_data *bed = get_elf_backend_data (dynobj);
+	  s = bfd_make_section_anyway_with_flags (dynobj,
+						  ".rel.bss",
+						  (bed->dynamic_sec_flags
+						   | SEC_READONLY));
+	  if (s == NULL
+	      || ! bfd_set_section_alignment (dynobj, s,
+					      bed->s->log_file_align))
+	    return FALSE;
+	}
+      htab->srelbss = s;
+    }
 
   if (get_elf_i386_backend_data (dynobj)->is_vxworks
       && !elf_vxworks_create_dynamic_sections (dynobj, info,
@@ -1075,6 +1094,10 @@ elf_i386_copy_indirect_symbol (struct bfd_link_info *info,
       edir->tls_type = eind->tls_type;
       eind->tls_type = GOT_UNKNOWN;
     }
+
+  /* Copy gotoff_ref so that elf_i386_adjust_dynamic_symbol will
+     generate a R_386_COPY reloc.  */
+  edir->gotoff_ref |= eind->gotoff_ref;
 
   if (ELIMINATE_COPY_RELOCS
       && ind->root.type != bfd_link_hash_indirect
@@ -1441,6 +1464,7 @@ elf_i386_check_relocs (bfd *abfd,
       unsigned int r_type;
       unsigned long r_symndx;
       struct elf_link_hash_entry *h;
+      struct elf_i386_link_hash_entry *eh;
       Elf_Internal_Sym *isym;
       const char *name;
       bfd_boolean size_reloc;
@@ -1490,6 +1514,7 @@ elf_i386_check_relocs (bfd *abfd,
 	    h = (struct elf_link_hash_entry *) h->root.u.i.link;
 	}
 
+      eh = (struct elf_i386_link_hash_entry *) h;
       if (h != NULL)
 	{
 	  /* Create the ifunc sections for static executables.  If we
@@ -1501,11 +1526,12 @@ elf_i386_check_relocs (bfd *abfd,
 	    default:
 	      break;
 
+	    case R_386_GOTOFF:
+	      eh->gotoff_ref = 1;
 	    case R_386_32:
 	    case R_386_PC32:
 	    case R_386_PLT32:
 	    case R_386_GOT32:
-	    case R_386_GOTOFF:
 	      if (htab->elf.dynobj == NULL)
 		htab->elf.dynobj = abfd;
 	      if (!_bfd_elf_create_ifunc_sections (htab->elf.dynobj, info))
@@ -1757,7 +1783,7 @@ do_size:
 		 relocations we need for this symbol.  */
 	      if (h != NULL)
 		{
-		  head = &((struct elf_i386_link_hash_entry *) h)->dyn_relocs;
+		  head = &eh->dyn_relocs;
 		}
 	      else
 		{
@@ -2104,12 +2130,14 @@ elf_i386_adjust_dynamic_symbol (struct bfd_link_info *info,
      only references to the symbol are via the global offset table.
      For such cases we need not do anything here; the relocations will
      be handled correctly by relocate_section.  */
-  if (info->shared)
+  if (!info->executable)
     return TRUE;
 
   /* If there are no references to this symbol that do not use the
-     GOT, we don't need to generate a copy reloc.  */
-  if (!h->non_got_ref)
+     GOT nor R_386_GOTOFF relocation, we don't need to generate a copy
+     reloc.  */
+  eh = (struct elf_i386_link_hash_entry *) h;
+  if (!h->non_got_ref && !eh->gotoff_ref)
     return TRUE;
 
   /* If -z nocopyreloc was given, we won't generate them either.  */
@@ -2123,14 +2151,15 @@ elf_i386_adjust_dynamic_symbol (struct bfd_link_info *info,
   if (htab == NULL)
     return FALSE;
 
-  /* If there aren't any dynamic relocs in read-only sections, then
-     we can keep the dynamic relocs and avoid the copy reloc.  This
-     doesn't work on VxWorks, where we can not have dynamic relocations
-     (other than copy and jump slot relocations) in an executable.  */
+  /* If there aren't any dynamic relocs in read-only sections nor
+     R_386_GOTOFF relocation, then we can keep the dynamic relocs and
+     avoid the copy reloc.  This doesn't work on VxWorks, where we can
+     not have dynamic relocations (other than copy and jump slot
+     relocations) in an executable.  */
   if (ELIMINATE_COPY_RELOCS
+      && !eh->gotoff_ref
       && !get_elf_i386_backend_data (info->output_bfd)->is_vxworks)
     {
-      eh = (struct elf_i386_link_hash_entry *) h;
       for (p = eh->dyn_relocs; p != NULL; p = p->next)
 	{
 	  s = p->sec->output_section;
@@ -3599,7 +3628,7 @@ elf_i386_relocate_section (bfd *output_bfd,
 	     for shared library since it may not be local when used
 	     as function address.  We also need to make sure that a
 	     symbol is defined locally.  */
-	  if (info->shared && h)
+	  if (!info->executable && h)
 	    {
 	      if (!h->def_regular)
 		{
@@ -3627,8 +3656,7 @@ elf_i386_relocate_section (bfd *output_bfd,
 		  bfd_set_error (bfd_error_bad_value);
 		  return FALSE;
 		}
-	      else if (!info->executable
-		       && !SYMBOLIC_BIND (info, h)
+	      else if (!SYMBOLIC_BIND (info, h)
 		       && h->type == STT_FUNC
 		       && ELF_ST_VISIBILITY (h->other) == STV_PROTECTED)
 		{
