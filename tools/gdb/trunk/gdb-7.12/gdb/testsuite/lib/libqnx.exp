@@ -67,7 +67,16 @@ proc gdb_start { } {
 proc gdb_load { arg } {
 # override
   global testfile
+  global last_loaded_file
   global gdb_prompt
+
+  if { ![info exists testfile] } {
+    set testfile gdb_testfile
+  }
+
+  if { $arg == "" } {
+    set arg ${last_loaded_file}
+  }
 
   gdb_file_cmd $arg
   send_gdb "upload ${arg} /tmp/${testfile}\n"
