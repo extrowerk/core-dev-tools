@@ -1095,7 +1095,7 @@ svr4_validate (const struct so_list *const so)
 
 	      if (build_idsz == so->abfd->build_id->size)
 		{
-		  const char gnu[] = "GNU\0";
+		  const char gnu[] = "GNU";
 
 		  if (memcmp (note->name, gnu, sizeof (gnu)) == 0)
 		    {
