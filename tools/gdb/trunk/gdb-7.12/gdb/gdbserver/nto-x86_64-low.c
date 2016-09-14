@@ -42,46 +42,45 @@ nto_x86_64_register_offset (int gdbregno)
 {
   if (gdbregno >= 0 && gdbregno < 22)
     {
-      X86_64_CPU_REGISTERS *dummy = (void*)0;
       /* GPRs  */
       switch (gdbregno)
 	{
 	case 0:
-	  return (int)&(dummy->rax);
+	  return offsetof(X86_64_CPU_REGISTERS,rax);
 	case 1:
-	  return (int)&(dummy->rbx);
+	  return offsetof(X86_64_CPU_REGISTERS,rbx);
 	case 2:
-	  return (int)&(dummy->rcx);
+	  return offsetof(X86_64_CPU_REGISTERS,rcx);
 	case 3:
-	  return (int)&(dummy->rdx);
+	  return offsetof(X86_64_CPU_REGISTERS,rdx);
 	case 4:
-	  return (int)&(dummy->rsi);
+	  return offsetof(X86_64_CPU_REGISTERS,rsi);
 	case 5:
-	  return (int)&(dummy->rdi);
+	  return offsetof(X86_64_CPU_REGISTERS,rdi);
 	case 6:
-	  return (int)&(dummy->rbp);
+	  return offsetof(X86_64_CPU_REGISTERS,rbp);
 	case 7:
-	  return (int)&(dummy->rsp);
+	  return offsetof(X86_64_CPU_REGISTERS,rsp);
 	case 8:
-	  return (int)&(dummy->r8);
+	  return offsetof(X86_64_CPU_REGISTERS,r8);
 	case 9:
-	  return (int)&(dummy->r9);
+	  return offsetof(X86_64_CPU_REGISTERS,r9);
 	case 10:
-	  return (int)&(dummy->r10);
+	  return offsetof(X86_64_CPU_REGISTERS,r10);
 	case 11:
-	  return (int)&(dummy->r11);
+	  return offsetof(X86_64_CPU_REGISTERS,r11);
 	case 12:
-	  return (int)&(dummy->r12);
+	  return offsetof(X86_64_CPU_REGISTERS,r12);
 	case 13:
-	  return (int)&(dummy->r13);
+	  return offsetof(X86_64_CPU_REGISTERS,r13);
 	case 14:
-	  return (int)&(dummy->r14);
+	  return offsetof(X86_64_CPU_REGISTERS,r14);
 	case 15:
-	  return (int)&(dummy->r15);
+	  return offsetof(X86_64_CPU_REGISTERS,r15);
 	case 16:
-	  return (int)&(dummy->rip);
+	  return offsetof(X86_64_CPU_REGISTERS,rip);
 	case 17:
-	  return (int)&(dummy->rflags);
+	  return offsetof(X86_64_CPU_REGISTERS,rflags);
 	case 18:
 	case 19:
 	case 20:
