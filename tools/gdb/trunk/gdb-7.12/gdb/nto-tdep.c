@@ -593,7 +593,8 @@ nto_in_dynsym_resolve_code (CORE_ADDR pc)
 }
 
 void
-nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs)
+nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs,
+			 size_t len)
 {
   /* Do nothing.  */
 }
@@ -1508,15 +1509,6 @@ nto_solib_added_listener (struct so_list *solib)
 
       mem_phdr_addr += sizeof_Elf_Phdr;
     }
-}
-
-const struct target_desc *
-nto_read_description (struct target_ops *ops)
-{
-  if (ntoops_read_description)
-    return ntoops_read_description (ops);
-  else
-    return NULL;
 }
 
 /* Allocate new nto_inferior_data object.  */

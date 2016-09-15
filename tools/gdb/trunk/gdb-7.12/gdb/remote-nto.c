@@ -1310,24 +1310,11 @@ nto_start_remote (char *dummy)
 			 current_session->target_proto_minor,
 			 HOST_QNX_PROTOVER_MAJOR, HOST_QNX_PROTOVER_MINOR);
 
-  nto_send_init (&tran, DStMsg_cpuinfo, 0, SET_CHANNEL_DEBUG);
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.cpuinfo), 1);
   /* If we had an inferior running previously, gdb will have some internal
      states which we need to clear to start fresh.  */
   registers_changed ();
   nullify_last_target_wait_ptid ();
   inferior_ptid = null_ptid;
-  if (recv.pkt.hdr.cmd == DSrMsg_err)
-    {
-      nto_cpuinfo_valid = 0;
-    }
-  else
-    {
-      struct dscpuinfo foo;
-      memcpy (&foo, recv.pkt.okdata.data, sizeof (struct dscpuinfo));
-      nto_cpuinfo_flags = EXTRACT_SIGNED_INTEGER (&foo.cpuflags, 4, byte_order);
-      nto_cpuinfo_valid = 1;
-    }
 
   return 1;
 }
@@ -2285,6 +2272,31 @@ nto_parse_notify (const DScomm_t *const recv, struct target_ops *ops,
   return ptid_build (pid, 0, tid);
 }
 
+static unsigned nto_get_cpuflags (void)
+{
+  static int read_done = 0;
+  static unsigned cpuflags = 0;
+  DScomm_t tran, recv;
+
+
+  if (!read_done)
+    {
+      read_done = 1;
+
+      nto_send_init (&tran, DStMsg_cpuinfo, 0, SET_CHANNEL_DEBUG);
+      nto_send_recv (&tran, &recv, sizeof (tran.pkt.cpuinfo), 1);
+
+      if (recv.pkt.hdr.cmd != DSrMsg_err)
+	{
+	  struct dscpuinfo foo;
+	  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+	  memcpy (&foo, recv.pkt.okdata.data, sizeof (struct dscpuinfo));
+	  cpuflags = EXTRACT_SIGNED_INTEGER (&foo.cpuflags, 4, byte_order);
+	}
+    }
+  return cpuflags;
+}
+
 /* Fetch the regset, returning true if successful.  If supply is true,
    then supply these registers to gdb as well.  */
 static int
@@ -2296,7 +2308,7 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
   int rlen;
   DScomm_t tran, recv;
 
-  len = nto_register_area (target_gdbarch (), -1, regset, &offset);
+  len = nto_register_area (regset, nto_get_cpuflags ());
   if (len < 1)
     return 0;
 
@@ -2313,9 +2325,6 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
        * says regset is different from gdb's idea; older kernel also
        * returned exactly 512. */
       len = 512;
-      /* Even uglier: */
-#define X86_CPU_XSAVE       (1UL <<  17)  /* CPU supports XSAVE/XRSTOR */
-      nto_cpuinfo_flags &= ~X86_CPU_XSAVE;
     }
 
   nto_send_init (&tran, DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
@@ -2328,17 +2337,8 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     return 0;
 
-/* FIXME: this i386 specific stuff should be taken out once we move
-   to the new procnto which has a long enough structure to hold
-   floating point registers.  */
-  if (gdbarch_bfd_arch_info (target_gdbarch ()) != NULL
-      && strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386")
-	 == 0
-      && regset == NTO_REG_FLOAT && rlen <= 128)
-    return 0;		/* Trying to get x86 fpregs from an old proc.  */
-
   if (supply)
-    nto_supply_regset (regcache, regset, recv.pkt.okdata.data);
+    nto_supply_regset (regcache, regset, recv.pkt.okdata.data, rlen);
   return 1;
 }
 
@@ -2411,13 +2411,13 @@ nto_store_registers (struct target_ops *ops,
       if (regno_regset != NTO_REG_END && regno_regset != regset)
 	continue;
 
-      len = nto_register_area (target_gdbarch (), -1, regset, &off);
+      len = nto_register_area (regset, nto_get_cpuflags ());
       if (len < 1)
 	continue;
 
       nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
       tran.pkt.regwr.offset = 0;
-      if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data) == -1)
+      if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data, len) == -1)
 	continue;
 
       nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
@@ -3180,7 +3180,6 @@ nto_remove_hw_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 				bp_tg_inf->shadow_contents);
 }
 
-
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 static void
 slashify (char *buf)
@@ -3846,6 +3845,15 @@ nto_supports_non_stop (struct target_ops *ops)
 {
   /* Not yet. */
   return 0;
+}
+
+static const struct target_desc *
+nto_read_description (struct target_ops *ops)
+{
+  if (ntoops_read_description)
+    return ntoops_read_description (nto_get_cpuflags ());
+  else
+    return NULL;
 }
 
 #if 0

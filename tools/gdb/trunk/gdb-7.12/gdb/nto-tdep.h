@@ -31,39 +31,26 @@
 
 struct nto_target_ops
 {
-/* The CPUINFO flags from the remote.  Currently used by
-   i386 for fxsave but future proofing other hosts.
-   This is initialized in procfs_attach or nto_start_remote
-   depending on our host/target.  It would only be invalid
-   if we were talking to an older pdebug which didn't support
-   the cpuinfo message.  */
-  unsigned cpuinfo_flags;
-
-/* True if successfully retrieved cpuinfo from remote.  */
-  int cpuinfo_valid;
-
 /* Given a register, return an id that represents the Neutrino
    regset it came from.  If reg == -1 update all regsets.  */
   int (*regset_id) (int);
 
-  void (*supply_gregset) (struct regcache *, const gdb_byte *);
+  void (*supply_gregset) (struct regcache *, const gdb_byte *, size_t len);
 
-  void (*supply_fpregset) (struct regcache *, const gdb_byte *);
+  void (*supply_fpregset) (struct regcache *, const gdb_byte *, size_t len);
 
-  void (*supply_altregset) (struct regcache *, const gdb_byte *);
+  void (*supply_altregset) (struct regcache *, const gdb_byte *, size_t len);
 
 /* Given a regset, tell gdb about registers stored in data.  */
-  void (*supply_regset) (struct regcache *, int, const gdb_byte *);
+  void (*supply_regset) (struct regcache *, int, const gdb_byte *, size_t len);
 
-/* Given a register and regset, calculate the offset into the regset
-   and stuff it into the last argument.  If regno is -1, calculate the
-   size of the entire regset.  Returns length of data, -1 if unknown
-   regset, 0 if unknown register.  */
-  int (*register_area) (struct gdbarch *, int, int, unsigned *);
+/* Given a regset and offset, return the size of the register area or
+   -1 on error */
+  int (*register_area) (int, unsigned);
 
 /* Build the Neutrino register set info into the data buffer.
    Return -1 if unknown regset, 0 otherwise.  */
-  int (*regset_fill) (const struct regcache *, int, gdb_byte *);
+  int (*regset_fill) (const struct regcache *, int, gdb_byte *, size_t);
 
 /* Gives the fetch_link_map_offsets function exposure outside of
    solib-svr4.c so that we can override relocate_section_addresses().  */
@@ -80,17 +67,13 @@ struct nto_target_ops
   const char *(*variant_directory_suffix)(void);
 
 /* Read description. */
-  const struct target_desc *(*read_description) (struct target_ops *ops);
+  const struct target_desc *(*read_description) (unsigned cpuflags);
 };
 
 #define target_nto_gdbarch_data ((struct nto_target_ops *)gdbarch_data (target_gdbarch (), nto_gdbarch_ops))
 
 extern int nto_internal_debugging;
 extern int nto_stop_on_thread_events;
-
-#define nto_cpuinfo_flags (target_nto_gdbarch_data->cpuinfo_flags)
-
-#define nto_cpuinfo_valid (target_nto_gdbarch_data->cpuinfo_valid)
 
 #define nto_regset_id (target_nto_gdbarch_data->regset_id)
 
@@ -235,7 +218,8 @@ void nto_initialize_signals (void);
 
 /* Dummy function for initializing nto_target_ops on targets which do
    not define a particular regset.  */
-void nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs);
+void nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs,
+			      size_t len);
 
 int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 
@@ -248,8 +232,6 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR inital_stack,
 					  LONGEST len, size_t sizeof_auxv_t);
 
 char *nto_pid_to_str (struct target_ops *ops, ptid_t);
-
-const struct target_desc *nto_read_description (struct target_ops *ops);
 
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
