@@ -35,6 +35,7 @@
 #include "gdbcore.h"
 #include "inferior.h"
 #include "target.h"
+#include "target-descriptions.h"
 #include "objfiles.h"
 #include "gdbthread.h"
 #include "nto-tdep.h"
@@ -862,13 +863,13 @@ procfs_fetch_registers (struct target_ops *ops,
 
   procfs_set_thread (inferior_ptid);
   if (devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize) == EOK)
-    nto_supply_gregset (regcache, (const gdb_byte *) &reg.greg);
+    nto_supply_gregset (regcache, (const gdb_byte *) &reg.greg, regsize);
   if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_fpregset (regcache, (const gdb_byte *) &reg.fpreg);
+    nto_supply_fpregset (regcache, (const gdb_byte *) &reg.fpreg, regsize);
   if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize)
       == EOK)
-    nto_supply_altregset (regcache, (const gdb_byte*) &reg.altreg);
+    nto_supply_altregset (regcache, (const gdb_byte*) &reg.altreg, regsize);
 }
 
 /* Helper for procfs_xfer_partial that handles memory transfers.
@@ -1191,6 +1192,11 @@ breakup_args (char *scratch, char **argv)
   *argv = NULL;
 }
 
+static unsigned nto_get_cpuflags (void)
+{
+  return SYSPAGE_ENTRY (cpuinfo)->flags;
+}
+
 static void
 procfs_create_inferior (struct target_ops *ops, char *exec_file,
 			char *allargs, char **env, int from_tty)
@@ -1333,9 +1339,9 @@ procfs_kill_inferior (struct target_ops *ops)
 }
 
 /* Fill buf with regset and return devctl cmd to do the setting.  Return
-   -1 if we fail to get the regset.  Store size of regset in regsize.  */
+   -1 if we fail to get the regset.  Store size of regset in bufsize.  */
 static int
-get_regset (int regset, char *buf, int bufsize, int *regsize)
+get_regset (int regset, char *buf, int *bufsize)
 {
   int dev_get, dev_set;
   switch (regset)
@@ -1359,7 +1365,7 @@ get_regset (int regset, char *buf, int bufsize, int *regsize)
     default:
       return -1;
     }
-  if (devctl (ctl_fd, dev_get, buf, bufsize, regsize) != EOK)
+  if (devctl (ctl_fd, dev_get, buf, *bufsize, bufsize) != EOK)
     return -1;
 
   return dev_set;
@@ -1377,55 +1383,28 @@ procfs_store_registers (struct target_ops *ops,
   }
   reg;
   unsigned off;
-  int len, regset, regsize, dev_set, err;
+  int len, regsize, err, dev_set, regset;
   char *data;
 
   if (ptid_equal (inferior_ptid, null_ptid))
     return;
   procfs_set_thread (inferior_ptid);
 
-  if (regno == -1)
+  for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
     {
-      for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
-	{
-	  dev_set = get_regset (regset, (char *) &reg,
-				sizeof (reg), &regsize);
-	  if (dev_set == -1)
-	    continue;
-
-	  if (nto_regset_fill (regcache, regset, (gdb_byte *) &reg) == -1)
-	    continue;
-
-	  err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
-	  if (err != EOK)
-	    fprintf_unfiltered (gdb_stderr,
-				"Warning unable to write regset %d: %s\n",
-				regno, safe_strerror (err));
-	}
-    }
-  else
-    {
-      regset = nto_regset_id (regno);
-      if (regset == -1)
-	return;
-
-      dev_set = get_regset (regset, (char *) &reg, sizeof (reg), &regsize);
+      regsize = sizeof (reg);
+      dev_set = get_regset (regset, (char *) &reg, &regsize);
       if (dev_set == -1)
-	return;
+        continue;
 
-      len = nto_register_area (get_regcache_arch (regcache),
-			       regno, regset, &off);
+      if (nto_regset_fill (regcache, regset, (gdb_byte *) &reg, regsize) == -1)
+        continue;
 
-      if (len < 1)
-	return;
-
-      regcache_raw_collect (regcache, regno, (char *) &reg + off);
-
-      err = devctl (ctl_fd, dev_set, &reg, regsize, 0);
+      err = devctl (ctl_fd, dev_set, &reg, sizeof (reg), 0);
       if (err != EOK)
-	fprintf_unfiltered (gdb_stderr,
-			    "Warning unable to write regset %d: %s\n", regno,
-			    safe_strerror (err));
+        fprintf_unfiltered (gdb_stderr,
+			    "Warning unable to write regset %d: %s\n",
+			    regno, safe_strerror (err));
     }
 }
 
@@ -1481,6 +1460,15 @@ procfs_native_open (const char *arg, int from_tty)
   procfs_open_1 (nto_native_ops, arg, from_tty);
 }
 
+static const struct target_desc *
+procfs_read_description (struct target_ops *ops)
+{
+  if (ntoops_read_description)
+    return ntoops_read_description (nto_get_cpuflags ());
+  else
+    return NULL;
+}
+
 /* Create the "native" and "procfs" targets.  */
 
 static void
@@ -1520,6 +1508,7 @@ init_procfs_targets (void)
   t->to_have_continuable_watchpoint = 1;
   t->to_extra_thread_info = nto_extra_thread_info;
   t->to_pid_to_exec_file = procfs_pid_to_exec_file;
+  t->to_read_description = procfs_read_description;
 
   nto_native_ops = t;
 
@@ -1556,10 +1545,6 @@ _initialize_procfs (void)
 
   /* Initially, make sure all signals are reported.  */
   sigfillset (&run.trace);
-
-  /* Stuff some information.  */
-  nto_cpuinfo_flags = SYSPAGE_ENTRY (cpuinfo)->flags;
-  nto_cpuinfo_valid = 1;
 
   add_info ("pidlist", procfs_pidlist, _("pidlist"));
   add_info ("meminfo", procfs_meminfo, _("memory information"));

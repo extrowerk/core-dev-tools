@@ -47,12 +47,6 @@
 #define  X86_64_RSP    18
 #define  X86_64_SS     19
 
-#ifndef __QNXNTO__
-typedef uint8_t _Uint8t;
-typedef uint32_t _Uint32t;
-typedef uint64_t _Uint64t;
-#endif
-
 typedef struct x86_64_cpu_registers {
 /*-
     This layout permits mimics the kernel call argument order.
@@ -60,7 +54,7 @@ typedef struct x86_64_cpu_registers {
     Instruction insists on stuffing %rip into %rcx (what were they thinking?),
     So the kernel call does a "mov %rcx, %r10" in the preamble.
 */
-    _Uint64t    rdi,
+    uint64_t    rdi,
                 rsi,
                 rdx,
                 r10,
@@ -75,23 +69,23 @@ typedef struct x86_64_cpu_registers {
                 r13,
                 r14,
                 r15;
-    _Uint64t    rip;
-    _Uint32t    cs;
-    _Uint32t    rsvd1;
-    _Uint64t    rflags;
-    _Uint64t    rsp;
-    _Uint32t    ss;
+    uint64_t    rip;
+    uint32_t    cs;
+    uint32_t    rsvd1;
+    uint64_t    rflags;
+    uint64_t    rsp;
+    uint32_t    ss;
 } X86_64_CPU_REGISTERS;
 
 typedef struct fsave_area_64 {
-    _Uint32t fpu_control_word;
-    _Uint32t fpu_status_word;
-    _Uint32t fpu_tag_word;
-    _Uint32t fpu_ip;
-    _Uint32t fpu_cs;
-    _Uint32t fpu_op;
-    _Uint32t fpu_ds;
-    _Uint8t  st_regs[80];
+    uint32_t fpu_control_word;
+    uint32_t fpu_status_word;
+    uint32_t fpu_tag_word;
+    uint32_t fpu_ip;
+    uint32_t fpu_cs;
+    uint32_t fpu_op;
+    uint32_t fpu_ds;
+    uint8_t  st_regs[80];
 } X86_64_NDP_REGISTERS;
 
 #endif /* amd64-nto-tdep.h */
