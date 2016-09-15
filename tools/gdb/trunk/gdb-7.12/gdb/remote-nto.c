@@ -1454,7 +1454,7 @@ nto_open (const char *name, int from_tty)
  * Use caller provided recv as the reply may be used by the caller. */
 
 static int
-nto_attach_only (const pid_t pid, DScomm_t *const recv)
+nto_attach_only (const int pid, DScomm_t *const recv)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   DScomm_t tran;
@@ -1553,7 +1553,7 @@ nto_attach (struct target_ops *ops, const char *args, int from_tty)
 
   if (symfile_objfile == NULL)
     {
-      const pid_t pid = ptid_get_pid (ptid);
+      const int pid = ptid_get_pid (ptid);
       struct dspidlist *pidlist = (struct dspidlist *)recv->pkt.okdata.data;
 
       /* Look for the binary executable name */
@@ -1591,7 +1591,7 @@ nto_attach (struct target_ops *ops, const char *args, int from_tty)
 }
 
 static void
-nto_post_attach (struct target_ops *ops, pid_t pid)
+nto_post_attach (struct target_ops *ops, int pid)
 {
   nto_trace (0) ("%s pid:%d\n", __func__, pid);
 #ifdef SOLIB_CREATE_INFERIOR_HOOK
@@ -2021,7 +2021,7 @@ nto_parse_notify (const DScomm_t *const recv, struct target_ops *ops,
 		  struct target_waitstatus *status)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  pid_t pid, tid;
+  int pid, tid;
   CORE_ADDR stopped_pc = 0;
   struct inferior *inf;
   struct nto_inferior_data *inf_data;
@@ -2721,7 +2721,7 @@ nto_kill_1 (char *dummy)
 {
   DScomm_t tran, recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  const pid_t pid = ptid_get_pid (inferior_ptid);
+  const int pid = ptid_get_pid (inferior_ptid);
 
   nto_trace (0) ("nto_kill_1(dummy %p)\n", dummy);
 
@@ -2772,7 +2772,7 @@ nto_mourn_inferior (struct target_ops *ops)
 {
   DScomm_t tran, recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  const pid_t pid = ptid_get_pid (inferior_ptid);
+  const int pid = ptid_get_pid (inferior_ptid);
   struct inferior *inf = current_inferior ();
   struct nto_inferior_data *inf_data;
   struct nto_remote_inferior_data *inf_rdata;
@@ -3969,7 +3969,7 @@ update_threadnames (void)
   DScomm_t tran, recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   struct dstidnames *tidnames = (struct dstidnames *) recv.pkt.okdata.data;
-  pid_t cur_pid;
+  int cur_pid;
   unsigned int numleft;
 
   nto_trace (0) ("%s ()\n", __func__);
@@ -4011,7 +4011,7 @@ update_threadnames (void)
 	  struct thread_info *ti;
 	  struct private_thread_info *priv;
 	  ptid_t ptid;
-	  pid_t tid;
+	  int tid;
 	  int namelen;
 	  char *tmp;
 
@@ -4043,7 +4043,7 @@ nto_find_new_threads (struct target_ops *ops)
 {
   DScomm_t tran, recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  pid_t cur_pid, start_tid = 1, total_tids = 0, num_tids;
+  int cur_pid, start_tid = 1, total_tids = 0, num_tids;
   struct dspidlist *pidlist = (struct dspidlist *) recv.pkt.okdata.data;
   struct tidinfo *tip;
   char subcmd;
@@ -4143,7 +4143,7 @@ nto_pidlist (char *args, int from_tty)
   struct dspidlist *pidlist = (struct dspidlist *) recv.pkt.okdata.data;
   struct tidinfo *tip;
   char specific_tid_supported = 0;
-  pid_t pid, start_tid, total_tid;
+  int pid, start_tid, total_tid;
   char subcmd;
 
   start_tid = 1;
@@ -4404,7 +4404,7 @@ nto_insert_hw_watchpoint (struct target_ops *ops, CORE_ADDR addr, int len,
 
 #if 0
 static struct tidinfo *
-nto_thread_info (pid_t pid, short tid)
+nto_thread_info (int pid, short tid)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   struct dspidlist *pidlist = (void *) recv.pkt.okdata.data;

@@ -1026,7 +1026,7 @@ nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
 }
 
 static void
-nto_core_add_thread_status_info (pid_t core_pid, int gdb_thread_id,
+nto_core_add_thread_status_info (int core_pid, int gdb_thread_id,
 				 const nto_procfs_status *ps)
 {
   struct thread_info *ti;
