@@ -34,6 +34,9 @@ if ![runto_main] then {
     continue
 }
 
+# For platforms with lazy fpu allocation, make sure it's enabled.
+gdb_test "call strtod \(\"2.0\"\)"
+
 # Test "info float".
 
 if { [is_aarch64_target] } then {
