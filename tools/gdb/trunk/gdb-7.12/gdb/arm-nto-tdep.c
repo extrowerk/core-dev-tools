@@ -207,7 +207,7 @@ armnto_regset_id (int regno)
 }
 
 static int
-armnto_register_area (int regset)
+armnto_register_area (int regset, unsigned cpuflags)
 {
   switch (regset)
     {
@@ -223,7 +223,7 @@ armnto_register_area (int regset)
 
 static int
 armnto_regset_fill (const struct regcache *regcache, int regset,
-		    gdb_byte *data)
+		    gdb_byte *data, size_t len)
 {
   int regi;
 
