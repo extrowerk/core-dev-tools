@@ -44,7 +44,8 @@
 
 
 static void
-aarch64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs)
+aarch64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs,
+			   size_t len)
 {
   int regno;
 
@@ -53,7 +54,8 @@ aarch64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs)
 }
 
 static void
-aarch64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
+aarch64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs,
+			    size_t len)
 {
   int regno;
 
@@ -69,15 +71,15 @@ aarch64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
 
 static void
 aarch64nto_supply_regset (struct regcache *regcache, int regset,
-			  const gdb_byte *data)
+			  const gdb_byte *data, size_t len)
 {
   switch (regset)
     {
     case NTO_REG_GENERAL:
-      aarch64nto_supply_gregset (regcache, data);
+      aarch64nto_supply_gregset (regcache, data, len);
       break;
     case NTO_REG_FLOAT:
-      aarch64nto_supply_fpregset (regcache, data);
+      aarch64nto_supply_fpregset (regcache, data, len);
       break;
     default:
       gdb_assert (!"Unknown regset");
@@ -98,53 +100,21 @@ aarch64nto_regset_id (int regno)
 }
 
 static int
-aarch64nto_register_area (struct gdbarch *gdbarch, int regno, int regset,
-			  unsigned *off)
+aarch64nto_register_area (int regset, unsigned cpuflags)
 {
-  struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
-
-  *off = 0;
   if (regset == NTO_REG_GENERAL)
-    {
-      if (regno == -1)
-	{
-	  *off = 0;
-	  return AARCH64_GREGSZ * AARCH64_V0_REGNUM;
-	}
-      *off = AARCH64_GREGSZ * regno;
-      return AARCH64_GREGSZ;
-    }
+    return AARCH64_GREGSZ * AARCH64_V0_REGNUM;
   else if (regset == NTO_REG_FLOAT)
-    {
-      if (regno == -1)
-	{
-	  *off = 0;
-	  return sizeof (AARCH64_CPU_REGISTERS);
-	}
-      if (regno >= AARCH64_V0_REGNUM && regno <= AARCH64_V31_REGNUM)
-	{
-	  *off = (regno - AARCH64_V0_REGNUM) + AARCH64_FPREGSZ;
-	  return AARCH64_FPREGSZ;
-	}
-      if (regno == AARCH64_FPSR_REGNUM || regno == AARCH64_FPCR_REGNUM)
-	{
-	  *off = (regno - AARCH64_V0_REGNUM) * 32 * AARCH64_FPREGSZ
-		 + (regno - AARCH64_FPSR_REGNUM) * AARCH64_FPSRSZ;
-	  return AARCH64_FPSRSZ;
-	}
-      *off = 0;
-      return -1;
-    }
+    return sizeof (AARCH64_CPU_REGISTERS);
   else
-    {
       warning(_("Only general and floatpoint registers supported on aarch64 for now\n"));
-    }
-  return 0;
+  return -1;
 }
 
 static int
 aarch64nto_regset_fill (const struct regcache *const regcache,
-			const int regset, gdb_byte *const data)
+			const int regset, gdb_byte *const data,
+			size_t len)
 {
   if (regset == NTO_REG_GENERAL)
     {
