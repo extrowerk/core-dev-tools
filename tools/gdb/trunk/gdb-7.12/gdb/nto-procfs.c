@@ -203,7 +203,7 @@ procfs_open_1 (struct target_ops *ops, const char *arg, int from_tty)
 static void
 procfs_set_thread (ptid_t ptid)
 {
-  pid_t tid;
+  int tid;
 
   tid = ptid_get_tid (ptid);
   devctl (ctl_fd, DCMD_PROC_CURTHREAD, &tid, sizeof (tid), 0);
@@ -213,8 +213,8 @@ procfs_set_thread (ptid_t ptid)
 static int
 procfs_thread_alive (struct target_ops *ops, ptid_t ptid)
 {
-  pid_t tid;
-  pid_t pid;
+  int tid;
+  int pid;
   procfs_status status;
   int err;
 
@@ -311,7 +311,7 @@ static void
 procfs_update_thread_list (struct target_ops *ops)
 {
   procfs_status status;
-  pid_t pid;
+  int pid;
   ptid_t ptid;
   pthread_t tid;
   struct thread_info *new_thread;
@@ -361,8 +361,8 @@ procfs_pidlist (char *args, int from_tty)
   procfs_info *pidinfo = NULL;
   procfs_debuginfo *info = NULL;
   procfs_status *status = NULL;
-  pid_t num_threads = 0;
-  pid_t pid;
+  int num_threads = 0;
+  int pid;
   char name[512];
   struct cleanup *cleanups;
   char procfs_dir[PATH_MAX];
@@ -676,7 +676,7 @@ procfs_attach (struct target_ops *ops, const char *args, int from_tty)
 }
 
 static void
-procfs_post_attach (struct target_ops *self, pid_t pid)
+procfs_post_attach (struct target_ops *self, int pid)
 {
   if (exec_bfd)
     solib_create_inferior_hook (0);
@@ -1202,7 +1202,7 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
 			char *allargs, char **env, int from_tty)
 {
   struct inheritance inherit;
-  pid_t pid;
+  int pid;
   int flags, errn;
   char **argv, *args;
   const char *in = "", *out = "", *err = "";
