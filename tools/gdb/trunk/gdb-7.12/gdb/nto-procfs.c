@@ -1303,11 +1303,11 @@ procfs_create_inferior (struct target_ops *ops, char *exec_file,
     close (fds[2]);
 
   inferior_ptid = do_attach (pid_to_ptid (pid));
-  procfs_update_thread_list (ops);
-
   inf = current_inferior ();
   inferior_appeared (inf, pid);
   inf->attach_flag = 0;
+
+  procfs_update_thread_list (ops);
 
   flags = _DEBUG_FLAG_KLC;	/* Kill-on-Last-Close flag.  */
   errn = devctl (ctl_fd, DCMD_PROC_SET_FLAG, &flags, sizeof (flags), 0);
