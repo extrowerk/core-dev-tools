@@ -37,14 +37,14 @@
 #include "solib-svr4.h"
 #include "amd64-nto-tdep.h"
 #include "i387-tdep.h"
+#include "x86-xstate.h"
+
+/* CPU capability/state flags from x86_64/syspage.h */
+#define X86_64_CPU_FXSR        (1UL <<  12)  /* CPU supports FXSAVE/FXRSTOR  */
+#define X86_64_CPU_XSAVE       (1UL <<  17)  /* CPU supports XSAVE/XRSTOR */
 
 /* Registers.  */
 #define AMD64_GREGSZ 8U
-
-#ifndef X86_64_CPU_FXSR
-#define X86_64_CPU_FXSR (1L << 12)
-#endif
-
 
 static int
 x86_64nto_gregset_reg_offset[] =
@@ -92,32 +92,80 @@ nto_reg_offset (int regnum)
 }
 
 static void
-x86_64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs)
+amd64_nto_supply_fpregset (const struct regset *regset,
+                       struct regcache *regcache,
+		       int regnum, const void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+
+  if (len > I387_SIZEOF_FXSAVE)
+    amd64_supply_xsave (regcache, regnum, fpregs);
+  else
+    amd64_supply_fxsave (regcache, regnum, fpregs);
+}
+
+static void
+amd64_nto_collect_fpregset (const struct regset *regset,
+			const struct regcache *regcache,
+			int regnum, void *fpregs, size_t len)
+{
+  struct gdbarch *gdbarch = get_regcache_arch (regcache);
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  gdb_assert (len >= tdep->sizeof_fpregset);
+
+  if (len > I387_SIZEOF_FXSAVE)
+    amd64_collect_xsave (regcache, regnum, fpregs, 0);
+  else
+    amd64_collect_fxsave (regcache, regnum, fpregs);
+}
+
+static const struct regset amd64_nto_fpregset =
+  {
+    NULL, amd64_nto_supply_fpregset, amd64_nto_collect_fpregset, REGSET_VARIABLE_SIZE
+  };
+
+static void
+amd64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
+					  iterate_over_regset_sections_cb *cb,
+					  void *cb_data,
+					  const struct regcache *regcache)
+{
+  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  cb (".reg", tdep->sizeof_gregset, &i386_gregset, NULL, cb_data);
+  cb (".reg2", tdep->sizeof_fpregset, &amd64_nto_fpregset, NULL, cb_data);
+}
+
+static void
+x86_64nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs, size_t len)
 {
   struct gdbarch *const gdbarch = get_regcache_arch (regcache);
   struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
 
   gdb_assert (tdep->gregset_reg_offset == x86_64nto_gregset_reg_offset);
-  i386_gregset.supply_regset (&i386_gregset, regcache, -1, gregs,
-			      X86_64NTO_NUM_GREGS * AMD64_GREGSZ);
+  i386_gregset.supply_regset (&i386_gregset, regcache, -1, gregs, len);
 }
 
 static void
-x86_64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs)
+x86_64nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs, size_t len)
 {
-  amd64_supply_fxsave (regcache, -1, fpregs);
+  amd64_nto_fpregset.supply_regset (&amd64_nto_fpregset, regcache, -1, fpregs, len);
 }
 
 static void
-x86_64nto_supply_regset (struct regcache *regcache, int regset, const gdb_byte *data)
+x86_64nto_supply_regset (struct regcache *regcache, int regset, const gdb_byte *data, size_t len)
 {
   switch (regset)
     {
     case NTO_REG_GENERAL:
-      x86_64nto_supply_gregset (regcache, data);
+      x86_64nto_supply_gregset (regcache, data, len);
       break;
     case NTO_REG_FLOAT:
-      x86_64nto_supply_fpregset (regcache, data);
+      x86_64nto_supply_fpregset (regcache, data, len);
       break;
     default:
       gdb_assert (!"Unknown regset");
@@ -137,171 +185,34 @@ x86_64nto_regset_id (int regno)
   return -1;			/* Error.  */
 }
 
-static void
-amd64_nto_supply_fpregset (const struct regset *regset,
-                       struct regcache *regcache,
-		       int regnum, const void *fpregs, size_t len)
-{
-  struct gdbarch *gdbarch = get_regcache_arch (regcache);
-  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-
-  gdb_assert (len >= tdep->sizeof_fpregset);
-  amd64_supply_fxsave (regcache, regnum, fpregs);
-}
-
-static void
-amd64_nto_collect_fpregset (const struct regset *regset,
-			const struct regcache *regcache,
-			int regnum, void *fpregs, size_t len)
-{
-  struct gdbarch *gdbarch = get_regcache_arch (regcache);
-  const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
-
-  gdb_assert (len >= tdep->sizeof_fpregset);
-  amd64_collect_fxsave (regcache, regnum, fpregs);
-}
-
-static const struct regset amd64_nto_fpregset =
-  {
-    NULL, amd64_nto_supply_fpregset, amd64_nto_collect_fpregset, REGSET_VARIABLE_SIZE
-  };
-
-static void
-amd64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
-					  iterate_over_regset_sections_cb *cb,
-					  void *cb_data,
-					  const struct regcache *regcache)
-{
-  cb (".reg", sizeof (X86_64_CPU_REGISTERS), &i386_gregset,
-      NULL, cb_data);
-  cb (".reg2", sizeof (X86_64_NDP_REGISTERS), &amd64_nto_fpregset,
-      NULL, cb_data);
-}
-
 static int
-x86_64nto_register_area (struct gdbarch *gdbarch, int regno, int regset,
-			 unsigned *off)
+x86_64nto_register_area (int regset, unsigned cpuflags)
 {
-  struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
-
-  *off = 0;
   if (regset == NTO_REG_GENERAL)
-    {
-      if (regno == -1)
 	return X86_64NTO_NUM_GREGS * AMD64_GREGSZ;
-
-      *off = nto_reg_offset (regno);
-      if (*off == -1)
-	return 0;
-      return AMD64_GREGSZ;
-    }
   else if (regset == NTO_REG_FLOAT)
     {
-      unsigned off_adjust, regsize, regset_size, regno_base;
-      /* The following are flags indicating number in our fxsave_area.  */
-      int first_four = (regno >= I387_FCTRL_REGNUM (tdep)
-			&& regno <= I387_FISEG_REGNUM (tdep));
-      int second_four = (regno > I387_FISEG_REGNUM (tdep)
-			 && regno <= I387_FOP_REGNUM (tdep));
-      int st_reg = (regno >= I387_ST0_REGNUM (tdep)
-		    && regno < I387_ST0_REGNUM (tdep) + 8);
-      int xmm_reg = (regno >= I387_XMM0_REGNUM (tdep)
-		     && regno < I387_MXCSR_REGNUM (tdep));
-
-      if (nto_cpuinfo_valid && nto_cpuinfo_flags & X86_64_CPU_FXSR)
+      if (cpuflags & X86_64_CPU_XSAVE)
 	{
-	  off_adjust = 32;
-	  regsize = 16;
-	  regset_size = 512;
-	  /* fxsave_area structure.  */
-	  if (first_four)
-	    {
-	      /* fpu_control_word, fpu_status_word, fpu_tag_word, fpu_operand
-	         registers.  */
-	      regsize = 2; /* Two bytes each.  */
-	      off_adjust = 0;
-	      regno_base = I387_FCTRL_REGNUM (tdep);
-	    }
-	  else if (second_four)
-	    {
-	      /* fpu_ip, fpu_cs, fpu_op, fpu_ds registers.  */
-	      regsize = 4;
-	      off_adjust = 8;
-	      regno_base = I387_FISEG_REGNUM (tdep) + 1;
-	    }
-	  else if (st_reg)
-	    {
-	      /* ST registers.  */
-	      regsize = 16;
-	      off_adjust = 32;
-	      regno_base = I387_ST0_REGNUM (tdep);
-	    }
-	  else if (xmm_reg)
-	    {
-	      /* XMM registers.  */
-	      regsize = 16;
-	      off_adjust = 160;
-	      regno_base = I387_XMM0_REGNUM (tdep);
-	    }
-	  else if (regno == I387_MXCSR_REGNUM (tdep))
-	    {
-	      regsize = 4;
-	      off_adjust = 24;
-	      regno_base = I387_MXCSR_REGNUM (tdep);
-	    }
-	  else
-	    {
-	      /* Whole regset.  */
-	      gdb_assert (regno == -1);
-	      off_adjust = 0;
-	      regno_base = 0;
-	      regsize = regset_size;
-	    }
+	  /* At most DS_DATA_MAX_SIZE: */
+	  return 1024;
 	}
+      else if (cpuflags & X86_64_CPU_FXSR)
+	  return 512;
       else
-	{
-	  regset_size = 108;
-	  /* fsave_area structure.  */
-	  if (first_four || second_four)
-	    {
-	      /* fpu_control_word, ... , fpu_ds registers.  */
-	      regsize = 4;
-	      off_adjust = 0;
-	      regno_base = I387_FCTRL_REGNUM (tdep);
-	    }
-	  else if (st_reg)
-	    {
-	      /* One of ST registers.  */
-	      regsize = 10;
-	      off_adjust = 7 * 4;
-	      regno_base = I387_ST0_REGNUM (tdep);
-	    }
-	  else
-	    {
-	      /* Whole regset.  */
-	      gdb_assert (regno == -1);
-	      off_adjust = 0;
-	      regno_base = 0;
-	      regsize = regset_size;
-	    }
-	}
-
-      if (regno != -1)
-	*off = off_adjust + (regno - regno_base) * regsize;
-      else
-	*off = 0;
-      return regsize;
+	  return 108;
     }
   else
     {
       warning(_("Only general and floatpoint registers supported on x86_64 for now\n"));
     }
-  return 0;
+  return -1;
 }
 
 static int
 x86_64nto_regset_fill (const struct regcache *const regcache,
-		       const int regset, gdb_byte *const data)
+		       const int regset, gdb_byte *const data,
+		       size_t len)
 {
   if (regset == NTO_REG_GENERAL)
     {
@@ -317,11 +228,11 @@ x86_64nto_regset_fill (const struct regcache *const regcache,
     }
   else if (regset == NTO_REG_FLOAT)
     {
-      if (nto_cpuinfo_valid && nto_cpuinfo_flags & X86_64_CPU_FXSR)
-	{
-	  amd64_collect_fxsave (regcache, -1, data);
-	  return 0;
-	}
+      if (len > I387_SIZEOF_FXSAVE)
+        amd64_collect_xsave (regcache, -1, data, 0);
+      else
+        amd64_collect_fxsave (regcache, -1, data);
+      return 0;
     }
   return -1; // Error
 }
@@ -364,6 +275,26 @@ amd64nto_breakpoint_size (CORE_ADDR addr)
   return 0;
 }
 
+static const struct target_desc *
+amd64nto_read_description(unsigned cpuflags)
+{
+  /* With a lazy allocation of the fpu context we cannot easily tell
+     up-front what the target supports, so set an upper bound on the
+     features. */
+  return amd64_target_description(X86_XSTATE_AVX_MASK);
+}
+
+static const struct target_desc *
+amd64nto_core_read_description (struct gdbarch *gdbarch,
+				  struct target_ops *target,
+				  bfd *abfd)
+{
+  /* We could pull xcr0 from the corefile, but just keep things
+     consistent with amd64nto_read_description() */
+  return amd64_target_description(X86_XSTATE_AVX_MASK);
+}
+
+
 static struct nto_target_ops amd64_nto_ops;
 
 static void
@@ -379,6 +310,7 @@ init_x86_64nto_ops (void)
   amd64_nto_ops.fetch_link_map_offsets =
     nto_generic_svr4_fetch_link_map_offsets;
   amd64_nto_ops.breakpoint_size = amd64nto_breakpoint_size;
+  amd64_nto_ops.read_description = amd64nto_read_description;
 }
 
 static void
@@ -459,6 +391,8 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   set_gdbarch_iterate_over_regset_sections
     (gdbarch, amd64_nto_iterate_over_regset_sections);
+  set_gdbarch_core_read_description (gdbarch,
+				     amd64nto_core_read_description);
 }
 
 

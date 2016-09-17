@@ -134,37 +134,40 @@ armnto_supply_reg_altregset (struct regcache *regcache, int regno,
 }
 
 static void
-armnto_supply_gregset (struct regcache *regcache, const gdb_byte *regs)
+armnto_supply_gregset (struct regcache *regcache, const gdb_byte *regs,
+		       size_t len)
 {
   armnto_supply_reg_gregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
-armnto_supply_fpregset (struct regcache *regcache, const gdb_byte *regs)
+armnto_supply_fpregset (struct regcache *regcache, const gdb_byte *regs,
+			size_t len)
 {
   armnto_supply_reg_fpregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
-armnto_supply_altregset (struct regcache *regcache, const gdb_byte *regs)
+armnto_supply_altregset (struct regcache *regcache, const gdb_byte *regs,
+			 size_t len)
 {
   armnto_supply_reg_altregset (regcache, NTO_ALL_REGS, regs);
 }
 
 static void
 armnto_supply_regset (struct regcache *regcache, int regset,
-		      const gdb_byte *data)
+		      const gdb_byte *data, size_t len)
 {
   switch (regset)
     {
     case NTO_REG_GENERAL:
-      armnto_supply_gregset (regcache, data);
+      armnto_supply_gregset (regcache, data, len);
       break;
     case NTO_REG_FLOAT:
-      armnto_supply_fpregset (regcache, data);
+      armnto_supply_fpregset (regcache, data, len);
       break;
     case NTO_REG_ALT:
-      armnto_supply_altregset (regcache, data);
+      armnto_supply_altregset (regcache, data, len);
       break;
     default:
       gdb_assert (0);
@@ -191,100 +194,23 @@ armnto_regset_id (int regno)
 }
 
 static int
-armnto_register_area (struct gdbarch *gdbarch,
-		      int regno, int regset, unsigned *off)
+armnto_register_area (int regset, unsigned cpuflags)
 {
-  *off = 0;
-
   switch (regset)
     {
     case NTO_REG_GENERAL:
-      if (regno == -1)
 	return GP_REGSET_SIZE;
-
-      if (regno < ARM_PS_REGNUM)
-	*off = regno * 4;
-      else if (regno == ARM_PS_REGNUM)
-	*off = PS_OFF;
-      else
-	return 0;
-      return 4;
-      break;
     case NTO_REG_FLOAT:
-      {
-	int regsize = -1;
-
-	if (regno == -1)
-	  return FP_REGSET_SIZE;
-	/* Both regular FP registers and VFP/NEON are in the same
-	   context.  Therefore, we siply check for all regnos.  It is
-	   up to architecture to not tell gdb there are both regular
-	   FP and VFP registers on the target.  */
-	/* Regular float registers: */
-	if (regno >= ARM_F0_REGNUM && regno <= ARM_F7_REGNUM)
-	  {
-	    regsize = NTO_FP_REGISTER_SIZE;
-	    *off = (regno - ARM_F0_REGNUM) * NTO_FP_REGISTER_SIZE;
-	  }
-	else if (regno >= ARM_D0_REGNUM && regno <= ARM_D31_REGNUM)
-	  {
-	    regsize = NTO_FP_REGISTER_SIZE;
-	    *off = (regno - ARM_D0_REGNUM) * NTO_FP_REGISTER_SIZE;
-	  }
-	else switch (regno)
-	  {
-	  case ARM_FPS_REGNUM:
-	    regsize = NTO_STATUS_REGISTER_SIZE;
-	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM; /* fpscr */
-	    break;
-	  case ARM_PS_REGNUM:
-	    regsize = NTO_STATUS_REGISTER_SIZE;
-	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM
-		   + NTO_STATUS_REGISTER_SIZE; /* fpexc */
-	    break;
-	  case ARM_FPSCR_REGNUM:
-	    regsize = NTO_STATUS_REGISTER_SIZE;
-	    *off = NTO_FP_REGISTER_SIZE * NTO_FP_REGISTER_NUM;
-	    break;
-	  }
-	return regsize;
-	break;
-      }
+	return FP_REGSET_SIZE;
     case NTO_REG_ALT:
-      if (regno == -1)
 	return ALT_REGSET_SIZE;
-      if (regno <= ARM_WR15_REGNUM)
-	{
-	  *off = (regno - ARM_WR0_REGNUM) * ARM_NTO_WMMX_WR_REGSIZE;
-	  return ARM_NTO_WMMX_WR_REGSIZE;
-	}
-      else
-	{
-	  switch (regno)
-	    {
-	    case ARM_WCSSF_REGNUM:
-	      *off = ARM_NTO_WMMX_WCSSF_OFFSET;
-	      break;
-	    case ARM_WCASF_REGNUM:
-	      *off = ARM_NTO_WMMX_WCASF_OFFSET;
-	      break;
-	    default:
-	      if (regno >= ARM_WCGR0_REGNUM && regno <= ARM_WCGR3_REGNUM)
-		*off = (regno - ARM_WCGR0_REGNUM) * ARM_NTO_WMMX_WC_REGSIZE
-		       + ARM_NTO_WMMX_WCGR0_OFFSET;
-	      else
-		return -1;
-	    }
-	  return ARM_NTO_WMMX_WC_REGSIZE;
-	}
-      break;
-  }
+    }
   return -1;
 }
 
 static int
 armnto_regset_fill (const struct regcache *regcache, int regset,
-		    gdb_byte *data)
+		    gdb_byte *data, size_t len)
 {
   int regi;
 
@@ -335,30 +261,26 @@ armnto_variant_directory_suffix (void)
 #define ARM_CPU_FLAG_WMMX2	    0x0080    /* iWMMX2 coprocessor */
 
 static const struct target_desc *
-armnto_read_description (struct target_ops *ops)
+armnto_read_description (unsigned cpuflags)
 {
-  if (nto_cpuinfo_valid)
+  if (cpuflags & ARM_CPU_FLAG_NEON)
     {
-      if (nto_cpuinfo_flags & ARM_CPU_FLAG_NEON)
-	{
-	  if (!tdesc_arm_with_neon)
-	    initialize_tdesc_arm_with_neon (nto_cpuinfo_flags & CPU_FLAG_FPU);
-	  return tdesc_arm_with_neon;
-	}
-      if (nto_cpuinfo_flags & ARM_CPU_FLAG_WMMX2)
-	{
-	  if (!tdesc_arm_with_iwmmxt)
-	    initialize_tdesc_arm_with_iwmmxt (nto_cpuinfo_flags & CPU_FLAG_FPU);
-	  return tdesc_arm_with_iwmmxt;
-	}
-      if (nto_cpuinfo_flags & CPU_FLAG_FPU)
-	{
-	  if (!tdesc_arm_with_vfp)
-	    initialize_tdesc_arm_with_vfp ();
-	  return tdesc_arm_with_vfp;
-	}
+      if (!tdesc_arm_with_neon)
+        initialize_tdesc_arm_with_neon (cpuflags & CPU_FLAG_FPU);
+      return tdesc_arm_with_neon;
     }
-
+  if (cpuflags & ARM_CPU_FLAG_WMMX2)
+    {
+      if (!tdesc_arm_with_iwmmxt)
+        initialize_tdesc_arm_with_iwmmxt (cpuflags & CPU_FLAG_FPU);
+      return tdesc_arm_with_iwmmxt;
+    }
+  if (cpuflags & CPU_FLAG_FPU)
+    {
+      if (!tdesc_arm_with_vfp)
+        initialize_tdesc_arm_with_vfp ();
+      return tdesc_arm_with_vfp;
+    }
   return NULL;
 }
 
