@@ -1518,7 +1518,7 @@ elf_arc_finish_dynamic_sections (bfd * output_bfd, struct bfd_link_info *info)
 		}
 	    }
 
-	  if (do_it == TRUE)
+	  if (do_it)
 	    bfd_elf32_swap_dyn_out (output_bfd, &internal_dyn, dyncon);
 	}
 
