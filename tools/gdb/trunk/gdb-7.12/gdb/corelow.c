@@ -1086,6 +1086,9 @@ init_core_ops (void)
 extern void foo_initialize_corelow (void);
 void
 foo_initialize_corelow (void)
+#else
+void
+initialize_corelow (void)
 #endif
 {
   init_core_ops ();
