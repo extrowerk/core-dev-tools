@@ -549,32 +549,23 @@ do_hardwire_readchar (struct serial *scb, int timeout)
       scb->timeout_remaining = (timeout < 0 ? timeout : timeout - delta);
       status = wait_for (scb, delta);
 
-      if (status < 0)
+      if (status == SERIAL_TIMEOUT) {
+	if (scb->timeout_remaining > 0) {
+	  timeout = scb->timeout_remaining;
+	  continue;
+	} else if (scb->timeout_remaining < 0)
+	  continue;
+	else
+	  return SERIAL_TIMEOUT;
+      } else if (status < 0)
 	return status;
 
       status = read (scb->fd, scb->buf, BUFSIZ);
 
-      if (status <= 0)
-	{
-	  if (status == 0)
-	    {
-	      /* Zero characters means timeout (it could also be EOF, but
-	         we don't (yet at least) distinguish).  */
-	      if (scb->timeout_remaining > 0)
-		{
-		  timeout = scb->timeout_remaining;
-		  continue;
-		}
-	      else if (scb->timeout_remaining < 0)
-		continue;
-	      else
-		return SERIAL_TIMEOUT;
-	    }
-	  else if (errno == EINTR)
-	    continue;
-	  else
-	    return SERIAL_ERROR;	/* Got an error from read.  */
-	}
+      if (status < 0 && errno == EINTR)
+	continue;
+      else if (status <= 0)
+	return SERIAL_ERROR;	/* Got an error from read.  */
 
       scb->bufcnt = status;
       scb->bufcnt--;
