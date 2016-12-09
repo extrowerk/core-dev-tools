@@ -500,8 +500,8 @@ wait_for (struct serial *scb, int timeout)
 /* Read a character with user-specified timeout.  TIMEOUT is number of
    seconds to wait, or -1 to wait forever.  Use timeout of 0 to effect
    a poll.  Returns char if successful.  Returns SERIAL_TIMEOUT if
-   timeout expired, EOF if line dropped dead, or SERIAL_ERROR for any
-   other error (see errno in that case).  */
+   timeout expired, SERIAL_EOF if line dropped dead, or SERIAL_ERROR
+   for any other error (see errno in that case).  */
 
 /* FIXME: cagney/1999-09-16: Don't replace this with the equivalent
    ser_base*() until the old TERMIOS/SGTTY/... timer code has been
@@ -516,7 +516,7 @@ wait_for (struct serial *scb, int timeout)
 static int
 do_hardwire_readchar (struct serial *scb, int timeout)
 {
-  int status, delta;
+  int delta;
   int detach = 0;
 
   if (timeout > 0)
@@ -532,6 +532,8 @@ do_hardwire_readchar (struct serial *scb, int timeout)
   delta = (timeout == 0 ? 0 : 1);
   while (1)
     {
+      int status;
+      ssize_t byte_count;
 
       /* N.B. The UI may destroy our world (for instance by calling
          remote_stop,) in which case we want to get out of here as
@@ -549,25 +551,27 @@ do_hardwire_readchar (struct serial *scb, int timeout)
       scb->timeout_remaining = (timeout < 0 ? timeout : timeout - delta);
       status = wait_for (scb, delta);
 
-      if (status == SERIAL_TIMEOUT) {
-	if (scb->timeout_remaining > 0) {
+      if (status == SERIAL_TIMEOUT && scb->timeout_remaining != 0)
+	{
 	  timeout = scb->timeout_remaining;
 	  continue;
-	} else if (scb->timeout_remaining < 0)
-	  continue;
-	else
-	  return SERIAL_TIMEOUT;
-      } else if (status < 0)
+	}
+      else if (status < 0)
 	return status;
 
-      status = read (scb->fd, scb->buf, BUFSIZ);
+      byte_count = read (scb->fd, scb->buf, BUFSIZ);
 
-      if (status < 0 && errno == EINTR)
-	continue;
-      else if (status <= 0)
-	return SERIAL_ERROR;	/* Got an error from read.  */
+      if (byte_count == 0)
+	return SERIAL_EOF;
+      else if (byte_count < 0)
+	{
+	  if (errno == EINTR)
+	    continue;
+          else
+	    return SERIAL_ERROR;	/* Got an error from read.  */
+	}
 
-      scb->bufcnt = status;
+      scb->bufcnt = byte_count;
       scb->bufcnt--;
       scb->bufp = scb->buf;
       return *scb->bufp++;
