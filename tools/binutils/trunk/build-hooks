@@ -78,6 +78,13 @@ function hook_preconfigure {
                 ;;
         esac
 
+	case ${target} in
+	*nto-qnx6.[0-9]*)
+		;;
+	*)
+		configure_opts="${configure_opts} --enable-initfini-array"
+		;;
+	esac
 
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
 	configure_opts="${configure_opts} --enable-gold"
