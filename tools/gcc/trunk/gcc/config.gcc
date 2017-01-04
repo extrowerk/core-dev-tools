@@ -796,9 +796,13 @@ case ${target} in
   extra_gcc_objs="nto-cxx.o"
   case ${target} in
   *-qnx6.[0-9].*)
-	tm_defines="${tm_defines} DEFAULT_STDLIB_LIBSTDCXX=1" ;;
+	tm_defines="${tm_defines} DEFAULT_STDLIB_LIBSTDCXX=1"
+	tm_defines="${tm_defines} QNX_ENABLE_RELRO=0"
+	;;
   *)
-	tm_defines="${tm_defines} DEFAULT_STDLIB_LIBCXX=1" ;;
+	tm_defines="${tm_defines} DEFAULT_STDLIB_LIBCXX=1"
+	tm_defines="${tm_defines} QNX_ENABLE_RELRO=1"
+	;;
   esac
   ;;
 *-*-rtems*)
