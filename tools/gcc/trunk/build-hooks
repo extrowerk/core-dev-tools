@@ -115,6 +115,7 @@ function hook_preconfigure {
 	*)
 		configure_opts="${configure_opts} --enable-cxx-flags=-stdlib=libstdc++"
 		configure_opts="${configure_opts} --enable-cheaders=c_global"
+		configure_opts="${configure_opts} --enable-initfini-array"
 		;;
 	esac
 
