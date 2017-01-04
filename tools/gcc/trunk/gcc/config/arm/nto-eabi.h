@@ -70,6 +70,7 @@ do {                                            \
 "%{h*} %{v:-V} \
  %{b} %{Wl,*:%*} \
  %{!r:--build-id=md5} \
+ " QNX_RELRO_SPEC " \
  %{static:-Bstatic} \
  %{shared} \
  %{symbolic:-Bsymbolic} \

@@ -46,6 +46,12 @@ do { \
 -isystem %$QNX_HOST/usr/lib/gcc/" DEFAULT_TARGET_MACHINE "/%v1.%v2.%v3/include \
 -isysroot %$QNX_TARGET/}"
 
+#if QNX_ENABLE_RELRO
+#define QNX_RELRO_SPEC "-zrelro -znow"
+#else
+#define QNX_RELRO_SPEC ""
+#endif
+
 #define DEFAULT_STDLIB_SPEC "|!stdlib=*"
 #if DEFAULT_STDLIB_LIBSTDCXX
 #define NTO_EXTRA_LIBSTDCXX_SPEC DEFAULT_STDLIB_SPEC
