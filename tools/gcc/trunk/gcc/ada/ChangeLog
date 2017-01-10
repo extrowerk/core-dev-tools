@@ -147,6 +147,10 @@
 
 	* gcc-interface/Makefile.in: Fix ARM/Darwin configuration.
 
+2015-05-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc-interface/Makefile.in (TOOLS_LIBS): Add @NO_PIE_FLAG@.
+
 2015-04-22  Release Manager
 
 	* GCC 5.1.0 released.

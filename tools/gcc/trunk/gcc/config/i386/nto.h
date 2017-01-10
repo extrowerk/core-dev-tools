@@ -42,7 +42,7 @@ QNX_SYSTEM_INCLUDES \
   %{!symbolic: \
     %{pg:%$QNX_TARGET/x86/lib/mcrt1.o%s} \
     %{!pg:%{p:%$QNX_TARGET/x86/lib/mcrt1.o%s} \
-    %{!p:%$QNX_TARGET/x86/lib/crt1%{pie:S}.o%s}} \
+    %{!p:%$QNX_TARGET/x86/lib/crt1%{" PIE_SPEC ":S}.o%s}} \
     }} \
 %$QNX_TARGET/x86/lib/crti.o%s crtbegin.o%s" 
 
@@ -63,10 +63,6 @@ QNX_SYSTEM_INCLUDES \
 #define LINK_LIBGCC_SPEC \
   "%D " \
   QNX_SYSTEM_LIBDIRS
-
-#undef LIB_SPEC
-#define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
 
 #undef LINK_SPEC
 #define LINK_SPEC \

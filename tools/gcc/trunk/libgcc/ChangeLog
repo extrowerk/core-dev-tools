@@ -175,6 +175,10 @@
 	md_unwind_header
 	* config/i386/freebsd-unwind.h: New.
 
+2015-05-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (CRTSTUFF_CFLAGS): Add $(NO_PIE_CFLAGS).
+
 2015-04-22  Release Manager
 
 	* GCC 5.1.0 released.

@@ -51,11 +51,6 @@ QNX_SYSTEM_INCLUDES \
 #define NTO_DYNAMIC_LINKER32 "/usr/lib/ldqnx.so.2"
 #define NTO_DYNAMIC_LINKER64 "/usr/lib/ldqnx-64.so.2"
 
-#undef LINK_PIE_SPEC
-#define LINK_PIE_SPEC "%{" SPEC_64 ": %{pie:-pie}\
-      %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
-  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie|fno-pie|fno-PIE|fno-pic|fno-PIC:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}}} "
-
 #undef	LINK_SPEC
 #define LINK_SPEC "%{" SPEC_64 ":-m elf_x86_64} %{" SPEC_32 ":-m i386nto} \
   %{h*} %{v:-V} \
@@ -85,7 +80,7 @@ QNX_SYSTEM_INCLUDES \
        %{" SPEC_32 ": %$QNX_TARGET/x86/lib/mcrt1.o%s} \
        %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/mcrt1.o%s}}} \
     %{!p: %{!pg: \
-       %{" SPEC_32 ": %$QNX_TARGET/x86/lib/crt1.o%s} \
+       %{" SPEC_32 ": %$QNX_TARGET/x86/lib/crt1%{" PIE_SPEC ":S}.o%s} \
        %{" SPEC_64 ": %$QNX_TARGET/x86_64/lib/crt1.o%s}}} \
     }} \
     %{" SPEC_32 ": %$QNX_TARGET/x86/lib/crti.o%s} \
@@ -123,16 +118,8 @@ QNX_SYSTEM_INCLUDES \
   "%D " \
   QNX_SYSTEM_LIBDIRS
 
-#undef LIB_SPEC
-#define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{!shared: -lc} %{shared:-lcS}}"
-
 #if TARGET_64BIT_DEFAULT
 #define MULTILIB_DEFAULTS { "m64" }
 #else
 #define MULTILIB_DEFAULTS { "m32" }
 #endif
-
-#undef CC1_SPEC
-#define CC1_SPEC \
-"%{" SPEC_64 ":%{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|nopie|D__KERNEL__:;:-fPIE}} %(cc1_cpu) "

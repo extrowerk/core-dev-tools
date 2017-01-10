@@ -177,3 +177,7 @@ extern const char *nto_select_libstdcxx_static(void);
 
 extern void nto_handle_cxx_option (size_t code, const char *arg);
 #define TARGET_HANDLE_CXX_OPTION nto_handle_cxx_option
+
+#undef LIB_SPEC
+#define LIB_SPEC \
+  "%{!symbolic: -lc -Bstatic %{shared:-lcS} %{" PIE_SPEC ":-lcS} %{" NO_PIE_SPEC ":-lc}}"
