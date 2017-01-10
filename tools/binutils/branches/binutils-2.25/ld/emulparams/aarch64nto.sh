@@ -22,6 +22,7 @@ IREL_IN_PLT=
 
 TEXT_START_ADDR=0x400000
 
+TEXT_START_SYMBOLS='_btext = .;'
 DATA_START_SYMBOLS='PROVIDE (__data_start = .);';
 
 # AArch64 does not support .s* sections.
