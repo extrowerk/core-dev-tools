@@ -26,11 +26,6 @@ along with GCC; see the file COPYING3.  If not see
 #define ENDFILE_SPEC \
 "crtend.o%s %$QNX_TARGET/aarch64%{EB:be}%{!EB:le}/lib/crtn.o"
 
-#undef LINK_PIE_SPEC
-#define LINK_PIE_SPEC "%{pie:-pie}\
-    %{shared|Bshareable: %{!no-warn-shared-textrel:--warn-shared-textrel}}\
-  %{static|Bstatic|shared|Bshareable|i|r|pie|nopie|fno-pie|fno-PIE|fno-pic|fno-PIC:;:-pie %{!no-warn-shared-textrel:--warn-shared-textrel}} "
-
 #undef LINK_SPEC
 #define LINK_SPEC \
 "%{h*} %{v:-V} \
@@ -62,10 +57,6 @@ along with GCC; see the file COPYING3.  If not see
   "%D " \
   QNX_SYSTEM_LIBDIRS
 
-#undef LIB_SPEC
-#define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{static|nopie: -lc;:-lcS}}"
-
 #undef  CPP_SPEC
 #define CPP_SPEC \
  QNX_SYSTEM_INCLUDES "\
@@ -75,9 +66,8 @@ along with GCC; see the file COPYING3.  If not see
  %{posix:-D_POSIX_SOURCE} \
  %{pthread:}"
 
-#undef CC1_SPEC
-#define CC1_SPEC \
-"%{fpic|fPIC|fpie|fPIE|fno-pic|fno-PIC|fno-pie|fno-PIE|static|shared|nostdlib|nostartfiles|nopie|D__KERNEL__:;:-fPIE} %{EB:-mbig-endian} %{!EB:-mlittle-endian}"
+#undef  CC1_SPEC
+#define CC1_SPEC "%{EB:-mbig-endian} %{!EB:-mlittle-endian}"
 
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()                \

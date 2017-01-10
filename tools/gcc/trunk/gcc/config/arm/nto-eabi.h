@@ -49,16 +49,12 @@ do {                                            \
   "%D " \
   QNX_SYSTEM_LIBDIRS
 
-#undef LIB_SPEC
-#define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{!shared: %{!pie: -lc}} %{shared|pie:-lcS}}"
-
 #undef LIBGCC_SPEC
 #define LIBGCC_SPEC "-lgcc"
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/%{pg:m}%{p:m}crt1%{pie:S}.o } \
+"%{!shared: %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/%{pg|p:mcrt1.o;:crt1%{" PIE_SPEC ":S}.o} } \
 %$QNX_TARGET/arm%{EB:be}%{!EB:le}-v7/lib/crti.o crtbegin.o%s "
 
 #undef ENDFILE_SPEC
