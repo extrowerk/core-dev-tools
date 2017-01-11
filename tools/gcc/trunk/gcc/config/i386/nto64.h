@@ -56,6 +56,7 @@ QNX_SYSTEM_INCLUDES \
   %{h*} %{v:-V} \
   %{b} \
   %{!r:--build-id=md5} \
+  --warn-shared-textrel \
   " QNX_RELRO_SPEC " \
   %{shared:-G -dy -z text} \
   %{symbolic:-Bsymbolic -G -dy -z text} \
