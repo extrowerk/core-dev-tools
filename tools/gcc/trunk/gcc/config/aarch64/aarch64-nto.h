@@ -31,6 +31,7 @@ along with GCC; see the file COPYING3.  If not see
 "%{h*} %{v:-V} \
  %{b} %{Wl,*:%*} \
  %{!r:--build-id=md5} \
+ --warn-shared-textrel \
  " QNX_RELRO_SPEC " \
  %{static:-Bstatic} \
  %{shared} \

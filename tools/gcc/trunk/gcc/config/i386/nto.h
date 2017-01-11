@@ -69,6 +69,7 @@ QNX_SYSTEM_INCLUDES \
   "%{h*} %{v:-V} \
    %{b} \
    %{!r:--build-id=md5} \
+   --warn-shared-textrel \
    " QNX_RELRO_SPEC " \
    %{static:-dn -Bstatic} \
    %{shared:-G -dy} \
