@@ -181,7 +181,7 @@ case "${host}" in
       AC_DEFINE(HAVE_ISNANL)
     fi
     ;;
-  *-qnx[678]*)
+  *-qnx*)
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
     AC_SUBST(SECTION_FLAGS) 
     GLIBCXX_CHECK_LINKER_FEATURES
@@ -198,6 +198,7 @@ case "${host}" in
     AC_DEFINE(HAVE_SINL)
     AC_DEFINE(HAVE_SINHF)
     AC_DEFINE(HAVE_SINHL)
+    AC_DEFINE(_GLIBCXX_USE_RANDOM_TR1)
     ;;
   *-rtems*)
     GLIBCXX_CHECK_COMPILER_FEATURES

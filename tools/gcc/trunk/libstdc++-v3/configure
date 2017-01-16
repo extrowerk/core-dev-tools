@@ -19656,6 +19656,12 @@ $as_echo "$glibcxx_glibc217" >&6; }
         ac_has_nanosleep=yes
         ac_has_sched_yield=yes
         ;;
+      *qnx* | *nto*)
+        ac_has_clock_monotonic=yes
+        ac_has_clock_realtime=yes
+        ac_has_nanosleep=yes
+        ac_has_sched_yield=yes
+        ;;
     esac
 
   elif test x"$enable_libstdcxx_time" != x"no"; then
@@ -65036,7 +65042,7 @@ $as_echo "$ac_ld_relro" >&6; }
 
     fi
     ;;
-  *-qnx[678]*)
+  *-qnx*)
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
 
 
@@ -70730,6 +70736,8 @@ done
     $as_echo "#define HAVE_SINHF 1" >>confdefs.h
 
     $as_echo "#define HAVE_SINHL 1" >>confdefs.h
+
+    $as_echo "#define _GLIBCXX_USE_RANDOM_TR1 1" >>confdefs.h
 
     ;;
   *-rtems*)
