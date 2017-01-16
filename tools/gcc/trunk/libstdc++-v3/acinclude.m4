@@ -1239,6 +1239,12 @@ AC_DEFUN([GLIBCXX_ENABLE_LIBSTDCXX_TIME], [
         ac_has_nanosleep=yes
         ac_has_sched_yield=yes
         ;;
+      *qnx* | *nto*)
+        ac_has_clock_monotonic=yes
+        ac_has_clock_realtime=yes
+        ac_has_nanosleep=yes
+        ac_has_sched_yield=yes
+        ;;
     esac
 
   elif test x"$enable_libstdcxx_time" != x"no"; then
