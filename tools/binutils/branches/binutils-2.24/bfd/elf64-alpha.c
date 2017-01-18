@@ -4936,7 +4936,7 @@ elf64_alpha_finish_dynamic_sections (bfd *output_bfd,
       bfd_vma plt_vma, gotplt_vma;
 
       splt = bfd_get_linker_section (dynobj, ".plt");
-      srelaplt = bfd_get_linker_section (output_bfd, ".rela.plt");
+      srelaplt = bfd_get_linker_section (dynobj, ".rela.plt");
       BFD_ASSERT (splt != NULL && sdyn != NULL);
 
       plt_vma = splt->output_section->vma + splt->output_offset;
@@ -4968,7 +4968,8 @@ elf64_alpha_finish_dynamic_sections (bfd *output_bfd,
 	      dyn.d_un.d_val = srelaplt ? srelaplt->size : 0;
 	      break;
 	    case DT_JMPREL:
-	      dyn.d_un.d_ptr = srelaplt ? srelaplt->vma : 0;
+	      dyn.d_un.d_ptr = srelaplt ? (srelaplt->output_section->vma
+					   + srelaplt->output_offset) : 0;
 	      break;
 
 	    case DT_RELASZ:

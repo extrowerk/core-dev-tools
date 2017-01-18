@@ -1,5 +1,5 @@
 
-tmpdir/arm-static-app:     file format elf32-(little|big)arm.*
+.*:     file format elf32-(little|big)arm.*
 architecture: armv4t, flags 0x00000112:
 EXEC_P, HAS_SYMS, D_PAGED
 start address 0x.*
