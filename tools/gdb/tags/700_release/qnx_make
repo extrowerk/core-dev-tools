@@ -1,0 +1,2 @@
+#!/bin/sh
+make -j4 OSLIST=win64 & make -j4 OSLIST=linux & make -j4 OSLIST=nto & make -j4 OSLIST=darwin
