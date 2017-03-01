@@ -942,4 +942,6 @@ extern const char *aarch64_rewrite_mcpu (int argc, const char **argv);
 #define EXTRA_SPECS						\
   { "asm_cpu_spec",		ASM_CPU_SPEC }
 
+#define ASM_OUTPUT_POOL_EPILOGUE  aarch64_asm_output_pool_epilogue
+
 #endif /* GCC_AARCH64_H */
