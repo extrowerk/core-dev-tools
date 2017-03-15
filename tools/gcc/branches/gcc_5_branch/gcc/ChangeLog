@@ -5175,6 +5175,13 @@
 	QImode inner modes for TARGET_AVX512BW.  Force mask operand
 	to a register for AVX512F modes.
 
+2015-04-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/50800
+	* tree.c (build_reference_type_for_mode): Don't pass can_alias_all
+	down when building TYPE_CANONICAL.
+	(build_pointer_type_for_mode): Likewise.
+
 2015-04-16  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR target/66047

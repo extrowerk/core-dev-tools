@@ -789,6 +789,11 @@
 	* pt.c (tsubst_decl) [VAR_DECL]: SET_DECL_IMPLICIT_INSTANTIATION
 	before register_specialization.
 
+2015-05-23  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/65936
+	* pt.c (lookup_template_class_1): Copy may_alias attribute too.
+
 2015-05-22  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline
