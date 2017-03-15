@@ -3747,6 +3747,11 @@
 	PR tree-optimization/66101
 	* gcc.dg/torture/pr66101.c: New testcase.
 
+2015-05-23  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/65936
+	* g++.dg/template/pr65936.C: New.
+
 2015-05-22  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline
