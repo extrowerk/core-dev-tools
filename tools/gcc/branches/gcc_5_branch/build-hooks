@@ -2,15 +2,23 @@ srcdir=${PWD}/..
 targ_root=${PWD}
 
 gcc_version=$(cat ../gcc/BASE-VER)
+QNX_VERSION=${QNX_VERSION:-7.0.0}
 
-qnx_target=qnx700
-qnx_target_version=7.0.0
+qnx_target_version=${QNX_VERSION}
+qnx_target=qnx$(echo ${QNX_VERSION} | sed 's/\.//g')
+qnx_os_dir=qnx$(echo ${QNX_VERSION} | sed 's/^\([0-9]*\)\..*/\1/g')
+
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
-cpu_string=`echo ${nto_target} | sed 's/nto//'`
 
+cpu_string=$(echo ${nto_target} | sed 's/nto//')
 case ${cpu_string} in
-	x86)		targetarch=i586 ;;
+	x86)
+		case ${qnx_target} in
+			qnx6*) targetarch=i486 ;;
+			    *) targetarch=i586 ;;
+		esac
+		;;
 	armeabi*)	targetarch=arm
 			nto_target=ntoarm
 			os_variant=eabi
@@ -21,8 +29,8 @@ case ${cpu_string} in
 	*)		targetarch=${cpu_string} ;;
 esac
 
-tmpstring=`echo ${targetarch}-nto-qnx${qnx_target_version}${os_variant}`
-target=`${srcdir}/config.sub ${tmpstring}`
+tmpstring=$(echo ${targetarch}-nto-qnx${qnx_target_version}${os_variant})
+target=$(${srcdir}/config.sub ${tmpstring})
 basedir='/usr'
 
 STACKSIZE=${STACKSIZE:-4096000}
@@ -38,13 +46,19 @@ esac
 
 export LDFLAGS="-Wl,-s $QNXSDK_HOST_LDFLAGS"
 
+echo ""
+echo "build: ${ac_build:-$(${make_CC} -dumpmachine)}"
+echo "host: ${ac_host:-$(${make_CC} -dumpmachine)}"
+echo "target: ${target}"
+echo ""
+
 function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/qnx7/${cpu}}}
+		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}}}
 				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/${qnx_target}/host/qnx7/${cpu}/usr ;;
+		*)		basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr ;;
 		esac
 		;;
 	darwin)
@@ -55,26 +69,26 @@ function hook_preconfigure {
 		case "${host_target}" in
 			win32-*) 	
 			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/qnx7/
+			qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
 			;;
 			win64-*) 	
 			basedir=/c/${qnx_target}/host/win64/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/qnx7/
+			qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
 			;;
 			nto-*)
 			CPPFLAGS=
-			basedir=/usr/${qnx_target}/host/qnx7/${cpu}/usr
-			qnxtarget=/usr/${qnx_target}/target/qnx7
+			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
+			qnxtarget=/usr/${qnx_target}/target/${qnx_os_dir}
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			darwin-*)
 			basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
-			qnxtarget=/Developer/SDKs/${qnx_target}/target/qnx7
+			qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
-				qnxtarget=/opt/${qnx_target}/target/qnx7
+				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
 			;;
 		esac ;;
 	win32)
