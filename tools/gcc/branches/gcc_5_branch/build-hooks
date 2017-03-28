@@ -125,6 +125,7 @@ function hook_preconfigure {
 	*nto-qnx6.[0-9]*)
 		configure_opts="${configure_opts} --with-default-libstdcxx-abi=gcc4-compatible"
 		configure_opts="${configure_opts} --enable-cheaders=c"
+		configure_opts="${configure_opts} --enable-libmudflap"
 		;;
 	*)
 		configure_opts="${configure_opts} --enable-cxx-flags=-stdlib=libstdc++"
@@ -165,9 +166,17 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --disable-fixed-point"
 			;;
 		armeabi)
-			configure_opts="${configure_opts} --with-float=hard"
+			case ${target} in
+			*nto-qnx6.[0-9]*)
+				configure_opts="${configure_opts} --with-float=softfp"
+				configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+				;;
+			*)
+				configure_opts="${configure_opts} --with-float=hard"
+				configure_opts="${configure_opts} --with-fpu=vfpv3"
+				;;
+			esac
 			configure_opts="${configure_opts} --with-arch=armv7-a"
-			configure_opts="${configure_opts} --with-fpu=vfpv3"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		armeabihf)
