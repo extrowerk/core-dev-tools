@@ -167,23 +167,31 @@ function hook_preconfigure {
 			;;
 		armeabi)
 			case ${target} in
-			*nto-qnx6.[0-9]*)
+			*nto-qnx6.[0-5]*)
 				configure_opts="${configure_opts} --with-float=softfp"
 				configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+				;;
+			*nto-qnx6.*)
+				configure_opts="${configure_opts} --with-float=softfp"
+				configure_opts="${configure_opts} --with-fpu=vfpv3-d16"
+				configure_opts="${configure_opts} --with-mode=thumb"
 				;;
 			*)
 				configure_opts="${configure_opts} --with-float=hard"
 				configure_opts="${configure_opts} --with-fpu=vfpv3"
+				configure_opts="${configure_opts} --with-mode=thumb"
 				;;
 			esac
 			configure_opts="${configure_opts} --with-arch=armv7-a"
-			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
 		armeabihf)
 			configure_opts="${configure_opts} --with-float=hard"
 			configure_opts="${configure_opts} --with-arch=armv7-a"
 			configure_opts="${configure_opts} --with-fpu=vfpv3"
-			configure_opts="${configure_opts} --with-mode=thumb"
+			case ${target} in
+			*nto-qnx6.[0-5]*) ;;
+			               *) configure_opts="${configure_opts} --with-mode=thumb" ;;
+			esac
 			;;
 		*)	;;
 	esac
