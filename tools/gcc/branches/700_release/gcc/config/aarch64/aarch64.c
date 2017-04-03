@@ -5110,6 +5110,18 @@ aarch64_select_rtx_section (machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 
+/* Implement ASM_OUTPUT_POOL_EPILOGUE.  */
+void
+aarch64_asm_output_pool_epilogue (FILE *f, const char *, tree,
+				  HOST_WIDE_INT offset)
+{
+  /* When using per-function literal pools, we must ensure that any code
+     section is aligned to the minimal instruction length, lest we get
+     errors from the assembler re "unaligned instructions".  */
+  if (offset & 3)
+    ASM_OUTPUT_ALIGN (f, 2);
+}
+
 /* Costs.  */
 
 /* Helper function for rtx cost calculation.  Strip a shift expression
