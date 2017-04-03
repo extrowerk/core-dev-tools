@@ -1,3 +1,11 @@
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	PR ld/18668
+	* elfnn-aarch64.c (aarch64_type_of_stub): Update destination for
+	calls go through plt stub.
+	(elfNN_aarch64_final_link_relocate): Adjust code logic for CALL26,
+	JUMP26 relocation to support inserting veneer for call to plt stub.
+
 2016-05-13  Alan Modra  <amodra@gmail.com>
 
 	* elf-m10300.c (_bfd_mn10300_elf_finish_dynamic_sections): Use
