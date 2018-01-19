@@ -2503,6 +2503,9 @@ struct GTY(()) machine_function {
      to be used. MS_ABI means ms abi. Otherwise SYSV_ABI means sysv abi.  */
   ENUM_BITFIELD(calling_abi) call_abi : 8;
 
+  /* How to generate indirec branch.  */
+  ENUM_BITFIELD(indirect_branch) indirect_branch_type : 3;
+
   /* Nonzero if the function accesses a previous frame.  */
   BOOL_BITFIELD accesses_prev_frame : 1;
 
