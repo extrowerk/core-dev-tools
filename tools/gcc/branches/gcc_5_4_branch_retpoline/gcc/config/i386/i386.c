@@ -15599,6 +15599,7 @@ put_condition_code (enum rtx_code code, machine_mode mode, bool reverse,
    If CODE is 'h', pretend the reg is the 'high' byte register.
    If CODE is 'y', print "st(0)" instead of "st", if the reg is stack op.
    If CODE is 'd', duplicate the operand for AVX instruction.
+   If CODE is 'V', print naked register name without %.
  */
 
 void
@@ -15608,7 +15609,7 @@ print_reg (rtx x, int code, FILE *file)
   unsigned int regno;
   bool duplicated = code == 'd' && TARGET_AVX;
 
-  if (ASSEMBLER_DIALECT == ASM_ATT)
+  if (ASSEMBLER_DIALECT == ASM_ATT && code != 'V')
     putc ('%', file);
 
   if (x == pc_rtx)
@@ -15774,6 +15775,7 @@ print_reg (rtx x, int code, FILE *file)
    & -- print some in-use local-dynamic symbol name.
    H -- print a memory address offset by 8; used for sse high-parts
    Y -- print condition for XOP pcom* instruction.
+   V -- print naked register name without %.
    + -- print a branch hint as 'cs' or 'ds' prefix
    ; -- print a semicolon (after prefixes due to bug in older gas).
    ~ -- print "i" if TARGET_AVX2, "f" otherwise.
@@ -16000,6 +16002,7 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	case 'X':
 	case 'P':
 	case 'p':
+	case 'V':
 	  break;
 
 	case 's':
