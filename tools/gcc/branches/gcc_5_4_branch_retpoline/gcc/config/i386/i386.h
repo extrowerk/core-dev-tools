@@ -2511,6 +2511,9 @@ struct GTY(()) machine_function {
   /* How to generate indirec branch.  */
   ENUM_BITFIELD(indirect_branch) indirect_branch_type : 3;
 
+  /* How to generate function return.  */
+  ENUM_BITFIELD(indirect_branch) function_return_type : 3;
+
   /* Nonzero if the function accesses a previous frame.  */
   BOOL_BITFIELD accesses_prev_frame : 1;
 
