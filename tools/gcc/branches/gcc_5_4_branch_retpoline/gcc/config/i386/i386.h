@@ -1214,6 +1214,11 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 /* First floating point reg */
 #define FIRST_FLOAT_REG 8
 
+/* @bweb20180119 some registers needed for indirect_thunk_name */
+#define FIRST_INT_REG AX_REG
+#define LAST_INT_REG  SP_REG
+#define LEGACY_INT_REGNO_P(N) (IN_RANGE ((N), FIRST_INT_REG, LAST_INT_REG))
+
 /* First & last stack-like regs */
 #define FIRST_STACK_REG FIRST_FLOAT_REG
 #define LAST_STACK_REG (FIRST_FLOAT_REG + 7)
