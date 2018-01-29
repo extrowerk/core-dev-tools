@@ -1,3 +1,18 @@
+2015-04-01  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* ld-aarch64/aarch64-elf.exp: Add erratum843419 test.
+	* ld-aarch64/erratum843419.d: New.
+	* ld-aarch64/erratum843419.s: New.
+
+ 2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+ 
+ 	PR ld/18176
+2015-03-24  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+       * ld-aarch64/erratum835769.d: Adjust for removal of padding before
+       835769 workaround stubs.
+
+
 2015-08-12  Jiong Wang  <jiong.wang@arm.com>
 
 	* ld-aarch64/aarch64-elf.exp (aarch64_choose_ilp32_emul): Support all
