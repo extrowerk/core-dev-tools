@@ -88,6 +88,8 @@ function hook_preconfigure {
 
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
 	configure_opts="${configure_opts} --enable-gold"
+	configure_opts="${configure_opts} --enable-fix-cortex-a53-843419"
+	configure_opts="${configure_opts} --enable-fix-cortex-a53-835769"
 	configure_opts="${configure_opts} --enable-plugins"
 	configure_opts="${configure_opts} --disable-werror"
 	configure_opts="${configure_opts} --disable-nls"
