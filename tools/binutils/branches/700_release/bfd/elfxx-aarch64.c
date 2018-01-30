@@ -25,46 +25,24 @@
 
 #define MASK(n) ((1u << (n)) - 1)
 
-/* Decode the 26-bit offset of unconditional branch.  */
-static inline uint32_t
-decode_branch_ofs_26 (uint32_t insn)
+/* Sign-extend VALUE, which has the indicated number of BITS.  */
+
+bfd_signed_vma
+_bfd_aarch64_sign_extend (bfd_vma value, int bits)
 {
-  return insn & MASK (26);
+  if (value & ((bfd_vma) 1 << (bits - 1)))
+    /* VALUE is negative.  */
+    value |= ((bfd_vma) - 1) << bits;
+
+  return value;
 }
 
-/* Decode the 19-bit offset of conditional branch and compare & branch.  */
-static inline uint32_t
-decode_cond_branch_ofs_19 (uint32_t insn)
-{
-  return (insn >> 5) & MASK (19);
-}
+/* Decode the IMM field of ADRP.  */
 
-/* Decode the 19-bit offset of load literal.  */
-static inline uint32_t
-decode_ld_lit_ofs_19 (uint32_t insn)
+uint32_t
+_bfd_aarch64_decode_adrp_imm (uint32_t insn)
 {
-  return (insn >> 5) & MASK (19);
-}
-
-/* Decode the 14-bit offset of test & branch.  */
-static inline uint32_t
-decode_tst_branch_ofs_14 (uint32_t insn)
-{
-  return (insn >> 5) & MASK (14);
-}
-
-/* Decode the 16-bit imm of move wide.  */
-static inline uint32_t
-decode_movw_imm (uint32_t insn)
-{
-  return (insn >> 5) & MASK (16);
-}
-
-/* Decode the 12-bit imm of add immediate.  */
-static inline uint32_t
-decode_add_imm (uint32_t insn)
-{
-  return (insn >> 10) & MASK (12);
+  return (((insn >> 5) & MASK (19)) << 2) | ((insn >> 29) & MASK (2));
 }
 
 /* Reencode the imm field of add immediate.  */
@@ -74,9 +52,10 @@ reencode_add_imm (uint32_t insn, uint32_t imm)
   return (insn & ~(MASK (12) << 10)) | ((imm & MASK (12)) << 10);
 }
 
-/* Reencode the imm field of adr.  */
-static inline uint32_t
-reencode_adr_imm (uint32_t insn, uint32_t imm)
+/* Reencode the IMM field of ADR.  */
+
+uint32_t
+_bfd_aarch64_reencode_adr_imm (uint32_t insn, uint32_t imm)
 {
   return (insn & ~((MASK (2) << 29) | (MASK (19) << 5)))
     | ((imm & MASK (2)) << 29) | ((imm & (MASK (19) << 2)) << 3);
@@ -258,7 +237,7 @@ _bfd_aarch64_elf_put_addend (bfd *abfd,
     case BFD_RELOC_AARCH64_ADR_LO21_PCREL:
     case BFD_RELOC_AARCH64_ADR_HI21_PCREL:
     case BFD_RELOC_AARCH64_ADR_HI21_NC_PCREL:
-      contents = reencode_adr_imm (contents, addend);
+      contents = _bfd_aarch64_reencode_adr_imm (contents, addend);
       break;
 
     case BFD_RELOC_AARCH64_TLSGD_ADD_LO12_NC:
