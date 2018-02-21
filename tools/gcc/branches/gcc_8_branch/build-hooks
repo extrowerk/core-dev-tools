@@ -59,9 +59,13 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}}}
-				basedir=${TOOL_PATH}/usr ;;
-		*)		basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr ;;
+		*nto-qnx*)	
+			TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}}}
+			basedir=${TOOL_PATH}/usr 
+			;;
+		*)	
+			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr 
+			;;
 		esac
 		;;
 	darwin)
@@ -71,24 +75,25 @@ function hook_preconfigure {
 	linux)
 		case "${host_target}" in
 			win32-*) 	
-			basedir=/c/${qnx_target}/host/win32/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
-			;;
+				basedir=/c/${qnx_target}/host/win32/${cpu}/usr
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				;;
 			win64-*) 	
-			basedir=/c/${qnx_target}/host/win64/${cpu}/usr
-			qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
-			;;
+				basedir=/c/${qnx_target}/host/win64/${cpu}/usr
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				;;
 			nto-*)
-			CPPFLAGS=
-			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
-			qnxtarget=/usr/${qnx_target}/target/${qnx_os_dir}
-			configure_opts="${configure_opts} --disable-plugin"
-			;;
+				CPPFLAGS=
+				basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
+				qnxtarget=/usr/${qnx_target}/target/${qnx_os_dir}
+				configure_opts="${configure_opts} --disable-plugin"
+				;;
 			darwin-*)
-			basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
-			qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
-			configure_opts="${configure_opts} --disable-plugin"
-			;;
+				basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
+				qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
+				configure_opts="${configure_opts} --disable-plugin"
+				configure_opts="${configure_opts} --with-as=`which ${target}-as`"
+				;;
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
@@ -134,6 +139,7 @@ function hook_preconfigure {
 # Set TARGET CPU specific flags	
 	case ${cpu_string} in
 		x86_64)
+			# @todo(bweber@qnx.com)
 			# Our default g(nu-)as fails on assembling the DWARF5 code
 			# looks like a relocation table set-up issue..
 			configure_opts="${configure_opts} --with-as=`which ${target}-as`"
@@ -157,8 +163,7 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --with-fpu=vfpv3"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
-		*)	
-			configure_opts="${configure_opts} --with-as=`which ${target}-as`"
+		*)
 			;;
 	esac
 
@@ -200,10 +205,6 @@ function hook_preconfigure {
 		fi
 	fi
 	
-#	ln -s /home/bweber/qnx700/target/qnx7/usr /home/bweber/qnx700/target/qnx7/x86/i586-pc-nto-qnx7.0.0
-#	echo "-----------------"
-#	echo "${configure_opts}"
-#	exit
 }
 
 function hook_premake {
