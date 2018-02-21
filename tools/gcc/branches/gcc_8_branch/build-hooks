@@ -82,13 +82,11 @@ function hook_preconfigure {
 			CPPFLAGS=
 			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
 			qnxtarget=/usr/${qnx_target}/target/${qnx_os_dir}
-# ??			
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			darwin-*)
 			basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
 			qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
-# ??			
 			configure_opts="${configure_opts} --disable-plugin"
 			;;
 			linux-*)
@@ -159,7 +157,9 @@ function hook_preconfigure {
 			configure_opts="${configure_opts} --with-fpu=vfpv3"
 			configure_opts="${configure_opts} --with-mode=thumb"
 			;;
-		*)	;;
+		*)	
+			configure_opts="${configure_opts} --with-as=`which ${target}-as`"
+			;;
 	esac
 
 # Installation root - set to /opt/qnxXXX/... so packager will find binaries 
