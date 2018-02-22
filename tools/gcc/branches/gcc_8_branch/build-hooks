@@ -92,7 +92,6 @@ function hook_preconfigure {
 				basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
 				qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
 				configure_opts="${configure_opts} --disable-plugin"
-				configure_opts="${configure_opts} --with-as=`which ${target}-as`"
 				;;
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
