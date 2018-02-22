@@ -30,8 +30,9 @@ do {                                            \
 */
 #undef ASM_SPEC
 #define ASM_SPEC \
-"%{EB:-EB} %{!EB:-EL} %{EL:-EL} \
- %{fpic|fPIC:--defsym __PIC__=1} \
+"%{EB:-EB} \
+ %{fpic:--defsym __PIC__=1} \
+ %{fPIC:--defsym __PIC__=2} \
  %{mcpu=*:-mcpu=%*} \
  %{mfloat-abi=*} %{mfpu=*} \
  %{mapcs-float:-mfloat} \
@@ -80,7 +81,7 @@ do {                                            \
      %{rdynamic:-export-dynamic}} \
    --dynamic-linker /usr/lib/ldqnx.so.2} \
  -m armnto -X \
- %{EB:-EB} %{!EB:-EL} %{EL:-EL} "
+ %{EB:-EB} "
 
 #undef CPP_APCS_PC_DEFAULT_SPEC
 #define CPP_APCS_PC_DEFAULT_SPEC "-D__APCS_32__"
