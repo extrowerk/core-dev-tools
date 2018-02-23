@@ -1088,7 +1088,7 @@ main (int argc, char **argv)
   prefix_from_env ("COMPILER_PATH", &cpath);
   prefix_from_env ("PATH", &path);
 #ifdef __QNXNTO__  
-  prefix_from_env1 ("QNX_HOST", "usr/bin", &cpath);
+  prefix_from_env ("QNX_HOST", "usr/bin", &cpath);
 #endif  
 
   /* Try to discover a valid linker/nm/strip to use.  */
