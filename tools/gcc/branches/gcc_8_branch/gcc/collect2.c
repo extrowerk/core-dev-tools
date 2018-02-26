@@ -377,6 +377,28 @@ typedef int scanfilter;
 static void scan_prog_file (const char *, scanpass, scanfilter);
 
 
+#ifdef __QNXNTO__
+/* Search for NAME using prefix list PPREFIX.  We only look for executable
+   files.
+   Return 0 if not found, otherwise return its name, allocated with malloc.  
+   Needed for environment based path resolution at runtime in QNX
+*/
+
+static void
+prefix_from_env1(const char *env, const char *suffix, struct path_prefix *pprefix)
+{
+   const char *p;
+   char *nstore;
+   p = getenv(env);
+   if (p)
+     {
+      nstore = XNEWVEC (char, strlen (suffix) + strlen(p) + 2);
+      sprintf(nstore, "%s/%s", p, suffix);
+      prefix_from_string(nstore, pprefix);
+     }
+}
+#endif
+
 /* Delete tempfiles and exit function.  */
 
 void
@@ -1088,7 +1110,7 @@ main (int argc, char **argv)
   prefix_from_env ("COMPILER_PATH", &cpath);
   prefix_from_env ("PATH", &path);
 #ifdef __QNXNTO__  
-  prefix_from_env ("QNX_HOST", "usr/bin", &cpath);
+  prefix_from_env1 ("QNX_HOST", "usr/bin", &cpath);
 #endif  
 
   /* Try to discover a valid linker/nm/strip to use.  */
