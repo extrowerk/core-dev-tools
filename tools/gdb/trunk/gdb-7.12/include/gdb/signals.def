@@ -198,7 +198,8 @@ SET (GDB_SIGNAL_LIBRT, 151, "SIGLIBRT", "librt internal signal")
 
 #ifdef __QNXTARGET__
 SET (GDB_SIGNAL_SELECT, 152, "SIGSELECT", "Data available")
-SET (GDB_SIGNAL_LAST, 153, NULL, "GDB_SIGNAL_LAST")
+SET (GDB_SIGNAL_PHOTON, 153, "SIGPHOTON", "Photon message ")
+SET (GDB_SIGNAL_LAST, 154, NULL, "GDB_SIGNAL_LAST")
 #else /* ! __QNXTARGET__ */
 
 /* If you are adding a new signal, add it just above this comment.  */
