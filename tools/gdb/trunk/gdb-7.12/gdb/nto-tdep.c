@@ -1566,11 +1566,18 @@ nto_gdbarch_init (struct obstack *obstack)
   return ops;
 }
 
+/*
+ * translates a GDB signal code into an NTO signal.
+ * Signal mappings differ from OS to OS and sometimes even between
+ * architectures, so GDB has it's own signal list that needs
+ * to be translated to the actual target and back.
+ */
 int
 nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
 {
   switch (signal)
     {
+    /* signals that can be sent with slay */
     case GDB_SIGNAL_0:
       return 0;
     case GDB_SIGNAL_HUP:
@@ -1636,9 +1643,66 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
       return 30;  /* exceded cpu limit */
     case GDB_SIGNAL_XFSZ:
       return 31;  /* exceded file size limit */
+    /* NTO does not define signals between 32 and 40 *
+     * filled up with non-posix RT signals           *
+     * todo: is this misleading?                     */
+    case GDB_SIGNAL_REALTIME_33:
+      return 33;
+    case GDB_SIGNAL_REALTIME_34:
+	  return 34;
+    case GDB_SIGNAL_REALTIME_35:
+	  return 35;
+    case GDB_SIGNAL_REALTIME_36:
+	  return 36;
+    case GDB_SIGNAL_REALTIME_37:
+	  return 37;
+    case GDB_SIGNAL_REALTIME_38:
+	  return 38;
+    case GDB_SIGNAL_REALTIME_39:
+	  return 39;
+    case GDB_SIGNAL_REALTIME_40:
+      return 40;
+    /* POSIX RT-signals ->  */
+    case GDB_SIGNAL_REALTIME_41:
+      return 41;
+    case GDB_SIGNAL_REALTIME_42:
+      return 42;
+    case GDB_SIGNAL_REALTIME_43:
+      return 43;
+    case GDB_SIGNAL_REALTIME_44:
+      return 44;
+    case GDB_SIGNAL_REALTIME_45:
+      return 45;
+    case GDB_SIGNAL_REALTIME_46:
+      return 46;
+    case GDB_SIGNAL_REALTIME_47:
+      return 47;
+    case GDB_SIGNAL_REALTIME_48:
+      return 48;
+    case GDB_SIGNAL_REALTIME_49:
+      return 49;
+    case GDB_SIGNAL_REALTIME_50:
+      return 50;
+    case GDB_SIGNAL_REALTIME_51:
+      return 51;
+    case GDB_SIGNAL_REALTIME_52:
+      return 52;
+    case GDB_SIGNAL_REALTIME_53:
+      return 53;
+    case GDB_SIGNAL_REALTIME_54:
+      return 54;
+    case GDB_SIGNAL_REALTIME_55:
+      return 55;
+    case GDB_SIGNAL_REALTIME_56:
+      return 56;
+    /* Special purpose signals ->  */
     case GDB_SIGNAL_SELECT:
       return 57;
+    case GDB_SIGNAL_PHOTON:
+      return 58;
+    /* Unknown signal with debug message as #143 is not always helpful */
     default:
+   	  nto_trace (0) ("Cannot translate GDB signal %i!\n", signal );
       return 0;
     }
 }
@@ -1653,6 +1717,8 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
       if (tgtsig == nto_signal)
 	return (enum gdb_signal)i;
     }
+  /* Give debug message as GDB_SIGNAL_UNKNOWN (143) can be confusing */
+  nto_trace (0) ("Unknown NTO signal %i!\n", nto_signal );
   return GDB_SIGNAL_UNKNOWN;
 }
 
