@@ -215,6 +215,13 @@ echo "target_cpu=${target_cpu}"
 echo "target=${target}"
 echo "qnx_abiext_target=${qnx_abiext_target}"
 
+# No nl_langinfo in libc++ yet so disable langinfo even though 
+# langinfo.h is installed
+if [ x${host_os} == xnto ]; then
+  export am_cv_langinfo_codeset=no
+fi
+
+
 # export TARGET_SYSNAME - needed for python-config-cross.sh
 export TARGET_SYSNAME
 
