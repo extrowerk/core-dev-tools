@@ -1373,6 +1373,16 @@ nto_open (const char *name, int from_tty)
     error
       ("To open a remote debug connection, you need to specify what serial\ndevice is attached to the remote system (e.g. /dev/ttya).");
 
+  /* If we're connected to a running target, target_preopen will kill it.
+     Ask this question first, before target_preopen has a chance to kill
+     anything.  */
+  if ( ( current_session->desc != NULL ) && !have_inferiors ())
+    {
+      if (from_tty
+	  && !query (_("Already connected to a remote target.  Disconnect? ")))
+	error (_("Still connected."));
+    }
+
   target_preopen (from_tty);
   unpush_target (&nto_ops);
 
@@ -1653,6 +1663,27 @@ nto_detach (struct target_ops *ops, const char *args, int from_tty)
   inf_data->has_memory = 0;
 }
 
+/* implementation of disconnect so mi-target-disconnect may work */
+static void
+nto_disconnect (struct target_ops *target, const char *args, int from_tty)
+{
+  if (args) {
+    error (_("Argument given to \"disconnect\" while remote debugging."));
+  }
+
+  /* clean up current inferior */
+  nto_mourn_inferior( target );
+
+  /* Make sure we unpush even the extended remote targets.  Calling
+     nto_mourn_inferior won't unpush, and remote_mourn won't
+     unpush if there is more than one inferior left. unpush calls close()
+     on the target, so the connection will be cleaned up */
+  unpush_target (target);
+
+  if (from_tty) {
+    puts_filtered ("Ending remote debugging.\n");
+  }
+}
 
 /* Tell the remote machine to resume.  */
 static void
@@ -3905,7 +3936,7 @@ or `pty' to launch `pdebug' for debugging.";
   nto_ops.to_attach = nto_attach;
   nto_ops.to_post_attach = nto_post_attach;
   nto_ops.to_detach = nto_detach;
-  //TODO: nto_ops.to_disconnect = nto_disconnect;
+  nto_ops.to_disconnect = nto_disconnect;
   nto_ops.to_resume = nto_resume;
   nto_ops.to_wait = nto_wait;
   nto_ops.to_fetch_registers = nto_fetch_registers;
