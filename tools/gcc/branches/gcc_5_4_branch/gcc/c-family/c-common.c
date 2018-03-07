@@ -10500,6 +10500,146 @@ builtin_type_for_size (int size, bool unsignedp)
   return type ? type : error_mark_node;
 }
 
+/* Work out the size of the object pointed to by the first arguement
+   of a call to __builtin_load_no_speculate.  Only pointers to
+   integral types and pointers are permitted.  Return 0 if the
+   arguement type is not supported of if the size is too large.  */
+static int
+load_no_speculate_resolve_size (tree function, vec<tree, va_gc> *params)
+{
+  /* Type of the argument.  */
+  tree type;
+  int size;
+
+  if (vec_safe_is_empty (params))
+    {
+      error ("too few arguments to function %qE", function);
+      return 0;
+    }
+
+  type = TREE_TYPE ((*params)[0]);
+
+  if (!POINTER_TYPE_P (type))
+    goto incompatible;
+
+  type = TREE_TYPE (type);
+
+  if (TREE_CODE (type) == ARRAY_TYPE)
+    {
+      /* Force array-to-pointer decay for c++.  */
+      gcc_assert (c_dialect_cxx());
+      (*params)[0] = default_conversion ((*params)[0]);
+      type = TREE_TYPE ((*params)[0]);
+    }
+
+  if (!INTEGRAL_TYPE_P (type) && !POINTER_TYPE_P (type))
+    goto incompatible;
+
+  if (!COMPLETE_TYPE_P (type))
+   goto incompatible;
+
+  size = tree_to_uhwi (TYPE_SIZE_UNIT (type));
+  if (size == 1 || size == 2 || size == 4 || size == 8 || size == 16)
+    return size;
+
+ incompatible:
+  /* Issue the diagnostic only if the argument is valid, otherwise
+     it would be redundant at best and could be misleading.  */
+  if (type != error_mark_node)
+    error ("operand type %qT is incompatible with argument %d of %qE",
+	   type, 1, function);
+
+  return 0;
+}
+
+/* Validate and coerce PARAMS, the arguments to ORIG_FUNCTION to fit
+   the prototype for FUNCTION.  The first three arguments are
+   mandatory, but shouldn't need casting as they are all pointers and
+   we've already established that the first argument is a pointer to a
+   permitted type.  The two optional arguments may need to be
+   fabricated if they have been omitted.  */
+static bool
+load_no_speculate_resolve_params (location_t loc, tree orig_function,
+				  tree function,
+				  vec<tree, va_gc> *params)
+{
+  function_args_iterator iter;
+
+  function_args_iter_init (&iter, TREE_TYPE (function));
+  tree arg_type = function_args_iter_cond (&iter);
+  unsigned parmnum;
+  tree val;
+
+  if (params->length () < 3)
+    {
+      error_at (loc, "too few arguments to function %qE", orig_function);
+      return false;
+    }
+  else if (params->length () > 5)
+    {
+      error_at (loc, "too many arguments to function %qE", orig_function);
+      return false;
+    }
+
+  /* Required arguments.  These must all be pointers.  */
+  for (parmnum = 0; parmnum < 3; parmnum++)
+    {
+      arg_type = function_args_iter_cond (&iter);
+      val = (*params)[parmnum];
+      if (TREE_CODE (TREE_TYPE (val)) == ARRAY_TYPE)
+	val = default_conversion (val);
+      if (TREE_CODE (TREE_TYPE (val)) != POINTER_TYPE)
+	goto bad_arg;
+      (*params)[parmnum] = val;
+    }
+
+  /* Optional integer value.  */
+  arg_type = function_args_iter_cond (&iter);
+  if (params->length () >= 4)
+    {
+      val = (*params)[parmnum];
+      val = convert (arg_type, val);
+      (*params)[parmnum] = val;
+    }
+  else
+    return true;
+
+  /* Optional pointer to compare against.  */
+  parmnum = 4;
+  arg_type = function_args_iter_cond (&iter);
+  if (params->length () == 5)
+    {
+      val = (*params)[parmnum];
+      if (TREE_CODE (TREE_TYPE (val)) == ARRAY_TYPE)
+	val = default_conversion (val);
+      if (TREE_CODE (TREE_TYPE (val)) != POINTER_TYPE)
+	goto bad_arg;
+      (*params)[parmnum] = val;
+    }
+
+  return true;
+
+ bad_arg:
+  error_at (loc, "expecting argument of type %qT for argument %u", arg_type,
+	    parmnum);
+  return false;
+}
+
+/* Cast the result of the builtin back to the type pointed to by the
+   first argument, preserving any qualifiers that it might have.  */
+static tree
+load_no_speculate_resolve_return (tree first_param, tree result)
+{
+  tree ptype = TREE_TYPE (TREE_TYPE (first_param));
+  tree rtype = TREE_TYPE (result);
+  ptype = TYPE_MAIN_VARIANT (ptype);
+
+  if (tree_int_cst_equal (TYPE_SIZE (ptype), TYPE_SIZE (rtype)))
+    return convert (ptype, result);
+
+  return result;
+}
+
 /* A helper function for resolve_overloaded_builtin in resolving the
    overloaded __sync_ builtins.  Returns a positive power of 2 if the
    first operand of PARAMS is a pointer to a supported data type.
@@ -11115,6 +11255,30 @@ resolve_overloaded_builtin (location_t loc, tree function,
   /* Handle BUILT_IN_NORMAL here.  */
   switch (orig_code)
     {
+    case BUILT_IN_LOAD_NO_SPECULATE_N:
+      {
+	int n = load_no_speculate_resolve_size (function, params);
+	tree new_function, first_param, result;
+	enum built_in_function fncode;
+
+	if (n == 0)
+	  return error_mark_node;
+
+	fncode = (enum built_in_function)((int)orig_code + exact_log2 (n) + 1);
+	new_function = builtin_decl_explicit (fncode);
+	first_param = (*params)[0];
+	if (!load_no_speculate_resolve_params (loc, function, new_function,
+					       params))
+	  return error_mark_node;
+
+	result = build_function_call_vec (loc, vNULL, new_function, params,
+					  NULL);
+	if (result == error_mark_node)
+	  return result;
+
+	return load_no_speculate_resolve_return (first_param, result);
+      }
+
     case BUILT_IN_ATOMIC_EXCHANGE:
     case BUILT_IN_ATOMIC_COMPARE_EXCHANGE:
     case BUILT_IN_ATOMIC_LOAD:

@@ -9079,6 +9079,7 @@ in the Cilk Plus language manual which can be found at
 @findex __builtin_islessequal
 @findex __builtin_islessgreater
 @findex __builtin_isunordered
+@findex __builtin_load_no_speculate
 @findex __builtin_powi
 @findex __builtin_powif
 @findex __builtin_powil
@@ -9605,6 +9606,58 @@ In the same fashion, GCC provides @code{fpclassify}, @code{isfinite},
 @code{isinf_sign} and @code{isnormal} built-ins used with
 @code{__builtin_} prefixed.  The @code{isinf} and @code{isnan}
 built-in functions appear both with and without the @code{__builtin_} prefix.
+
+@deftypefn {Built-in Function} @var{type} __builtin_load_no_speculate (const volatile @var{type} *ptr, const volatile void *lower_bound, const volatile void *upper_bound, @var{type} failval, const volatile void *cmpptr)
+The @code{__builtin_load_no_speculation} function provides a means to
+limit the extent to which a processor can continue speculative
+execution with the result of loading a value stored at @var{ptr}.
+Logically, the builtin implements the following behavior:
+
+@smallexample
+inline @var{type} __builtin_load_no_speculate
+    (const volatile @var{type} *ptr,
+     const volatile void *lower_bound,
+     const volatile void *upper_bound,
+     @var{type} failval,
+     const volatile void *cmpptr)
+@{
+  @var{type} result;
+  if (cmpptr >= lower_bound && cmpptr < upper_bound)
+    result = *ptr;
+  else
+    result = failval;
+  return result;
+@}
+@end smallexample
+
+but in addition target-specific code will be inserted to ensure that
+speculation using @code{*ptr} cannot occur when @var{cmpptr} lies outside of
+the specified bounds.
+
+@var{type} may be any integral type (signed, or unsigned, @code{char},
+@code{short}, @code{int}, etc) or a pointer to any type.
+
+The final argument, @var{cmpptr}, may be omitted.  If you do this,
+then the compiler will use @var{ptr} for comparison against the upper
+and lower bounds.  Furthermore, if you omit @var{cmpptr}, you may also
+omit @var{failval} and the compiler will use @code{(@var{type})0} for
+the out-of-bounds result.
+
+Additionally, when it is know that one of the bounds can never fail,
+you can use a literal @code{NULL} argument and the compiler will
+generate code that only checks the other boundary condition.  It is generally
+only safe to do this when your code contains a loop construct where the only
+boundary of interest is the one beyond the termination condition.  You cannot
+omit both boundary conditions in this way.
+
+The logical behaviour of the builtin is supported for all architectures, but
+on machines where target-specific support for inhibiting speculation is not
+implemented, or not necessary, the compiler will emit a warning.
+
+The pre-processor macro @code{__HAVE_LOAD_NO_SPECULATE} is defined with the
+value 1 on all implementations of GCC that support this builtin.
+
+@end deftypefn
 
 @deftypefn {Built-in Function} int __builtin_types_compatible_p (@var{type1}, @var{type2})
 

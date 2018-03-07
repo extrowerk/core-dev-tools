@@ -910,6 +910,28 @@ DEF_BUILTIN (BUILT_IN_EMUTLS_REGISTER_COMMON,
 	     true, true, true, ATTR_NOTHROW_LEAF_LIST, false,
 	     !targetm.have_tls)
 
+/* Suppressing speculation.  Users are expected to use the first (N)
+   variant, which will be translated internally into one of the other
+   types.  */
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_N, "load_no_speculate",
+		 BT_FN_VOID_VAR, ATTR_NULL)
+
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_1, "load_no_speculate_1",
+		 BT_FN_I1_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR,
+		 ATTR_NULL)
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_2, "load_no_speculate_2",
+		 BT_FN_I2_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR,
+		 ATTR_NULL)
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_4, "load_no_speculate_4",
+		 BT_FN_I4_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR,
+		 ATTR_NULL)
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_8, "load_no_speculate_8",
+		 BT_FN_I8_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR,
+		 ATTR_NULL)
+DEF_GCC_BUILTIN (BUILT_IN_LOAD_NO_SPECULATE_16, "load_no_speculate_16",
+		 BT_FN_I16_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR,
+		 ATTR_NULL)
+
 /* Exception support.  */
 DEF_BUILTIN_STUB (BUILT_IN_UNWIND_RESUME, "__builtin_unwind_resume")
 DEF_BUILTIN_STUB (BUILT_IN_CXA_END_CLEANUP, "__builtin_cxa_end_cleanup")

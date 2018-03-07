@@ -11591,3 +11591,10 @@ All and all it does not take long to convert ports that the
 maintainer is familiar with.
 
 @end defmac
+
+@deftypefn {Target Hook} rtx TARGET_INHIBIT_LOAD_SPECULATION (machine_mode @var{mode}, rtx @var{result}, rtx @var{mem}, rtx @var{lower_bound}, rtx @var{upper_bound}, rtx @var{fail_result}, rtx @var{cmpptr})
+Generate a target-specific code sequence that implements @code{__builtin_load_no_speculate}, returning the result in @var{result}. If @var{cmpptr} is greater than, or equal to, @var{lower_bound} and less than @var{upper_bound} then @var{mem}, a @code{MEM} of type @var{mode}, should be returned, otherwise @var{failval} should be returned.  The expansion must ensure that subsequent speculation by the processor using the @var{mem} cannot occur if @var{cmpptr} lies outside of the specified bounds.  At most one of @var{lower_bound} and @var{upper_bound} can be @code{NULL_RTX}, indicating that code for that bounds check should not be generated.
+ 
+ The default implementation implements the logic of the builtin but cannot provide the target-specific code necessary to inhibit speculation.  A warning will be emitted to that effect.
+@end deftypefn
+
