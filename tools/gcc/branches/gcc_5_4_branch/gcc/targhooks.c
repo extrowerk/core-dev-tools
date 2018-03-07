@@ -96,7 +96,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimplify.h"
 #include "stringpool.h"
 #include "tree-ssanames.h"
-
+#include "predict.h"
+#include "basic-block.h"
+#include "dojump.h"
 
 bool
 default_legitimate_address_p (machine_mode mode ATTRIBUTE_UNUSED,
@@ -1940,6 +1942,76 @@ can_use_doloop_if_innermost (const widest_int &, const widest_int &,
 			     unsigned int loop_depth, bool)
 {
   return loop_depth == 1;
+}
+
+/* Default implementation of the load-and-inhibit-speculation builtin.
+   This version does not have, or know of, the target-specific
+   mechanisms necessary to inhibit speculation, so it simply emits a
+   code sequence that implements the architectural aspects of the
+   builtin.  */
+rtx
+default_inhibit_load_speculation (machine_mode mode ATTRIBUTE_UNUSED,
+				  rtx result,
+				  rtx mem,
+				  rtx lower_bound,
+				  rtx upper_bound,
+				  rtx fail_result,
+				  rtx cmpptr)
+{
+  rtx_code_label *done_label = gen_label_rtx ();
+  rtx_code_label *inrange_label = gen_label_rtx ();
+  warning_at
+    (input_location, 0,
+     "this target does not support anti-speculation operations.  "
+     "Your program will still execute correctly, but speculation "
+     "will not be inhibited");
+
+  /* We don't have any despeculation barriers, but if we mark the branch
+     probabilities to be always predicting the out-of-bounds path, then
+     there's a higher chance that the compiler will order code so that
+     static prediction will fall through a safe path.  
+     @bweber@qnx.com - using 0 for profile_probability::never () 
+     and PROB_ALWAYS for profile_probability::always  () */
+  if (lower_bound == NULL)
+    {
+      do_compare_rtx_and_jump (cmpptr, upper_bound, LTU, true, ptr_mode,
+			       NULL, NULL, inrange_label,
+			       0 );
+      emit_move_insn (result, fail_result);
+      emit_jump (done_label);
+      emit_label (inrange_label);
+      emit_move_insn (result, mem);
+      emit_label (done_label);
+    }
+  else if (upper_bound == NULL)
+    {
+      do_compare_rtx_and_jump (cmpptr, lower_bound, GEU, true, ptr_mode,
+			       NULL, NULL, inrange_label,
+			       0 );
+      emit_move_insn (result, fail_result);
+      emit_jump (done_label);
+      emit_label (inrange_label);
+      emit_move_insn (result, mem);
+      emit_label (done_label);
+    }
+  else
+    {
+      rtx_code_label *oob_label = gen_label_rtx ();
+      do_compare_rtx_and_jump (cmpptr, lower_bound, LTU, true, ptr_mode,
+			       NULL, NULL, oob_label,
+			       PROB_ALWAYS );
+      do_compare_rtx_and_jump (cmpptr, upper_bound, GEU, true, ptr_mode,
+			       NULL, NULL, inrange_label,
+			       0 );
+      emit_label (oob_label);
+      emit_move_insn (result, fail_result);
+      emit_jump (done_label);
+      emit_label (inrange_label);
+      emit_move_insn (result, mem);
+      emit_label (done_label);
+    }
+
+  return result;
 }
 
 #include "gt-targhooks.h"

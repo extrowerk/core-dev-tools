@@ -3833,6 +3833,26 @@ normally defined in @file{libgcc2.c}.",
  default_external_stack_protect_fail)
 
 DEFHOOK
+(inhibit_load_speculation,
+ "Generate a target-specific code sequence that implements\
+ @code{__builtin_load_no_speculate}, returning the result in @var{result}.\
+ If @var{cmpptr} is greater than, or equal to, @var{lower_bound} and less\
+ than @var{upper_bound} then @var{mem}, a @code{MEM} of type @var{mode},\
+ should be returned, otherwise @var{failval} should be returned.  The\
+ expansion must ensure that subsequent speculation by the processor using\
+ the @var{mem} cannot occur if @var{cmpptr} lies outside of the specified\
+ bounds.  At most one of @var{lower_bound} and @var{upper_bound} can be\
+ @code{NULL_RTX}, indicating that code for that bounds check should not be\
+ generated.\n\
+ \n\
+ The default implementation implements the logic of the builtin\
+ but cannot provide the target-specific code necessary to inhibit\
+ speculation.  A warning will be emitted to that effect.",
+ rtx, (machine_mode mode, rtx result, rtx mem, rtx lower_bound,
+       rtx upper_bound, rtx fail_result, rtx cmpptr),
+ default_inhibit_load_speculation)
+
+DEFHOOK
 (can_use_doloop_p,
  "Return true if it is possible to use low-overhead loops (@code{doloop_end}\n\
 and @code{doloop_begin}) for a particular loop.  @var{iterations} gives the\n\

@@ -5959,6 +5959,97 @@ expand_builtin_acc_on_device (tree exp ATTRIBUTE_UNUSED,
 #endif
 }
 
+/* Expand a call to __builtin_load_no_speculate_<N>.  MODE represents the
+   size of the first argument to that call.  We emit a warning if the
+   result isn't used (IGNORE != 0), since the implementation might
+   rely on the value being used to correctly inhibit speculation.  */
+static rtx
+expand_load_no_speculate (machine_mode mode, tree exp, rtx target, int ignore)
+{
+  rtx ptr, op0, op1, op2, op3, op4;
+  unsigned nargs = call_expr_nargs (exp);
+
+  if (ignore)
+    {
+      warning_at (input_location, 0,
+		  "result of __builtin_load_no_speculate must be used to "
+		  "ensure correct operation");
+      target = NULL;
+    }
+
+  tree arg0 = CALL_EXPR_ARG (exp, 0);
+  tree arg1 = CALL_EXPR_ARG (exp, 1);
+  tree arg2 = CALL_EXPR_ARG (exp, 2);
+
+  ptr = expand_expr (arg0, NULL_RTX, ptr_mode, EXPAND_SUM);
+  op0 = validize_mem (gen_rtx_MEM (mode, convert_memory_address (Pmode, ptr)));
+
+  set_mem_align (op0, MAX (GET_MODE_ALIGNMENT (mode),
+			   get_pointer_alignment (arg0)));
+  set_mem_alias_set (op0, get_alias_set (TREE_TYPE (TREE_TYPE (arg0))));
+
+  /* Mark the memory access as volatile.  We don't want the optimizers to
+     move it or otherwise substitue an alternative value.  */
+  MEM_VOLATILE_P (op0) = 1;
+
+  if (integer_zerop (tree_strip_nop_conversions (arg1)))
+    op1 = NULL;
+  else
+    {
+      op1 = expand_normal (arg1);
+      if (GET_MODE (op1) != ptr_mode && GET_MODE (op1) != VOIDmode)
+	op1 = convert_modes (ptr_mode, VOIDmode, op1,
+			     TYPE_UNSIGNED (TREE_TYPE (arg1)));
+    }
+
+  if (integer_zerop (tree_strip_nop_conversions (arg2)))
+    op2 = NULL;
+  else
+    {
+      op2 = expand_normal (arg2);
+      if (GET_MODE (op2) != ptr_mode && GET_MODE (op2) != VOIDmode)
+	op2 = convert_modes (ptr_mode, VOIDmode, op2,
+			     TYPE_UNSIGNED (TREE_TYPE (arg2)));
+    }
+
+  if (nargs > 3)
+    {
+      tree arg3 = CALL_EXPR_ARG (exp, 3);
+      op3 = expand_normal (arg3);
+      if (CONST_INT_P (op3))
+	op3 = gen_int_mode (INTVAL (op3), mode);
+      else if (GET_MODE (op3) != mode && GET_MODE (op3) != VOIDmode)
+	op3 = convert_modes (mode, VOIDmode, op3,
+			     TYPE_UNSIGNED (TREE_TYPE (arg3)));
+    }
+  else
+    op3 = const0_rtx;
+
+  if (nargs > 4)
+    {
+      tree arg4 = CALL_EXPR_ARG (exp, 4);
+      op4 = expand_normal (arg4);
+      if (GET_MODE (op4) != ptr_mode && GET_MODE (op4) != VOIDmode)
+	op4 = convert_modes (ptr_mode, VOIDmode, op4,
+			     TYPE_UNSIGNED (TREE_TYPE (arg4)));
+    }
+  else
+    op4 = ptr;
+
+  if (op1 == NULL && op2 == NULL)
+    {
+      error_at (input_location,
+		"at least one speculation bound must be non-NULL");
+      /* Ensure we don't crash later.  */
+      op1 = op4;
+    }
+
+  if (target == NULL)
+    target = gen_reg_rtx (mode);
+
+  return targetm.inhibit_load_speculation (mode, target, op0, op1, op2, op3,
+					   op4);
+}
 
 /* Expand an expression EXP that calls a built-in function,
    with result going to TARGET if that's convenient
@@ -7103,6 +7194,14 @@ expand_builtin (tree exp, rtx target, rtx subtarget, machine_mode mode,
       if (target)
 	return target;
       break;
+
+    case BUILT_IN_LOAD_NO_SPECULATE_1:
+    case BUILT_IN_LOAD_NO_SPECULATE_2:
+    case BUILT_IN_LOAD_NO_SPECULATE_4:
+    case BUILT_IN_LOAD_NO_SPECULATE_8:
+    case BUILT_IN_LOAD_NO_SPECULATE_16:
+      mode = get_builtin_sync_mode (fcode - BUILT_IN_LOAD_NO_SPECULATE_1);
+      return expand_load_no_speculate (mode, exp, target, ignore);
 
     default:	/* just do library call, if unknown builtin */
       break;
