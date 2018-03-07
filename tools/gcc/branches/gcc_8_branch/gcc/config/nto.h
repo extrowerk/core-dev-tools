@@ -185,4 +185,5 @@ extern void nto_handle_cxx_option (size_t code, const char *arg);
 
 #undef LIB_SPEC
 #define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{shared:-lcS} %{" PIE_SPEC ":-lcS}}"
+  "%{!symbolic: -lc -Bstatic %{shared:-lcS} %{" PIE_SPEC ":-lcS} %{no-pie:-lc}}"
+
