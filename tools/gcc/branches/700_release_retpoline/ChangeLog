@@ -1,3 +1,7 @@
+2018-03-07	Bjoern Weber	<bweber@qnx.com>
+
+	* port retpoline patch from gcc_5_4_branch
+
 2016-06-03  Release Manager
 
 	* GCC 5.4.0 released.
