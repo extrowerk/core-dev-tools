@@ -4453,17 +4453,25 @@ aarch64_print_operand (FILE *f, rtx x, char code)
     case 'k':
       {
 	int cond_code;
-	/* Print nzcv.  */
+	
+	/* Print immediate nzcv. */
+	if(CONST_INT_P (x)) {
+	  cond_code = INTVAL (x);
+	  gcc_assert (cond_code >= 0 && cond_code <= AARCH64_NV);
+	  asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	}
+	/* Print comparison result. */
+	else if(COMPARISON_P(x)) {
+	  cond_code = aarch64_get_condition_code_1 (CCmode, GET_CODE (x));
+	  gcc_assert (cond_code >= 0);
+	  asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	}
+	else {
+	  output_operand_lossage ("invalid operand for '%%%c'", code);
+	  return;
+	}
 
-	if (!CONST_INT_P (x))
-	  {
-	    output_operand_lossage ("invalid operand for '%%%c'", code);
-	    return;
-	  }
-
-	cond_code = INTVAL (x);
-	gcc_assert (cond_code >= 0 && cond_code <= AARCH64_NV);
-	asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	
       }
       break;
 
