@@ -8234,5 +8234,5 @@ maintainer is familiar with.
 
 @end defmac
 
-@hook TARGET_INHIBIT_LOAD_SPECULATION
+@hook TARGET_SPECULATION_SAFE_LOAD
 

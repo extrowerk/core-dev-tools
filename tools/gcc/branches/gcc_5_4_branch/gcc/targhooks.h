@@ -239,8 +239,7 @@ extern void default_setup_incoming_vararg_bounds (cumulative_args_t ca ATTRIBUTE
 						  tree type ATTRIBUTE_UNUSED,
 						  int *pretend_arg_size ATTRIBUTE_UNUSED,
 						  int second_time ATTRIBUTE_UNUSED);
-
 extern rtx
-default_inhibit_load_speculation (machine_mode, rtx, rtx, rtx, rtx, rtx, rtx);
+default_speculation_safe_load (machine_mode, rtx, rtx, rtx, rtx, rtx, bool);
 						  
 #endif /* GCC_TARGHOOKS_H */
