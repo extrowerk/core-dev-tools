@@ -1191,8 +1191,8 @@ c_cpp_builtins (cpp_reader *pfile)
 
   cpp_atomic_builtins (pfile);
 
-  /* Show support for __builtin_load_no_speculate ().  */
-  cpp_define (pfile, "__HAVE_LOAD_NO_SPECULATE");
+  /* Show support for __builtin_speculation_safe_load ().  */
+  cpp_define (pfile, "__HAVE_SPECULATION_SAFE_LOAD");
 
 #ifdef DWARF2_UNWIND_INFO
   if (dwarf2out_do_cfi_asm ())

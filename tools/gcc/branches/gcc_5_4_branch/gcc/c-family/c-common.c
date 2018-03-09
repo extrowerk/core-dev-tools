@@ -10501,11 +10501,11 @@ builtin_type_for_size (int size, bool unsignedp)
 }
 
 /* Work out the size of the object pointed to by the first arguement
-   of a call to __builtin_load_no_speculate.  Only pointers to
+   of a call to __builtin_speculation_safe.  Only pointers to
    integral types and pointers are permitted.  Return 0 if the
    arguement type is not supported of if the size is too large.  */
 static int
-load_no_speculate_resolve_size (tree function, vec<tree, va_gc> *params)
+speculation_safe_load_resolve_size (tree function, vec<tree, va_gc> *params)
 {
   /* Type of the argument.  */
   tree type;
@@ -10527,7 +10527,7 @@ load_no_speculate_resolve_size (tree function, vec<tree, va_gc> *params)
   if (TREE_CODE (type) == ARRAY_TYPE)
     {
       /* Force array-to-pointer decay for c++.  */
-      gcc_assert (c_dialect_cxx());
+      gcc_assert (c_dialect_cxx ());
       (*params)[0] = default_conversion ((*params)[0]);
       type = TREE_TYPE ((*params)[0]);
     }
@@ -10559,9 +10559,9 @@ load_no_speculate_resolve_size (tree function, vec<tree, va_gc> *params)
    permitted type.  The two optional arguments may need to be
    fabricated if they have been omitted.  */
 static bool
-load_no_speculate_resolve_params (location_t loc, tree orig_function,
-				  tree function,
-				  vec<tree, va_gc> *params)
+speculation_safe_load_resolve_params (location_t loc, tree orig_function,
+				      tree function,
+				      vec<tree, va_gc> *params)
 {
   function_args_iterator iter;
 
@@ -10575,7 +10575,7 @@ load_no_speculate_resolve_params (location_t loc, tree orig_function,
       error_at (loc, "too few arguments to function %qE", orig_function);
       return false;
     }
-  else if (params->length () > 5)
+  else if (params->length () > 4)
     {
       error_at (loc, "too many arguments to function %qE", orig_function);
       return false;
@@ -10593,21 +10593,9 @@ load_no_speculate_resolve_params (location_t loc, tree orig_function,
       (*params)[parmnum] = val;
     }
 
-  /* Optional integer value.  */
-  arg_type = function_args_iter_cond (&iter);
-  if (params->length () >= 4)
-    {
-      val = (*params)[parmnum];
-      val = convert (arg_type, val);
-      (*params)[parmnum] = val;
-    }
-  else
-    return true;
-
   /* Optional pointer to compare against.  */
-  parmnum = 4;
   arg_type = function_args_iter_cond (&iter);
-  if (params->length () == 5)
+  if (params->length () == 4)
     {
       val = (*params)[parmnum];
       if (TREE_CODE (TREE_TYPE (val)) == ARRAY_TYPE)
@@ -10628,7 +10616,7 @@ load_no_speculate_resolve_params (location_t loc, tree orig_function,
 /* Cast the result of the builtin back to the type pointed to by the
    first argument, preserving any qualifiers that it might have.  */
 static tree
-load_no_speculate_resolve_return (tree first_param, tree result)
+speculation_safe_load_resolve_return (tree first_param, tree result)
 {
   tree ptype = TREE_TYPE (TREE_TYPE (first_param));
   tree rtype = TREE_TYPE (result);
@@ -11255,9 +11243,9 @@ resolve_overloaded_builtin (location_t loc, tree function,
   /* Handle BUILT_IN_NORMAL here.  */
   switch (orig_code)
     {
-    case BUILT_IN_LOAD_NO_SPECULATE_N:
+    case BUILT_IN_SPECULATION_SAFE_LOAD_N:
       {
-	int n = load_no_speculate_resolve_size (function, params);
+	int n = speculation_safe_load_resolve_size (function, params);
 	tree new_function, first_param, result;
 	enum built_in_function fncode;
 
@@ -11267,8 +11255,8 @@ resolve_overloaded_builtin (location_t loc, tree function,
 	fncode = (enum built_in_function)((int)orig_code + exact_log2 (n) + 1);
 	new_function = builtin_decl_explicit (fncode);
 	first_param = (*params)[0];
-	if (!load_no_speculate_resolve_params (loc, function, new_function,
-					       params))
+	if (!speculation_safe_load_resolve_params (loc, function, new_function,
+						   params))
 	  return error_mark_node;
 
 	result = build_function_call_vec (loc, vNULL, new_function, params,
@@ -11276,7 +11264,7 @@ resolve_overloaded_builtin (location_t loc, tree function,
 	if (result == error_mark_node)
 	  return result;
 
-	return load_no_speculate_resolve_return (first_param, result);
+	return speculation_safe_load_resolve_return (first_param, result);
       }
 
     case BUILT_IN_ATOMIC_EXCHANGE:

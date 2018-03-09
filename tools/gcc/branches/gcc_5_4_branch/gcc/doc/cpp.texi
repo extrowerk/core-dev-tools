@@ -2378,9 +2378,9 @@ If GCC cannot determine the current date, it will emit a warning message
 These macros are defined when the target processor supports atomic compare
 and swap operations on operands 1, 2, 4, 8 or 16 bytes in length, respectively.
 
-@item __HAVE_LOAD_NO_SPECULATE
+@item __HAVE_SPECULATION_SAFE_LAOD
 This macro is defined with the value 1 to show that this version of GCC
-supports @code{__builtin_load_no_speculate}.
+supports @code{__builtin_speculation_safe_load}.
 
 @item __GCC_HAVE_DWARF2_CFI_ASM
 This macro is defined when the compiler is emitting Dwarf2 CFI directives

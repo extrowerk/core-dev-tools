@@ -146,6 +146,7 @@
   VUNSPEC_STL		; Represent a store-register-release.
   VUNSPEC_GET_FPSCR	; Represent fetch of FPSCR content.
   VUNSPEC_SET_FPSCR	; Represent assign of FPSCR content.
+  VUNSPEC_NOSPECULATE	; Represent a despeculation sequence.
 ])
 
 ;; Enumerators for NEON unspecs.
