@@ -6654,6 +6654,14 @@ aarch64_print_operand (FILE *f, rtx x, int code)
       break;
 
     case 'H':
+       /* Print the higher numbered register of a pair (TImode) of regs.  */
+      if (x == const0_rtx
+	  || (CONST_DOUBLE_P (x) && aarch64_float_const_zero_rtx_p (x)))
+	{
+	  asm_fprintf (f, "xzr");
+	  break;
+	}
+
       if (!REG_P (x) || !GP_REGNUM_P (REGNO (x) + 1))
 	{
 	  output_operand_lossage ("invalid operand for '%%%c'", code);
@@ -17351,6 +17359,76 @@ aarch64_select_early_remat_modes (sbitmap modes)
     }
 }
 
+static rtx
+aarch64_speculation_safe_load (machine_mode mode, rtx result, rtx mem,
+			       rtx lower_bound, rtx upper_bound, rtx cmpptr,
+			       bool warn ATTRIBUTE_UNUSED)
+{
+  rtx cond, comparison;
+  rtx target = gen_reg_rtx (mode);
+  rtx tgt2 = result;
+
+  if (!register_operand (cmpptr, ptr_mode))
+    cmpptr = force_reg (ptr_mode, cmpptr);
+
+  if (!register_operand (tgt2, mode))
+    tgt2 = gen_reg_rtx (mode);
+
+  if (lower_bound == const0_rtx)
+    {
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      cond = aarch64_gen_compare_reg (GEU, cmpptr, upper_bound);
+      comparison = gen_rtx_GEU (VOIDmode, cond, const0_rtx);
+    }
+  else
+    {
+      if (!register_operand (lower_bound, ptr_mode))
+	lower_bound = force_reg (ptr_mode, lower_bound);
+
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      rtx cond1 = aarch64_gen_compare_reg (GEU, cmpptr, lower_bound);
+      rtx comparison1 = gen_rtx_GEU (ptr_mode, cond1, const0_rtx);
+      rtx failcond = GEN_INT (aarch64_get_condition_code (comparison1)^1);
+      cond = gen_rtx_REG (CCmode, CC_REGNUM);
+      if (ptr_mode == SImode)
+	emit_insn (gen_ccmpsi (cond1, cond, cmpptr, upper_bound, comparison1,
+			       failcond));
+      else
+	emit_insn (gen_ccmpdi (cond1, cond, cmpptr, upper_bound, comparison1,
+			       failcond));
+      comparison = gen_rtx_GEU (VOIDmode, cond, const0_rtx);
+    }
+
+  rtx_code_label *label = gen_label_rtx ();
+  emit_jump_insn (gen_condjump (comparison, cond, label));
+  emit_move_insn (target, mem);
+  emit_label (label);
+
+  insn_code icode;
+
+  switch (mode)
+    {
+    case E_QImode: icode = CODE_FOR_nospeculateqi; break;
+    case E_HImode: icode = CODE_FOR_nospeculatehi; break;
+    case E_SImode: icode = CODE_FOR_nospeculatesi; break;
+    case E_DImode: icode = CODE_FOR_nospeculatedi; break;
+    case E_TImode: icode = CODE_FOR_nospeculateti; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (GEN_FCN (icode) (tgt2, comparison, cond, target, const0_rtx));
+
+  if (tgt2 != result)
+    emit_move_insn (result, tgt2);
+
+  return result;
+}
+
 /* Target-specific selftests.  */
 
 #if CHECKING_P
@@ -17819,6 +17897,9 @@ aarch64_libgcc_floating_mode_supported_p
 
 #undef TARGET_SELECT_EARLY_REMAT_MODES
 #define TARGET_SELECT_EARLY_REMAT_MODES aarch64_select_early_remat_modes
+
+#undef TARGET_SPECULATION_SAFE_LOAD
+#define TARGET_SPECULATION_SAFE_LOAD aarch64_speculation_safe_load
 
 #if CHECKING_P
 #undef TARGET_RUN_TARGET_SELFTESTS

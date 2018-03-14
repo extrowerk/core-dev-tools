@@ -9488,7 +9488,7 @@
    (set_attr "type" "multiple")]
 )
 
-(define_insn "*cmp_ior"
+(define_insn "cmp_ior"
   [(set (match_operand 6 "dominant_cc_register" "")
 	(compare
 	 (ior:SI
@@ -12014,6 +12014,44 @@
 }
   [(set_attr "length" "4")
    (set_attr "type" "coproc")])
+
+(define_insn "nospeculate<QHSI:mode>"
+ [(set (match_operand:QHSI 0 "s_register_operand" "=l,l,r")
+        (unspec_volatile:QHSI
+         [(match_operator 1 "arm_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:QHSI 3 "s_register_operand" "0,0,0")
+	  (match_operand:QHSI 4 "arm_not_operand" "I,K,r")]
+	 VUNSPEC_NOSPECULATE))]
+  "TARGET_32BIT"
+  {
+  if (TARGET_THUMB)
+    return \"it\\t%d1\;mov%d1\\t%0, %4\;.inst 0xf3af8014\t%@ CSDB\";
+  return \"mov%d1\\t%0, %4\;.inst 0xe320f014\t%@ CSDB\";
+  }
+  [(set_attr "type" "mov_imm,mvn_imm,mov_reg")
+   (set_attr "conds" "use")
+   (set_attr "length" "8")]
+)
+
+(define_insn "nospeculatedi"
+ [(set (match_operand:DI 0 "s_register_operand" "=r")
+        (unspec_volatile:DI
+         [(match_operator 1 "arm_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:DI 3 "s_register_operand" "0")
+	  (match_operand:DI 4 "arm_rhs_operand" "rI")]
+	 VUNSPEC_NOSPECULATE))]
+  "TARGET_32BIT"
+  {
+  if (TARGET_THUMB)
+    return \"it\\t%d1\;mov%d1\\t%Q0, %Q4\;it\\t%d1\;mov%d1\\t%R0, %R4\;.inst 0xf3af8014\t%@ CSDB\";
+  return  \"mov%d1\\t%Q0, %Q4\;mov%d1\\t%R0, %R4\;.inst 0xe320f014\t%@ CSDB\";
+  }
+  [(set_attr "type" "mov_reg")
+   (set_attr "conds" "use")
+   (set_attr "length" "12")]
+)
 
 ;; Vector bits common to IWMMXT and Neon
 (include "vec-common.md")

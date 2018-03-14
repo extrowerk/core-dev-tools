@@ -11055,6 +11055,7 @@ the built-in function returns -1.
 @findex __builtin_powi
 @findex __builtin_powif
 @findex __builtin_powil
+@findex __builtin_speculation_safe_load
 @findex _Exit
 @findex _exit
 @findex abort
@@ -11695,6 +11696,73 @@ at compile time, for use by @option{-fstack-usage}, @option{-Wstack-usage}
 and @option{-Walloca-larger-than}.  @var{max_size} must be a constant integer
 expression, it has no effect on code generation and no attempt is made to
 check its compatibility with @var{size}.
+
+@end deftypefn
+
+@deftypefn {Built-in Function} @var{type} __builtin_speculation_safe_load (const volatile @var{type} *ptr, const volatile void *lower_bound, const volatile void *upper_bound, const volatile void *cmpptr)
+
+Modern processors use sophisticated techniques to improve their
+overall performance.  For example, the processor may begin to execute
+instructions that it guesses are likely to be needed in the near
+future: this is known as speculative execution.  If the guess turns
+out to be correct then significant time can be saved.  If the guess
+turns out to be wrong the instruction's calculations are discarded and
+the correct ones are then executed and the program will continue as
+the programmer intended.  However, in some circumstances it is
+possible for the discarded operations to leave traces of what happened
+in a manner that can later be discovered by timing subsequent
+operations.  Speculative memory operations, for example, interact with
+the cache memory found on many processors in a way which could
+allow further carefully controlled speculative instructions to reveal
+information.
+
+The @code{__builtin_speculation_safe_load} function provides a means
+to limit the extent to which a processor can continue speculative
+execution with the result of loading a value stored at @var{ptr}.  The
+boundary conditions, described by @var{cmpptr}, @var{lower_bound} and
+@var{upper_bound}, define the conditions under which execution after
+the load can continue safely:
+
+@enumerate
+@item
+When the call to the builtin is not being speculatively executed the
+result is @code{*ptr} if @code{lower_bound <= cmpptr < upper_bound}.
+The behavior is undefined if cmpptr is outside of that range.
+
+@item
+When code is being speculatively executed either:
+@itemize
+@item
+execution of subsequent instructions that depend on the result will
+be prevented until it can be proven that the call to the builtin is
+not being speculatively executed (i.e.@: until execution can continue under
+point 1), or
+
+@item
+speculation may continue using @code{*ptr} as the result when
+@code{lower_bound <= cmpptr < upper_bound}, or an unspecified constant
+value (e.g.@: zero) if @code{cmpptr} lies outside that range.
+@end itemize
+@end enumerate
+
+The type of the result, @var{type}, may be any integral type (signed,
+or unsigned, @code{char}, @code{short}, @code{int}, etc) or a pointer
+to any type.
+
+The final argument, @var{cmpptr}, may be omitted if it is the same as
+@var{ptr}.
+
+The builtin is supported for all architectures, but on machines where
+target-specific support for inhibiting speculation is not implemented,
+or not necessary, the compiler will emit a warning.
+
+@emph{Note:} it is important that the boundary conditions used
+accurately describe the conditions under which speculation may be
+occuring, otherwise the builtin will not provide protection against
+speculative use of the result.
+
+The pre-processor macro @code{__HAVE_SPECULATION_SAFE_LOAD} is defined with the
+value 1 on all implementations of GCC that support this builtin.
 
 @end deftypefn
 
