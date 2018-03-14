@@ -11987,6 +11987,15 @@ maintainer is familiar with.
 
 @end defmac
 
+@deftypefn {Target Hook} rtx TARGET_SPECULATION_SAFE_LOAD (machine_mode @var{mode}, rtx @var{result}, rtx @var{mem}, rtx @var{lower_bound}, rtx @var{upper_bound}, rtx @var{cmpptr}, bool @var{warn})
+Generate a target-specific code sequence that implements @code{__builtin_speculation_safe_load}, returning @var{mem}, a @code{MEM} of type @var{mode} in @var{result}. 
+ In the abstract machine, the built-in must only be called when @var{cmpptr} is greater than or equal to @var{lower} and less than @var{upper}.  The behaviour is undefined otherwise (and may generate memory faults). 
+ On real hardware, however, the builtin may be reached while the CPU is speculatively executing code.  It is this built-in's responsibility to ensure that, if speculating when outside the specified boundary conditions, the contents of @var{mem} is not visible to subsequent instructions. 
+ There are two common techniques that can be used to implement this builtin. The first is to emit a target-specific barrier instruction sequence that is guaranteed to ensure that speculative execution cannot continue.  On architectures with such a sequence the bounds checks can be ignored and the expansion can be simply a load and the barrier. 
+ On some targets, however, unsafe speculation can be inhibited by overwriting the result when the speculation bounds are exceeded.  This must be done using a code sequence that does not introduce further speculative behavior. An example of a target using this approach is AArch64. 
+ The default implementation implements the logic of the builtin but cannot provide the target-specific code necessary to inhibit speculation.  If @var{warn} is true a warning will be emitted to that effect.
+@end deftypefn
+
 @deftypefn {Target Hook} void TARGET_RUN_TARGET_SELFTESTS (void)
 If selftests are enabled, run any selftests for this target.
 @end deftypefn

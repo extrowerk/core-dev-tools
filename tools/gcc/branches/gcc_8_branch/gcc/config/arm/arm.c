@@ -325,6 +325,8 @@ static unsigned int arm_hard_regno_nregs (unsigned int, machine_mode);
 static bool arm_hard_regno_mode_ok (unsigned int, machine_mode);
 static bool arm_modes_tieable_p (machine_mode, machine_mode);
 static HOST_WIDE_INT arm_constant_alignment (const_tree, HOST_WIDE_INT);
+static rtx arm_speculation_safe_load (machine_mode, rtx, rtx, rtx, rtx, rtx,
+				      bool);
 
 /* Table of machine attributes.  */
 static const struct attribute_spec arm_attribute_table[] =
@@ -808,6 +810,9 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef TARGET_CONSTANT_ALIGNMENT
 #define TARGET_CONSTANT_ALIGNMENT arm_constant_alignment
+
+#undef TARGET_SPECULATION_SAFE_LOAD
+#define TARGET_SPECULATION_SAFE_LOAD arm_speculation_safe_load
 
 /* Obstack for minipool constant handling.  */
 static struct obstack minipool_obstack;
@@ -31535,6 +31540,101 @@ arm_constant_alignment (const_tree exp, HOST_WIDE_INT align)
   if (TREE_CODE (exp) == STRING_CST && !optimize_size)
     return MAX (align, BITS_PER_WORD * factor);
   return align;
+}
+
+static rtx
+arm_speculation_safe_load (machine_mode mode, rtx result, rtx mem,
+				  rtx lower_bound, rtx upper_bound,
+			   rtx cmpptr, bool warn)
+{
+  rtx cond, comparison;
+
+  /* We can't support this for Thumb1 as we have no suitable conditional
+     move operations.  Nor do we support it for TImode.  For both
+     these cases fall back to the generic code sequence which will emit
+     a suitable warning for us.  */
+  if (mode == TImode || TARGET_THUMB1)
+    return default_speculation_safe_load (mode, result, mem, lower_bound,
+					  upper_bound, cmpptr, warn);
+
+
+  rtx target = gen_reg_rtx (mode);
+  rtx tgt2 = result;
+
+  if (!register_operand (tgt2, mode))
+    tgt2 = gen_reg_rtx (mode);
+
+  if (!register_operand (cmpptr, ptr_mode))
+    cmpptr = force_reg (ptr_mode, cmpptr);
+
+  /* There's no point in comparing against a lower bound that is NULL, all
+     addresses are greater than or equal to that.  */
+  if (lower_bound == const0_rtx)
+    {
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      cond = arm_gen_compare_reg (GEU, cmpptr, upper_bound, NULL);
+      comparison = gen_rtx_GEU (VOIDmode, cond, const0_rtx);
+    }
+  else
+    {
+      /* We want to generate code for
+	   result = (cmpptr < lower || cmpptr >= upper) ? 0 : *ptr;
+	 Which can be recast to
+	   result = (cmpptr < lower || upper <= cmpptr) ? 0 : *ptr;
+	 which can be implemented as
+	   cmp   cmpptr, lower
+	   cmpcs upper, cmpptr
+	   bls   1f
+	   ldr   result, [ptr]
+	  1:
+	   movls result, #0
+	 with suitable IT instructions as needed for thumb2.  Later
+	 optimization passes may make the load conditional.  */
+
+      if (!register_operand (lower_bound, ptr_mode))
+	lower_bound = force_reg (ptr_mode, lower_bound);
+
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      rtx comparison1 = gen_rtx_LTU (SImode, cmpptr, lower_bound);
+      rtx comparison2 = gen_rtx_LEU (SImode, upper_bound, cmpptr);
+      cond = gen_rtx_REG (arm_select_dominance_cc_mode (comparison1,
+							comparison2,
+							DOM_CC_X_OR_Y),
+			  CC_REGNUM);
+      emit_insn (gen_cmp_ior (cmpptr, lower_bound, upper_bound, cmpptr,
+			      comparison1, comparison2, cond));
+      comparison = gen_rtx_NE (SImode, cond, const0_rtx);
+    }
+
+  rtx_code_label *label = gen_label_rtx ();
+  emit_jump_insn (gen_arm_cond_branch (label, comparison, cond));
+  emit_move_insn (target, mem);
+  emit_label (label);
+
+  insn_code icode;
+
+  /* We don't support TImode on Arm, but that can't currently be generated
+     for integral types on this architecture.  */
+  switch (mode)
+    {
+    case E_QImode: icode = CODE_FOR_nospeculateqi; break;
+    case E_HImode: icode = CODE_FOR_nospeculatehi; break;
+    case E_SImode: icode = CODE_FOR_nospeculatesi; break;
+    case E_DImode: icode = CODE_FOR_nospeculatedi; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (GEN_FCN (icode) (tgt2, comparison, cond, target, const0_rtx));
+
+  if (tgt2 != result)
+    emit_move_insn (result, tgt2);
+
+  return result;
 }
 
 #if CHECKING_P

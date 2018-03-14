@@ -179,6 +179,7 @@
     UNSPECV_SET_FPSR		; Represent assign of FPSR content.
     UNSPECV_BLOCKAGE		; Represent a blockage
     UNSPECV_PROBE_STACK_RANGE	; Represent stack range probing.
+    UNSPECV_NOSPECULATE		; Inhibit speculation
   ]
 )
 
@@ -6010,6 +6011,33 @@
 		   (match_operand 1))
 	      (clobber (reg:CC CC_REGNUM))])])
 
+(define_insn "nospeculate<ALLI:mode>"
+  [(set (match_operand:ALLI 0 "register_operand" "=r")
+        (unspec_volatile:ALLI
+         [(match_operator 1 "aarch64_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:ALLI 3 "register_operand" "r")
+	  (match_operand:ALLI 4 "aarch64_reg_or_zero" "rZ")]
+	 UNSPECV_NOSPECULATE))]
+  ""
+  "csel\\t%<w>0, %<w>3, %<w>4, %M1\;hint\t#0x14\t// CSDB"
+  [(set_attr "type" "csel")
+   (set_attr "length" "8")]
+)
+
+(define_insn "nospeculateti"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (unspec_volatile:TI
+         [(match_operator 1 "aarch64_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:TI 3 "register_operand" "r")
+	  (match_operand:TI 4 "aarch64_reg_or_zero" "rZ")]
+	 UNSPECV_NOSPECULATE))]
+  ""
+  "csel\\t%x0, %x3, %x4, %M1\;csel\\t%H0, %H3, %H4, %M1\;hint\t#0x14\t// CSDB"
+  [(set_attr "type" "csel")
+   (set_attr "length" "12")]
+)
 ;; AdvSIMD Stuff
 (include "aarch64-simd.md")
 

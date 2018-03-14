@@ -289,4 +289,7 @@ default_excess_precision (enum excess_precision_type ATTRIBUTE_UNUSED);
 extern bool default_stack_clash_protection_final_dynamic_probe (rtx);
 extern void default_select_early_remat_modes (sbitmap);
 
+extern rtx
+default_speculation_safe_load (machine_mode, rtx, rtx, rtx, rtx, rtx, bool);
+
 #endif /* GCC_TARGHOOKS_H */

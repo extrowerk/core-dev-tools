@@ -1,3 +1,90 @@
+2018-03-13 Bjoern Weber <bweber@qnx.com>
+
+	* [PATCH 3/3] [arm] Implement support for the de-speculation intrinsic
+
+    From: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+    To: gcc-patches at gcc dot gnu dot org
+    Cc: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+    Date: Wed, 17 Jan 2018 14:55:36 +0000
+    Subject: [PATCH 3/3] [arm] Implement support for the de-speculation intrinsic
+    Authentication-results: sourceware.org; auth=none
+    References: <cover.1516199099.git.Richard.Earnshaw@arm.com>
+    References: <cover.1516199099.git.Richard.Earnshaw@arm.com>
+
+This patch implements despeculation on ARM.  We only support it when
+generating ARM or Thumb2 code (we need conditional execution); and we
+only support it for sizes up to DImode.  For unsupported cases we
+fall back to the generic code generation sequence so that a suitable
+failure warning is emitted.
+
+	* config/arm/arm.c (arm_speculation_safe_load): New function
+	(TARGET_SPECULATION_SAFE_LOAD): Redefine.
+	* config/arm/unspec.md (VUNSPEC_NOSPECULATE): New unspec_volatile code.
+	* config/arm/arm.md (cmp_ior): Make this pattern callable.
+	(nospeculate<QHSI:mode>, nospeculatedi): New patterns.
+		
+2018-03-13 Bjoern Weber <bweber@qnx.com>
+
+	* [PATCH 2/3] [aarch64] Implement support for __builtin_speculation_safe_load
+
+Author: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+Date: Wed, 17 Jan 2018 14:55:35 +0000
+
+This patch implements support for __builtin_speculation_safe_load on
+AArch64.  On this architecture we inhibit speclation by emitting a
+combination of CSEL and a hint instruction that ensures the CSEL is
+full resolved when the operands to the CSEL may involve a speculative
+load.
+
+	* config/aarch64/aarch64.c (aarch64_print_operand): Handle zero passed
+	to 'H' operand qualifier.
+	(aarch64_speculation_safe_load): New function.
+	(TARGET_SPECULATION_SAFE_LOAD): Redefine.
+	* config/aarch64/aarch64.md (UNSPECV_NOSPECULATE): New unspec_volatile
+	code.
+	(nospeculate<ALLI:mode>, nospeculateti): New patterns.
+
+2018-03-13 Bjoern Weber <bweber@qnx.com>
+
+	* [PATCH 1/3] [builtins] Generic support for __builtin_speculation_safe_load()
+
+Author: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+Date: Wed, 17 Jan 2018 14:55:34 +0000
+
+This patch adds generic support for the new builtin
+__builtin_speculation_safe_load.  It provides the overloading of the
+different access sizes and a default fall-back expansion for targets
+that do not support a mechanism for inhibiting speculation.
+
+	* builtin-types.def (BT_FN_I1_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR):
+	New builtin type signature.
+	(BT_FN_I2_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I4_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I8_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I16_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	* builtins.def (BUILT_IN_SPECULATION_SAFE_LOAD_N): New builtin.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_1): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_2): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_4): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_8): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_16): Likewise.
+	* target.def (speculation_safe_load): New hook.
+	* doc/tm.texi.in (TARGET_SPECULATION_SAFE_LOAD): Add to
+	documentation.
+	* doc/tm.texi: Regenerated.
+	* doc/cpp.texi: Document __HAVE_SPECULATION_SAFE_LOAD.
+	* doc/extend.texi: Document __builtin_speculation_safe_load.
+	* c-family/c-common.c (speculation_safe_load_resolve_size): New
+	function.
+	(speculation_safe_load_resolve_params): New function.
+	(speculation_safe_load_resolve_return): New function.
+	(resolve_overloaded_builtin): Handle overloading
+	__builtin_speculation_safe_load.
+	* builtins.c (expand_speculation_safe_load): New function.
+	(expand_builtin): Handle new speculation-safe builtins.
+	* targhooks.h (default_speculation_safe_load): Declare.
+	* targhooks.c (default_speculation_safe_load): New function.
+	  
 2018-01-18  Boris Kolpackov  <boris@codesynthesis.com>
 
 	* MAINTAINERS (write after approval): Add myself.
