@@ -5,9 +5,10 @@ void *malloc (__SIZE_TYPE__);
 int main( int argc, char **argv ) {
 	unsigned char field[10]="abcdefghij";
 	unsigned char element=__builtin_speculation_safe_load( field+4, field, field+9 );
-/* { dg-warning "this target does not support anti-speculation operations." "No speculation barriers" { target { { ! arm*-*-*  } && { ! aarch64*-*-* } } } .-1 } */	
+/* { dg-warning "this target does not support anti-speculation operations." "No speculation barriers" { target { { ! arm*-*-*  } && { ! aarch64*-*-* } } } 7 } */	
 	if( element != 'e' ) abort();
 	element=__builtin_speculation_safe_load( field+9, field, field+9 );
+/* { dg-warning "this target does not support anti-speculation operations." "No speculation barriers" { target { { ! arm*-*-*  } && { ! aarch64*-*-* } } } 10 } */	
 	if( element == 'j' ) abort();
 	return 0;
 }
