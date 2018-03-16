@@ -2381,7 +2381,7 @@ default_speculation_safe_load (machine_mode mode ATTRIBUTE_UNUSED,
       do_compare_rtx_and_jump (cmpptr, lower_bound, LTU, true, ptr_mode,
 			       NULL, NULL, oob_label,
 			       profile_probability::always ());
-      do_compare_rtx_and_jump (cmpptr, upper_bound, GEU, true, ptr_mode,
+      do_compare_rtx_and_jump (cmpptr, upper_bound, LTU, true, ptr_mode,
 			       NULL, NULL, inrange_label,
 			       profile_probability::never ());
       emit_label (oob_label);
