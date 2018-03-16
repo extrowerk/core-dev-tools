@@ -1989,7 +1989,7 @@ default_speculation_safe_load (machine_mode mode ATTRIBUTE_UNUSED,
       rtx_code_label *oob_label = gen_label_rtx ();
       do_compare_rtx_and_jump (cmpptr, lower_bound, LTU, true, ptr_mode,
 			       NULL, NULL, oob_label, PROB_ALWAYS );
-      do_compare_rtx_and_jump (cmpptr, upper_bound, GEU, true, ptr_mode,
+      do_compare_rtx_and_jump (cmpptr, upper_bound, LTU, true, ptr_mode,
 			       NULL, NULL, inrange_label, 0 );
       emit_label (oob_label);
       emit_move_insn (result, GEN_INT (0));
