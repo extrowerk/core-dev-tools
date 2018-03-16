@@ -3833,6 +3833,40 @@ normally defined in @file{libgcc2.c}.",
  default_external_stack_protect_fail)
 
 DEFHOOK
+(speculation_safe_load,
+ "Generate a target-specific code sequence that implements\
+ @code{__builtin_speculation_safe_load}, returning @var{mem}, a @code{MEM} of\
+ type @var{mode} in @var{result}.\
+ \n\
+ In the abstract machine, the built-in must only be called when @var{cmpptr}\
+ is greater than or equal to @var{lower} and less than @var{upper}.  The\
+ behaviour is undefined otherwise (and may generate memory faults).\
+ \n\
+ On real hardware, however, the builtin may be reached while the CPU is\
+ speculatively executing code.  It is this built-in's responsibility to ensure\
+ that, if speculating when outside the specified boundary conditions, the\
+ contents of @var{mem} is not visible to subsequent instructions.\
+ \n\
+ There are two common techniques that can be used to implement this builtin.\
+ The first is to emit a target-specific barrier instruction sequence that is\
+ guaranteed to ensure that speculative execution cannot continue.  On\
+ architectures with such a sequence the bounds checks can be ignored and\
+ the expansion can be simply a load and the barrier.\
+ \n\
+ On some targets, however, unsafe speculation can be inhibited by overwriting\
+ the result when the speculation bounds are exceeded.  This must be done\
+ using a code sequence that does not introduce further speculative behavior.\
+ An example of a target using this approach is AArch64.\
+ \n\
+ The default implementation implements the logic of the builtin\
+ but cannot provide the target-specific code necessary to inhibit\
+ speculation.  If @var{warn} is true a warning will be emitted to that\
+ effect.",
+ rtx, (machine_mode mode, rtx result, rtx mem, rtx lower_bound,
+       rtx upper_bound, rtx cmpptr, bool warn),
+ default_speculation_safe_load)
+
+DEFHOOK
 (can_use_doloop_p,
  "Return true if it is possible to use low-overhead loops (@code{doloop_end}\n\
 and @code{doloop_begin}) for a particular loop.  @var{iterations} gives the\n\

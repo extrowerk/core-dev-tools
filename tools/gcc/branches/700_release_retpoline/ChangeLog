@@ -1,6 +1,450 @@
-2018-03-07	Bjoern Weber	<bweber@qnx.com>
+2018-03-08 Bjoern Weber <bweber@qnx.com>
 
-	* port retpoline patch from gcc_5_4_branch
+	* [PATCH 3/3] [arm] Implement support for the de-speculation intrinsic
+
+    From: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+    To: gcc-patches at gcc dot gnu dot org
+    Cc: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+    Date: Wed, 17 Jan 2018 14:55:36 +0000
+    Subject: [PATCH 3/3] [arm] Implement support for the de-speculation intrinsic
+    Authentication-results: sourceware.org; auth=none
+    References: <cover.1516199099.git.Richard.Earnshaw@arm.com>
+    References: <cover.1516199099.git.Richard.Earnshaw@arm.com>
+
+This patch implements despeculation on ARM.  We only support it when
+generating ARM or Thumb2 code (we need conditional execution); and we
+only support it for sizes up to DImode.  For unsupported cases we
+fall back to the generic code generation sequence so that a suitable
+failure warning is emitted.
+
+	* config/arm/arm.c (arm_speculation_safe_load): New function
+	(TARGET_SPECULATION_SAFE_LOAD): Redefine.
+	* config/arm/unspec.md (VUNSPEC_NOSPECULATE): New unspec_volatile code.
+	* config/arm/arm.md (cmp_ior): Make this pattern callable.
+	(nospeculate<QHSI:mode>, nospeculatedi): New patterns.
+	
+GCC5.4 changes
+	* config/arm/arm.c (arm_speculation_safe_load): use legacy
+	  machine mode definitions (??mode) instead of E_??mode
+	
+	
+2018-03-08 Bjoern Weber <bweber@qnx.com>
+
+	* [PATCH 2/3] [aarch64] Implement support for __builtin_speculation_safe_load
+
+Author: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+Date: Wed, 17 Jan 2018 14:55:35 +0000
+
+This patch implements support for __builtin_speculation_safe_load on
+AArch64.  On this architecture we inhibit speclation by emitting a
+combination of CSEL and a hint instruction that ensures the CSEL is
+full resolved when the operands to the CSEL may involve a speculative
+load.
+
+	* config/aarch64/aarch64.c (aarch64_print_operand): Handle zero passed
+	to 'H' operand qualifier.
+	(aarch64_speculation_safe_load): New function.
+	(TARGET_SPECULATION_SAFE_LOAD): Redefine.
+	* config/aarch64/aarch64.md (UNSPECV_NOSPECULATE): New unspec_volatile
+	code.
+	(nospeculate<ALLI:mode>, nospeculateti): New patterns.
+
+GCC5.4 changes
+	* config/aarch64/aarch64.c (aarch64_speculation_safe_load): use legacy
+	  machine mode definitions (??mode) instead of E_??mode
+	* config/aarch64/aarch64.c (aarch64_print_operand): add extended definition
+	  for code 'k' to print integer
+	* config/aarch64/aarch64.md: add ccmp<mode> support
+	  turn *condjump into condjump
+	  add UNSPEC_NZCV
+
+2018-03-08 Bjoern Weber <bweber@qnx.com>
+
+	* [PATCH 1/3] [builtins] Generic support for __builtin_speculation_safe_load()
+
+Author: Richard Earnshaw <Richard dot Earnshaw at arm dot com>
+Date: Wed, 17 Jan 2018 14:55:34 +0000
+
+This patch adds generic support for the new builtin
+__builtin_speculation_safe_load.  It provides the overloading of the
+different access sizes and a default fall-back expansion for targets
+that do not support a mechanism for inhibiting speculation.
+
+	* builtin-types.def (BT_FN_I1_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR):
+	New builtin type signature.
+	(BT_FN_I2_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I4_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I8_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	(BT_FN_I16_CONST_VPTR_CONST_VPTR_CONST_VPTR_VAR): Likewise.
+	* builtins.def (BUILT_IN_SPECULATION_SAFE_LOAD_N): New builtin.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_1): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_2): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_4): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_8): Likewise.
+	(BUILT_IN_SPECULATION_SAFE_LOAD_16): Likewise.
+	* target.def (speculation_safe_load): New hook.
+	* doc/tm.texi.in (TARGET_SPECULATION_SAFE_LOAD): Add to
+	documentation.
+	* doc/tm.texi: Regenerated.
+	* doc/cpp.texi: Document __HAVE_SPECULATION_SAFE_LOAD.
+	* doc/extend.texi: Document __builtin_speculation_safe_load.
+	* c-family/c-common.c (speculation_safe_load_resolve_size): New
+	function.
+	(speculation_safe_load_resolve_params): New function.
+	(speculation_safe_load_resolve_return): New function.
+	(resolve_overloaded_builtin): Handle overloading
+	__builtin_speculation_safe_load.
+	* builtins.c (expand_speculation_safe_load): New function.
+	(expand_builtin): Handle new speculation-safe builtins.
+	* targhooks.h (default_speculation_safe_load): Declare.
+	* targhooks.c (default_speculation_safe_load): New function.
+
+GCC5.4 changes
+
+	* targhooks.c (default_speculation_safe_load): 
+	  use legacy probabilities instead of unknown profile_probability
+	  add predict.h and basic-block.h fore definitions
+	  
+2018-01-23 Bjoern Weber <bweber@qnx.com>
+
+    * retpoline backport
+    
+Taken from http://git.infradead.org/users/dwmw2/gcc-retpoline.git/shortlog/refs/heads/retpoline-regnames        
+    
+	* i386: Move struct ix86_frame to machine_function
+author	H.J. Lu <hjl.tools@gmail.com>
+
+Make ix86_frame available to i386 code generation.  This is needed to
+backport the patch set of -mindirect-branch= to mitigate variant #2 of
+the speculative execution vulnerabilities on x86 processors identified
+by CVE-2017-5715, aka Spectre.
+
+Backport from mainline
+* config/i386/i386.c (ix86_frame): Moved to ...
+* config/i386/i386.h (ix86_frame): Here.
+(machine_function): Add frame.
+* config/i386/i386.c (ix86_compute_frame_layout): Repace the
+frame argument with &cfun->machine->frame.
+(ix86_can_use_return_insn_p): Don't pass &frame to
+ix86_compute_frame_layout.  Copy frame from cfun->machine->frame.
+(ix86_can_eliminate): Likewise.
+(ix86_expand_prologue): Likewise.
+(ix86_expand_epilogue): Likewise.
+(ix86_expand_split_stack_prologue): Likewise.
+
+	* i386: Use reference of struct ix86_frame to avoid copy
+author	H.J. Lu <hjl.tools@gmail.com>
+
+When there is no need to make a copy of ix86_frame, we can use reference
+of struct ix86_frame to avoid copy.
+
+Backport from mainline
+* config/i386/i386.c (ix86_can_use_return_insn_p): Use reference
+of struct ix86_frame.
+(ix86_initial_elimination_offset): Likewise.
+(ix86_expand_split_stack_prologue): Likewise.
+
+	* i386: More use reference of struct ix86_frame to avoid copy
+author	H.J. Lu <hjl.tools@gmail.com>
+
+When there is no need to make a copy of ix86_frame, we can use reference
+of struct ix86_frame to avoid copy.
+
+Backport from mainline
+* config/i386/i386.c (ix86_expand_prologue): Use reference of
+struct ix86_frame.
+(ix86_expand_epilogue): Likewise.
+
+	* x86: Add -mindirect-branch=
+author	H.J. Lu <hjl.tools@gmail.com>
+
+Add -mindirect-branch= option to convert indirect call and jump to call
+and return thunks.  The default is 'keep', which keeps indirect call and
+jump unmodified.  'thunk' converts indirect call and jump to call and
+return thunk.  'thunk-inline' converts indirect call and jump to inlined
+call and return thunk.  'thunk-extern' converts indirect call and jump to
+external call and return thunk provided in a separate object file.  You
+can control this behavior for a specific function by using the function
+attribute indirect_branch.
+
+2 kinds of thunks are geneated.  Memory thunk where the function address
+is at the top of the stack:
+
+__x86_indirect_thunk:
+call L2
+L1:
+pause
+lfence
+jmp L1
+L2:
+lea 8(%rsp), %rsp|lea 4(%esp), %esp
+ret
+
+Indirect jmp via memory, "jmp mem", is converted to
+
+push memory
+jmp __x86_indirect_thunk
+
+Indirect call via memory, "call mem", is converted to
+
+jmp L2
+L1:
+push [mem]
+jmp __x86_indirect_thunk
+L2:
+call L1
+
+Register thunk where the function address is in a register, reg:
+
+__x86_indirect_thunk_reg:
+call L2
+L1:
+pause
+lfence
+jmp L1
+L2:
+movq %reg, (%rsp)|movl    %reg, (%esp)
+ret
+
+where reg is one of (r|e)ax, (r|e)dx, (r|e)cx, (r|e)bx, (r|e)si, (r|e)di,
+(r|e)bp, r8, r9, r10, r11, r12, r13, r14 and r15.
+
+Indirect jmp via register, "jmp reg", is converted to
+
+jmp __x86_indirect_thunk_reg
+
+Indirect call via register, "call reg", is converted to
+
+call __x86_indirect_thunk_reg
+
+gcc/
+
+Backport from mainline
+* config/i386/i386-opts.h (indirect_branch): New.
+* config/i386/i386-protos.h (ix86_output_indirect_jmp): Likewise.
+* config/i386/i386.c (ix86_using_red_zone): Disallow red-zone
+with local indirect jump when converting indirect call and jump.
+(ix86_set_indirect_branch_type): New.
+(ix86_set_current_function): Call ix86_set_indirect_branch_type.
+(indirectlabelno): New.
+(indirect_thunk_needed): Likewise.
+(indirect_thunk_bnd_needed): Likewise.
+(indirect_thunks_used): Likewise.
+(indirect_thunks_bnd_used): Likewise.
+(INDIRECT_LABEL): Likewise.
+(indirect_thunk_name): Likewise.
+(output_indirect_thunk): Likewise.
+(output_indirect_thunk_function): Likewise.
+(ix86_output_indirect_branch): Likewise.
+(ix86_output_indirect_jmp): Likewise.
+(ix86_code_end): Call output_indirect_thunk_function if needed.
+(ix86_output_call_insn): Call ix86_output_indirect_branch if
+needed.
+(ix86_handle_fndecl_attribute): Handle indirect_branch.
+(ix86_attribute_table): Add indirect_branch.
+* config/i386/i386.h (machine_function): Add indirect_branch_type
+and has_local_indirect_jump.
+* config/i386/i386.md (indirect_jump): Set has_local_indirect_jump
+to true.
+(tablejump): Likewise.
+(*indirect_jump): Use ix86_output_indirect_jmp.
+(*tablejump_1): Likewise.
+(simple_return_indirect_internal): Likewise.
+* config/i386/i386.opt (mindirect-branch=): New option.
+(indirect_branch): New.
+(keep): Likewise.
+(thunk): Likewise.
+(thunk-inline): Likewise.
+(thunk-extern): Likewise.
+* doc/extend.texi: Document indirect_branch function attribute.
+* doc/invoke.texi: Document -mindirect-branch= option.
+
+GCC5.4 changes
+* config/i386/i386.c 
+ - work around missing ix86_set_func_type()
+ - nopic_noplt not supported
+* config/i386/i386.md 
+ - ignore "maybe_prefix_bnd"
+ 
+	* x86: Add -mfunction-return=
+author	H.J. Lu <hjl.tools@gmail.com>
+ 
+ Add -mfunction-return= option to convert function return to call and
+return thunks.  The default is 'keep', which keeps function return
+unmodified.  'thunk' converts function return to call and return thunk.
+'thunk-inline' converts function return to inlined call and return thunk.
+'thunk-extern' converts function return to external call and return
+thunk provided in a separate object file.  You can control this behavior
+for a specific function by using the function attribute function_return.
+
+Function return thunk is the same as memory thunk for -mindirect-branch=
+where the return address is at the top of the stack:
+
+__x86_return_thunk:
+call L2
+L1:
+pause
+lfence
+jmp L1
+L2:
+lea 8(%rsp), %rsp|lea 4(%esp), %esp
+ret
+
+and function return becomes
+
+jmp __x86_return_thunk
+
+-mindirect-branch= tests are updated with -mfunction-return=keep to
+avoid false test failures when -mfunction-return=thunk is added to
+RUNTESTFLAGS for "make check".
+
+gcc/
+
+Backport from mainline
+* config/i386/i386-protos.h (ix86_output_function_return): New.
+* config/i386/i386.c (ix86_set_indirect_branch_type): Also
+set function_return_type.
+(indirect_thunk_name): Add ret_p to indicate thunk for function
+return.
+(output_indirect_thunk_function): Pass false to
+indirect_thunk_name.
+(ix86_output_indirect_branch): Likewise.
+(output_indirect_thunk_function): Create alias for function
+return thunk if regno < 0.
+(ix86_output_function_return): New function.
+(ix86_handle_fndecl_attribute): Handle function_return.
+(ix86_attribute_table): Add function_return.
+* config/i386/i386.h (machine_function): Add
+function_return_type.
+* config/i386/i386.md (simple_return_internal): Use
+ix86_output_function_return.
+(simple_return_internal_long): Likewise.
+* config/i386/i386.opt (mfunction-return=): New option.
+(indirect_branch): Mention -mfunction-return=.
+* doc/extend.texi: Document function_return function attribute.
+* doc/invoke.texi: Document -mfunction-return= option.
+
+GCC5.4 changes
+* gcc/config/i386/i386.md
+ - "simple_return_internal" "length" or "length_bnd" ?
+
+	* x86: Add -mindirect-branch-register
+author	H.J. Lu <hjl.tools@gmail.com>
+
+Add -mindirect-branch-register to force indirect branch via register.
+This is implemented by disabling patterns of indirect branch via memory,
+similar to TARGET_X32.
+
+-mindirect-branch= and -mfunction-return= tests are updated with
+-mno-indirect-branch-register to avoid false test failures when
+-mindirect-branch-register is added to RUNTESTFLAGS for "make check".
+
+gcc/
+
+Backport from mainline
+* config/i386/constraints.md (Bs): Disallow memory operand for
+-mindirect-branch-register.
+(Bw): Likewise.
+* config/i386/predicates.md (indirect_branch_operand): Likewise.
+(GOT_memory_operand): Likewise.
+(call_insn_operand): Likewise.
+(sibcall_insn_operand): Likewise.
+(GOT32_symbol_operand): Likewise.
+* config/i386/i386.md (indirect_jump): Call convert_memory_address
+for -mindirect-branch-register.
+(tablejump): Likewise.
+(*sibcall_memory): Likewise.
+(*sibcall_value_memory): Likewise.
+Disallow peepholes of indirect call and jump via memory for
+-mindirect-branch-register.
+(*call_pop): Replace m with Bw.
+(*call_value_pop): Likewise.
+(*sibcall_pop_memory): Replace m with Bs.
+* config/i386/i386.opt (mindirect-branch-register): New option.
+* doc/invoke.texi: Document -mindirect-branch-register option.
+
+GCC5.4 changes
+* gcc/config/i386/constraints.md
+ - no "GOT_memory_operand"
+* gcc/config/i386/predicates.md
+ - no "GOT_memory_operand"
+
+	* x86: Add 'V' register operand modifier
+author	H.J. Lu <hjl.tools@gmail.com>
+
+Add 'V', a special modifier which prints the name of the full integer
+register without '%'.  For
+
+extern void (*func_p) (void);
+
+void
+foo (void)
+{
+  asm ("call __x86_indirect_thunk_%V0" : : "a" (func_p));
+}
+
+it generates:
+
+foo:
+movq func_p(%rip), %rax
+call __x86_indirect_thunk_rax
+ret
+
+gcc/
+
+Backport from mainline
+* config/i386/i386.c (print_reg): Print the name of the full
+integer register without '%'.
+(ix86_print_operand): Handle 'V'.
+ * doc/extend.texi: Document 'V' modifier.
+
+GCC5.4 changes
+* config/i386/i386.c (print_reg)
+ - re-implement naked register print
+
+	* x86: Disallow -mindirect-branch=/-mfunction-return= with -mcmodel=large
+author	H.J. Lu <hjl.tools@gmail.com>
+
+Since the thunk function may not be reachable in large code model,
+-mcmodel=large is incompatible with -mindirect-branch=thunk,
+-mindirect-branch=thunk-extern, -mfunction-return=thunk and
+-mfunction-return=thunk-extern.  Issue an error when they are used with
+-mcmodel=large.
+
+gcc/
+
+Backport from mainline
+* config/i386/i386.c (ix86_set_indirect_branch_type): Disallow
+-mcmodel=large with -mindirect-branch=thunk,
+-mindirect-branch=thunk-extern, -mfunction-return=thunk and
+-mfunction-return=thunk-extern.
+* doc/invoke.texi: Document -mcmodel=large is incompatible with
+-mindirect-branch=thunk, -mindirect-branch=thunk-extern,
+-mfunction-return=thunk and -mfunction-return=thunk-extern.
+
+	* Change %V to bare reg names
+author	David Woodhouse <dwmw2@infradead.org>
+	
+	* indirect thunk reg names
+author	David Woodhouse <dwmw2@infradead.org>
+
+GCC5.4 changes
+* config/i386/i386.h
+ - add LAST_INT_REG 
+    
+2016-06-03  Release Manager
+
+	* GCC 5.4.0 released.
+
+2015-12-04  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-12-01  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	PR libffi/65726
+	* Makefile.def (lang_env_dependencies): Make libffi depend
+	on cxx.
+	* Makefile.in: Regenerate.
 
 2016-06-03  Release Manager
 

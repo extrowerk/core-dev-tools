@@ -4142,8 +4142,14 @@ aarch64_print_operand (FILE *f, rtx x, char code)
       break;
 
     case 'H':
-      /* Print the higher numbered register of a pair (TImode) of regs.  */
-      if (!REG_P (x) || !GP_REGNUM_P (REGNO (x) + 1))
+        /* Print the higher numbered register of a pair (TImode) of regs.  */
+       if (x == const0_rtx
+	  || (CONST_DOUBLE_P (x) && aarch64_float_const_zero_rtx_p (x)))
+	{
+	  asm_fprintf (f, "xzr");
+	  break;
+	}
+       if (!REG_P (x) || !GP_REGNUM_P (REGNO (x) + 1))
 	{
 	  output_operand_lossage ("invalid operand for '%%%c'", code);
 	  return;
@@ -4447,17 +4453,25 @@ aarch64_print_operand (FILE *f, rtx x, char code)
     case 'k':
       {
 	int cond_code;
-	/* Print nzcv.  */
+	
+	/* Print immediate nzcv. */
+	if(CONST_INT_P (x)) {
+	  cond_code = INTVAL (x);
+	  gcc_assert (cond_code >= 0 && cond_code <= AARCH64_NV);
+	  asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	}
+	/* Print comparison result. */
+	else if(COMPARISON_P(x)) {
+	  cond_code = aarch64_get_condition_code_1 (CCmode, GET_CODE (x));
+	  gcc_assert (cond_code >= 0);
+	  asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	}
+	else {
+	  output_operand_lossage ("invalid operand for '%%%c'", code);
+	  return;
+	}
 
-	if (!COMPARISON_P (x))
-	  {
-	    output_operand_lossage ("invalid operand for '%%%c'", code);
-	    return;
-	  }
-
-	cond_code = aarch64_get_condition_code_1 (CCmode, GET_CODE (x));
-	gcc_assert (cond_code >= 0);
-	asm_fprintf (f, "%d", aarch64_nzcv_codes[cond_code][1]);
+	
       }
       break;
 
@@ -11309,6 +11323,79 @@ aarch64_gen_adjusted_ldpstp (rtx *operands, bool load,
   emit_insn (gen_rtx_PARALLEL (VOIDmode, gen_rtvec (2, t1, t2)));
   return true;
 }
+
+static rtx
+aarch64_speculation_safe_load (machine_mode mode, rtx result, rtx mem,
+			       rtx lower_bound, rtx upper_bound, rtx cmpptr,
+			       bool warn ATTRIBUTE_UNUSED)
+{
+  rtx cond, comparison;
+  rtx target = gen_reg_rtx (mode);
+  rtx tgt2 = result;
+
+  if (!register_operand (cmpptr, ptr_mode))
+    cmpptr = force_reg (ptr_mode, cmpptr);
+
+  if (!register_operand (tgt2, mode))
+    tgt2 = gen_reg_rtx (mode);
+
+  if (lower_bound == const0_rtx)
+    {
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      cond = aarch64_gen_compare_reg (GEU, cmpptr, upper_bound);
+      comparison = gen_rtx_GEU (VOIDmode, cond, const0_rtx);
+    }
+  else
+    {
+      if (!register_operand (lower_bound, ptr_mode))
+	lower_bound = force_reg (ptr_mode, lower_bound);
+
+      if (!register_operand (upper_bound, ptr_mode))
+	upper_bound = force_reg (ptr_mode, upper_bound);
+
+      rtx cond1 = aarch64_gen_compare_reg (GEU, cmpptr, lower_bound);
+      rtx comparison1 = gen_rtx_GEU (ptr_mode, cond1, const0_rtx);
+      rtx failcond = GEN_INT (aarch64_get_condition_code (comparison1)^1);
+      cond = gen_rtx_REG (CCmode, CC_REGNUM);
+      if (ptr_mode == SImode)
+	emit_insn (gen_ccmpsi (cond1, cond, cmpptr, upper_bound, comparison1,
+			       failcond));
+      else
+	emit_insn (gen_ccmpdi (cond1, cond, cmpptr, upper_bound, comparison1,
+			       failcond));
+      comparison = gen_rtx_GEU (VOIDmode, cond, const0_rtx);
+    }
+
+  rtx_code_label *label = gen_label_rtx ();
+  emit_jump_insn (gen_condjump (comparison, cond, label));
+  emit_move_insn (target, mem);
+  emit_label (label);
+
+  insn_code icode;
+
+  switch (mode)
+    {
+    case QImode: icode = CODE_FOR_nospeculateqi; break;
+    case HImode: icode = CODE_FOR_nospeculatehi; break;
+    case SImode: icode = CODE_FOR_nospeculatesi; break;
+    case DImode: icode = CODE_FOR_nospeculatedi; break;
+    case TImode: icode = CODE_FOR_nospeculateti; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (GEN_FCN (icode) (tgt2, comparison, cond, target, const0_rtx));
+
+  if (tgt2 != result)
+    emit_move_insn (result, tgt2);
+
+  return result;
+}
+
+#undef TARGET_SPECULATION_SAFE_LOAD
+#define TARGET_SPECULATION_SAFE_LOAD aarch64_speculation_safe_load
 
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST aarch64_address_cost
