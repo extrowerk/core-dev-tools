@@ -8233,3 +8233,6 @@ All and all it does not take long to convert ports that the
 maintainer is familiar with.
 
 @end defmac
+
+@hook TARGET_SPECULATION_SAFE_LOAD
+
