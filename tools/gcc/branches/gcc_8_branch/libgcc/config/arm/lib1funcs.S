@@ -1581,6 +1581,33 @@ LSYM(Lover12):
 #error "This is only for ARM EABI GNU/Linux"
 #endif
 #endif /* L_clear_cache */
+
+#ifdef L_dvmd_nto
+@ QNX nto division-by zero handler.  Used in place of L_dvmd_tls
+
+#ifdef __ARM_EABI__
+        WEAK aeabi_idiv0
+        WEAK aeabi_ldiv0
+        ARM_FUNC_START aeabi_idiv0
+        ARM_FUNC_START aeabi_ldiv0
+#else
+        ARM_FUNC_START div0
+#endif
+
+#ifndef __ARM_EABI__
+        ldr     lr, [sp], #4
+#endif
+        .word   0xe7fffffe
+        RET
+#ifdef __ARM_EABI__
+        FUNC_END aeabi_ldiv0
+        FUNC_END aeabi_idiv0
+#else
+        FUNC_END div0
+#endif
+
+#endif /* L_dvmd_nto */
+
 /* ------------------------------------------------------------------------ */
 /* Dword shift operations.  */
 /* All the following Dword shift variants rely on the fact that
