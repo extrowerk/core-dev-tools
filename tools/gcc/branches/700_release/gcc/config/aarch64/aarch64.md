@@ -120,6 +120,7 @@
     UNSPEC_VSTRUCTDUMMY
     UNSPEC_SP_SET
     UNSPEC_SP_TEST
+    UNSPEC_NZCV
 ])
 
 (define_c_enum "unspecv" [
@@ -128,6 +129,7 @@
     UNSPECV_SET_FPCR		; Represent assign of FPCR content.
     UNSPECV_GET_FPSR		; Represent fetch of FPSR content.
     UNSPECV_SET_FPSR		; Represent assign of FPSR content.
+    UNSPECV_NOSPECULATE		; Inhibit speculation
   ]
 )
 
@@ -248,6 +250,25 @@
   ""
   "")
 
+;; needed for aarch64_speculation_safe_load
+(define_insn "ccmp<mode>"
+  [(set (match_operand:CC 1 "cc_register" "")
+	(if_then_else:CC
+	  (match_operator 4 "aarch64_comparison_operator"
+	   [(match_operand 0 "cc_register" "")
+	    (const_int 0)])
+	  (compare:CC
+	    (match_operand:GPI 2 "register_operand" "r,r,r")
+	    (match_operand:GPI 3 "aarch64_ccmp_operand" "r,Uss,Usn"))
+	  (unspec:CC [(match_operand 5 "immediate_operand")] UNSPEC_NZCV)))]
+  ""
+  "@
+   ccmp\\t%<w>2, %<w>3, %k5, %m4
+   ccmp\\t%<w>2, %3, %k5, %m4
+   ccmn\\t%<w>2, #%n3, %k5, %m4"
+  [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
+)
+
 (define_insn "ccmp_and<mode>"
   [(set (match_operand 1 "ccmp_cc_register" "")
 	(compare
@@ -300,7 +321,7 @@
   }
 )
 
-(define_insn "*condjump"
+(define_insn "condjump"
   [(set (pc) (if_then_else (match_operator 0 "aarch64_comparison_operator"
 			    [(match_operand 1 "cc_register" "") (const_int 0)])
 			   (label_ref (match_operand 2 "" ""))
@@ -4501,6 +4522,33 @@
   DONE;
 })
 
+(define_insn "nospeculate<ALLI:mode>"
+  [(set (match_operand:ALLI 0 "register_operand" "=r")
+        (unspec_volatile:ALLI
+         [(match_operator 1 "aarch64_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:ALLI 3 "register_operand" "r")
+	  (match_operand:ALLI 4 "aarch64_reg_or_zero" "rZ")]
+	 UNSPECV_NOSPECULATE))]
+  ""
+  "csel\\t%<w>0, %<w>3, %<w>4, %M1\;hint\t#0x14\t// CSDB"
+  [(set_attr "type" "csel")
+   (set_attr "length" "8")]
+)
+
+(define_insn "nospeculateti"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (unspec_volatile:TI
+         [(match_operator 1 "aarch64_comparison_operator"
+	   [(match_operand 2 "cc_register" "") (const_int 0)])
+	  (match_operand:TI 3 "register_operand" "r")
+	  (match_operand:TI 4 "aarch64_reg_or_zero" "rZ")]
+	 UNSPECV_NOSPECULATE))]
+  ""
+  "csel\\t%x0, %x3, %x4, %M1\;csel\\t%H0, %H3, %H4, %M1\;hint\t#0x14\t// CSDB"
+  [(set_attr "type" "csel")
+   (set_attr "length" "12")]
+)
 ;; AdvSIMD Stuff
 (include "aarch64-simd.md")
 
