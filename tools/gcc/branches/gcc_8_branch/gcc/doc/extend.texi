@@ -2275,8 +2275,11 @@ on a declaration, followed by an attribute specification inside double
 parentheses.  You can specify multiple attributes in a declaration by
 separating them by commas within the double parentheses or by
 immediately following an attribute declaration with another attribute
-declaration.  @xref{Attribute Syntax}, for the exact rules on
-attribute syntax and placement.
+declaration.  @xref{Attribute Syntax}, for the exact rules on attribute
+syntax and placement.  Compatible attribute specifications on distinct
+declarations of the same function are merged.  An attribute specification
+that is not compatible with attributes already applied to a declaration
+of the same function is ignored with a warning.
 
 GCC also supports attributes on
 variable declarations (@pxref{Variable Attributes}),
@@ -2499,7 +2502,7 @@ themselves to optimization such as common subexpression elimination.
 The @code{const} attribute imposes greater restrictions on a function's
 definition than the similar @code{pure} attribute below because it prohibits
 the function from reading global variables.  Consequently, the presence of
-the attribute on a function declarations allows GCC to emit more efficient
+the attribute on a function declaration allows GCC to emit more efficient
 code for some calls to the function.  Decorating the same function with
 both the @code{const} and the @code{pure} attribute is diagnosed.
 
@@ -2507,8 +2510,9 @@ both the @code{const} and the @code{pure} attribute is diagnosed.
 Note that a function that has pointer arguments and examines the data
 pointed to must @emph{not} be declared @code{const}.  Likewise, a
 function that calls a non-@code{const} function usually must not be
-@code{const}.  It does not make sense for a @code{const} function to
-return @code{void}.
+@code{const}.  Because a @code{const} function cannot have any side
+effects it does not make sense for such a function to return @code{void}.
+Declaring such a function is diagnosed.
 
 @item constructor
 @itemx destructor
@@ -3218,6 +3222,9 @@ The @code{pure} attribute imposes similar but looser restrictions on
 a function's defintion than the @code{const} attribute: it allows the
 function to read global variables.  Decorating the same function with
 both the @code{pure} and the @code{const} attribute is diagnosed.
+Because a @code{pure} function cannot have any side effects it does not
+make sense for such a function to return @code{void}.  Declaring such
+a function is diagnosed.
 
 @item returns_nonnull
 @cindex @code{returns_nonnull} function attribute
@@ -5182,7 +5189,7 @@ that the specified function is an interrupt handler.  The compiler generates
 function entry and exit sequences suitable for use in an interrupt handler
 when this attribute is present.
 
-On RX targets, you may specify one or more vector numbers as arguments
+On RX and RL78 targets, you may specify one or more vector numbers as arguments
 to the attribute, as well as naming an alternate table name.
 Parameters are handled sequentially, so one handler can be assigned to
 multiple entries in multiple tables.  One may also pass the magic
@@ -6080,17 +6087,17 @@ types (@pxref{Common Function Attributes},
 @item nonstring
 @cindex @code{nonstring} variable attribute
 The @code{nonstring} variable attribute specifies that an object or member
-declaration with type array of @code{char} or pointer to @code{char} is
-intended to store character arrays that do not necessarily contain
-a terminating @code{NUL} character.  This is useful in detecting uses
-of such arrays or pointers with functions that expect NUL-terminated
-strings, and to avoid warnings when such an array or pointer is used
-as an argument to a bounded string manipulation function such as
-@code{strncpy}.  For example, without the attribute, GCC will issue
-a warning for the @code{strncpy} call below because it may truncate
-the copy without appending the terminating @code{NUL} character.  Using
-the attribute makes it possible to suppress the warning.  However, when
-the array is declared with the attribute the call to @code{strlen} is
+declaration with type array of @code{char}, @code{signed char}, or
+@code{unsigned char}, or pointer to such a type is intended to store
+character arrays that do not necessarily contain a terminating @code{NUL}.
+This is useful in detecting uses of such arrays or pointers with functions
+that expect @code{NUL}-terminated strings, and to avoid warnings when such
+an array or pointer is used as an argument to a bounded string manipulation
+function such as @code{strncpy}.  For example, without the attribute, GCC
+will issue a warning for the @code{strncpy} call below because it may
+truncate the copy without appending the terminating @code{NUL} character.
+Using the attribute makes it possible to suppress the warning.  However,
+when the array is declared with the attribute the call to @code{strlen} is
 diagnosed because when the array doesn't contain a @code{NUL}-terminated
 string the call is undefined.  To copy, compare, of search non-string
 character arrays use the @code{memcpy}, @code{memcmp}, @code{memchr},
@@ -11042,6 +11049,7 @@ the built-in function returns -1.
 @findex __builtin_alloca_with_align
 @findex __builtin_alloca_with_align_and_max
 @findex __builtin_call_with_static_chain
+@findex __builtin_extend_pointer
 @findex __builtin_fpclassify
 @findex __builtin_isfinite
 @findex __builtin_isnormal
@@ -11915,7 +11923,9 @@ corresponding to @var{t} for each function.
 The standard rules for @code{<tgmath.h>} macros are used to find a
 common type @var{u} from the types of the arguments for parameters
 whose types vary between the functions; complex integer types (a GNU
-extension) are treated like @code{_Complex double} for this purpose.
+extension) are treated like @code{_Complex double} for this purpose
+(or @code{_Complex _Float64} if all the function return types are the
+same @code{_Float@var{n}} or @code{_Float@var{n}x} type).
 If the function return types vary, or are all the same integer type,
 the function called is the one for which @var{t} is @var{u}, and it is
 an error if there is no such function.  If the function return types
@@ -12487,6 +12497,14 @@ Similar to @code{__builtin_bswap32}, except the argument and return types
 are 64 bit.
 @end deftypefn
 
+@deftypefn {Built-in Function} Pmode __builtin_extend_pointer (void * x)
+On targets where the user visible pointer size is smaller than the size
+of an actual hardware address this function returns the extended user
+pointer.  Targets where this is true included ILP32 mode on x86_64 or
+Aarch64.  This function is mainly useful when writing inline assembly
+code.
+@end deftypefn
+
 @node Target Builtins
 @section Built-in Functions Specific to Particular Target Machines
 
@@ -12529,6 +12547,7 @@ instructions, but allow the compiler to schedule those calls.
 * TILEPro Built-in Functions::
 * x86 Built-in Functions::
 * x86 transactional memory intrinsics::
+* x86 control-flow protection intrinsics::
 @end menu
 
 @node AArch64 Built-in Functions
@@ -15876,22 +15895,17 @@ or @option{-mpopcntd}):
 @smallexample
 long __builtin_bpermd (long, long);
 int __builtin_divwe (int, int);
-int __builtin_divweo (int, int);
 unsigned int __builtin_divweu (unsigned int, unsigned int);
-unsigned int __builtin_divweuo (unsigned int, unsigned int);
 long __builtin_divde (long, long);
-long __builtin_divdeo (long, long);
 unsigned long __builtin_divdeu (unsigned long, unsigned long);
-unsigned long __builtin_divdeuo (unsigned long, unsigned long);
 unsigned int cdtbcd (unsigned int);
 unsigned int cbcdtd (unsigned int);
 unsigned int addg6s (unsigned int, unsigned int);
 void __builtin_rs6000_speculation_barrier (void);
 @end smallexample
 
-The @code{__builtin_divde}, @code{__builtin_divdeo},
-@code{__builtin_divdeu}, @code{__builtin_divdeou} functions require a
-64-bit environment support ISA 2.06 or later.
+The @code{__builtin_divde} and @code{__builtin_divdeu} functions
+require a 64-bit environment supporting ISA 2.06 or later.
 
 The following built-in functions are available for the PowerPC family
 of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}):
@@ -18453,6 +18467,10 @@ vector double vec_div (vector double, vector double);
 vector long vec_div (vector long, vector long);
 vector unsigned long vec_div (vector unsigned long, vector unsigned long);
 vector double vec_floor (vector double);
+vector __int128 vec_ld (int, const vector __int128 *);
+vector unsigned __int128 vec_ld (int, const vector unsigned __int128 *);
+vector __int128 vec_ld (int, const __int128 *);
+vector unsigned __int128 vec_ld (int, const unsigned __int128 *);
 vector double vec_ld (int, const vector double *);
 vector double vec_ld (int, const double *);
 vector double vec_ldl (int, const vector double *);
@@ -18505,6 +18523,12 @@ vector double vec_perm (vector double, vector double, vector unsigned char);
 vector long vec_perm (vector long, vector long, vector unsigned char);
 vector unsigned long vec_perm (vector unsigned long, vector unsigned long,
                                vector unsigned char);
+vector bool char vec_permxor (vector bool char, vector bool char,
+                              vector bool char);
+vector unsigned char vec_permxor (vector signed char, vector signed char,
+                                  vector signed char);
+vector unsigned char vec_permxor (vector unsigned char, vector unsigned char,
+                                  vector unsigned char);
 vector double vec_rint (vector double);
 vector double vec_recip (vector double, vector double);
 vector double vec_rsqrt (vector double);
@@ -19122,14 +19146,12 @@ vector unsigned short vec_vctzh (vector unsigned short);
 vector int vec_vctzw (vector int);
 vector unsigned int vec_vctzw (vector int);
 
-long long vec_vextract4b (const vector signed char, const int);
-long long vec_vextract4b (const vector unsigned char, const int);
+vector unsigned long long vec_extract4b (vector unsigned char, const int);
 
-vector signed char vec_insert4b (vector int, vector signed char, const int);
+vector unsigned char vec_insert4b (vector signed int, vector unsigned char,
+                                   const int);
 vector unsigned char vec_insert4b (vector unsigned int, vector unsigned char,
                                    const int);
-vector signed char vec_insert4b (long long, vector signed char, const int);
-vector unsigned char vec_insert4b (long long, vector unsigned char, const int);
 
 vector unsigned int vec_parity_lsbb (vector signed int);
 vector unsigned int vec_parity_lsbb (vector unsigned int);
@@ -21840,13 +21862,17 @@ void __builtin_ia32_wrpkru (unsigned int)
 unsigned int __builtin_ia32_rdpkru ()
 @end smallexample
 
-The following built-in functions are available when @option{-mcet} is used.
-They are used to support Intel Control-flow Enforcment Technology (CET).
-Each built-in function generates the  machine instruction that is part of the
-function's name.
+The following built-in functions are available when @option{-mcet} or
+@option{-mshstk} option is used.  They support shadow stack
+machine instructions from Intel Control-flow Enforcement Technology (CET).
+Each built-in function generates the  machine instruction that is part
+of the function's name.  These are the internal low-level functions.
+Normally the functions in @ref{x86 control-flow protection intrinsics}
+should be used instead.
+
 @smallexample
-unsigned int __builtin_ia32_rdsspd (unsigned int)
-unsigned long long __builtin_ia32_rdsspq (unsigned long long)
+unsigned int __builtin_ia32_rdsspd (void)
+unsigned long long __builtin_ia32_rdsspq (void)
 void __builtin_ia32_incsspd (unsigned int)
 void __builtin_ia32_incsspq (unsigned long long)
 void __builtin_ia32_saveprevssp(void);
@@ -21952,6 +21978,51 @@ else
 @noindent
 Note that, in most cases, the transactional and non-transactional code
 must synchronize together to ensure consistency.
+
+@node x86 control-flow protection intrinsics
+@subsection x86 Control-Flow Protection Intrinsics
+
+@deftypefn {CET Function} {ret_type} _get_ssp (void)
+Get the current value of shadow stack pointer if shadow stack support
+from Intel CET is enabled in the hardware or @code{0} otherwise.
+The @code{ret_type} is @code{unsigned long long} for 64-bit targets 
+and @code{unsigned int} for 32-bit targets.
+@end deftypefn
+
+@deftypefn {CET Function} void _inc_ssp (unsigned int)
+Increment the current shadow stack pointer by the size specified by the
+function argument.  The argument is masked to a byte value for security
+reasons, so to increment by more than 255 bytes you must call the function
+multiple times.
+@end deftypefn
+
+The shadow stack unwind code looks like:
+
+@smallexample
+#include <immintrin.h>
+
+/* Unwind the shadow stack for EH.  */
+#define _Unwind_Frames_Extra(x)       \
+  do                                  \
+    @{                                \
+      _Unwind_Word ssp = _get_ssp (); \
+      if (ssp != 0)                   \
+        @{                            \
+          _Unwind_Word tmp = (x);     \
+          while (tmp > 255)           \
+            @{                        \
+              _inc_ssp (tmp);         \
+              tmp -= 255;             \
+            @}                        \
+          _inc_ssp (tmp);             \
+        @}                            \
+    @}                                \
+    while (0)
+@end smallexample
+
+@noindent
+This code runs unconditionally on all 64-bit processors.  For 32-bit
+processors the code runs on those that support multi-byte NOP instructions.
 
 @node Target Format Checks
 @section Format Checks Specific to Particular Target Machines
@@ -23828,46 +23899,21 @@ some cases that the feature will be dropped in the future.  In other
 cases, the feature might be gone already.
 
 While the list below is not exhaustive, it documents some of the options
-that are now deprecated:
+that are now deprecated or have been removed:
 
 @table @code
-@item -fexternal-templates
-@itemx -falt-external-templates
-These are two of the many ways for G++ to implement template
-instantiation.  @xref{Template Instantiation}.  The C++ standard clearly
-defines how template definitions have to be organized across
-implementation units.  G++ has an implicit instantiation mechanism that
-should work just fine for standard-conforming code.
 
-@item -fstrict-prototype
-@itemx -fno-strict-prototype
-Previously it was possible to use an empty prototype parameter list to
-indicate an unspecified number of parameters (like C), rather than no
-parameters, as C++ demands.  This feature has been removed, except where
-it is required for backwards compatibility.   @xref{Backwards Compatibility}.
+@item -fno-for-scope
+@itemx -ffriend-injection
+These two options provide compatibility with pre-standard C++.
+@xref{Backwards Compatibility}.
+
 @end table
 
 G++ allows a virtual function returning @samp{void *} to be overridden
 by one returning a different pointer type.  This extension to the
 covariant return type rules is now deprecated and will be removed from a
 future version.
-
-The G++ minimum and maximum operators (@samp{<?} and @samp{>?}) and
-their compound forms (@samp{<?=}) and @samp{>?=}) have been deprecated
-and are now removed from G++.  Code using these operators should be
-modified to use @code{std::min} and @code{std::max} instead.
-
-The named return value extension has been deprecated, and is now
-removed from G++.
-
-The use of initializer lists with new expressions has been deprecated,
-and is now removed from G++.
-
-Floating and complex non-type template parameters have been deprecated,
-and are now removed from G++.
-
-The implicit typename extension has been deprecated and is now
-removed from G++.
 
 The use of default arguments in function pointers, function typedefs
 and other places where they are not permitted by the standard is
@@ -23882,6 +23928,14 @@ with an initializer in a class definition. The standard only allows
 initializers for static members of const integral types and const
 enumeration types so this extension has been deprecated and will be removed
 from a future version.
+
+G++ allows attributes to follow a parenthesized direct initializer,
+e.g.@: @samp{ int f (0) __attribute__ ((something)); } This extension
+has been ignored since G++ 3.3 and is deprecated.
+
+G++ allows anonymous structs and unions to have members that are not
+public non-static data members (i.e.@: fields).  These extensions are
+deprecated.
 
 @node Backwards Compatibility
 @section Backwards Compatibility
@@ -23899,10 +23953,22 @@ deprecated.   @xref{Deprecated Features}.
 
 @table @code
 @item For scope
-If a variable is declared at for scope, it used to remain in scope until
-the end of the scope that contained the for statement (rather than just
-within the for scope).  G++ retains this, but issues a warning, if such a
+If a variable is declared at for scope, it used to remain in scope
+until the end of the scope that contained the for statement (rather
+than just within the for scope).  The deprecated
+@option{-fno-for-scope} option enables this non-standard behavior.
+Without the option, G++ retains this, but issues a warning, if such a
 variable is accessed outside the for scope.
+
+The behavior is deprecated, only available with @option{-std=c++98}
+@option{-std=gnu++98} languages and you must use the
+@option{-fpermissive} option to enable it.  The behavior will be
+removed.
+
+@item Friend Injection
+The @option{-ffriend-injection} option makes injected friends visible
+to regular name lookup, unlike standard C++.  This option is
+deprecated and will be removed.
 
 @item Implicit C language
 Old C system header files did not contain an @code{extern "C" @{@dots{}@}}

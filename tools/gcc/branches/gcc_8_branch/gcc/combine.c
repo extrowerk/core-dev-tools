@@ -1990,6 +1990,7 @@ can_combine_p (rtx_insn *insn, rtx_insn *i3, rtx_insn *pred ATTRIBUTE_UNUSED,
 	       && (reg_used_between_p (dest, succ2, i3)
 		   || reg_used_between_p (dest, succ, succ2)))
 	      || (!succ2 && succ && reg_used_between_p (dest, succ, i3))
+	      || (!succ2 && !succ && reg_used_between_p (dest, insn, i3))
 	      || (succ
 		  /* SUCC and SUCC2 can be split halves from a PARALLEL; in
 		     that case SUCC is not in the insn stream, so use SUCC2
@@ -2665,6 +2666,7 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
   /* Notes that I1, I2 or I3 is a MULT operation.  */
   int have_mult = 0;
   int swap_i2i3 = 0;
+  int split_i2i3 = 0;
   int changed_i3_dest = 0;
 
   int maxreg;
@@ -4091,6 +4093,9 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
 	    }
 
 	  insn_code_number = recog_for_combine (&newpat, i3, &new_i3_notes);
+
+	  if (insn_code_number >= 0)
+	    split_i2i3 = 1;
 	}
     }
 
@@ -4258,44 +4263,46 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
 
   if (swap_i2i3)
     {
-      rtx_insn *insn;
-      struct insn_link *link;
-      rtx ni2dest;
-
       /* I3 now uses what used to be its destination and which is now
 	 I2's destination.  This requires us to do a few adjustments.  */
       PATTERN (i3) = newpat;
       adjust_for_new_dest (i3);
+    }
 
-      /* We need a LOG_LINK from I3 to I2.  But we used to have one,
-	 so we still will.
+  if (swap_i2i3 || split_i2i3)
+    {
+      /* We might need a LOG_LINK from I3 to I2.  But then we used to
+	 have one, so we still will.
 
 	 However, some later insn might be using I2's dest and have
-	 a LOG_LINK pointing at I3.  We must remove this link.
-	 The simplest way to remove the link is to point it at I1,
-	 which we know will be a NOTE.  */
+	 a LOG_LINK pointing at I3.  We should change it to point at
+	 I2 instead.  */
 
       /* newi2pat is usually a SET here; however, recog_for_combine might
 	 have added some clobbers.  */
-      if (GET_CODE (newi2pat) == PARALLEL)
-	ni2dest = SET_DEST (XVECEXP (newi2pat, 0, 0));
-      else
-	ni2dest = SET_DEST (newi2pat);
+      rtx x = newi2pat;
+      if (GET_CODE (x) == PARALLEL)
+	x = XVECEXP (newi2pat, 0, 0);
 
-      for (insn = NEXT_INSN (i3);
-	   insn && (this_basic_block->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-		    || insn != BB_HEAD (this_basic_block->next_bb));
+      /* It can only be a SET of a REG or of a SUBREG of a REG.  */
+      unsigned int regno = reg_or_subregno (SET_DEST (x));
+
+      bool done = false;
+      for (rtx_insn *insn = NEXT_INSN (i3);
+	   !done
+	   && insn
+	   && NONDEBUG_INSN_P (insn)
+	   && BLOCK_FOR_INSN (insn) == this_basic_block;
 	   insn = NEXT_INSN (insn))
 	{
-	  if (NONDEBUG_INSN_P (insn)
-	      && reg_referenced_p (ni2dest, PATTERN (insn)))
-	    {
-	      FOR_EACH_LOG_LINK (link, insn)
-		if (link->insn == i3)
-		  link->insn = i1;
-
-	      break;
-	    }
+	  struct insn_link *link;
+	  FOR_EACH_LOG_LINK (link, insn)
+	    if (link->insn == i3 && link->regno == regno)
+	      {
+		link->insn = i2;
+		done = true;
+		break;
+	      }
 	}
     }
 
@@ -5724,7 +5731,11 @@ combine_simplify_rtx (rtx x, machine_mode op0_mode, int in_dest,
 	  /* If everything is a comparison, what we have is highly unlikely
 	     to be simpler, so don't use it.  */
 	  && ! (COMPARISON_P (x)
-		&& (COMPARISON_P (true_rtx) || COMPARISON_P (false_rtx))))
+		&& (COMPARISON_P (true_rtx) || COMPARISON_P (false_rtx)))
+	  /* Similarly, if we end up with one of the expressions the same
+	     as the original, it is certainly not simpler.  */
+	  && ! rtx_equal_p (x, true_rtx)
+	  && ! rtx_equal_p (x, false_rtx))
 	{
 	  rtx cop1 = const0_rtx;
 	  enum rtx_code cond_code = simplify_comparison (NE, &cond, &cop1);
@@ -13913,7 +13924,7 @@ move_deaths (rtx x, rtx maybe_kill_insn, int from_luid, rtx_insn *to_insn,
 	 FROM_LUID and TO_INSN.  If so, find it.  This is PR83304.  */
       if (!where_dead || DF_INSN_LUID (where_dead) >= DF_INSN_LUID (to_insn))
 	{
-	  rtx_insn *insn = prev_real_insn (to_insn);
+	  rtx_insn *insn = prev_real_nondebug_insn (to_insn);
 	  while (insn
 		 && BLOCK_FOR_INSN (insn) == BLOCK_FOR_INSN (to_insn)
 		 && DF_INSN_LUID (insn) >= from_luid)
@@ -13925,7 +13936,7 @@ move_deaths (rtx x, rtx maybe_kill_insn, int from_luid, rtx_insn *to_insn,
 		  break;
 		}
 
-	      insn = prev_real_insn (insn);
+	      insn = prev_real_nondebug_insn (insn);
 	    }
 	}
 
@@ -14766,6 +14777,9 @@ distribute_links (struct insn_link *links)
 	     || GET_CODE (reg) == STRICT_LOW_PART
 	     || GET_CODE (reg) == SUBREG)
 	reg = XEXP (reg, 0);
+
+      if (reg == pc_rtx)
+	continue;
 
       /* A LOG_LINK is defined as being placed on the first insn that uses
 	 a register and points to the insn that sets the register.  Start

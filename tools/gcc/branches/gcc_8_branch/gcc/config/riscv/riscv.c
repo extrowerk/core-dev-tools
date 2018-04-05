@@ -2202,7 +2202,7 @@ riscv_expand_conditional_branch (rtx label, rtx_code code, rtx op0, rtx op1)
 
 /* Implement TARGET_FUNCTION_ARG_BOUNDARY.  Every parameter gets at
    least PARM_BOUNDARY bits of alignment, but will be given anything up
-   to STACK_BOUNDARY bits if the type requires it.  */
+   to PREFERRED_STACK_BOUNDARY bits if the type requires it.  */
 
 static unsigned int
 riscv_function_arg_boundary (machine_mode mode, const_tree type)
@@ -2215,7 +2215,7 @@ riscv_function_arg_boundary (machine_mode mode, const_tree type)
   else
     alignment = type ? TYPE_ALIGN (type) : GET_MODE_ALIGNMENT (mode);
 
-  return MIN (STACK_BOUNDARY, MAX (PARM_BOUNDARY, alignment));
+  return MIN (PREFERRED_STACK_BOUNDARY, MAX (PARM_BOUNDARY, alignment));
 }
 
 /* If MODE represents an argument that can be passed or returned in
@@ -3495,25 +3495,43 @@ riscv_output_gpr_save (unsigned mask)
 
 /* For stack frames that can't be allocated with a single ADDI instruction,
    compute the best value to initially allocate.  It must at a minimum
-   allocate enough space to spill the callee-saved registers.  */
+   allocate enough space to spill the callee-saved registers.  If TARGET_RVC,
+   try to pick a value that will allow compression of the register saves
+   without adding extra instructions.  */
 
 static HOST_WIDE_INT
 riscv_first_stack_step (struct riscv_frame_info *frame)
 {
-  HOST_WIDE_INT min_first_step = frame->total_size - frame->fp_sp_offset;
-  HOST_WIDE_INT max_first_step = IMM_REACH / 2 - STACK_BOUNDARY / 8;
-
   if (SMALL_OPERAND (frame->total_size))
     return frame->total_size;
 
+  HOST_WIDE_INT min_first_step = frame->total_size - frame->fp_sp_offset;
+  HOST_WIDE_INT max_first_step = IMM_REACH / 2 - PREFERRED_STACK_BOUNDARY / 8;
+  HOST_WIDE_INT min_second_step = frame->total_size - max_first_step;
+  gcc_assert (min_first_step <= max_first_step);
+
   /* As an optimization, use the least-significant bits of the total frame
      size, so that the second adjustment step is just LUI + ADD.  */
-  if (!SMALL_OPERAND (frame->total_size - max_first_step)
+  if (!SMALL_OPERAND (min_second_step)
       && frame->total_size % IMM_REACH < IMM_REACH / 2
       && frame->total_size % IMM_REACH >= min_first_step)
     return frame->total_size % IMM_REACH;
 
-  gcc_assert (min_first_step <= max_first_step);
+  if (TARGET_RVC)
+    {
+      /* If we need two subtracts, and one is small enough to allow compressed
+	 loads and stores, then put that one first.  */
+      if (IN_RANGE (min_second_step, 0,
+		    (TARGET_64BIT ? SDSP_REACH : SWSP_REACH)))
+	return MAX (min_second_step, min_first_step);
+
+      /* If we need LUI + ADDI + ADD for the second adjustment step, then start
+	 with the minimum first step, so that we can get compressed loads and
+	 stores.  */
+      else if (!SMALL_OPERAND (min_second_step))
+	return min_first_step;
+    }
+
   return max_first_step;
 }
 
@@ -3961,6 +3979,11 @@ riscv_file_start (void)
 
   /* Instruct GAS to generate position-[in]dependent code.  */
   fprintf (asm_out_file, "\t.option %spic\n", (flag_pic ? "" : "no"));
+
+  /* If the user specifies "-mno-relax" on the command line then disable linker
+     relaxation in the assembler.  */
+  if (! riscv_mrelax)
+    fprintf (asm_out_file, "\t.option norelax\n");
 }
 
 /* Implement TARGET_ASM_OUTPUT_MI_THUNK.  Generate rtl rather than asm text
@@ -4119,7 +4142,7 @@ riscv_option_override (void)
   riscv_stack_boundary = ABI_STACK_BOUNDARY;
   if (riscv_preferred_stack_boundary_arg)
     {
-      int min = ctz_hwi (MIN_STACK_BOUNDARY / 8);
+      int min = ctz_hwi (STACK_BOUNDARY / 8);
       int max = 8;
 
       if (!IN_RANGE (riscv_preferred_stack_boundary_arg, min, max))

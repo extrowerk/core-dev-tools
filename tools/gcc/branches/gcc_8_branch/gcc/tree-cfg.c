@@ -2301,6 +2301,12 @@ remove_bb (basic_block bb)
 		}
 
 	      new_bb = bb->prev_bb;
+	      /* Don't move any labels into ENTRY block.  */
+	      if (new_bb == ENTRY_BLOCK_PTR_FOR_FN (cfun))
+		{
+		  new_bb = single_succ (new_bb);
+		  gcc_assert (new_bb != bb);
+		}
 	      new_gsi = gsi_start_bb (new_bb);
 	      gsi_remove (&i, false);
 	      gsi_insert_before (&new_gsi, stmt, GSI_NEW_STMT);
@@ -2379,10 +2385,14 @@ find_taken_edge_computed_goto (basic_block bb, tree val)
 
   dest = label_to_block (val);
   if (dest)
-    {
-      e = find_edge (bb, dest);
-      gcc_assert (e != NULL);
-    }
+    e = find_edge (bb, dest);
+
+  /* It's possible for find_edge to return NULL here on invalid code
+     that abuses the labels-as-values extension (e.g. code that attempts to
+     jump *between* functions via stored labels-as-values; PR 84136).
+     If so, then we simply return that NULL for the edge.
+     We don't currently have a way of detecting such invalid code, so we
+     can't assert that it was the case when a NULL edge occurs here.  */
 
   return e;
 }

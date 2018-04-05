@@ -24,6 +24,9 @@
 (define_predicate "nds32_greater_less_comparison_operator"
   (match_code "gt,ge,lt,le"))
 
+(define_predicate "nds32_movecc_comparison_operator"
+  (match_code "eq,ne,le,leu,ge,geu"))
+
 (define_special_predicate "nds32_logical_binary_operator"
   (match_code "and,ior,xor"))
 
@@ -38,6 +41,11 @@
   (ior (match_operand 0 "register_operand")
        (and (match_operand 0 "const_int_operand")
 	    (match_test "satisfies_constraint_Is15 (op)"))))
+
+(define_predicate "nds32_rimm11s_operand"
+  (ior (match_operand 0 "register_operand")
+       (and (match_operand 0 "const_int_operand")
+	    (match_test "satisfies_constraint_Is11 (op)"))))
 
 (define_predicate "nds32_imm5u_operand"
   (and (match_operand 0 "const_int_operand")
@@ -57,12 +65,40 @@
   return true;
 })
 
+(define_predicate "nds32_general_register_operand"
+  (match_code "reg,subreg")
+{
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op);
+
+  return (REG_P (op)
+	  && (REGNO (op) >= FIRST_PSEUDO_REGISTER
+	      || REGNO (op) <= NDS32_LAST_GPR_REGNUM));
+})
+
+(define_predicate "nds32_call_address_operand"
+  (ior (match_operand 0 "nds32_symbolic_operand")
+       (match_operand 0 "nds32_general_register_operand")))
+
+(define_predicate "nds32_lmw_smw_base_operand"
+  (and (match_code "mem")
+       (match_test "nds32_valid_smw_lwm_base_p (op)")))
+
 (define_special_predicate "nds32_load_multiple_operation"
   (match_code "parallel")
 {
   /* To verify 'load' operation, pass 'true' for the second argument.
      See the implementation in nds32.c for details.  */
-  return nds32_valid_multiple_load_store (op, true);
+  return nds32_valid_multiple_load_store_p (op, true, false);
+})
+
+(define_special_predicate "nds32_load_multiple_and_update_address_operation"
+  (match_code "parallel")
+{
+  /* To verify 'load' operation, pass 'true' for the second argument.
+     to verify 'update address' operation, pass 'true' for the third argument
+     See the implementation in nds32.c for details.  */
+  return nds32_valid_multiple_load_store_p (op, true, true);
 })
 
 (define_special_predicate "nds32_store_multiple_operation"
@@ -70,7 +106,16 @@
 {
   /* To verify 'store' operation, pass 'false' for the second argument.
      See the implementation in nds32.c for details.  */
-  return nds32_valid_multiple_load_store (op, false);
+  return nds32_valid_multiple_load_store_p (op, false, false);
+})
+
+(define_special_predicate "nds32_store_multiple_and_update_address_operation"
+  (match_code "parallel")
+{
+  /* To verify 'store' operation, pass 'false' for the second argument,
+     to verify 'update address' operation, pass 'true' for the third argument
+     See the implementation in nds32.c for details.  */
+  return nds32_valid_multiple_load_store_p (op, false, true);
 })
 
 (define_special_predicate "nds32_stack_push_operation"

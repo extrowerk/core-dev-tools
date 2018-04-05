@@ -33,6 +33,14 @@
 #define NDS32_SYMBOL_REF_RODATA_P(x) \
   ((SYMBOL_REF_FLAGS (x) & NDS32_SYMBOL_FLAG_RODATA) != 0)
 
+/* Classifies expand result for expand helper function.  */
+enum nds32_expand_result_type
+{
+  EXPAND_DONE,
+  EXPAND_FAIL,
+  EXPAND_CREATE_TEMPLATE
+};
+
 /* Computing the Length of an Insn.  */
 #define ADJUST_INSN_LENGTH(INSN, LENGTH) \
   (LENGTH = nds32_adjust_insn_length (INSN, LENGTH))
@@ -130,6 +138,10 @@ enum nds32_16bit_address_type
 /* Define the last integer register number.  */
 #define NDS32_LAST_GPR_REGNUM 31
 
+#define NDS32_FIRST_CALLEE_SAVE_GPR_REGNUM 6
+#define NDS32_LAST_CALLEE_SAVE_GPR_REGNUM \
+  (TARGET_REDUCED_REGS ? 10 : 14)
+
 /* Define double word alignment bits.  */
 #define NDS32_DOUBLE_WORD_ALIGNMENT 64
 
@@ -195,6 +207,19 @@ enum nds32_16bit_address_type
    it is required to be saved.  */
 #define NDS32_REQUIRED_CALLEE_SAVED_P(regno)                  \
   ((!call_used_regs[regno]) && (df_regs_ever_live_p (regno)))
+
+/* This macro is to check if the push25/pop25 are available to be used
+   for code generation.  Because pop25 also performs return behavior,
+   the instructions may not be available for some cases.
+   If we want to use push25/pop25, all the following conditions must
+   be satisfied:
+     1. TARGET_V3PUSH is set.
+     2. Current function is not an ISR function.
+     3. Current function is not a variadic function.*/
+#define NDS32_V3PUSH_AVAILABLE_P  \
+  (TARGET_V3PUSH \
+   && !nds32_isr_function_p (current_function_decl) \
+   && (cfun->machine->va_args_size == 0))
 
 /* ------------------------------------------------------------------------ */
 
@@ -345,7 +370,17 @@ enum nds32_builtins
   NDS32_BUILTIN_MTSR,
   NDS32_BUILTIN_MTUSR,
   NDS32_BUILTIN_SETGIE_EN,
-  NDS32_BUILTIN_SETGIE_DIS
+  NDS32_BUILTIN_SETGIE_DIS,
+  NDS32_BUILTIN_FFB,
+  NDS32_BUILTIN_FFMISM,
+  NDS32_BUILTIN_FLMISM,
+  NDS32_BUILTIN_UALOAD_HW,
+  NDS32_BUILTIN_UALOAD_W,
+  NDS32_BUILTIN_UALOAD_DW,
+  NDS32_BUILTIN_UASTORE_HW,
+  NDS32_BUILTIN_UASTORE_W,
+  NDS32_BUILTIN_UASTORE_DW,
+  NDS32_BUILTIN_COUNT
 };
 
 /* ------------------------------------------------------------------------ */
@@ -430,38 +465,8 @@ enum nds32_builtins
 
 /* Run-time Target Specification.  */
 
-#define TARGET_CPU_CPP_BUILTINS()                     \
-  do                                                  \
-    {                                                 \
-      builtin_define ("__nds32__");                   \
-                                                      \
-      if (TARGET_ISA_V2)                              \
-        builtin_define ("__NDS32_ISA_V2__");          \
-      if (TARGET_ISA_V3)                              \
-        builtin_define ("__NDS32_ISA_V3__");          \
-      if (TARGET_ISA_V3M)                             \
-        builtin_define ("__NDS32_ISA_V3M__");         \
-                                                      \
-      if (TARGET_BIG_ENDIAN)                          \
-        builtin_define ("__big_endian__");            \
-      if (TARGET_REDUCED_REGS)                        \
-        builtin_define ("__NDS32_REDUCED_REGS__");    \
-      if (TARGET_CMOV)                                \
-        builtin_define ("__NDS32_CMOV__");            \
-      if (TARGET_EXT_PERF)                            \
-        builtin_define ("__NDS32_EXT_PERF__");        \
-      if (TARGET_EXT_PERF2)                           \
-        builtin_define ("__NDS32_EXT_PERF2__");       \
-      if (TARGET_EXT_STRING)                          \
-        builtin_define ("__NDS32_EXT_STRING__");      \
-      if (TARGET_16_BIT)                              \
-        builtin_define ("__NDS32_16_BIT__");          \
-      if (TARGET_GP_DIRECT)                           \
-        builtin_define ("__NDS32_GP_DIRECT__");       \
-                                                      \
-      builtin_assert ("cpu=nds32");                   \
-      builtin_assert ("machine=nds32");               \
-    } while (0)
+#define TARGET_CPU_CPP_BUILTINS() \
+  nds32_cpu_cpp_builtins (pfile)
 
 
 /* Defining Data Structures for Per-function Information.  */
@@ -519,8 +524,8 @@ enum nds32_builtins
 
 #define SIZE_TYPE "long unsigned int"
 #define PTRDIFF_TYPE "long int"
-#define WCHAR_TYPE "short unsigned int"
-#define WCHAR_TYPE_SIZE 16
+#define WCHAR_TYPE "unsigned int"
+#define WCHAR_TYPE_SIZE 32
 
 
 /* Register Usage.  */
@@ -629,6 +634,10 @@ enum nds32_builtins
    88,  89,  90,  91,  92,  93,  94,  95, \
    96,  97,  98,  99, 100,                \
 }
+
+/* ADJUST_REG_ALLOC_ORDER is a macro which permits reg_alloc_order
+   to be rearranged based on optimizing for speed or size.  */
+#define ADJUST_REG_ALLOC_ORDER nds32_adjust_reg_alloc_order ()
 
 /* Tell IRA to use the order we define rather than messing it up with its
    own cost calculations.  */
@@ -800,7 +809,15 @@ enum reg_class
 #define EXIT_IGNORE_STACK 1
 
 #define FUNCTION_PROFILER(file, labelno) \
-  fprintf (file, "/* profiler %d */", (labelno))
+  fprintf (file, "/* profiler %d */\n", (labelno))
+
+#define PROFILE_HOOK(LABEL)						\
+  {									\
+    rtx fun, lp;							\
+    lp = get_hard_reg_initial_val (Pmode, LP_REGNUM);			\
+    fun = gen_rtx_SYMBOL_REF (Pmode, "_mcount");			\
+    emit_library_call (fun, LCT_NORMAL, VOIDmode, lp, Pmode);		\
+  }
 
 
 /* Implementing the Varargs Macros.  */
@@ -850,7 +867,7 @@ enum reg_class
 
 #define CONSTANT_ADDRESS_P(x) (CONSTANT_P (x) && GET_CODE (x) != CONST_DOUBLE)
 
-#define MAX_REGS_PER_ADDRESS 2
+#define MAX_REGS_PER_ADDRESS 3
 
 
 /* Anchored Addresses.  */
@@ -864,7 +881,11 @@ enum reg_class
 /* A C expression for the cost of a branch instruction.
    A value of 1 is the default;
    other values are interpreted relative to that.  */
-#define BRANCH_COST(speed_p, predictable_p) ((speed_p) ? 2 : 0)
+#define BRANCH_COST(speed_p, predictable_p) ((speed_p) ? 2 : 1)
+
+/* Override BRANCH_COST heuristic which empirically produces worse
+   performance for removing short circuiting from the logical ops.  */
+#define LOGICAL_OP_NON_SHORT_CIRCUIT 0
 
 #define SLOW_BYTE_ACCESS 1
 
@@ -1064,6 +1085,11 @@ enum reg_class
    an integral mode and stored by a store-flag instruction ('cstoremode4')
    when the condition is true.  */
 #define STORE_FLAG_VALUE 1
+
+/* A C expression that indicates whether the architecture defines a value for
+   clz or ctz with a zero operand.  In nds32 clz for 0 result 32 is defined
+   in ISA spec */
+#define CLZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE)  ((VALUE) = 32, 1)
 
 /* An alias for the machine mode for pointers.  */
 #define Pmode SImode

@@ -2754,6 +2754,13 @@ L2:],
   [AC_DEFINE(HAVE_AS_LEB128, 0,
     [Define if your assembler supports .sleb128 and .uleb128.])])
 
+# Determine if an .eh_frame section is read-only.
+gcc_fn_eh_frame_ro () {
+  $gcc_cv_as $1 -o conftest.o conftest.s > /dev/null 2>&1 && \
+    $gcc_cv_objdump -h conftest.o 2>/dev/null | \
+    sed -e '/.eh_frame/!d' -e N | grep READONLY > /dev/null
+}
+
 # Check if we have assembler support for unwind directives.
 gcc_GAS_CHECK_FEATURE([cfi directives], gcc_cv_as_cfi_directive,
   ,,
@@ -2769,41 +2776,41 @@ gcc_GAS_CHECK_FEATURE([cfi directives], gcc_cv_as_cfi_directive,
     # If the linker used on Solaris (like Sun ld) isn't capable of merging
     # read-only and read-write sections, we need to make sure that the
     # assembler used emits read-write .eh_frame sections.
-    if test "x$gcc_cv_ld_ro_rw_mix" != xread-write; then
-      if test "x$gcc_cv_objdump" != x; then
-	if $gcc_cv_objdump -h conftest.o 2>/dev/null | \
-		sed -e /.eh_frame/!d -e N | grep READONLY > /dev/null; then
-	  gcc_cv_as_cfi_directive=no
-	else
-	  case "$target" in
-	    i?86-*-solaris2.1[[0-9]]* | x86_64-*-solaris2.1[[0-9]]*)
-	      # On Solaris/x86, make sure that GCC and assembler agree on using
-	      # read-only .eh_frame sections for 64-bit.
-	      if test x$gas = xyes; then
-	         as_ix86_64_opt="--64"
-	      else
-	         as_ix86_64_opt="-xarch=amd64"
-	      fi
-	      if $gcc_cv_as $as_ix86_64_opt -o conftest.o conftest.s > /dev/null 2>&1 && \
-		$gcc_cv_objdump -h conftest.o 2>/dev/null | \
-			sed -e /.eh_frame/!d -e N | \
-			grep READONLY > /dev/null; then
-		gcc_cv_as_cfi_directive=yes
-	      else
-		gcc_cv_as_cfi_directive=no
-	      fi
-	      ;;
-	    *)
-	      gcc_cv_as_cfi_directive=yes
-	      ;;
-	  esac 
-	fi
-      else
-        # no objdump, err on the side of caution
-	gcc_cv_as_cfi_directive=no
-      fi
-    else
+    if test "x$gcc_cv_ld_ro_rw_mix" = xread-write; then
       gcc_cv_as_cfi_directive=yes
+    elif test "x$gcc_cv_objdump" = x; then
+      # No objdump, err on the side of caution.
+      gcc_cv_as_cfi_directive=no
+    else
+      if test x$gas = xyes; then
+	as_32_opt="--32"
+	as_64_opt="--64"
+      else
+	as_32_opt="-m32"
+	as_64_opt="-m64"
+      fi
+      case "$target" in
+	sparc*-*-solaris2.*)
+	  # On Solaris/SPARC, .eh_frame sections should always be read-write.
+	  if gcc_fn_eh_frame_ro $as_32_opt \
+	     || gcc_fn_eh_frame_ro $as_64_opt; then
+	    gcc_cv_as_cfi_directive=no
+	  else
+	    gcc_cv_as_cfi_directive=yes
+	  fi
+	  ;;
+	i?86-*-solaris2.* | x86_64-*-solaris2.*)
+	  # On Solaris/x86, make sure that GCC and assembler agree on using
+	  # read-only .eh_frame sections for 64-bit.
+	  if gcc_fn_eh_frame_ro $as_32_opt; then
+	    gcc_cv_as_cfi_directive=no
+	  elif gcc_fn_eh_frame_ro $as_64_opt; then
+	    gcc_cv_as_cfi_directive=yes
+	  else
+	    gcc_cv_as_cfi_directive=no
+	  fi
+	  ;;
+      esac
     fi
     ;;
   *-*-*)
@@ -3647,6 +3654,50 @@ if test x"$gcc_cv_ld_static_dynamic" = xyes; then
 [Define to the linker option to enable use of shared objects.])
 fi
 AC_MSG_RESULT($gcc_cv_ld_static_dynamic)
+
+AC_MSG_CHECKING(linker --version-script option)
+gcc_cv_ld_version_script=no
+ld_version_script_option=''
+if test $in_tree_ld = yes || test x"$gnu_ld" = xyes; then
+  gcc_cv_ld_version_script=yes
+  ld_version_script_option='--version-script'
+elif test x$gcc_cv_ld != x; then
+  case "$target" in
+    # Solaris 2 ld always supports -M.  It also supports a subset of
+    # --version-script since Solaris 11.4, but requires
+    # -z gnu-version-script-compat to activate.
+    *-*-solaris2*)
+      gcc_cv_ld_version_script=yes
+      ld_version_script_option='-M'
+      ;;
+  esac
+fi
+# Don't AC_DEFINE result, only used in jit/Make-lang.in so far.
+AC_MSG_RESULT($gcc_cv_ld_version_script)
+AC_SUBST(ld_version_script_option)
+
+AC_MSG_CHECKING(linker soname option)
+gcc_cv_ld_soname=no
+if test $in_tree_ld = yes || test x"$gnu_ld" = xyes; then
+  gcc_cv_ld_soname=yes
+  ld_soname_option='-soname'
+elif test x$gcc_cv_ld != x; then
+  case "$target" in
+    *-*-darwin*)
+      gcc_cv_ld_soname=yes
+      ld_soname_option='-install_name'
+      ;;
+    # Solaris 2 ld always supports -h.  It also supports --soname for GNU
+    # ld compatiblity since some Solaris 10 update.
+    *-*-solaris2*)
+      gcc_cv_ld_soname=yes
+      ld_soname_option='-h'
+      ;;
+  esac
+fi
+# Don't AC_DEFINE result, only used in jit/Make-lang.in so far.
+AC_MSG_RESULT($gcc_cv_ld_soname)
+AC_SUBST(ld_soname_option)
 
 if test x"$demangler_in_ld" = xyes; then
   AC_MSG_CHECKING(linker --demangle support)
@@ -4895,9 +4946,25 @@ if test x"$insn" != x; then
 
  if test $gcc_cv_as_dwarf2_debug_line = yes \
  && test $gcc_cv_as_dwarf2_file_buggy = no; then
-	AC_DEFINE(HAVE_AS_DWARF2_DEBUG_LINE, 1,
+    AC_DEFINE(HAVE_AS_DWARF2_DEBUG_LINE, 1,
   [Define if your assembler supports dwarf2 .file/.loc directives,
    and preserves file table indices exactly as given.])
+
+    if test $gcc_cv_as_leb128 = yes; then
+	conftest_s="\
+	.file 1 \"conftest.s\"
+	.loc 1 3 0 view .LVU1
+	$insn
+	.data
+	.uleb128 .LVU1
+	.uleb128 .LVU1
+"
+	gcc_GAS_CHECK_FEATURE([dwarf2 debug_view support],
+	  gcc_cv_as_dwarf2_debug_view,
+	  [elf,2,27,0],,[$conftest_s],,
+	  [AC_DEFINE(HAVE_AS_DWARF2_DEBUG_VIEW, 1,
+  [Define if your assembler supports views in dwarf2 .loc directives.])])
+    fi
  fi
 
  gcc_GAS_CHECK_FEATURE([--gdwarf2 option],

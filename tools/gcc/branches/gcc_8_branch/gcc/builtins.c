@@ -3172,13 +3172,12 @@ check_access (tree exp, tree, tree, tree dstwrite,
 			  exp, func, range[0], dstsize);
 	    }
 	  else if (tree_int_cst_equal (range[0], range[1]))
-	    warning_at (loc, opt,
-			(integer_onep (range[0])
-			 ? G_("%K%qD writing %E byte into a region "
-			      "of size %E overflows the destination")
-			 : G_("%K%qD writing %E bytes into a region "
-			      "of size %E overflows the destination")),
-			exp, func, range[0], dstsize);
+	    warning_n (loc, opt, tree_to_uhwi (range[0]),
+		       "%K%qD writing %E byte into a region "
+		       "of size %E overflows the destination",
+		       "%K%qD writing %E bytes into a region "
+		       "of size %E overflows the destination",
+		       exp, func, range[0], dstsize);
 	  else if (tree_int_cst_sign_bit (range[1]))
 	    {
 	      /* Avoid printing the upper bound if it's invalid.  */
@@ -3273,10 +3272,9 @@ check_access (tree exp, tree, tree, tree dstwrite,
       location_t loc = tree_nonartificial_location (exp);
 
       if (tree_int_cst_equal (range[0], range[1]))
-	warning_at (loc, opt,
-		    (tree_int_cst_equal (range[0], integer_one_node)
-		     ? G_("%K%qD reading %E byte from a region of size %E")
-		     : G_("%K%qD reading %E bytes from a region of size %E")),
+	warning_n (loc, opt, tree_to_uhwi (range[0]),
+		   "%K%qD reading %E byte from a region of size %E",
+		   "%K%qD reading %E bytes from a region of size %E",
 		    exp, func, range[0], slen);
       else if (tree_int_cst_sign_bit (range[1]))
 	{
@@ -7917,8 +7915,7 @@ builtin_mathfn_code (const_tree t)
   const_tree argtype, parmtype;
   const_call_expr_arg_iterator iter;
 
-  if (TREE_CODE (t) != CALL_EXPR
-      || TREE_CODE (CALL_EXPR_FN (t)) != ADDR_EXPR)
+  if (TREE_CODE (t) != CALL_EXPR)
     return END_BUILTINS;
 
   fndecl = get_callee_fndecl (t);
@@ -8082,6 +8079,7 @@ fold_builtin_expect (location_t loc, tree arg0, tree arg1, tree arg2)
     {
       tree op0 = TREE_OPERAND (inner, 0);
       tree op1 = TREE_OPERAND (inner, 1);
+      arg1 = save_expr (arg1);
 
       op0 = build_builtin_expect_predicate (loc, op0, arg1, arg2);
       op1 = build_builtin_expect_predicate (loc, op1, arg1, arg2);
@@ -9655,7 +9653,7 @@ fold_builtin_strpbrk (location_t loc, tree s1, tree s2, tree type)
       if (p2[0] == '\0')
 	/* strpbrk(x, "") == NULL.
 	   Evaluate and ignore s1 in case it had side-effects.  */
-	return omit_one_operand_loc (loc, TREE_TYPE (s1), integer_zero_node, s1);
+	return omit_one_operand_loc (loc, type, integer_zero_node, s1);
 
       if (p2[1] != '\0')
 	return NULL_TREE;  /* Really call strpbrk.  */

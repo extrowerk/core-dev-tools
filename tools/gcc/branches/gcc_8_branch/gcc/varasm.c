@@ -225,7 +225,7 @@ hash_section (section *sect)
 {
   if (sect->common.flags & SECTION_NAMED)
     return htab_hash_string (sect->named.name);
-  return sect->common.flags;
+  return sect->common.flags & ~SECTION_DECLARED;
 }
 
 /* Helper routines for maintaining object_block_htab.  */
@@ -983,11 +983,11 @@ decode_reg_name (const char *name)
 /* Return true if DECL's initializer is suitable for a BSS section.  */
 
 bool
-bss_initializer_p (const_tree decl)
+bss_initializer_p (const_tree decl, bool named)
 {
   /* Do not put non-common constants into the .bss section, they belong in
-     a readonly section.  */
-  return ((!TREE_READONLY (decl) || DECL_COMMON (decl))
+     a readonly section, except when NAMED is true.  */
+  return ((!TREE_READONLY (decl) || DECL_COMMON (decl) || named)
 	  && (DECL_INITIAL (decl) == NULL
 	      /* In LTO we have no errors in program; error_mark_node is used
 	         to mark offlined constructors.  */
@@ -1165,7 +1165,8 @@ get_variable_section (tree decl, bool prefer_noswitch_p)
     {
       section *sect = get_named_section (decl, NULL, reloc);
 
-      if ((sect->common.flags & SECTION_BSS) && !bss_initializer_p (decl))
+      if ((sect->common.flags & SECTION_BSS)
+	  && !bss_initializer_p (decl, true))
 	{
 	  error_at (DECL_SOURCE_LOCATION (decl),
 		    "only zero initializers are allowed in section %qs",
@@ -1252,10 +1253,9 @@ use_blocks_for_decl_p (tree decl)
   if (!VAR_P (decl) && TREE_CODE (decl) != CONST_DECL)
     return false;
 
-  /* Detect decls created by dw2_force_const_mem.  Such decls are
-     special because DECL_INITIAL doesn't specify the decl's true value.
-     dw2_output_indirect_constants will instead call assemble_variable
-     with dont_output_data set to 1 and then print the contents itself.  */
+  /* DECL_INITIAL (decl) set to decl is a hack used for some decls that
+     are never used from code directly and we never want object block handling
+     for those.  */
   if (DECL_INITIAL (decl) == decl)
     return false;
 

@@ -691,7 +691,7 @@ mem_type_for_type (BrigType16_t type)
   /* HSA has non-intuitive constraints on load/store types.  If it's
      a bit-type it _must_ be B128, if it's not a bit-type it must be
      64bit max.  So for loading entities of 128 bits (e.g. vectors)
-     we have to to B128, while for loading the rest we have to use the
+     we have to use B128, while for loading the rest we have to use the
      input type (??? or maybe also flattened to a equally sized non-vector
      unsigned type?).  */
   if ((type & BRIG_TYPE_PACK_MASK) == BRIG_TYPE_PACK_128)
@@ -932,9 +932,13 @@ get_symbol_for_decl (tree decl)
 	  else if (lookup_attribute ("hsa_group_segment",
 				     DECL_ATTRIBUTES (decl)))
 	    segment = BRIG_SEGMENT_GROUP;
-	  else if (TREE_STATIC (decl)
-		   || lookup_attribute ("hsa_global_segment",
-					DECL_ATTRIBUTES (decl)))
+	  else if (TREE_STATIC (decl))
+	    {
+	      segment = BRIG_SEGMENT_GLOBAL;
+	      allocation = BRIG_ALLOCATION_PROGRAM;
+	    }
+	  else if (lookup_attribute ("hsa_global_segment",
+				     DECL_ATTRIBUTES (decl)))
 	    segment = BRIG_SEGMENT_GLOBAL;
 	  else
 	    segment = BRIG_SEGMENT_PRIVATE;
