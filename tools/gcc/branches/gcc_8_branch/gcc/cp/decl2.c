@@ -739,6 +739,9 @@ check_classfn (tree ctype, tree function, tree template_parms)
 void
 note_vague_linkage_fn (tree decl)
 {
+  if (processing_template_decl)
+    return;
+
   DECL_DEFER_OUTPUT (decl) = 1;
   vec_safe_push (deferred_fns, decl);
 }
@@ -1825,6 +1828,11 @@ mark_vtable_entries (tree decl)
 	 function, so we emit the thunks there instead.  */
       if (DECL_THUNK_P (fn))
 	use_thunk (fn, /*emit_p=*/0);
+      /* Set the location, as marking the function could cause
+         instantiation.  We do not need to preserve the incoming
+         location, as we're called from c_parse_final_cleanups, which
+         takes care of that.  */
+      input_location = DECL_SOURCE_LOCATION (fn);
       mark_used (fn);
     }
 }
@@ -1935,7 +1943,7 @@ vague_linkage_p (tree decl)
       if ((DECL_MAYBE_IN_CHARGE_DESTRUCTOR_P (decl)
 	   || DECL_MAYBE_IN_CHARGE_CONSTRUCTOR_P (decl))
 	  && DECL_CHAIN (decl)
-	  && DECL_CLONED_FUNCTION (DECL_CHAIN (decl)))
+	  && DECL_CLONED_FUNCTION_P (DECL_CHAIN (decl)))
 	return vague_linkage_p (DECL_CHAIN (decl));
 
       gcc_checking_assert (!DECL_COMDAT (decl));
@@ -3332,7 +3340,8 @@ get_tls_init_fn (tree var)
 	  /* If the variable is defined somewhere else and might have static
 	     initialization, make the init function a weak reference.  */
 	  if ((!TYPE_NEEDS_CONSTRUCTING (obtype)
-	       || TYPE_HAS_CONSTEXPR_CTOR (obtype))
+	       || TYPE_HAS_CONSTEXPR_CTOR (obtype)
+	       || TYPE_HAS_TRIVIAL_DFLT (obtype))
 	      && TYPE_HAS_TRIVIAL_DESTRUCTOR (obtype)
 	      && DECL_EXTERNAL (var))
 	    declare_weak (fn);
@@ -4727,6 +4736,9 @@ c_parse_final_cleanups (void)
 	    reconsider = true;
 	    keyed_classes->unordered_remove (i);
 	  }
+      /* The input_location may have been changed during marking of
+	 vtable entries.  */
+      input_location = locus_at_end_of_parsing;
 
       /* Write out needed type info variables.  We have to be careful
 	 looping through unemitted decls, because emit_tinfo_decl may
@@ -5189,6 +5201,12 @@ maybe_instantiate_decl (tree decl)
 bool
 mark_used (tree decl, tsubst_flags_t complain)
 {
+  /* If we're just testing conversions or resolving overloads, we
+     don't want any permanent effects like forcing functions to be
+     output or instantiating templates.  */
+  if ((complain & tf_conv))
+    return true;
+
   /* If DECL is a BASELINK for a single function, then treat it just
      like the DECL for the function.  Otherwise, if the BASELINK is
      for an overloaded function, we don't know which function was

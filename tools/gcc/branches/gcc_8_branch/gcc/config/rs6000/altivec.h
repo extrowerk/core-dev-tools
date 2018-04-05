@@ -76,6 +76,7 @@
 #define vec_vor vec_or
 #define vec_vpkpx vec_packpx
 #define vec_vperm vec_perm
+#define vec_permxor __builtin_vec_vpermxor
 #define vec_vrefp vec_re
 #define vec_vrfin vec_round
 #define vec_vrsqrtefp vec_rsqrte
@@ -433,8 +434,8 @@
 #define vec_vctzd __builtin_vec_vctzd
 #define vec_vctzh __builtin_vec_vctzh
 #define vec_vctzw __builtin_vec_vctzw
-#define vec_vextract4b __builtin_vec_vextract4b
-#define vec_vinsert4b __builtin_vec_vinsert4b
+#define vec_extract4b __builtin_vec_extract4b
+#define vec_insert4b __builtin_vec_insert4b
 #define vec_vprtyb __builtin_vec_vprtyb
 #define vec_vprtybd __builtin_vec_vprtybd
 #define vec_vprtybw __builtin_vec_vprtybw

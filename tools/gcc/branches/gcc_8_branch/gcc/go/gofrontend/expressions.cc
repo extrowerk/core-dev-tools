@@ -1330,9 +1330,24 @@ Func_descriptor_expression::do_get_backend(Translate_context* context)
   else
     {
       Location bloc = Linemap::predeclared_location();
+
+      // The runtime package has hash/equality functions that are
+      // referenced by type descriptors outside of the runtime, so the
+      // function descriptors must be visible even though they are not
+      // exported.
+      bool is_exported_runtime = false;
+      if (gogo->compiling_runtime()
+	  && gogo->package_name() == "runtime"
+	  && (no->name().find("hash") != std::string::npos
+	      || no->name().find("equal") != std::string::npos))
+	is_exported_runtime = true;
+
       bool is_hidden = ((no->is_function()
 			 && no->func_value()->enclosing() != NULL)
+			|| (Gogo::is_hidden_name(no->name())
+			    && !is_exported_runtime)
 			|| Gogo::is_thunk(no));
+
       bvar = context->backend()->immutable_struct(var_name, asm_name,
                                                   is_hidden, false,
 						  btype, bloc);
@@ -8209,6 +8224,11 @@ Builtin_call_expression::do_numeric_constant_value(Numeric_constant* nc) const
             return false;
           if (st->named_type() != NULL)
             st->named_type()->convert(this->gogo_);
+          if (st->is_error_type())
+            {
+              go_assert(saw_errors());
+              return false;
+            }
           int64_t offset;
           this->seen_ = true;
           bool ok = st->struct_type()->backend_field_offset(this->gogo_,
@@ -11681,7 +11701,7 @@ Field_reference_expression::do_lower(Gogo* gogo, Named_object* function,
   Location loc = this->location();
 
   std::string s = "fieldtrack \"";
-  Named_type* nt = this->expr_->type()->named_type();
+  Named_type* nt = this->expr_->type()->unalias()->named_type();
   if (nt == NULL || nt->named_object()->package() == NULL)
     s.append(gogo->pkgpath());
   else
@@ -16158,10 +16178,16 @@ Numeric_constant::set_float(Type* type, const mpfr_t val)
   this->clear();
   this->classification_ = NC_FLOAT;
   this->type_ = type;
+
   // Numeric constants do not have negative zero values, so remove
   // them here.  They also don't have infinity or NaN values, but we
   // should never see them here.
-  if (mpfr_zero_p(val))
+  int bits = 0;
+  if (type != NULL
+      && type->float_type() != NULL
+      && !type->float_type()->is_abstract())
+    bits = type->float_type()->bits();
+  if (Numeric_constant::is_float_neg_zero(val, bits))
     mpfr_init_set_ui(this->u_.float_val, 0, GMP_RNDN);
   else
     mpfr_init_set(this->u_.float_val, val, GMP_RNDN);
@@ -16175,8 +16201,60 @@ Numeric_constant::set_complex(Type* type, const mpc_t val)
   this->clear();
   this->classification_ = NC_COMPLEX;
   this->type_ = type;
+
+  // Avoid negative zero as in set_float.
+  int bits = 0;
+  if (type != NULL
+      && type->complex_type() != NULL
+      && !type->complex_type()->is_abstract())
+    bits = type->complex_type()->bits() / 2;
+
+  mpfr_t real;
+  mpfr_init_set(real, mpc_realref(val), GMP_RNDN);
+  if (Numeric_constant::is_float_neg_zero(real, bits))
+    mpfr_set_ui(real, 0, GMP_RNDN);
+
+  mpfr_t imag;
+  mpfr_init_set(imag, mpc_imagref(val), GMP_RNDN);
+  if (Numeric_constant::is_float_neg_zero(imag, bits))
+    mpfr_set_ui(imag, 0, GMP_RNDN);
+
   mpc_init2(this->u_.complex_val, mpc_precision);
-  mpc_set(this->u_.complex_val, val, MPC_RNDNN);
+  mpc_set_fr_fr(this->u_.complex_val, real, imag, MPC_RNDNN);
+
+  mpfr_clear(real);
+  mpfr_clear(imag);
+}
+
+// Return whether VAL, at a precision of BITS, is a negative zero.
+// BITS may be zero in which case it is ignored.
+
+bool
+Numeric_constant::is_float_neg_zero(const mpfr_t val, int bits)
+{
+  if (!mpfr_signbit(val))
+    return false;
+  if (mpfr_zero_p(val))
+    return true;
+  mp_exp_t min_exp;
+  switch (bits)
+    {
+    case 0:
+      return false;
+    case 32:
+      // In a denormalized float32 the exponent is -126, and there are
+      // 24 bits of which at least the last must be 1, so the smallest
+      // representable non-zero exponent is -126 - (24 - 1) == -149.
+      min_exp = -149;
+      break;
+    case 64:
+      // Minimum exponent is -1022, there are 53 bits.
+      min_exp = -1074;
+      break;
+    default:
+      go_unreachable();
+    }
+  return mpfr_get_exp(val) < min_exp;
 }
 
 // Get an int value.
