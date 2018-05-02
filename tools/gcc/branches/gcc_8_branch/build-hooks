@@ -97,6 +97,7 @@ function hook_preconfigure {
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
 				configure_opts="${configure_opts} --with-as=`which ${target}-as`"
+				configure_opts="${configure_opts} --with-ld=`which ${target}-ld`"
 			;;
 		esac ;;
 	win32)
@@ -143,6 +144,7 @@ function hook_preconfigure {
 			# Our default g(nu-)as fails on assembling the DWARF5 code
 			# looks like a relocation table set-up issue..
 			configure_opts="${configure_opts} --with-as=`which ${target}-as`"
+			configure_opts="${configure_opts} --with-ld=`which ${target}-ld`"
 			;;
 		x86*)
 			configure_opts="${configure_opts} --with-tune=generic"
