@@ -96,8 +96,6 @@ function hook_preconfigure {
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
-				configure_opts="${configure_opts} --with-as=${target}-as"
-				configure_opts="${configure_opts} --with-ld=${target}-ld"
 			;;
 		esac ;;
 	win32)
