@@ -283,8 +283,11 @@ esac
 AC_ARG_WITH(ld,
 [AS_HELP_STRING([--with-ld], [arrange to use the specified ld (full pathname)])],
 DEFAULT_LINKER="$with_ld")
+
+# NTO does not work with absolute binutil paths since build and target 
+# environments differ (see also DEFAULT_ASSEMBLER)
 if test x"${DEFAULT_LINKER+set}" = x"set"; then
-  if test ! -x "$DEFAULT_LINKER"; then
+  if test ! -x $(which ${DEFAULT_LINKER}); then
     AC_MSG_ERROR([cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER])
   elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gnu_ld_flag=yes
@@ -326,7 +329,7 @@ AC_ARG_WITH(as,
 [AS_HELP_STRING([--with-as], [arrange to use the specified as (full pathname)])],
 DEFAULT_ASSEMBLER="$with_as")
 if test x"${DEFAULT_ASSEMBLER+set}" = x"set"; then
-  if test ! -x "$DEFAULT_ASSEMBLER"; then
+  if test ! -x $(which ${DEFAULT_ASSEMBLER}); then
     AC_MSG_ERROR([cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER])
   elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gas_flag=yes

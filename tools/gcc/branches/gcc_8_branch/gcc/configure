@@ -3667,8 +3667,10 @@ if test "${with_ld+set}" = set; then :
   withval=$with_ld; DEFAULT_LINKER="$with_ld"
 fi
 
+# NTO does not work with absolute binutil paths since build and target 
+# environments differ (see also DEFAULT_ASSEMBLER)
 if test x"${DEFAULT_LINKER+set}" = x"set"; then
-  if test ! -x "$DEFAULT_LINKER"; then
+  if test ! -x $(which ${DEFAULT_LINKER}); then
     as_fn_error "cannot execute: $DEFAULT_LINKER: check --with-ld or env. var. DEFAULT_LINKER" "$LINENO" 5
   elif $DEFAULT_LINKER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gnu_ld_flag=yes
@@ -3728,7 +3730,7 @@ if test "${with_as+set}" = set; then :
 fi
 
 if test x"${DEFAULT_ASSEMBLER+set}" = x"set"; then
-  if test ! -x "$DEFAULT_ASSEMBLER"; then
+  if test ! -x $(which ${DEFAULT_ASSEMBLER}); then
     as_fn_error "cannot execute: $DEFAULT_ASSEMBLER: check --with-as or env. var. DEFAULT_ASSEMBLER" "$LINENO" 5
   elif $DEFAULT_ASSEMBLER -v < /dev/null 2>&1 | grep GNU > /dev/null; then
     gas_flag=yes
