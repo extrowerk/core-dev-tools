@@ -96,6 +96,8 @@ function hook_preconfigure {
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
+				configure_opts="${configure_opts} --with-as=${target}-as"
+				configure_opts="${configure_opts} --with-ld=${target}-ld"
 			;;
 		esac ;;
 	win32)
@@ -132,6 +134,8 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --enable-cheaders=c_global"
 		configure_opts="${configure_opts} --enable-initfini-array"
 		configure_opts="${configure_opts} --enable-default-pie"
+		configure_opts="${configure_opts} --with-as=${target}-as"
+		configure_opts="${configure_opts} --with-ld=${target}-ld"
 		;;
 	esac
 	
@@ -169,8 +173,6 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --enable-languages=c++"
 	configure_opts="${configure_opts} --disable-werror"
-	configure_opts="${configure_opts} --with-as=${target}-as"
-	configure_opts="${configure_opts} --with-ld=${target}-ld"
 
 #cross options
 	configure_opts="${configure_opts} --with-sysroot=${QNX_TARGET}"
