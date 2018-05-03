@@ -96,8 +96,6 @@ function hook_preconfigure {
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
 				qnxtarget=/opt/${qnx_target}/target/${qnx_os_dir}
-				configure_opts="${configure_opts} --with-as=`which ${target}-as`"
-				configure_opts="${configure_opts} --with-ld=`which ${target}-ld`"
 			;;
 		esac ;;
 	win32)
@@ -139,13 +137,6 @@ function hook_preconfigure {
 	
 # Set TARGET CPU specific flags	
 	case ${cpu_string} in
-		x86_64)
-			# @todo(bweber@qnx.com)
-			# Our default g(nu-)as fails on assembling the DWARF5 code
-			# looks like a relocation table set-up issue..
-			configure_opts="${configure_opts} --with-as=`which ${target}-as`"
-			configure_opts="${configure_opts} --with-ld=`which ${target}-ld`"
-			;;
 		x86*)
 			configure_opts="${configure_opts} --with-tune=generic"
 			;;
@@ -178,6 +169,8 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --enable-languages=c++"
 	configure_opts="${configure_opts} --disable-werror"
+	configure_opts="${configure_opts} --with-as=${target}-as"
+	configure_opts="${configure_opts} --with-ld=${target}-ld"
 
 #cross options
 	configure_opts="${configure_opts} --with-sysroot=${QNX_TARGET}"
