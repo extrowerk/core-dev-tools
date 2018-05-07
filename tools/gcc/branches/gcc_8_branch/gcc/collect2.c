@@ -377,7 +377,7 @@ typedef int scanfilter;
 static void scan_prog_file (const char *, scanpass, scanfilter);
 
 
-#ifdef __QNXNTO__
+#ifdef TARGET_NEUTRINO
 /* Search for NAME using prefix list PPREFIX.  We only look for executable
    files.
    Return 0 if not found, otherwise return its name, allocated with malloc.  
@@ -1109,9 +1109,9 @@ main (int argc, char **argv)
   /* Extract COMPILER_PATH and PATH into our prefix list.  */
   prefix_from_env ("COMPILER_PATH", &cpath);
   prefix_from_env ("PATH", &path);
-#ifdef __QNXNTO__  
+ #ifdef TARGET_NEUTRINO
   prefix_from_env1 ("QNX_HOST", "usr/bin", &cpath);
-#endif  
+#endif
 
   /* Try to discover a valid linker/nm/strip to use.  */
 
