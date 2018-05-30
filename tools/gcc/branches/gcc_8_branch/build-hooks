@@ -166,7 +166,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --libexecdir=${basedir}/lib"
 	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
-	configure_opts="${configure_opts} --with-local-prefix=${basedir}/usr"
+#	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
 	configure_opts="${configure_opts} --enable-threads=posix"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --enable-languages=c++"
