@@ -39,23 +39,40 @@ check_large_neg (int flags)
 {
   if (flags & LARGE_NEG_MAYBE_ERANGE)
     return;
+#if defined(__QNXNTO__)
+  int expected_fe=(flags & (LARGE_NEG_ERANGE|LARGE_NEG_EDOM) ) ? FE_ALL_EXCEPT
+			: 0;
+  if (!fetestexcept (expected_fe) & expected_fe)
+    abort ();
+  feclearexcept (FE_ALL_EXCEPT);
+#else
   int expected_errno = (flags & LARGE_NEG_ERANGE ? ERANGE
 			: flags & LARGE_NEG_EDOM ? EDOM
 			: 0);
   if (expected_errno != errno)
     abort ();
   errno = 0;
+#endif
 }
 
 void
 check_large_pos (int flags)
 {
+#if defined(__QNXNTO__)
+  int expected_fe=(flags & (LARGE_POS_ERANGE|LARGE_POS_EDOM) ) ? FE_ALL_EXCEPT
+			: 0;
+  if (!fetestexcept (expected_fe) & expected_fe)
+    abort ();
+  feclearexcept (FE_ALL_EXCEPT);
+#else
+
   int expected_errno = (flags & LARGE_POS_ERANGE ? ERANGE
 			: flags & LARGE_POS_EDOM ? EDOM
 			: 0);
   if (expected_errno != errno)
     abort ();
   errno = 0;
+#endif
 }
 
 void
@@ -108,14 +125,26 @@ main (void)
   feclearexcept (FE_ALL_EXCEPT);
   test ();
 
+#if defined(__QNXNTO__)
+  feclearexcept (FE_ALL_EXCEPT);
+#endif
+
   d = -1.0e80;
   tester = check_large_neg;
+#if defined(__QNXNTO__)
+  feclearexcept (FE_ALL_EXCEPT);
+#else
   errno = 0;
+#endif
   test ();
 
   d = 1.0e80;
   tester = check_large_pos;
+#if defined(__QNXNTO__)
+  feclearexcept (FE_ALL_EXCEPT);
+#else
   errno = 0;
+#endif
   test ();
 
   return 0;

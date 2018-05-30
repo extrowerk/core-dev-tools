@@ -9,7 +9,7 @@ extern void abort (void);
 
 _Atomic char v = ATOMIC_VAR_INIT (0);
 char expected = 0;
-char max = ~0;
+char maximum = ~0;
 char desired = ~0;
 char zero = 0;
 
@@ -17,19 +17,19 @@ int
 main ()
 {
 
-  if (!atomic_compare_exchange_strong_explicit (&v, &expected, max, memory_order_relaxed, memory_order_relaxed))
+  if (!atomic_compare_exchange_strong_explicit (&v, &expected, maximum, memory_order_relaxed, memory_order_relaxed))
     abort ();
   if (expected != 0)
     abort ();
 
   if (atomic_compare_exchange_strong_explicit (&v, &expected, 0, memory_order_acquire, memory_order_relaxed))
     abort ();
-  if (expected != max)
+  if (expected != maximum)
     abort ();
 
   if (!atomic_compare_exchange_strong_explicit (&v, &expected, 0, memory_order_release, memory_order_acquire))
     abort ();
-  if (expected != max)
+  if (expected != maximum)
     abort ();
   if (v != 0)
     abort ();
@@ -43,24 +43,24 @@ main ()
     abort ();
   if (expected != 0)
     abort ();
-  if (v != max)
+  if (v != maximum)
     abort ();
 
   v = 0;
 
-  if (!atomic_compare_exchange_strong (&v, &expected, max))
+  if (!atomic_compare_exchange_strong (&v, &expected, maximum))
     abort ();
   if (expected != 0)
     abort ();
 
   if (atomic_compare_exchange_strong (&v, &expected, zero))
     abort ();
-  if (expected != max)
+  if (expected != maximum)
     abort ();
 
   if (!atomic_compare_exchange_strong (&v, &expected, zero))
     abort ();
-  if (expected != max)
+  if (expected != maximum)
     abort ();
   if (v != 0)
     abort ();
@@ -74,7 +74,7 @@ main ()
     abort ();
   if (expected != 0)
     abort ();
-  if (v != max)
+  if (v != maximum)
     abort ();
 
   return 0;
