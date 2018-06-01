@@ -227,7 +227,6 @@ AS_IF([test "x$enable_logging" = "xyes"],
      )
 
 LDFLAGS=$OLD_LDFLAGS
-CPPFLAGS=$OLD_CPPFLAGS
 
 AC_SUBST(MPC_LDFLAGS)
 AC_SUBST(MPC_CPPFLAGS)
