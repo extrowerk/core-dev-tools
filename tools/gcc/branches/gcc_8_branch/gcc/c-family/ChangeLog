@@ -1,3 +1,43 @@
+2018-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/85696
+	* c-omp.c (c_omp_predetermined_sharing): Return
+	OMP_CLAUSE_DEFAULT_SHARED for artificial vars with integral type.
+
+	2018-05-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/85662
+	* c-common.h (fold_offsetof_1): Removed.
+	(fold_offsetof): Add TYPE argument defaulted to size_type_node and
+	CTX argument defaulted to ERROR_MARK.
+	* c-common.c (fold_offsetof_1): Renamed to ...
+	(fold_offsetof): ... this.  Remove wrapper function.  Add TYPE
+	argument, convert the pointer constant to TYPE and use size_binop
+	with PLUS_EXPR instead of fold_build_pointer_plus if type is not
+	a pointer type.  Adjust recursive calls.
+
+2018-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/85921
+	* c-warn.c (diagnose_mismatched_attributes): Remove unnecessary
+	noinline variable to workaround broken kernel headers.
+
+2018-05-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2018-05-11  Martin Liska  <mliska@suse.cz>
+
+        PR sanitizer/85556
+	* c-attribs.c (handle_no_sanitize_attribute): Iterate all
+	TREE_LIST values.
+
+2018-05-02  Release Manager
+
+	* GCC 8.1.0 released.
+
 2018-03-29  David Malcolm  <dmalcolm@redhat.com>
 
 	PR c++/84269

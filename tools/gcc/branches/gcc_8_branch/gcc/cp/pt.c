@@ -50,7 +50,8 @@ typedef int (*tree_fn_t) (tree, void*);
 /* The PENDING_TEMPLATES is a TREE_LIST of templates whose
    instantiations have been deferred, either because their definitions
    were not yet available, or because we were putting off doing the work.  */
-struct GTY ((chain_next ("%h.next"))) pending_template {
+struct GTY ((chain_next ("%h.next"))) pending_template
+{
   struct pending_template *next;
   struct tinst_level *tinst;
 };
@@ -8731,6 +8732,269 @@ comp_template_args_porder (tree oargs, tree nargs)
   return comp_template_args (oargs, nargs, NULL, NULL, true);
 }
 
+/* Implement a freelist interface for objects of type T.
+
+   Head is a separate object, rather than a regular member, so that we
+   can define it as a GTY deletable pointer, which is highly
+   desirable.  A data member could be declared that way, but then the
+   containing object would implicitly get GTY((user)), which would
+   prevent us from instantiating freelists as global objects.
+   Although this way we can create freelist global objects, they're
+   such thin wrappers that instantiating temporaries at every use
+   loses nothing and saves permanent storage for the freelist object.
+
+   Member functions next, anew, poison and reinit have default
+   implementations that work for most of the types we're interested
+   in, but if they don't work for some type, they should be explicitly
+   specialized.  See the comments before them for requirements, and
+   the example specializations for the tree_list_freelist.  */
+template <typename T>
+class freelist
+{
+  /* Return the next object in a chain.  We could just do type
+     punning, but if we access the object with its underlying type, we
+     avoid strict-aliasing trouble.  This needs only work between
+     poison and reinit.  */
+  static T *&next (T *obj) { return obj->next; }
+
+  /* Return a newly allocated, uninitialized or minimally-initialized
+     object of type T.  Any initialization performed by anew should
+     either remain across the life of the object and the execution of
+     poison, or be redone by reinit.  */
+  static T *anew () { return ggc_alloc<T> (); }
+
+  /* Optionally scribble all over the bits holding the object, so that
+     they become (mostly?) uninitialized memory.  This is called while
+     preparing to make the object part of the free list.  */
+  static void poison (T *obj) {
+    T *p ATTRIBUTE_UNUSED = obj;
+    T **q ATTRIBUTE_UNUSED = &next (obj);
+
+#ifdef ENABLE_GC_CHECKING
+    /* Poison the data, to indicate the data is garbage.  */
+    VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (p, sizeof (*p)));
+    memset (p, 0xa5, sizeof (*p));
+#endif
+    /* Let valgrind know the object is free.  */
+    VALGRIND_DISCARD (VALGRIND_MAKE_MEM_NOACCESS (p, sizeof (*p)));
+
+    /* Let valgrind know the next portion of the object is available,
+       but uninitialized.  */
+    VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (q, sizeof (*q)));
+  }
+
+  /* Bring an object that underwent at least one lifecycle after anew
+     and before the most recent free and poison, back to a usable
+     state, reinitializing whatever is needed for it to be
+     functionally equivalent to an object just allocated and returned
+     by anew.  This may poison or clear the next field, used by
+     freelist housekeeping after poison was called.  */
+  static void reinit (T *obj) {
+    T **q ATTRIBUTE_UNUSED = &next (obj);
+
+#ifdef ENABLE_GC_CHECKING
+    memset (q, 0xa5, sizeof (*q));
+#endif
+    /* Let valgrind know the entire object is available, but
+       uninitialized.  */
+    VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (obj, sizeof (*obj)));
+  }
+
+  /* Reference a GTY-deletable pointer that points to the first object
+     in the free list proper.  */
+  T *&head;
+public:
+  /* Construct a freelist object chaining objects off of HEAD.  */
+  freelist (T *&head) : head(head) {}
+
+  /* Add OBJ to the free object list.  The former head becomes OBJ's
+     successor.  */
+  void free (T *obj)
+  {
+    poison (obj);
+    next (obj) = head;
+    head = obj;
+  }
+
+  /* Take an object from the free list, if one is available, or
+     allocate a new one.  Objects taken from the free list should be
+     regarded as filled with garbage, except for bits that are
+     configured to be preserved across free and alloc.  */
+  T *alloc ()
+  {
+    if (head)
+      {
+	T *obj = head;
+	head = next (head);
+	reinit (obj);
+	return obj;
+      }
+    else
+      return anew ();
+  }
+};
+
+/* Explicitly specialize the interfaces for freelist<tree_node>: we
+   want to allocate a TREE_LIST using the usual interface, and ensure
+   TREE_CHAIN remains functional.  Alas, we have to duplicate a bit of
+   build_tree_list logic in reinit, so this could go out of sync.  */
+template <>
+inline tree &
+freelist<tree_node>::next (tree obj)
+{
+  return TREE_CHAIN (obj);
+}
+template <>
+inline tree
+freelist<tree_node>::anew ()
+{
+  return build_tree_list (NULL, NULL);
+}
+template <>
+inline void
+freelist<tree_node>::poison (tree obj ATTRIBUTE_UNUSED)
+{
+  int size ATTRIBUTE_UNUSED = sizeof (tree_list);
+  tree p ATTRIBUTE_UNUSED = obj;
+  tree_base *b ATTRIBUTE_UNUSED = &obj->base;
+  tree *q ATTRIBUTE_UNUSED = &next (obj);
+
+#ifdef ENABLE_GC_CHECKING
+  gcc_checking_assert (TREE_CODE (obj) == TREE_LIST);
+
+  /* Poison the data, to indicate the data is garbage.  */
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (p, size));
+  memset (p, 0xa5, size);
+#endif
+  /* Let valgrind know the object is free.  */
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_NOACCESS (p, size));
+  /* But we still want to use the TREE_CODE and TREE_CHAIN parts.  */
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_DEFINED (b, sizeof (*b)));
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (q, sizeof (*q)));
+
+#ifdef ENABLE_GC_CHECKING
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (b, sizeof (*b)));
+  /* Keep TREE_CHAIN functional.  */
+  TREE_SET_CODE (obj, TREE_LIST);
+#else
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_DEFINED (b, sizeof (*b)));
+#endif
+}
+template <>
+inline void
+freelist<tree_node>::reinit (tree obj ATTRIBUTE_UNUSED)
+{
+  tree_base *b ATTRIBUTE_UNUSED = &obj->base;
+
+#ifdef ENABLE_GC_CHECKING
+  gcc_checking_assert (TREE_CODE (obj) == TREE_LIST);
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (obj, sizeof (tree_list)));
+  memset (obj, 0, sizeof (tree_list));
+#endif
+
+  /* Let valgrind know the entire object is available, but
+     uninitialized.  */
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_UNDEFINED (obj, sizeof (tree_list)));
+
+#ifdef ENABLE_GC_CHECKING
+  TREE_SET_CODE (obj, TREE_LIST);
+#else
+  VALGRIND_DISCARD (VALGRIND_MAKE_MEM_DEFINED (b, sizeof (*b)));
+#endif
+}
+
+/* Point to the first object in the TREE_LIST freelist.  */
+static GTY((deletable)) tree tree_list_freelist_head;
+/* Return the/an actual TREE_LIST freelist.  */
+static inline freelist<tree_node>
+tree_list_freelist ()
+{
+  return tree_list_freelist_head;
+}
+
+/* Point to the first object in the tinst_level freelist.  */
+static GTY((deletable)) tinst_level *tinst_level_freelist_head;
+/* Return the/an actual tinst_level freelist.  */
+static inline freelist<tinst_level>
+tinst_level_freelist ()
+{
+  return tinst_level_freelist_head;
+}
+
+/* Point to the first object in the pending_template freelist.  */
+static GTY((deletable)) pending_template *pending_template_freelist_head;
+/* Return the/an actual pending_template freelist.  */
+static inline freelist<pending_template>
+pending_template_freelist ()
+{
+  return pending_template_freelist_head;
+}
+
+/* Build the TREE_LIST object out of a split list, store it
+   permanently, and return it.  */
+tree
+tinst_level::to_list ()
+{
+  gcc_assert (split_list_p ());
+  tree ret = tree_list_freelist ().alloc ();
+  TREE_PURPOSE (ret) = tldcl;
+  TREE_VALUE (ret) = targs;
+  tldcl = ret;
+  targs = NULL;
+  gcc_assert (tree_list_p ());
+  return ret;
+}
+
+const unsigned short tinst_level::refcount_infinity;
+
+/* Increment OBJ's refcount unless it is already infinite.  */
+static tinst_level *
+inc_refcount_use (tinst_level *obj)
+{
+  if (obj && obj->refcount != tinst_level::refcount_infinity)
+    ++obj->refcount;
+  return obj;
+}
+
+/* Release storage for OBJ and node, if it's a TREE_LIST.  */
+void
+tinst_level::free (tinst_level *obj)
+{
+  if (obj->tree_list_p ())
+    tree_list_freelist ().free (obj->get_node ());
+  tinst_level_freelist ().free (obj);
+}
+
+/* Decrement OBJ's refcount if not infinite.  If it reaches zero, release
+   OBJ's DECL and OBJ, and start over with the tinst_level object that
+   used to be referenced by OBJ's NEXT.  */
+static void
+dec_refcount_use (tinst_level *obj)
+{
+  while (obj
+	 && obj->refcount != tinst_level::refcount_infinity
+	 && !--obj->refcount)
+    {
+      tinst_level *next = obj->next;
+      tinst_level::free (obj);
+      obj = next;
+    }
+}
+
+/* Modify PTR so that it points to OBJ, adjusting the refcounts of OBJ
+   and of the former PTR.  Omitting the second argument is equivalent
+   to passing (T*)NULL; this is allowed because passing the
+   zero-valued integral constant NULL confuses type deduction and/or
+   overload resolution.  */
+template <typename T>
+static void
+set_refcount_ptr (T *& ptr, T *obj = NULL)
+{
+  T *save = ptr;
+  ptr = inc_refcount_use (obj);
+  dec_refcount_use (save);
+}
+
 static void
 add_pending_template (tree d)
 {
@@ -8746,14 +9010,17 @@ add_pending_template (tree d)
   /* We are called both from instantiate_decl, where we've already had a
      tinst_level pushed, and instantiate_template, where we haven't.
      Compensate.  */
-  level = !current_tinst_level || current_tinst_level->decl != d;
+  gcc_assert (TREE_CODE (d) != TREE_LIST);
+  level = !current_tinst_level
+    || current_tinst_level->maybe_get_node () != d;
 
   if (level)
     push_tinst_level (d);
 
-  pt = ggc_alloc<pending_template> ();
+  pt = pending_template_freelist ().alloc ();
   pt->next = NULL;
-  pt->tinst = current_tinst_level;
+  pt->tinst = NULL;
+  set_refcount_ptr (pt->tinst, current_tinst_level);
   if (last_pending_template)
     last_pending_template->next = pt;
   else
@@ -9177,7 +9444,9 @@ lookup_template_class_1 (tree d1, tree arglist, tree in_decl, tree context,
 
 	  /* A local class.  Make sure the decl gets registered properly.  */
 	  if (context == current_function_decl)
-	    pushtag (DECL_NAME (gen_tmpl), t, /*tag_scope=*/ts_current);
+	    if (pushtag (DECL_NAME (gen_tmpl), t, /*tag_scope=*/ts_current)
+		== error_mark_node)
+	      return error_mark_node;
 
 	  if (comp_template_args (CLASSTYPE_TI_ARGS (template_type), arglist))
 	    /* This instantiation is another name for the primary
@@ -9560,6 +9829,7 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
       break;
 
     case TYPEOF_TYPE:
+    case DECLTYPE_TYPE:
     case UNDERLYING_TYPE:
       if (pfd->include_nondeduced_p
 	  && for_each_template_parm (TYPE_VALUES_RAW (t), fn, data,
@@ -9567,6 +9837,7 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
 				     pfd->include_nondeduced_p,
 				     pfd->any_fn))
 	return error_mark_node;
+      *walk_subtrees = false;
       break;
 
     case FUNCTION_DECL:
@@ -9810,7 +10081,7 @@ uses_outer_template_parms (tree decl)
 static inline bool
 neglectable_inst_p (tree d)
 {
-  return (DECL_P (d)
+  return (d && DECL_P (d)
 	  && !undeduced_auto_decl (d)
 	  && !(TREE_CODE (d) == FUNCTION_DECL ? DECL_DECLARED_CONSTEXPR_P (d)
 	       : decl_maybe_constant_var_p (d)));
@@ -9828,7 +10099,7 @@ limit_bad_template_recursion (tree decl)
     return false;
 
   for (; lev; lev = lev->next)
-    if (neglectable_inst_p (lev->decl))
+    if (neglectable_inst_p (lev->maybe_get_node ()))
       break;
 
   return (lev && errs > lev->errors);
@@ -9841,19 +10112,10 @@ int depth_reached;
 static GTY(()) struct tinst_level *last_error_tinst_level;
 
 /* We're starting to instantiate D; record the template instantiation context
-   for diagnostics and to restore it later.  */
-
-bool
-push_tinst_level (tree d)
-{
-  return push_tinst_level_loc (d, input_location);
-}
-
-/* We're starting to instantiate D; record the template instantiation context
    at LOC for diagnostics and to restore it later.  */
 
-bool
-push_tinst_level_loc (tree d, location_t loc)
+static bool
+push_tinst_level_loc (tree tldcl, tree targs, location_t loc)
 {
   struct tinst_level *new_level;
 
@@ -9871,29 +10133,59 @@ push_tinst_level_loc (tree d, location_t loc)
   /* If the current instantiation caused problems, don't let it instantiate
      anything else.  Do allow deduction substitution and decls usable in
      constant expressions.  */
-  if (limit_bad_template_recursion (d))
+  if (!targs && limit_bad_template_recursion (tldcl))
     return false;
 
   /* When not -quiet, dump template instantiations other than functions, since
      announce_function will take care of those.  */
-  if (!quiet_flag
-      && TREE_CODE (d) != TREE_LIST
-      && TREE_CODE (d) != FUNCTION_DECL)
-    fprintf (stderr, " %s", decl_as_string (d, TFF_DECL_SPECIFIERS));
+  if (!quiet_flag && !targs
+      && TREE_CODE (tldcl) != TREE_LIST
+      && TREE_CODE (tldcl) != FUNCTION_DECL)
+    fprintf (stderr, " %s", decl_as_string (tldcl, TFF_DECL_SPECIFIERS));
 
-  new_level = ggc_alloc<tinst_level> ();
-  new_level->decl = d;
+  new_level = tinst_level_freelist ().alloc ();
+  new_level->tldcl = tldcl;
+  new_level->targs = targs;
   new_level->locus = loc;
-  new_level->errors = errorcount+sorrycount;
-  new_level->in_system_header_p = in_system_header_at (input_location);
-  new_level->next = current_tinst_level;
-  current_tinst_level = new_level;
+  new_level->errors = errorcount + sorrycount;
+  new_level->next = NULL;
+  new_level->refcount = 0;
+  set_refcount_ptr (new_level->next, current_tinst_level);
+  set_refcount_ptr (current_tinst_level, new_level);
 
   ++tinst_depth;
   if (GATHER_STATISTICS && (tinst_depth > depth_reached))
     depth_reached = tinst_depth;
 
   return true;
+}
+
+/* We're starting substitution of TMPL<ARGS>; record the template
+   substitution context for diagnostics and to restore it later.  */
+
+static bool
+push_tinst_level (tree tmpl, tree args)
+{
+  return push_tinst_level_loc (tmpl, args, input_location);
+}
+
+/* We're starting to instantiate D; record INPUT_LOCATION and the
+   template instantiation context for diagnostics and to restore it
+   later.  */
+
+bool
+push_tinst_level (tree d)
+{
+  return push_tinst_level_loc (d, input_location);
+}
+
+/* Likewise, but record LOC as the program location.  */
+
+bool
+push_tinst_level_loc (tree d, location_t loc)
+{
+  gcc_assert (TREE_CODE (d) != TREE_LIST);
+  return push_tinst_level_loc (d, NULL, loc);
 }
 
 /* We're done instantiating this template; return to the instantiation
@@ -9905,7 +10197,7 @@ pop_tinst_level (void)
   /* Restore the filename and line number stashed away when we started
      this instantiation.  */
   input_location = current_tinst_level->locus;
-  current_tinst_level = current_tinst_level->next;
+  set_refcount_ptr (current_tinst_level, current_tinst_level->next);
   --tinst_depth;
 }
 
@@ -9922,11 +10214,11 @@ reopen_tinst_level (struct tinst_level *level)
   for (t = level; t; t = t->next)
     ++tinst_depth;
 
-  current_tinst_level = level;
+  set_refcount_ptr (current_tinst_level, level);
   pop_tinst_level ();
   if (current_tinst_level)
     current_tinst_level->errors = errorcount+sorrycount;
-  return level->decl;
+  return level->maybe_get_node ();
 }
 
 /* Returns the TINST_LEVEL which gives the original instantiation
@@ -10904,6 +11196,14 @@ instantiate_class_template_1 (tree type)
 			      cxx_incomplete_type_error (r, rtype);
 			      TREE_TYPE (r) = error_mark_node;
 			    }
+			  else if (TREE_CODE (rtype) == ARRAY_TYPE
+				   && TYPE_DOMAIN (rtype) == NULL_TREE
+				   && (TREE_CODE (type) == UNION_TYPE
+				       || TREE_CODE (type) == QUAL_UNION_TYPE))
+			    {
+			      error ("flexible array member %qD in union", r);
+			      TREE_TYPE (r) = error_mark_node;
+			    }
 			}
 
 		      /* If it is a TYPE_DECL for a class-scoped ENUMERAL_TYPE,
@@ -11597,8 +11897,12 @@ tsubst_binary_right_fold (tree t, tree args, tsubst_flags_t complain,
 
 struct el_data
 {
+  hash_set<tree> internal;
   tree extra;
   tsubst_flags_t complain;
+
+  el_data (tsubst_flags_t c)
+    : extra (NULL_TREE), complain (c) {}
 };
 static tree
 extract_locals_r (tree *tp, int */*walk_subtrees*/, void *data_)
@@ -11606,8 +11910,18 @@ extract_locals_r (tree *tp, int */*walk_subtrees*/, void *data_)
   el_data &data = *reinterpret_cast<el_data*>(data_);
   tree *extra = &data.extra;
   tsubst_flags_t complain = data.complain;
-  if (tree spec = retrieve_local_specialization (*tp))
+
+  if (TYPE_P (*tp) && typedef_variant_p (*tp))
+    /* Remember local typedefs (85214).  */
+    tp = &TYPE_NAME (*tp);
+
+  if (TREE_CODE (*tp) == DECL_EXPR)
+    data.internal.add (DECL_EXPR_DECL (*tp));
+  else if (tree spec = retrieve_local_specialization (*tp))
     {
+      if (data.internal.contains (*tp))
+	/* Don't mess with variables declared within the pattern.  */
+	return NULL_TREE;
       if (TREE_CODE (spec) == NONTYPE_ARGUMENT_PACK)
 	{
 	  /* Maybe pull out the PARM_DECL for a partial instantiation.  */
@@ -11658,7 +11972,7 @@ extract_locals_r (tree *tp, int */*walk_subtrees*/, void *data_)
 static tree
 extract_local_specs (tree pattern, tsubst_flags_t complain)
 {
-  el_data data = { NULL_TREE, complain };
+  el_data data (complain);
   cp_walk_tree_without_duplicates (&pattern, extract_locals_r, &data);
   return data.extra;
 }
@@ -11743,15 +12057,18 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
       int level = 0;
 
       if (TREE_CODE (parm_pack) == BASES)
-       {
-	 gcc_assert (parm_pack == pattern);
-         if (BASES_DIRECT (parm_pack))
-           return calculate_direct_bases (tsubst_expr (BASES_TYPE (parm_pack),
-                                                        args, complain, in_decl, false));
-         else
-           return calculate_bases (tsubst_expr (BASES_TYPE (parm_pack),
-                                                 args, complain, in_decl, false));
-       }
+	{
+	  gcc_assert (parm_pack == pattern);
+	  if (BASES_DIRECT (parm_pack))
+	    return calculate_direct_bases (tsubst_expr (BASES_TYPE (parm_pack),
+							args, complain,
+							in_decl, false),
+					   complain);
+	  else
+	    return calculate_bases (tsubst_expr (BASES_TYPE (parm_pack),
+						 args, complain, in_decl,
+						 false), complain);
+	}
       else if (builtin_pack_call_p (parm_pack))
 	{
 	  /* ??? Support use in other patterns.  */
@@ -11860,7 +12177,7 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 	  /* We can't substitute for this parameter pack.  We use a flag as
 	     well as the missing_level counter because function parameter
 	     packs don't have a level.  */
-	  gcc_assert (processing_template_decl);
+	  gcc_assert (processing_template_decl || is_auto (parm_pack));
 	  unsubstituted_packs = true;
 	}
     }
@@ -14903,6 +15220,15 @@ tsubst_qualified_id (tree qualified_id, tree args,
 
   if (is_template)
     {
+      /* We may be repeating a check already done during parsing, but
+	 if it was well-formed and passed then, it will pass again
+	 now, and if it didn't, we wouldn't have got here.  The case
+	 we want to catch is when we couldn't tell then, and can now,
+	 namely when templ prior to substitution was an
+	 identifier.  */
+      if (flag_concepts && check_auto_in_tmpl_args (expr, template_args))
+	return error_mark_node;
+
       if (variable_template_p (expr))
 	expr = lookup_and_finish_template_variable (expr, template_args,
 						    complain);
@@ -15274,7 +15600,8 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 		expanded = make_argument_pack (expanded);
 
 	      if (TYPE_P (expanded))
-		return cxx_sizeof_or_alignof_type (expanded, SIZEOF_EXPR, 
+		return cxx_sizeof_or_alignof_type (expanded, SIZEOF_EXPR,
+						   false,
 						   complain & tf_error);
 	      else
 		return cxx_sizeof_or_alignof_expr (expanded, SIZEOF_EXPR,
@@ -15312,7 +15639,10 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
       {
 	tree type = tsubst (TREE_TYPE (t), args, complain, in_decl);
 	tree op0 = tsubst_copy (TREE_OPERAND (t, 0), args, complain, in_decl);
-	return build1 (code, type, op0);
+	r = build1 (code, type, op0);
+	if (code == ALIGNOF_EXPR)
+	  ALIGNOF_EXPR_STD_P (r) = ALIGNOF_EXPR_STD_P (t);
+	return r;
       }
 
     case COMPONENT_REF:
@@ -16214,11 +16544,18 @@ tsubst_decomp_names (tree decl, tree pattern_decl, tree args,
       DECL_HAS_VALUE_EXPR_P (decl2) = 1;
       if (VAR_P (decl3))
 	DECL_TEMPLATE_INSTANTIATED (decl3) = 1;
+      else
+	{
+	  gcc_assert (errorcount);
+	  decl = error_mark_node;
+	  continue;
+	}
       maybe_push_decl (decl3);
       if (error_operand_p (decl3))
 	decl = error_mark_node;
       else if (decl != error_mark_node
-	       && DECL_CHAIN (decl3) != prev)
+	       && DECL_CHAIN (decl3) != prev
+	       && decl != prev)
 	{
 	  gcc_assert (errorcount);
 	  decl = error_mark_node;
@@ -17240,6 +17577,8 @@ tsubst_lambda_expr (tree t, tree args, tsubst_flags_t complain, tree in_decl)
     }
 
   tree type = begin_lambda_type (r);
+  if (type == error_mark_node)
+    return error_mark_node;
 
   /* Do this again now that LAMBDA_EXPR_EXTRA_SCOPE is set.  */
   determine_visibility (TYPE_NAME (type));
@@ -17295,6 +17634,17 @@ tsubst_lambda_expr (tree t, tree args, tsubst_flags_t complain, tree in_decl)
       tree body = start_lambda_function (fn, r);
 
       register_parameter_specializations (oldfn, fn);
+
+      if (oldtmpl)
+	{
+	  /* We might not partially instantiate some parts of the function, so
+	     copy these flags from the original template.  */
+	  language_function *ol = DECL_STRUCT_FUNCTION (oldfn)->language;
+	  current_function_returns_value = ol->returns_value;
+	  current_function_returns_null = ol->returns_null;
+	  current_function_returns_abnormally = ol->returns_abnormally;
+	  current_function_infinite_loop = ol->infinite_loop;
+	}
 
       tsubst_expr (DECL_SAVED_TREE (oldfn), args, complain, r,
 		   /*constexpr*/false);
@@ -17669,6 +18019,8 @@ tsubst_copy_and_build (tree t,
 	op1 = TREE_OPERAND (t, 0);
 	if (TREE_CODE (t) == SIZEOF_EXPR && SIZEOF_EXPR_TYPE_P (t))
 	  op1 = TREE_TYPE (op1);
+	bool std_alignof = (TREE_CODE (t) == ALIGNOF_EXPR
+			    && ALIGNOF_EXPR_STD_P (t));
         if (!args)
 	  {
 	    /* When there are no ARGS, we are trying to evaluate a
@@ -17692,7 +18044,7 @@ tsubst_copy_and_build (tree t,
 	    --c_inhibit_evaluation_warnings;
 	  }
         if (TYPE_P (op1))
-	  r = cxx_sizeof_or_alignof_type (op1, TREE_CODE (t),
+	  r = cxx_sizeof_or_alignof_type (op1, TREE_CODE (t), std_alignof,
 					  complain & tf_error);
 	else
 	  r = cxx_sizeof_or_alignof_expr (op1, TREE_CODE (t),
@@ -18088,7 +18440,9 @@ tsubst_copy_and_build (tree t,
 	      /* Unsupported internal function with arguments.  */
 	      gcc_unreachable ();
 	    }
-	else if (TREE_CODE (function) == OFFSET_REF)
+	else if (TREE_CODE (function) == OFFSET_REF
+		 || TREE_CODE (function) == DOTSTAR_EXPR
+		 || TREE_CODE (function) == MEMBER_REF)
 	  ret = build_offset_ref_call_from_tree (function, &call_args,
 						 complain);
 	else if (TREE_CODE (function) == COMPONENT_REF)
@@ -18942,16 +19296,10 @@ instantiate_template (tree tmpl, tree orig_args, tsubst_flags_t complain)
 static tree
 instantiate_alias_template (tree tmpl, tree args, tsubst_flags_t complain)
 {
-  struct pending_template *old_last_pend = last_pending_template;
-  struct tinst_level *old_error_tinst = last_error_tinst_level;
   if (tmpl == error_mark_node || args == error_mark_node)
     return error_mark_node;
-  tree tinst = build_tree_list (tmpl, args);
-  if (!push_tinst_level (tinst))
-    {
-      ggc_free (tinst);
-      return error_mark_node;
-    }
+  if (!push_tinst_level (tmpl, args))
+    return error_mark_node;
 
   args =
     coerce_innermost_template_parms (DECL_TEMPLATE_PARMS (tmpl),
@@ -18961,11 +19309,6 @@ instantiate_alias_template (tree tmpl, tree args, tsubst_flags_t complain)
 
   tree r = instantiate_template (tmpl, args, complain);
   pop_tinst_level ();
-  /* We can't free this if a pending_template entry or last_error_tinst_level
-     is pointing at it.  */
-  if (last_pending_template == old_last_pend
-      && last_error_tinst_level == old_error_tinst)
-    ggc_free (tinst);
 
   return r;
 }
@@ -19055,15 +19398,12 @@ fn_type_unification (tree fn,
   tsubst_flags_t complain = (explain_p ? tf_warning_or_error : tf_none);
   bool ok;
   static int deduction_depth;
-  struct pending_template *old_last_pend = last_pending_template;
-  struct tinst_level *old_error_tinst = last_error_tinst_level;
 
   tree orig_fn = fn;
   if (flag_new_inheriting_ctors)
     fn = strip_inheriting_ctors (fn);
 
   tree tparms = DECL_INNERMOST_TEMPLATE_PARMS (fn);
-  tree tinst;
   tree r = error_mark_node;
 
   tree full_targs = targs;
@@ -19089,7 +19429,6 @@ fn_type_unification (tree fn,
      This is, of course, not reentrant.  */
   if (excessive_deduction_depth)
     return error_mark_node;
-  tinst = build_tree_list (fn, NULL_TREE);
   ++deduction_depth;
 
   gcc_assert (TREE_CODE (fn) == TEMPLATE_DECL);
@@ -19182,8 +19521,7 @@ fn_type_unification (tree fn,
             }
         }
 
-      TREE_VALUE (tinst) = explicit_targs;
-      if (!push_tinst_level (tinst))
+      if (!push_tinst_level (fn, explicit_targs))
 	{
 	  excessive_deduction_depth = true;
 	  goto fail;
@@ -19238,12 +19576,11 @@ fn_type_unification (tree fn,
      callers must be ready to deal with unification failures in any
      event.  */
 
-  TREE_VALUE (tinst) = targs;
   /* If we aren't explaining yet, push tinst context so we can see where
      any errors (e.g. from class instantiations triggered by instantiation
      of default template arguments) come from.  If we are explaining, this
      context is redundant.  */
-  if (!explain_p && !push_tinst_level (tinst))
+  if (!explain_p && !push_tinst_level (fn, targs))
     {
       excessive_deduction_depth = true;
       goto fail;
@@ -19299,8 +19636,7 @@ fn_type_unification (tree fn,
      the corresponding deduced argument values.  If the
      substitution results in an invalid type, as described above,
      type deduction fails.  */
-  TREE_VALUE (tinst) = targs;
-  if (!push_tinst_level (tinst))
+  if (!push_tinst_level (fn, targs))
     {
       excessive_deduction_depth = true;
       goto fail;
@@ -19365,12 +19701,6 @@ fn_type_unification (tree fn,
 	/* Reset once we're all the way out.  */
 	excessive_deduction_depth = false;
     }
-
-  /* We can't free this if a pending_template entry or last_error_tinst_level
-     is pointing at it.  */
-  if (last_pending_template == old_last_pend
-      && last_error_tinst_level == old_error_tinst)
-    ggc_free (tinst);
 
   return r;
 }
@@ -22341,8 +22671,7 @@ get_partial_spec_bindings (tree tmpl, tree spec_tmpl, tree args)
 	return NULL_TREE;
       }
 
-  tree tinst = build_tree_list (spec_tmpl, deduced_args);
-  if (!push_tinst_level (tinst))
+  if (!push_tinst_level (spec_tmpl, deduced_args))
     {
       excessive_deduction_depth = true;
       return NULL_TREE;
@@ -22820,6 +23149,7 @@ bt_instantiate_type_proc (binding_entry entry, void *data)
   tree storage = *(tree *) data;
 
   if (MAYBE_CLASS_TYPE_P (entry->type)
+      && CLASSTYPE_TEMPLATE_INFO (entry->type)
       && !uses_template_parms (CLASSTYPE_TI_ARGS (entry->type)))
     do_type_instantiation (TYPE_MAIN_DECL (entry->type), storage, 0);
 }
@@ -23192,7 +23522,8 @@ maybe_instantiate_noexcept (tree fn, tsubst_flags_t complain)
   tree fntype, spec, noex, clone;
 
   /* Don't instantiate a noexcept-specification from template context.  */
-  if (processing_template_decl)
+  if (processing_template_decl
+      && (!flag_noexcept_type || type_dependent_expression_p (fn)))
     return true;
 
   if (DECL_CLONED_FUNCTION_P (fn))
@@ -23231,10 +23562,10 @@ maybe_instantiate_noexcept (tree fn, tsubst_flags_t complain)
 					tf_warning_or_error, fn,
 					/*function_p=*/false,
 					/*integral_constant_expression_p=*/true);
+	  spec = build_noexcept_spec (noex, tf_warning_or_error);
 	  pop_deferring_access_checks ();
 	  pop_access_scope (fn);
 	  pop_tinst_level ();
-	  spec = build_noexcept_spec (noex, tf_warning_or_error);
 	  if (spec == error_mark_node)
 	    spec = noexcept_false_spec;
 	}
@@ -23721,7 +24052,7 @@ instantiate_pending_templates (int retries)
      to avoid infinite loop.  */
   if (pending_templates && retries >= max_tinst_depth)
     {
-      tree decl = pending_templates->tinst->decl;
+      tree decl = pending_templates->tinst->maybe_get_node ();
 
       fatal_error (input_location,
 		   "template instantiation depth exceeds maximum of %d"
@@ -23784,16 +24115,21 @@ instantiate_pending_templates (int retries)
 	    }
 
 	  if (complete)
-	    /* If INSTANTIATION has been instantiated, then we don't
-	       need to consider it again in the future.  */
-	    *t = (*t)->next;
+	    {
+	      /* If INSTANTIATION has been instantiated, then we don't
+		 need to consider it again in the future.  */
+	      struct pending_template *drop = *t;
+	      *t = (*t)->next;
+	      set_refcount_ptr (drop->tinst);
+	      pending_template_freelist ().free (drop);
+	    }
 	  else
 	    {
 	      last = *t;
 	      t = &(*t)->next;
 	    }
 	  tinst_depth = 0;
-	  current_tinst_level = NULL;
+	  set_refcount_ptr (current_tinst_level);
 	}
       last_pending_template = last;
     }
@@ -24041,7 +24377,7 @@ problematic_instantiation_changed (void)
 void
 record_last_problematic_instantiation (void)
 {
-  last_error_tinst_level = current_tinst_level;
+  set_refcount_ptr (last_error_tinst_level, current_tinst_level);
 }
 
 struct tinst_level *
@@ -24057,7 +24393,8 @@ bool
 instantiating_current_function_p (void)
 {
   return (current_instantiation ()
-	  && current_instantiation ()->decl == current_function_decl);
+	  && (current_instantiation ()->maybe_get_node ()
+	      == current_function_decl));
 }
 
 /* [temp.param] Check that template non-type parm TYPE is of an allowable
@@ -24881,6 +25218,7 @@ instantiation_dependent_r (tree *tp, int *walk_subtrees,
 	 TREE_TYPE.  */
     case TREE_LIST:
     case TREE_VEC:
+    case NONTYPE_ARGUMENT_PACK:
       return NULL_TREE;
 
     case TEMPLATE_PARM_INDEX:
@@ -26195,6 +26533,10 @@ do_class_deduction (tree ptype, tree tmpl, tree init, int flags,
   // FIXME cache artificial deduction guides
   for (ovl_iterator iter (CLASSTYPE_CONSTRUCTORS (type)); iter; ++iter)
     {
+      /* Skip inherited constructors.  */
+      if (iter.using_p ())
+	continue;
+
       tree guide = build_deduction_guide (*iter, outer_args, complain);
       if (guide == error_mark_node)
 	return error_mark_node;
@@ -26539,12 +26881,55 @@ type_uses_auto (tree type)
 	 them.  */
       if (uses_template_parms (type))
 	return for_each_template_parm (type, is_auto_r, /*data*/NULL,
-				       /*visited*/NULL, /*nondeduced*/true);
+				       /*visited*/NULL, /*nondeduced*/false);
       else
 	return NULL_TREE;
     }
   else
     return find_type_usage (type, is_auto);
+}
+
+/* Report ill-formed occurrences of auto types in ARGUMENTS.  If
+   concepts are enabled, auto is acceptable in template arguments, but
+   only when TEMPL identifies a template class.  Return TRUE if any
+   such errors were reported.  */
+
+bool
+check_auto_in_tmpl_args (tree tmpl, tree args)
+{
+  /* If there were previous errors, nevermind.  */
+  if (!args || TREE_CODE (args) != TREE_VEC)
+    return false;
+
+  /* If TMPL is an identifier, we're parsing and we can't tell yet
+     whether TMPL is supposed to be a type, a function or a variable.
+     We'll only be able to tell during template substitution, so we
+     expect to be called again then.  If concepts are enabled and we
+     know we have a type, we're ok.  */
+  if (flag_concepts
+      && (identifier_p (tmpl)
+	  || (DECL_P (tmpl)
+	      &&  (DECL_TYPE_TEMPLATE_P (tmpl)
+		   || DECL_TEMPLATE_TEMPLATE_PARM_P (tmpl)))))
+    return false;
+
+  /* Quickly search for any occurrences of auto; usually there won't
+     be any, and then we'll avoid allocating the vector.  */
+  if (!type_uses_auto (args))
+    return false;
+
+  bool errors = false;
+
+  tree vec = extract_autos (args);
+  for (int i = 0; i < TREE_VEC_LENGTH (vec); i++)
+    {
+      tree xauto = TREE_VALUE (TREE_VEC_ELT (vec, i));
+      error_at (DECL_SOURCE_LOCATION (xauto),
+		"invalid use of %qT in template argument", xauto);
+      errors = true;
+    }
+
+  return errors;
 }
 
 /* For a given template T, return the vector of typedefs referenced
