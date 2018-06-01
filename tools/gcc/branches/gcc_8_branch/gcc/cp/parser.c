@@ -2243,7 +2243,7 @@ static tree cp_parser_default_argument
 static void cp_parser_function_body
   (cp_parser *, bool);
 static tree cp_parser_initializer
-  (cp_parser *, bool *, bool *);
+  (cp_parser *, bool *, bool *, bool = false);
 static cp_expr cp_parser_initializer_clause
   (cp_parser *, bool *);
 static cp_expr cp_parser_braced_list
@@ -2498,7 +2498,7 @@ static tree cp_parser_maybe_treat_template_as_class
 static bool cp_parser_check_declarator_template_parameters
   (cp_parser *, cp_declarator *, location_t);
 static bool cp_parser_check_template_parameters
-  (cp_parser *, unsigned, location_t, cp_declarator *);
+  (cp_parser *, unsigned, bool, location_t, cp_declarator *);
 static cp_expr cp_parser_simple_cast_expression
   (cp_parser *);
 static tree cp_parser_global_scope_opt
@@ -6100,16 +6100,6 @@ cp_parser_unqualified_id (cp_parser* parser,
 	  /* If that didn't work, try a conversion-function-id.  */
 	  if (!cp_parser_parse_definitely (parser))
 	    id = cp_parser_conversion_function_id (parser);
-	  else if (UDLIT_OPER_P (id))
-	    {
-	      /* 17.6.3.3.5  */
-	      const char *name = UDLIT_OP_SUFFIX (id);
-	      if (name[0] != '_' && !in_system_header_at (input_location)
-		  && declarator_p)
-		warning (OPT_Wliteral_suffix,
-			 "literal operator suffixes not preceded by %<_%>"
-			 " are reserved for future standardization");
-	    }
 
 	  return id;
 	}
@@ -8003,19 +7993,22 @@ cp_parser_unary_expression (cp_parser *parser, cp_id_kind * pidk,
 	    location_t start_loc = token->location;
 
 	    op = keyword == RID_ALIGNOF ? ALIGNOF_EXPR : SIZEOF_EXPR;
+	    bool std_alignof = id_equal (token->u.value, "alignof");
+
 	    /* Consume the token.  */
 	    cp_lexer_consume_token (parser->lexer);
 	    /* Parse the operand.  */
 	    operand = cp_parser_sizeof_operand (parser, keyword);
 
 	    if (TYPE_P (operand))
-	      ret = cxx_sizeof_or_alignof_type (operand, op, true);
+	      ret = cxx_sizeof_or_alignof_type (operand, op, std_alignof,
+						true);
 	    else
 	      {
 		/* ISO C++ defines alignof only with types, not with
 		   expressions. So pedwarn if alignof is used with a non-
 		   type expression. However, __alignof__ is ok.  */
-		if (id_equal (token->u.value, "alignof"))
+		if (std_alignof)
 		  pedwarn (token->location, OPT_Wpedantic,
 			   "ISO C++ does not allow %<alignof%> "
 			   "with a non-type");
@@ -9833,7 +9826,13 @@ cp_parser_builtin_offsetof (cp_parser *parser)
   parens.require_open (parser);
   /* Parse the type-id.  */
   location_t loc = cp_lexer_peek_token (parser->lexer)->location;
-  type = cp_parser_type_id (parser);
+  {
+    const char *saved_message = parser->type_definition_forbidden_message;
+    parser->type_definition_forbidden_message
+      = G_("types may not be defined within __builtin_offsetof");
+    type = cp_parser_type_id (parser);
+    parser->type_definition_forbidden_message = saved_message;
+  }
   /* Look for the `,'.  */
   cp_parser_require (parser, CPP_COMMA, RT_COMMA);
   token = cp_lexer_peek_token (parser->lexer);
@@ -10359,7 +10358,7 @@ cp_parser_lambda_introducer (cp_parser* parser, tree lambda_expr)
 		     "lambda capture initializers "
 		     "only available with -std=c++14 or -std=gnu++14");
 	  capture_init_expr = cp_parser_initializer (parser, &direct,
-						     &non_constant);
+						     &non_constant, true);
 	  explicit_init_p = true;
 	  if (capture_init_expr == NULL_TREE)
 	    {
@@ -12051,17 +12050,8 @@ cp_parser_perform_range_for_lookup (tree range, tree *begin, tree *end)
       if (member_begin != NULL_TREE && member_end != NULL_TREE)
 	{
 	  /* Use the member functions.  */
-	  if (member_begin != NULL_TREE)
-	    *begin = cp_parser_range_for_member_function (range, id_begin);
-	  else
-	    error ("range-based %<for%> expression of type %qT has an "
-		   "%<end%> member but not a %<begin%>", TREE_TYPE (range));
-
-	  if (member_end != NULL_TREE)
-	    *end = cp_parser_range_for_member_function (range, id_end);
-	  else
-	    error ("range-based %<for%> expression of type %qT has a "
-		   "%<begin%> member but not an %<end%>", TREE_TYPE (range));
+	  *begin = cp_parser_range_for_member_function (range, id_begin);
+	  *end = cp_parser_range_for_member_function (range, id_end);
 	}
       else
 	{
@@ -12993,8 +12983,14 @@ cp_parser_simple_declaration (cp_parser* parser,
 	/* The next token should be either a `,' or a `;'.  */
 	cp_token *token = cp_lexer_peek_token (parser->lexer);
 	/* If it's a `;', we are done.  */
-	if (token->type == CPP_SEMICOLON || maybe_range_for_decl)
+	if (token->type == CPP_SEMICOLON)
 	  goto finish;
+	else if (maybe_range_for_decl)
+	  {
+	    if (*maybe_range_for_decl == NULL_TREE)
+	      *maybe_range_for_decl = error_mark_node;
+	    goto finish;
+	  }
 	/* Anything else is an error.  */
 	else
 	  {
@@ -14391,10 +14387,15 @@ cp_parser_mem_initializer_list (cp_parser* parser)
       /* Parse the mem-initializer.  */
       mem_initializer = cp_parser_mem_initializer (parser);
       /* If the next token is a `...', we're expanding member initializers. */
-      if (cp_lexer_next_token_is (parser->lexer, CPP_ELLIPSIS))
+      bool ellipsis = cp_lexer_next_token_is (parser->lexer, CPP_ELLIPSIS);
+      if (ellipsis
+	  || (mem_initializer != error_mark_node
+	      && check_for_bare_parameter_packs (TREE_PURPOSE
+						 (mem_initializer))))
         {
           /* Consume the `...'. */
-          cp_lexer_consume_token (parser->lexer);
+	  if (ellipsis)
+	    cp_lexer_consume_token (parser->lexer);
 
           /* The TREE_PURPOSE must be a _TYPE, because base-specifiers
              can be expanded but members cannot. */
@@ -15831,8 +15832,16 @@ cp_parser_template_id (cp_parser *parser,
   location_t combined_loc
     = make_location (token->location, token->location, finish_loc);
 
+  /* Check for concepts autos where they don't belong.  We could
+     identify types in some cases of idnetifier TEMPL, looking ahead
+     for a CPP_SCOPE, but that would buy us nothing: we accept auto in
+     types.  We reject them in functions, but if what we have is an
+     identifier, even with none_type we can't conclude it's NOT a
+     type, we have to wait for template substitution.  */
+  if (flag_concepts && check_auto_in_tmpl_args (templ, arguments))
+    template_id = error_mark_node;
   /* Build a representation of the specialization.  */
-  if (identifier_p (templ))
+  else if (identifier_p (templ))
     template_id = build_min_nt_loc (combined_loc,
 				    TEMPLATE_ID_EXPR,
 				    templ, arguments);
@@ -17914,6 +17923,7 @@ cp_parser_elaborated_type_specifier (cp_parser* parser,
 	  if (template_parm_lists_apply
 	      && !cp_parser_check_template_parameters (parser,
 						       /*num_templates=*/0,
+						       /*template_id*/false,
 						       token->location,
 						       /*declarator=*/NULL))
 	    return error_mark_node;
@@ -18968,6 +18978,7 @@ cp_parser_alias_declaration (cp_parser* parser)
   if (parser->num_template_parameter_lists
       && !cp_parser_check_template_parameters (parser,
 					       /*num_templates=*/0,
+					       /*template_id*/false,
 					       id_location,
 					       /*declarator=*/NULL))
     return error_mark_node;
@@ -21849,7 +21860,7 @@ cp_parser_ctor_initializer_opt_and_function_body (cp_parser *parser,
 
 static tree
 cp_parser_initializer (cp_parser* parser, bool* is_direct_init,
-		       bool* non_constant_p)
+		       bool* non_constant_p, bool subexpression_p)
 {
   cp_token *token;
   tree init;
@@ -21896,7 +21907,7 @@ cp_parser_initializer (cp_parser* parser, bool* is_direct_init,
       init = error_mark_node;
     }
 
-  if (check_for_bare_parameter_packs (init))
+  if (!subexpression_p && check_for_bare_parameter_packs (init))
     init = error_mark_node;
 
   return init;
@@ -23114,6 +23125,7 @@ cp_parser_class_head (cp_parser* parser,
   /* Make sure that the right number of template parameters were
      present.  */
   if (!cp_parser_check_template_parameters (parser, num_templates,
+					    template_id_p,
 					    type_start_token->location,
 					    /*declarator=*/NULL))
     {
@@ -26388,17 +26400,22 @@ cp_parser_check_declarator_template_parameters (cp_parser* parser,
       {
 	unsigned num_templates = 0;
 	tree scope = declarator->u.id.qualifying_scope;
+	bool template_id_p = false;
 
 	if (scope)
 	  num_templates = num_template_headers_for_class (scope);
 	else if (TREE_CODE (declarator->u.id.unqualified_name)
 		 == TEMPLATE_ID_EXPR)
-	  /* If the DECLARATOR has the form `X<y>' then it uses one
-	     additional level of template parameters.  */
-	  ++num_templates;
+	  {
+	    /* If the DECLARATOR has the form `X<y>' then it uses one
+	       additional level of template parameters.  */
+	    ++num_templates;
+	    template_id_p = true;
+	  }
 
 	return cp_parser_check_template_parameters 
-	  (parser, num_templates, declarator_location, declarator);
+	  (parser, num_templates, template_id_p, declarator_location,
+	   declarator);
       }
 
     case cdk_function:
@@ -26427,6 +26444,7 @@ cp_parser_check_declarator_template_parameters (cp_parser* parser,
 static bool
 cp_parser_check_template_parameters (cp_parser* parser,
 				     unsigned num_templates,
+				     bool template_id_p,
 				     location_t location,
 				     cp_declarator *declarator)
 {
@@ -26434,9 +26452,10 @@ cp_parser_check_template_parameters (cp_parser* parser,
      lists, that's OK.  */
   if (parser->num_template_parameter_lists == num_templates)
     return true;
-  /* If there are more, but only one more, then we are referring to a
-     member template.  That's OK too.  */
-  if (parser->num_template_parameter_lists == num_templates + 1)
+  /* If there are more, but only one more, and the name ends in an identifier,
+     then we are declaring a primary template.  That's OK too.  */
+  if (!template_id_p
+      && parser->num_template_parameter_lists == num_templates + 1)
     return true;
   /* If there are more template classes than parameter lists, we have
      something like:

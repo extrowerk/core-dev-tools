@@ -736,7 +736,7 @@ finish_if_stmt_cond (tree cond, tree if_stmt)
       && !instantiation_dependent_expression_p (cond)
       /* Wait until instantiation time, since only then COND has been
 	 converted to bool.  */
-      && TREE_TYPE (cond) == boolean_type_node)
+      && TYPE_MAIN_VARIANT (TREE_TYPE (cond)) == boolean_type_node)
     {
       cond = instantiate_non_dependent_expr (cond);
       cond = cxx_constant_value (cond, NULL_TREE);
@@ -2061,7 +2061,8 @@ finish_qualified_id_expr (tree qualifying_class,
     }
 
   /* No need to check access within an enum.  */
-  if (TREE_CODE (qualifying_class) == ENUMERAL_TYPE)
+  if (TREE_CODE (qualifying_class) == ENUMERAL_TYPE
+      && TREE_CODE (expr) != IDENTIFIER_NODE)
     return expr;
 
   /* Within the scope of a class, turn references to non-static
@@ -3885,49 +3886,36 @@ finish_underlying_type (tree type)
 }
 
 /* Implement the __direct_bases keyword: Return the direct base classes
-   of type */
+   of type.  */
 
 tree
-calculate_direct_bases (tree type)
+calculate_direct_bases (tree type, tsubst_flags_t complain)
 {
-  vec<tree, va_gc> *vector = make_tree_vector();
-  tree bases_vec = NULL_TREE;
-  vec<tree, va_gc> *base_binfos;
+  if (!complete_type_or_maybe_complain (type, NULL_TREE, complain)
+      || !NON_UNION_CLASS_TYPE_P (type))
+    return make_tree_vec (0);
+
+  vec<tree, va_gc> *vector = make_tree_vector ();
+  vec<tree, va_gc> *base_binfos = BINFO_BASE_BINFOS (TYPE_BINFO (type));
   tree binfo;
   unsigned i;
 
-  complete_type (type);
-
-  if (!NON_UNION_CLASS_TYPE_P (type))
-    return make_tree_vec (0);
-
-  base_binfos = BINFO_BASE_BINFOS (TYPE_BINFO (type));
-
   /* Virtual bases are initialized first */
   for (i = 0; base_binfos->iterate (i, &binfo); i++)
-    {
-      if (BINFO_VIRTUAL_P (binfo))
-       {
-         vec_safe_push (vector, binfo);
-       }
-    }
+    if (BINFO_VIRTUAL_P (binfo))
+      vec_safe_push (vector, binfo);
 
   /* Now non-virtuals */
   for (i = 0; base_binfos->iterate (i, &binfo); i++)
-    {
-      if (!BINFO_VIRTUAL_P (binfo))
-       {
-         vec_safe_push (vector, binfo);
-       }
-    }
+    if (!BINFO_VIRTUAL_P (binfo))
+      vec_safe_push (vector, binfo);
 
-
-  bases_vec = make_tree_vec (vector->length ());
+  tree bases_vec = make_tree_vec (vector->length ());
 
   for (i = 0; i < vector->length (); ++i)
-    {
-      TREE_VEC_ELT (bases_vec, i) = BINFO_TYPE ((*vector)[i]);
-    }
+    TREE_VEC_ELT (bases_vec, i) = BINFO_TYPE ((*vector)[i]);
+
+  release_tree_vector (vector);
   return bases_vec;
 }
 
@@ -3949,9 +3937,7 @@ dfs_calculate_bases_post (tree binfo, void *data_)
 {
   vec<tree, va_gc> **data = ((vec<tree, va_gc> **) data_);
   if (!BINFO_VIRTUAL_P (binfo))
-    {
-      vec_safe_push (*data, BINFO_TYPE (binfo));
-    }
+    vec_safe_push (*data, BINFO_TYPE (binfo));
   return NULL_TREE;
 }
 
@@ -3959,7 +3945,7 @@ dfs_calculate_bases_post (tree binfo, void *data_)
 static vec<tree, va_gc> *
 calculate_bases_helper (tree type)
 {
-  vec<tree, va_gc> *vector = make_tree_vector();
+  vec<tree, va_gc> *vector = make_tree_vector ();
 
   /* Now add non-virtual base classes in order of construction */
   if (TYPE_BINFO (type))
@@ -3969,26 +3955,25 @@ calculate_bases_helper (tree type)
 }
 
 tree
-calculate_bases (tree type)
+calculate_bases (tree type, tsubst_flags_t complain)
 {
-  vec<tree, va_gc> *vector = make_tree_vector();
+  if (!complete_type_or_maybe_complain (type, NULL_TREE, complain)
+      || !NON_UNION_CLASS_TYPE_P (type))
+    return make_tree_vec (0);
+
+  vec<tree, va_gc> *vector = make_tree_vector ();
   tree bases_vec = NULL_TREE;
   unsigned i;
   vec<tree, va_gc> *vbases;
   vec<tree, va_gc> *nonvbases;
   tree binfo;
 
-  complete_type (type);
-
-  if (!NON_UNION_CLASS_TYPE_P (type))
-    return make_tree_vec (0);
-
   /* First go through virtual base classes */
   for (vbases = CLASSTYPE_VBASECLASSES (type), i = 0;
        vec_safe_iterate (vbases, i, &binfo); i++)
     {
-      vec<tree, va_gc> *vbase_bases;
-      vbase_bases = calculate_bases_helper (BINFO_TYPE (binfo));
+      vec<tree, va_gc> *vbase_bases
+	= calculate_bases_helper (BINFO_TYPE (binfo));
       vec_safe_splice (vector, vbase_bases);
       release_tree_vector (vbase_bases);
     }
@@ -4002,7 +3987,7 @@ calculate_bases (tree type)
   if (vector->length () > 1)
     {
       /* Last element is entire class, so don't copy */
-      bases_vec = make_tree_vec (vector->length() - 1);
+      bases_vec = make_tree_vec (vector->length () - 1);
 
       for (i = 0; i < vector->length () - 1; ++i)
 	TREE_VEC_ELT (bases_vec, i) = (*vector)[i];
@@ -4059,17 +4044,17 @@ finish_offsetof (tree object_ptr, tree expr, location_t loc)
       || TREE_CODE (TREE_TYPE (expr)) == METHOD_TYPE
       || TREE_TYPE (expr) == unknown_type_node)
     {
-      if (INDIRECT_REF_P (expr))
-	error ("second operand of %<offsetof%> is neither a single "
-	       "identifier nor a sequence of member accesses and "
-	       "array references");
-      else
+      while (TREE_CODE (expr) == COMPONENT_REF
+	     || TREE_CODE (expr) == COMPOUND_EXPR)
+	expr = TREE_OPERAND (expr, 1);
+
+      if (DECL_P (expr))
 	{
-	  if (TREE_CODE (expr) == COMPONENT_REF
-	      || TREE_CODE (expr) == COMPOUND_EXPR)
-	    expr = TREE_OPERAND (expr, 1);
 	  error ("cannot apply %<offsetof%> to member function %qD", expr);
+	  inform (DECL_SOURCE_LOCATION (expr), "declared here");
 	}
+      else
+	error ("cannot apply %<offsetof%> to member function");
       return error_mark_node;
     }
   if (TREE_CODE (expr) == CONST_DECL)
@@ -4085,9 +4070,9 @@ finish_offsetof (tree object_ptr, tree expr, location_t loc)
       && CLASS_TYPE_P (TREE_TYPE (TREE_TYPE (object_ptr)))
       && CLASSTYPE_NON_STD_LAYOUT (TREE_TYPE (TREE_TYPE (object_ptr)))
       && cp_unevaluated_operand == 0)
-    pedwarn (loc, OPT_Winvalid_offsetof,
-	     "offsetof within non-standard-layout type %qT is undefined",
-	     TREE_TYPE (TREE_TYPE (object_ptr)));
+    warning_at (loc, OPT_Winvalid_offsetof, "offsetof within "
+		"non-standard-layout type %qT is conditionally-supported",
+		TREE_TYPE (TREE_TYPE (object_ptr)));
   return fold_offsetof (expr);
 }
 
@@ -7326,7 +7311,7 @@ finish_omp_clauses (tree clauses, enum c_omp_region_type ort)
 
 	  if (VAR_P (t) && CP_DECL_THREAD_LOCAL_P (t))
 	    share_name = "threadprivate";
-	  else switch (cxx_omp_predetermined_sharing (t))
+	  else switch (cxx_omp_predetermined_sharing_1 (t))
 	    {
 	    case OMP_CLAUSE_DEFAULT_UNSPECIFIED:
 	      break;

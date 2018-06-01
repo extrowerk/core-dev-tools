@@ -182,6 +182,8 @@ build_zero_init_1 (tree type, tree nelts, bool static_storage_p,
     ;
   else if (TYPE_PTR_OR_PTRMEM_P (type))
     init = fold (convert (type, nullptr_node));
+  else if (NULLPTR_TYPE_P (type))
+    init = build_int_cst (type, 0);
   else if (SCALAR_TYPE_P (type))
     init = fold (convert (type, integer_zero_node));
   else if (RECORD_OR_UNION_CODE_P (TREE_CODE (type)))
@@ -634,7 +636,7 @@ get_nsdmi (tree member, bool in_ctor, tsubst_flags_t complain)
   bool simple_target = (init && SIMPLE_TARGET_EXPR_P (init));
   if (simple_target)
     init = TARGET_EXPR_INITIAL (init);
-  init = break_out_target_exprs (init);
+  init = break_out_target_exprs (init, /*loc*/true);
   if (simple_target && TREE_CODE (init) != CONSTRUCTOR)
     /* Now put it back so C++17 copy elision works.  */
     init = get_target_expr (init);
@@ -1676,6 +1678,7 @@ build_aggr_init (tree exp, tree init, int flags, tsubst_flags_t complain)
       if (VAR_P (exp) && DECL_DECOMPOSITION_P (exp))
 	{
 	  from_array = 1;
+	  init = mark_rvalue_use (init);
 	  if (init && DECL_P (init)
 	      && !(flags & LOOKUP_ONLYCONVERTING))
 	    {

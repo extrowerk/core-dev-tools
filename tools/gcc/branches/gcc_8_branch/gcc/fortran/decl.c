@@ -3235,7 +3235,11 @@ done:
 	  e = gfc_copy_expr (len);
 	  gfc_reduce_init_expr (e);
 	  if (e->expr_type == EXPR_CONSTANT)
-	    gfc_replace_expr (len, e);
+	    {
+	      gfc_replace_expr (len, e);
+	      if (mpz_cmp_si (len->value.integer, 0) < 0)
+		mpz_set_ui (len->value.integer, 0);
+	    }
 	  else
 	    gfc_free_expr (e);
 	  cl->length = len;
@@ -9957,8 +9961,12 @@ gfc_match_derived_decl (void)
 
   if (!gensym->attr.generic && gensym->ts.type != BT_UNKNOWN)
     {
-      gfc_error ("Derived type name %qs at %C already has a basic type "
-		 "of %s", gensym->name, gfc_typename (&gensym->ts));
+      if (gensym->ts.u.derived)
+	gfc_error ("Derived type name %qs at %C already has a basic type "
+		   "of %s", gensym->name, gfc_typename (&gensym->ts));
+      else
+	gfc_error ("Derived type name %qs at %C already has a basic type",
+		   gensym->name);
       return MATCH_ERROR;
     }
 
