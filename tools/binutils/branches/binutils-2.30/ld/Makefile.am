@@ -452,6 +452,7 @@ ALL_64_EMULATION_SOURCES = \
 	eaarch64linuxb.c \
 	eaarch64linux32.c \
 	eaarch64linux32b.c \
+	eaarch64nto.c \
 	eelf32_x86_64.c \
 	eelf32_x86_64_nacl.c \
 	eelf32b4300.c \
@@ -1698,6 +1699,10 @@ eaarch64linux32.c: $(srcdir)/emulparams/aarch64linux32.sh \
   $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 
 eaarch64linux32b.c: $(srcdir)/emulparams/aarch64linux32b.sh $(srcdir)/emulparams/aarch64linux32.sh \
+  $(ELF_DEPS) $(srcdir)/emultempl/aarch64elf.em \
+  $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+
+eaarch64nto.c: $(srcdir)/emulparams/aarch64nto.sh \
   $(ELF_DEPS) $(srcdir)/emultempl/aarch64elf.em \
   $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 

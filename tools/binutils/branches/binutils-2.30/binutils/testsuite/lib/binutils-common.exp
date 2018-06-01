@@ -37,6 +37,7 @@ proc is_elf_format {} {
 	 && ![istarget *-*-nacl*]
 	 && ![istarget *-*-netbsd*]
 	 && ![istarget *-*-openbsd*]
+         && ![istarget *-*-qnx*]
 	 && ![istarget *-*-rtems*]
 	 && ![istarget *-*-solaris2*]
 	 && ![istarget *-*-sysv4*]
