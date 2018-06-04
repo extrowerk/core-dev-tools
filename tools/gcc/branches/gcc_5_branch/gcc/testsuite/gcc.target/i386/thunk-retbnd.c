@@ -1,6 +1,7 @@
 /* { dg-do compile { target { ! x32 } } } */
 /* { dg-options "-O2 -fcheck-pointer-bounds -mmpx -fdump-tree-optimized" } */
 /* { dg-final { scan-tree-dump-times "return &glob," 2 "optimized" } } */
+/* { dg-final { cleanup-tree-dump "optimized" } } */
 
 int glob;
 
