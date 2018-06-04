@@ -11,7 +11,7 @@ male_indirect_jump (long offset)
   dispatch(offset);
 }
 
-/* { dg-final { scan-assembler "jmp\[ \t\]*__x86_indirect_thunk_ax" } } */
+/* { dg-final { scan-assembler "jmp\[ \t\]*__x86_indirect_thunk_(r|e)ax" } } */
 /* { dg-final { scan-assembler-not "push(?:l|q)\[ \t\]*_?dispatch"  } } */
 /* { dg-final { scan-assembler-not "pushq\[ \t\]%rax" } } */
 /* { dg-final { scan-assembler-not {\t(pause|pause|nop)} } } */
