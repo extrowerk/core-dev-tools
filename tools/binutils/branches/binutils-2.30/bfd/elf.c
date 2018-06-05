@@ -7175,21 +7175,6 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
   map_first = NULL;
   pointer_to_map = &map_first;
 
-#ifdef __QNXTARGET__
-  p_paddr_valid = TRUE;
-  /* ldrel has produced binaries that PT_LOAD segments with valid
-     p_paddr and other segments with zero fields. */
-
-  for (i = 0, segment = elf_tdata (ibfd)->phdr;
-       i < num_segments;
-       i++, segment++)
-    if (!segment->p_paddr)
-      {
-        p_paddr_valid = FALSE;
-        break;
-      }
-
-#else
   /* If all the segment p_paddr fields are zero, don't set
      map->p_paddr_valid.  */
   p_paddr_valid = FALSE;
@@ -7202,8 +7187,6 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
 	p_paddr_valid = TRUE;
 	break;
       }
-
-#endif
 
   for (i = 0, segment = elf_tdata (ibfd)->phdr;
        i < num_segments;
