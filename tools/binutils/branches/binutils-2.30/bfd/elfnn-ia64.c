@@ -593,6 +593,9 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 		     1, change it to slot 2.  */
 		  if ((irel->r_offset & 3) == 1)
 		    irel->r_offset += 1;
+
+		  changed_contents = TRUE;
+		  changed_relocs = TRUE;
 		}
 
 	      continue;
@@ -607,6 +610,9 @@ elfNN_ia64_relax_section (bfd *abfd, asection *sec,
 
 	      /* Make the relocation offset point to slot 1.  */
 	      irel->r_offset = (irel->r_offset & ~((bfd_vma) 0x3)) + 1;
+
+	      changed_contents = TRUE;
+	      changed_relocs = TRUE;
 	      continue;
 	    }
 
@@ -5064,6 +5070,7 @@ elfNN_hpux_backend_symbol_processing (bfd *abfd ATTRIBUTE_UNUSED,
 	elfNN_ia64_print_private_bfd_data
 
 #define elf_backend_plt_readonly	1
+#define elf_backend_can_gc_sections	1
 #define elf_backend_want_plt_sym	0
 #define elf_backend_plt_alignment	5
 #define elf_backend_got_header_size	0

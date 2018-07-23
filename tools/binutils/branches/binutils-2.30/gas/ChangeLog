@@ -1,3 +1,127 @@
+2018-06-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-01-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* config/tc-i386.c (cpu_arch): Delete .cet. Add .ibt, .shstk.
+	(cpu_noarch): Add noibt, noshstk.
+	(parse_insn): Change cpucet to cpuibt.
+	* doc/c-i386.texi: Delete .cet. Add .ibt, .shstk.
+	* testsuite/gas/i386/cet-ibt-inval.l: New test.
+	* testsuite/gas/i386/cet-ibt-inval.s: Likewise.
+	* testsuite/gas/i386/cet-shstk-inval.l: Likewise.
+	* testsuite/gas/i386/cet-shstk-inval.s: Likewise.
+	* testsuite/gas/i386/x86-64-cet-ibt-inval.l: Likewise.
+	* testsuite/gas/i386/x86-64-cet-ibt-inval.s: Likewise.
+	* testsuite/gas/i386/x86-64-cet-shstk-inval.l: Likewise.
+	* testsuite/gas/i386/x86-64-cet-shstk-inval.s: Likewise.
+
+2018-04-25  Tamar Christina  <tamar.christina@arm.com>
+
+	Backported from master branch
+	* testsuite/gas/aarch64/rdma.s: Test for larger register numbers.
+	* testsuite/gas/aarch64/rdma.d: Update results.
+	* testsuite/gas/aarch64/rdma-directive.d: Likewise.
+
+2018-04-20  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+
+2018-04-12  Nick Clifton  <nickc@redhat.com>
+
+	* po/es.po: Updated Spanish translation.
+	* po/ru.po: Updated Russian translation.
+
+2018-04-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-04-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23025
+	* testsuite/gas/i386/prefix.s: Add tests for vcvtpd2dq with
+	VEX and EVEX prefixes.
+	* testsuite/gas/i386/prefix.d: Updated.
+
+2018-03-29  Nick Clifton  <nickc@redhat.com>
+
+	Import from mainline:
+	2018-02-13  Nick Clifton  <nickc@redhat.com>
+
+	PR 22773
+	* config/tc-arm.c (md_apply_fix): Test Rn field of Thumb ORR
+	instruction before assuming that it is a MOV instruction.
+	* testsuite/gas/arm/pr22773.s: New test.
+	* testsuite/gas/arm/pr22773.d: New test driver.
+	* testsuite/gas/arm/pr22773.l: New expected output.
+
+2018-03-21  Alan Modra  <amodra@gmail.com>
+
+	Apply from master
+	2018-03-08  Alan Modra  <amodra@gmail.com>
+	* config/tc-ppc.c (ppc_handle_align): Correct last patch.  Really
+	don't emit a group terminating nop for power9.  Simplify cpu
+	tests.
+
+	2018-03-08  Alan Modra  <amodra@gmail.com>
+	* config/tc-ppc.c (ppc_handle_align): Don't emit a group
+	terminating nop for power9.
+
+2018-02-28  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-02-23  Nick Clifton  <nickc@redhat.com>
+
+	* Import from mainline:
+
+	2018-02-22  A. Wilcox  <awilfox@adelielinux.org>
+
+	PR 22014
+	* config/tc-mips.c (mips_lookup_insn): Use memmove to strip the
+	instruction size suffix.
+
+2018-02-16  Tamar Christina  <tamar.christina@arm.com>
+
+	* config/tc-arm.c (cpu_arch_ver): Renumber ARM_ARCH_V8_4A.
+	* testsuite/gas/arm/attr-march-armv8_4-a.d: New.
+
+2018-02-14  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2018-02-13  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (xg_find_best_trampoline): Skip trampoline
+	frag that contains source address.
+
+2018-02-12  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-02-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2018-01-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR gas/22738
+	* config/tc-sparc.h (sparc_mach): Declare.
+	(TARGET_MACH): Define to above.
+	* config/tc-sparc.c (sparc_mach): New function.
+	(sparc_md_end): Minor tweak.
+
+2018-02-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-01-29  Nick Clifton  <nickc@redhat.com>
+
+	* po/ru.po: Updated Russian translation.
+
+2018-01-27  Nick Clifton  <nickc@redhat.com>
+
+	Back to development.
+
+	* configure: Regenerate.
+
 2018-01-27  Nick Clifton  <nickc@redhat.com>
 
 	This is the 2.30 release:

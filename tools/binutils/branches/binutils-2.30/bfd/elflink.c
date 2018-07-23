@@ -586,7 +586,12 @@ bfd_elf_link_mark_dynamic_symbol (struct bfd_link_info *info,
       || (d != NULL
 	  && h->non_elf
 	  && (*d->match) (&d->head, NULL, h->root.root.string)))
-    h->dynamic = 1;
+    {
+      h->dynamic = 1;
+      /* NB: If a symbol is made dynamic by --dynamic-list, it has
+	 non-IR reference.  */
+      h->root.non_ir_ref_dynamic = 1;
+    }
 }
 
 /* Record an assignment to a symbol made by a linker script.  We need
@@ -11618,6 +11623,13 @@ bfd_elf_final_link (bfd *abfd, struct bfd_link_info *info)
 	  else
 	    o->flags |= SEC_EXCLUDE;
 	}
+      else if ((o->flags & SEC_GROUP) != 0 && o->size == 0)
+	{
+	  /* Remove empty group section from linker output.  */
+	  o->flags |= SEC_EXCLUDE;
+	  bfd_section_list_remove (abfd, o);
+	  abfd->section_count--;
+	}
     }
 
   /* Count up the number of relocations we will output for each output
@@ -12785,20 +12797,31 @@ _bfd_elf_gc_mark_hook (asection *sec,
   return NULL;
 }
 
-/* Return the global debug definition section.  */
+/* Return the debug definition section.  */
 
 static asection *
 elf_gc_mark_debug_section (asection *sec ATTRIBUTE_UNUSED,
 			   struct bfd_link_info *info ATTRIBUTE_UNUSED,
 			   Elf_Internal_Rela *rel ATTRIBUTE_UNUSED,
 			   struct elf_link_hash_entry *h,
-			   Elf_Internal_Sym *sym ATTRIBUTE_UNUSED)
+			   Elf_Internal_Sym *sym)
 {
-  if (h != NULL
-      && (h->root.type == bfd_link_hash_defined
-	  || h->root.type == bfd_link_hash_defweak)
-      && (h->root.u.def.section->flags & SEC_DEBUGGING) != 0)
-    return h->root.u.def.section;
+  if (h != NULL)
+    {
+      /* Return the global debug definition section.  */
+      if ((h->root.type == bfd_link_hash_defined
+	   || h->root.type == bfd_link_hash_defweak)
+	  && (h->root.u.def.section->flags & SEC_DEBUGGING) != 0)
+	return h->root.u.def.section;
+    }
+  else
+    {
+      /* Return the local debug definition section.  */
+      asection *isec = bfd_section_from_elf_index (sec->owner,
+						   sym->st_shndx);
+      if ((isec->flags & SEC_DEBUGGING) != 0)
+	return isec;
+    }
 
   return NULL;
 }

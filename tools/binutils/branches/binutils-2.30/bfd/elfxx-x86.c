@@ -1086,7 +1086,7 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
       /* Don't allocate .got.plt section if there are no GOT nor PLT
 	 entries and there is no reference to _GLOBAL_OFFSET_TABLE_.  */
       if ((htab->elf.hgot == NULL
-	   || !htab->elf.hgot->ref_regular_nonweak)
+	   || !htab->got_referenced)
 	  && (htab->elf.sgotplt->size == bed->got_header_size)
 	  && (htab->elf.splt == NULL
 	      || htab->elf.splt->size == 0)
@@ -1096,7 +1096,22 @@ _bfd_x86_elf_size_dynamic_sections (bfd *output_bfd,
 	      || htab->elf.iplt->size == 0)
 	  && (htab->elf.igotplt == NULL
 	      || htab->elf.igotplt->size == 0))
-	htab->elf.sgotplt->size = 0;
+	{
+	  htab->elf.sgotplt->size = 0;
+	  /* Solaris requires to keep _GLOBAL_OFFSET_TABLE_ even if it
+	     isn't used.  */
+	  if (htab->elf.hgot != NULL && htab->target_os != is_solaris)
+	    {
+	      /* Remove the unused _GLOBAL_OFFSET_TABLE_ from symbol
+		 table. */
+	      htab->elf.hgot->root.type = bfd_link_hash_undefined;
+	      htab->elf.hgot->root.u.undef.abfd
+		= htab->elf.hgot->root.u.def.section->owner;
+	      htab->elf.hgot->root.linker_def = 0;
+	      htab->elf.hgot->ref_regular = 0;
+	      htab->elf.hgot->def_regular = 0;
+	    }
+	}
     }
 
   if (_bfd_elf_eh_frame_present (info))
@@ -1951,7 +1966,14 @@ _bfd_x86_elf_link_symbol_references_local (struct bfd_link_info *info,
       return TRUE;
     }
 
-  eh->local_ref = 1;
+  /* Symbols created by HIDDEN and PROVIDE_HIDDEN assignments in linker
+     script aren't forced local here yet.  bfd_hide_sym_by_version
+     can't be used to check if a versioned symbol is hidden.  It has to
+     be syncd with _bfd_elf_link_assign_sym_version to get the correct
+     answer.  */
+  if (!h->root.ldscript_def && h->versioned == unversioned)
+    eh->local_ref = 1;
+
   return FALSE;
 }
 
