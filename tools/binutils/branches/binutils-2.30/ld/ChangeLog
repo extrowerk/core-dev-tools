@@ -1,3 +1,176 @@
+2018-07-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23324
+	* testsuite/ld-x86-64/pr23324.s: New file.
+	* testsuite/ld-x86-64/pr23324a.d: Likewise.
+	* testsuite/ld-x86-64/pr23324b.d: Likewise.
+
+2018-06-26  Alan Modra  <amodra@gmail.com>
+
+	* testsuite/ld-bootstrap/bootstrap.exp: Use parentheses rather
+	than curly braces in logical expression.
+
+2018-05-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23194
+	* testsuite/ld-i386/i386.exp: Run pr23194.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr23194.d: New file.
+	* testsuite/ld-i386/pr23194.map: Likewise.
+	* testsuite/ld-i386/pr23194.s: Likewise.
+	* testsuite/ld-x86-64/pr23194.d: Likewise.
+	* testsuite/ld-x86-64/pr23194.map: Likewise.
+	* testsuite/ld-x86-64/pr23194.s: Likewise.
+
+2018-05-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23189
+	* testsuite/ld-i386/i386.exp: Run pr23189.
+	* testsuite/ld-x86-64/x86-64.exp: Likewise.
+	* testsuite/ld-i386/pr23189.d: New file.
+	* testsuite/ld-i386/pr23189.s: Likewise.
+	* testsuite/ld-i386/pr23189.t: Likewise.
+	* testsuite/ld-x86-64/pr23189.d: Likewise.
+	* testsuite/ld-x86-64/pr23189.s: Likewise.
+	* testsuite/ld-x86-64/pr23189.t: Likewise.
+
+2018-02-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22782
+	* testsuite/ld-i386/discarded1.s: Replace mov with div.
+	* testsuite/ld-x86-64/discarded1.s: Likewise.
+	* testsuite/ld-i386/i386.exp: Run pr22782.
+	* testsuite/ld-i386/load1-nacl.d: Updated for removing
+	_GLOBAL_OFFSET_TABLE_ from output.
+	* testsuite/ld-i386/load1.d: Likewise.
+	* testsuite/ld-x86-64/load1a-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1a.d: Likewise.
+	* testsuite/ld-x86-64/load1b-nacl.d: Likewise.
+	* testsuite/ld-x86-64/load1b.d: Likewise.
+	* testsuite/ld-i386/pr22782.d: New file.
+	* testsuite/ld-i386/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782.s: Likewise.
+	* testsuite/ld-x86-64/pr22782a.d: Likewise.
+	* testsuite/ld-x86-64/pr22782b.d: Likewise.
+	* testsuite/ld-x86-64/x86-64.exp: Run pr22782a and pr22782b.
+
+2018-04-06  Nick Clifton  <nickc@redhat.com>
+
+	Import from mainline:
+	2018-04-05  Nick Clifton  <nickc@redhat.com>
+
+	PR 23030
+	* emulparams/elf64_ia64.sh (OTHER_READONLY_SECTIONS): Make sure
+	that the .IA_64.unwind_info and .IA_64.unwind sections are not
+	subject to garbage collection.
+
+2018-03-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ld/22972
+	* testsuite/ld-sparc/sparc.exp: Add test for mixed GOTDATA/GOT relocs.
+	* testsuite/ld-sparc/gotop-hidden.c: New file.
+	* testsuite/ld-sparc/got-hidden32.s: Likewise.
+	* testsuite/ld-sparc/got-hidden64.s: Likewise.
+	* testsuite/ld-sparc/pass.out: Likewise.
+
+2018-03-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-03-25  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/23000
+	* testsuite/ld-x86-64/tlsdesc.pd: Updated.
+
+2018-03-20  Roland McGrath  <mcgrathr@google.com>
+
+	* testsuite/ld-elf/elf.exp (pr20995-2): XFAIL on aarch64*-*-elf*,
+	another target without RELRO.
+
+2018-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/22983
+	* testsuite/ld-plugin/lto.exp: Run PR ld/22983 test.
+	* testsuite/ld-plugin/pr22983.d: New file.
+	* testsuite/ld-plugin/pr22983.t: Likewise.
+	* testsuite/ld-plugin/pr22983a.c: Likewise.
+	* testsuite/ld-plugin/pr22983b.c: Likewise.
+
+2018-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-02-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR 22836
+	* testsuite/ld-elf/pr22836-1.s: New file.
+	* testsuite/ld-elf/pr22836-1a.d: Likewise.
+	* testsuite/ld-elf/pr22836-1b.d: Likewise.
+
+2018-03-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-02-13  Alan Modra  <amodra@gmail.com>
+
+	PR 22836
+	* testsuite/ld-elf/pr22836-2.d,
+	* testsuite/ld-elf/pr22836-2.s: New test.
+
+2018-03-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/20882
+	* testsuite/ld-gc/pr20882.d: Also dump and check .debug_abbrev
+	section.
+	* testsuite/ld-gc/pr20882b.s: Add .debug_abbrev section.
+
+2018-02-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/ld-elf/pr22450.d: Remove reference to SPARC64.
+
+2018-02-07  Alan Modra  <amodra@gmail.com>
+
+	Revert 2018-01-17  Alan Modra  <amodra@gmail.com>
+	* emultempl/ppc32elf.em: Remove --speculate-indirect-jumps support.
+	* emultempl/ppc64elf.em: Likesize
+	* ld.texinfo: Likewise
+	* testsuite/ld-powerpc/elfv2exe.d,
+	* testsuite/ld-powerpc/elfv2so.d,
+	* testsuite/ld-powerpc/relbrlt.d,
+	* testsuite/ld-powerpc/powerpc.exp: Likewise.
+
+2018-02-05  Renlin Li  <renlin.li@arm.com>
+
+	PR ld/22764
+	* testsuite/ld-aarch64/emit-relocs-258.s: Define symbol as an address.
+	* testsuite/ld-aarch64/emit-relocs-259.s: Likewise.
+	* testsuite/ld-aarch64/pr22764.s: New.
+	* testsuite/ld-aarch64/pr22764.d: New.
+
+2018-02-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt_BR.po: Updated Brazilian Portuguese translation.
+
+2018-02-05  Nick Clifton  <nickc@redhat.com>
+
+	Import from mainline:
+
+	2018-02-03  Nick Clifton  <nickc@redhat.com>
+
+	PR 22762
+	* scripttempl/pe.sc: Remove PROVIDE()s from __CTOR_LIST__ and
+	__DTOR_LIST__ symbols.  Add a comment explaining why this is
+	necessary.
+	* scripttemp/pep.sc: Likewise.
+	* ld.texinfo (PROVIDE): Add a note about the effect of common
+	symbols.
+
+2018-01-27  Nick Clifton  <nickc@redhat.com>
+
+	Back to development.
+
+	* configure: Regenerate.
+
 2018-01-27  Nick Clifton  <nickc@redhat.com>
 
 	This is the 2.30 release:
@@ -108,7 +281,7 @@
 
 2018-01-16  Nick Clifton  <nickc@redhat.com>
 
-	* po/pt_BR.po: Updated Brazilian Portugese translation.
+	* po/pt_BR.po: Updated Brazilian Portuguese translation.
 
 2018-01-15  Nick Clifton  <nickc@redhat.com>
 

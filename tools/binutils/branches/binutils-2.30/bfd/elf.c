@@ -627,7 +627,8 @@ setup_group (bfd *abfd, Elf_Internal_Shdr *hdr, asection *newsect)
 	      bfd_alloc2 (abfd, num_group, sizeof (Elf_Internal_Shdr *));
 	  if (elf_tdata (abfd)->group_sect_ptr == NULL)
 	    return FALSE;
-	  memset (elf_tdata (abfd)->group_sect_ptr, 0, num_group * sizeof (Elf_Internal_Shdr *));
+	  memset (elf_tdata (abfd)->group_sect_ptr, 0,
+		  num_group * sizeof (Elf_Internal_Shdr *));
 	  num_group = 0;
 
 	  for (i = 0; i < shnum; i++)
@@ -706,13 +707,24 @@ setup_group (bfd *abfd, Elf_Internal_Shdr *hdr, asection *newsect)
 			      |= SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD;
 			  break;
 			}
-		      if (idx >= shnum)
+		      if (idx < shnum)
+			{
+			  dest->shdr = elf_elfsections (abfd)[idx];
+			  /* PR binutils/23199: All sections in a
+			     section group should be marked with
+			     SHF_GROUP.  But some tools generate
+			     broken objects without SHF_GROUP.  Fix
+			     them up here.  */
+			  dest->shdr->sh_flags |= SHF_GROUP;
+			}
+		      if (idx >= shnum
+			  || dest->shdr->sh_type == SHT_GROUP)
 			{
 			  _bfd_error_handler
-			    (_("%B: invalid SHT_GROUP entry"), abfd);
-			  idx = 0;
+			    (_("%B: invalid entry in SHT_GROUP section [%u]"),
+			     abfd, i);
+			  dest->shdr = NULL;
 			}
-		      dest->shdr = elf_elfsections (abfd)[idx];
 		    }
 		}
 	    }
@@ -778,7 +790,8 @@ setup_group (bfd *abfd, Elf_Internal_Shdr *hdr, asection *newsect)
 		idx = (Elf_Internal_Group *) shdr->contents;
 		n_elt = shdr->sh_size / 4;
 		while (--n_elt != 0)
-		  if ((s = (++idx)->shdr->bfd_section) != NULL
+		  if ((++idx)->shdr != NULL
+		      && (s = idx->shdr->bfd_section) != NULL
 		      && elf_next_in_group (s) != NULL)
 		    break;
 		if (n_elt != 0)
@@ -4727,33 +4740,35 @@ _bfd_elf_map_sections_to_segments (bfd *abfd, struct bfd_link_info *info)
 		 the previous section, then we need a new segment.  */
 	      new_segment = TRUE;
 	    }
+	  else if ((abfd->flags & D_PAGED) != 0
+		   && (((last_hdr->lma + last_size - 1) & -maxpagesize)
+		       == (hdr->lma & -maxpagesize)))
+	    {
+	      /* If we are demand paged then we can't map two disk
+		 pages onto the same memory page.  */
+	      new_segment = FALSE;
+	    }
 	  /* In the next test we have to be careful when last_hdr->lma is close
 	     to the end of the address space.  If the aligned address wraps
 	     around to the start of the address space, then there are no more
 	     pages left in memory and it is OK to assume that the current
 	     section can be included in the current segment.  */
-	  else if ((BFD_ALIGN (last_hdr->lma + last_size, maxpagesize) + maxpagesize
-		    > last_hdr->lma)
-		   && (BFD_ALIGN (last_hdr->lma + last_size, maxpagesize) + maxpagesize
-		       <= hdr->lma))
+	  else if ((BFD_ALIGN (last_hdr->lma + last_size, maxpagesize)
+		    + maxpagesize > last_hdr->lma)
+		   && (BFD_ALIGN (last_hdr->lma + last_size, maxpagesize)
+		       + maxpagesize <= hdr->lma))
 	    {
 	      /* If putting this section in this segment would force us to
 		 skip a page in the segment, then we need a new segment.  */
 	      new_segment = TRUE;
 	    }
 	  else if ((last_hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) == 0
-		   && (hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) != 0
-		   && ((abfd->flags & D_PAGED) == 0
-		       || (((last_hdr->lma + last_size - 1) & -maxpagesize)
-			   != (hdr->lma & -maxpagesize))))
+		   && (hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) != 0)
 	    {
 	      /* We don't want to put a loaded section after a
 		 nonloaded (ie. bss style) section in the same segment
 		 as that will force the non-loaded section to be loaded.
-		 Consider .tbss sections as loaded for this purpose.
-		 However, like the writable/non-writable case below,
-		 if they are on the same page then they must be put
-		 in the same segment.  */
+		 Consider .tbss sections as loaded for this purpose.  */
 	      new_segment = TRUE;
 	    }
 	  else if ((abfd->flags & D_PAGED) == 0)
@@ -4769,21 +4784,11 @@ _bfd_elf_map_sections_to_segments (bfd *abfd, struct bfd_link_info *info)
 	    {
 	      new_segment = TRUE;
 	    }
-	  else if (! writable
-		   && (hdr->flags & SEC_READONLY) == 0
-		   && ((info != NULL
-			&& info->relro_end > info->relro_start)
-		       || (((last_hdr->lma + last_size - 1) & -maxpagesize)
-			   != (hdr->lma & -maxpagesize))))
+          else if (! writable
+		   && (hdr->flags & SEC_READONLY) == 0)
 	    {
 	      /* We don't want to put a writable section in a read only
-		 segment, unless they are on the same page in memory
-		 anyhow and there is no RELRO segment.  We already
-		 know that the last section does not bring us past the
-		 current section on the page, so the only case in which
-		 the new section is not on the same page as the previous
-		 section is when the previous section ends precisely on
-		 a page boundary.  */
+		 segment.  */
 	      new_segment = TRUE;
 	    }
 	  else
@@ -7587,7 +7592,16 @@ _bfd_elf_fixup_group_sections (bfd *ibfd, asection *discarded)
 	       but the SHT_GROUP section is, then adjust its size.  */
 	    else if (s->output_section == discarded
 		     && isec->output_section != discarded)
-	      removed += 4;
+	      {
+		struct bfd_elf_section_data *elf_sec = elf_section_data (s);
+		removed += 4;
+		if (elf_sec->rel.hdr != NULL
+		    && (elf_sec->rel.hdr->sh_flags & SHF_GROUP) != 0)
+		  removed += 4;
+		if (elf_sec->rela.hdr != NULL
+		    && (elf_sec->rela.hdr->sh_flags & SHF_GROUP) != 0)
+		  removed += 4;
+	      }
 	    s = elf_next_in_group (s);
 	    if (s == first)
 	      break;
@@ -7597,18 +7611,26 @@ _bfd_elf_fixup_group_sections (bfd *ibfd, asection *discarded)
 	    if (discarded != NULL)
 	      {
 		/* If we've been called for ld -r, then we need to
-		   adjust the input section size.  This function may
-		   be called multiple times, so save the original
-		   size.  */
+		   adjust the input section size.  */
 		if (isec->rawsize == 0)
 		  isec->rawsize = isec->size;
 		isec->size = isec->rawsize - removed;
+		if (isec->size <= 4)
+		  {
+		    isec->size = 0;
+		    isec->flags |= SEC_EXCLUDE;
+		  }
 	      }
 	    else
 	      {
 		/* Adjust the output section size when called from
 		   objcopy. */
 		isec->output_section->size -= removed;
+		if (isec->output_section->size <= 4)
+		  {
+		    isec->output_section->size = 0;
+		    isec->output_section->flags |= SEC_EXCLUDE;
+		  }
 	      }
 	  }
       }
@@ -11019,6 +11041,8 @@ elf_parse_notes (bfd *abfd, char *buf, size_t size, file_ptr offset,
      align is less than 4, we use 4 byte alignment.   */
   if (align < 4)
     align = 4;
+  if (align != 4 && align != 8)
+    return FALSE;
 
   p = buf;
   while (p < buf + size)

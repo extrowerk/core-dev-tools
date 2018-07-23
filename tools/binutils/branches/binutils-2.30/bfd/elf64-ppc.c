@@ -161,10 +161,6 @@ static bfd_vma opd_entry_value
 #define LD_R11_0R11	0xe96b0000	/* ld	 %r11,xxx+16@l(%r11) */
 #define BCTR		0x4e800420	/* bctr			     */
 
-#define CRSETEQ		0x4c421242	/* crset 4*%cr0+%eq	 */
-#define BEQCTRM		0x4dc20420	/* beqctr-		 */
-#define BEQCTRLM	0x4dc20421	/* beqctrl-		 */
-
 #define ADDI_R11_R11	0x396b0000	/* addi %r11,%r11,off@l	 */
 #define ADDIS_R2_R2	0x3c420000	/* addis %r2,%r2,off@ha	 */
 #define ADDI_R2_R2	0x38420000	/* addi	 %r2,%r2,off@l	 */
@@ -193,8 +189,7 @@ static bfd_vma opd_entry_value
 
 /* __glink_PLTresolve stub instructions.  We enter with the index in R0.  */
 #define GLINK_PLTRESOLVE_SIZE(htab)			\
-  (8u + (htab->opd_abi ? 11 * 4 : 14 * 4)		\
-   + (!htab->params->speculate_indirect_jumps ? 2 * 4 : 0))
+  (8u + (htab->opd_abi ? 11 * 4 : 14 * 4))
 					/* 0:				*/
 					/*  .quad plt0-1f		*/
 					/* __glink:			*/
@@ -6650,7 +6645,7 @@ sfpr_define (struct bfd_link_info *info,
 		{
 		  s->root.type = bfd_link_hash_defined;
 		  s->root.u.def.section = stub_sec;
-		  s->root.u.def.value = (stub_sec->size
+		  s->root.u.def.value = (stub_sec->size - htab->sfpr->size
 					 + h->elf.root.u.def.value);
 		  s->ref_regular = 1;
 		  s->def_regular = 1;
@@ -7188,8 +7183,8 @@ ppc64_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
 	      if (!readonly_dynrelocs (h))
 		{
 		  h->pointer_equality_needed = 0;
-		  /* If we haven't seen a branch reloc then we don't need
-		     a plt entry.  */
+		  /* If we haven't seen a branch reloc and the symbol
+		     isn't an ifunc then we don't need a plt entry.  */
 		  if (!h->needs_plt)
 		    h->plt.plist = NULL;
 		}
@@ -7205,8 +7200,8 @@ ppc64_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
       else if (!h->needs_plt
 	       && !readonly_dynrelocs (h))
 	{
-	  /* If we haven't seen a branch reloc then we don't need a
-	     plt entry.  */
+	  /* If we haven't seen a branch reloc and the symbol isn't an
+	     ifunc then we don't need a plt entry.  */
 	  h->plt.plist = NULL;
 	  h->pointer_equality_needed = 0;
 	  return TRUE;
@@ -9886,8 +9881,6 @@ size_global_entry_stubs (struct elf_link_hash_entry *h, void *inf)
 	unsigned int align_power;
 
 	stub_size = 16;
-	if (!htab->params->speculate_indirect_jumps)
-	  stub_size += 8;
 	stub_off = s->size;
 	if (htab->params->plt_stub_align >= 0)
 	  align_power = htab->params->plt_stub_align;
@@ -10453,8 +10446,6 @@ plt_stub_size (struct ppc_link_hash_table *htab,
     size += 4;
   if (PPC_HA (off) != 0)
     size += 4;
-  if (!htab->params->speculate_indirect_jumps)
-    size += 8;
   if (htab->opd_abi)
     {
       size += 4;
@@ -10476,11 +10467,7 @@ plt_stub_size (struct ppc_link_hash_table *htab,
       size += 7 * 4;
       if (ALWAYS_EMIT_R2SAVE
 	  || stub_entry->stub_type == ppc_stub_plt_call_r2save)
-	{
-	  size += 6 * 4;
-	  if (!htab->params->speculate_indirect_jumps)
-	    size -= 4;
-	}
+	size += 6 * 4;
     }
   return size;
 }
@@ -10515,26 +10502,6 @@ plt_stub_pad (struct ppc_link_hash_table *htab,
   return 0;
 }
 
-static inline bfd_byte *
-output_bctr (struct ppc_link_hash_table *htab, bfd *obfd, bfd_byte *p)
-{
-  if (!htab->params->speculate_indirect_jumps)
-    {
-      bfd_put_32 (obfd, CRSETEQ, p);
-      p += 4;
-      bfd_put_32 (obfd, BEQCTRM, p);
-      p += 4;
-      bfd_put_32 (obfd, B_DOT, p);
-      p += 4;
-    }
-  else
-    {
-      bfd_put_32 (obfd, BCTR, p);
-      p += 4;
-    }
-  return p;
-}
-
 /* Build a .plt call stub.  */
 
 static inline bfd_byte *
@@ -10555,7 +10522,6 @@ build_plt_stub (struct ppc_link_hash_table *htab,
   if (!ALWAYS_USE_FAKE_DEP
       && plt_load_toc
       && plt_thread_safe
-      && htab->params->speculate_indirect_jumps
       && !((stub_entry->h == htab->tls_get_addr_fd
 	    || stub_entry->h == htab->tls_get_addr)
 	   && htab->params->tls_get_addr_opt))
@@ -10710,7 +10676,7 @@ build_plt_stub (struct ppc_link_hash_table *htab,
       bfd_put_32 (obfd, B_DOT | (cmp_branch_off & 0x3fffffc), p), p += 4;
     }
   else
-    p = output_bctr (htab, obfd, p);
+    bfd_put_32 (obfd, BCTR, p),					p += 4;
   return p;
 }
 
@@ -10754,13 +10720,7 @@ build_tls_get_addr_stub (struct ppc_link_hash_table *htab,
   if (r != NULL)
     r[0].r_offset += 2 * 4;
   p = build_plt_stub (htab, stub_entry, p, offset, r);
-  if (!htab->params->speculate_indirect_jumps)
-    {
-      p -= 4;
-      bfd_put_32 (obfd, BEQCTRLM, p - 4);
-    }
-  else
-    bfd_put_32 (obfd, BCTRL, p - 4);
+  bfd_put_32 (obfd, BCTRL, p - 4);
 
   bfd_put_32 (obfd, LD_R2_0R1 + STK_TOC (htab), p),	p += 4;
   bfd_put_32 (obfd, LD_R11_0R1 + STK_LINKER (htab), p),	p += 4;
@@ -11113,7 +11073,8 @@ ppc_build_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
       p += 4;
       bfd_put_32 (htab->params->stub_bfd, MTCTR_R12, p);
       p += 4;
-      p = output_bctr (htab, htab->params->stub_bfd, p);
+      bfd_put_32 (htab->params->stub_bfd, BCTR, p);
+      p += 4;
       break;
 
     case ppc_stub_plt_call:
@@ -11446,8 +11407,6 @@ ppc_size_one_stub (struct bfd_hash_entry *gen_entry, void *in_arg)
 	      if (PPC_LO (r2off) != 0)
 		size += 4;
 	    }
-	  if (!htab->params->speculate_indirect_jumps)
-	    size += 8;
 	}
       else if (info->emitrelocations)
 	{
@@ -13089,7 +13048,7 @@ build_global_entry_stubs (struct elf_link_hash_entry *h, void *inf)
 	p += 4;
 	bfd_put_32 (s->owner, MTCTR_R12, p);
 	p += 4;
-	output_bctr (htab, s->owner, p);
+	bfd_put_32 (s->owner, BCTR, p);
 	break;
       }
   return TRUE;
@@ -13218,7 +13177,8 @@ ppc64_elf_build_stubs (struct bfd_link_info *info,
 	  bfd_put_32 (htab->glink->owner, LD_R11_0R11 | 8, p);
 	  p += 4;
 	}
-      p = output_bctr (htab, htab->glink->owner, p);
+      bfd_put_32 (htab->glink->owner, BCTR, p);
+      p += 4;
       BFD_ASSERT (p == htab->glink->contents + GLINK_PLTRESOLVE_SIZE (htab));
 
       /* Build the .glink lazy link call stubs.  */
@@ -13272,20 +13232,7 @@ ppc64_elf_build_stubs (struct bfd_link_info *info,
 
   for (group = htab->group; group != NULL; group = group->next)
     if (group->needs_save_res)
-      {
-	stub_sec = group->stub_sec;
-	memcpy (stub_sec->contents + stub_sec->size, htab->sfpr->contents,
-		htab->sfpr->size);
-	if (htab->params->emit_stub_syms)
-	  {
-	    unsigned int i;
-
-	    for (i = 0; i < ARRAY_SIZE (save_res_funcs); i++)
-	      if (!sfpr_define (info, &save_res_funcs[i], stub_sec))
-		return FALSE;
-	  }
-	stub_sec->size += htab->sfpr->size;
-      }
+      group->stub_sec->size += htab->sfpr->size;
 
   if (htab->relbrlt != NULL)
     htab->relbrlt->reloc_count = 0;
@@ -13297,6 +13244,22 @@ ppc64_elf_build_stubs (struct bfd_link_info *info,
 	  int align = abs (htab->params->plt_stub_align);
 	  stub_sec->size = (stub_sec->size + (1 << align) - 1) & -(1 << align);
 	}
+
+  for (group = htab->group; group != NULL; group = group->next)
+    if (group->needs_save_res)
+      {
+	stub_sec = group->stub_sec;
+	memcpy (stub_sec->contents + stub_sec->size - htab->sfpr->size,
+		htab->sfpr->contents, htab->sfpr->size);
+	if (htab->params->emit_stub_syms)
+	  {
+	    unsigned int i;
+
+	    for (i = 0; i < ARRAY_SIZE (save_res_funcs); i++)
+	      if (!sfpr_define (info, &save_res_funcs[i], stub_sec))
+		return FALSE;
+	  }
+      }
 
   for (group = htab->group; group != NULL; group = group->next)
     if ((stub_sec = group->stub_sec) != NULL)

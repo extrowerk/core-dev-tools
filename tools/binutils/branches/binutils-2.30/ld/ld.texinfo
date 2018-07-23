@@ -4001,6 +4001,12 @@ underscore), the linker will silently use the definition in the program.
 If the program references @samp{etext} but does not define it, the
 linker will use the definition in the linker script.
 
+Note - the @code{PROVIDE} directive considers a common symbol to be
+defined, even though such a symbol could be combined with the symbol
+that the @code{PROVIDE} would create.  This is particularly important
+when considering constructor and destructor list symbols such as
+@samp{__CTOR_LIST__} as these are often defined as common symbols.
+
 @node PROVIDE_HIDDEN
 @subsection PROVIDE_HIDDEN
 @cindex PROVIDE_HIDDEN
@@ -7645,15 +7651,6 @@ barrier in the call stub, or use LD_BIND_NOW=1.  By default, @code{ld}
 looks for calls to commonly used functions that create threads, and if
 seen, adds the necessary barriers.  Use these options to change the
 default behaviour.
-
-@cindex PowerPC64 PLT call stub speculative execution barrier
-@kindex --speculate-indirect-jumps
-@kindex --no-speculate-indirect-jumps
-@item --speculate-indirect-jumps
-@itemx --no-speculate-indirect-jumps
-Use these options to control whether all indirect branch instructions
-emitted by @code{ld}, such as those in the PLT, have a speculative
-execution barrier to mitigate Spectre variant 2 attacks.
 
 @cindex PowerPC64 ELFv2 PLT localentry optimization
 @kindex --plt-localentry

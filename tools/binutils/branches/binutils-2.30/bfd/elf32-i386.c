@@ -29,6 +29,9 @@
 
 #include "elf/i386.h"
 
+static bfd_boolean elf32_i386_copy_solaris_special_section_fields
+  (const bfd *, bfd *, const Elf_Internal_Shdr *, Elf_Internal_Shdr *);
+
 static reloc_howto_type elf_howto_table[]=
 {
   HOWTO(R_386_NONE, 0, 3, 0, FALSE, 0, complain_overflow_dont,
@@ -759,6 +762,12 @@ static const struct elf_x86_lazy_plt_layout elf_i386_lazy_plt =
     sizeof (elf_i386_lazy_plt0_entry),	/* plt0_entry_size */
     elf_i386_lazy_plt_entry,		/* plt_entry */
     LAZY_PLT_ENTRY_SIZE,		/* plt_entry_size */
+    NULL,				/* plt_tlsdesc_entry */
+    0,					/* plt_tlsdesc_entry_size*/
+    0,					/* plt_tlsdesc_got1_offset */
+    0,					/* plt_tlsdesc_got2_offset */
+    0,					/* plt_tlsdesc_got1_insn_end */
+    0,					/* plt_tlsdesc_got2_insn_end */
     2,					/* plt0_got1_offset */
     8,					/* plt0_got2_offset */
     0,					/* plt0_got2_insn_end */
@@ -791,6 +800,12 @@ static const struct elf_x86_lazy_plt_layout elf_i386_lazy_ibt_plt =
     sizeof (elf_i386_lazy_ibt_plt0_entry), /* plt0_entry_size */
     elf_i386_lazy_ibt_plt_entry,	/* plt_entry */
     LAZY_PLT_ENTRY_SIZE,		/* plt_entry_size */
+    NULL,				/* plt_tlsdesc_entry */
+    0,					/* plt_tlsdesc_entry_size*/
+    0,					/* plt_tlsdesc_got1_offset */
+    0,					/* plt_tlsdesc_got2_offset */
+    0,					/* plt_tlsdesc_got1_insn_end */
+    0,					/* plt_tlsdesc_got2_insn_end */
     2,					/* plt0_got1_offset */
     8,					/* plt0_got2_offset */
     0,					/* plt0_got2_insn_end */
@@ -1578,6 +1593,10 @@ elf_i386_check_relocs (bfd *abfd,
 				     rel, rel_end, h, r_symndx, FALSE))
 	goto error_return;
 
+      /* Check if _GLOBAL_OFFSET_TABLE_ is referenced.  */
+      if (h == htab->elf.hgot)
+	htab->got_referenced = TRUE;
+
       switch (r_type)
 	{
 	case R_386_TLS_LDM:
@@ -1720,11 +1739,19 @@ elf_i386_check_relocs (bfd *abfd,
 
 	case R_386_GOTOFF:
 	case R_386_GOTPC:
-	create_got:
+create_got:
 	  if (r_type != R_386_TLS_IE)
 	    {
 	      if (eh != NULL)
-		eh->zero_undefweak &= 0x2;
+		{
+		  eh->zero_undefweak &= 0x2;
+
+		  /* Need GOT to resolve undefined weak symbol to 0.  */
+		  if (r_type == R_386_GOTOFF
+		      && h->root.type == bfd_link_hash_undefweak
+		      && bfd_link_executable (info))
+		    htab->got_referenced = TRUE;
+		}
 	      break;
 	    }
 	  /* Fall through */
@@ -2427,66 +2454,7 @@ do_ifunc_pointer:
       switch (r_type)
 	{
 	case R_386_GOT32X:
-	  /* Avoid optimizing _DYNAMIC since ld.so may use its
-	     link-time address.  */
-	  if (h == htab->elf.hdynamic)
-	    goto r_386_got32;
-
-	  if (bfd_link_pic (info))
-	    {
-	      /* It is OK to convert mov to lea and convert indirect
-		 branch to direct branch.  It is OK to convert adc,
-		 add, and, cmp, or, sbb, sub, test, xor only when PIC
-		 is false.   */
-	      unsigned int opcode, addend;
-	      addend = bfd_get_32 (input_bfd, contents + rel->r_offset);
-	      if (addend != 0)
-		goto r_386_got32;
-	      opcode = bfd_get_8 (input_bfd, contents + rel->r_offset - 2);
-	      if (opcode != 0x8b && opcode != 0xff)
-		goto r_386_got32;
-	    }
-
-	  /* Resolve "mov GOT[(%reg)], %reg",
-	     "call/jmp *GOT[(%reg)]", "test %reg, foo@GOT[(%reg)]"
-	     and "binop foo@GOT[(%reg)], %reg".  */
-	  if (h == NULL
-	      || (h->plt.offset == (bfd_vma) -1
-		  && h->got.offset == (bfd_vma) -1)
-	      || htab->elf.sgotplt == NULL)
-	    abort ();
-
-	  offplt = (htab->elf.sgotplt->output_section->vma
-		    + htab->elf.sgotplt->output_offset);
-
-	  /* It is relative to .got.plt section.  */
-	  if (h->got.offset != (bfd_vma) -1)
-	    /* Use GOT entry.  Mask off the least significant bit in
-	       GOT offset which may be set by R_386_GOT32 processing
-	       below.  */
-	    relocation = (htab->elf.sgot->output_section->vma
-			  + htab->elf.sgot->output_offset
-			  + (h->got.offset & ~1) - offplt);
-	  else
-	    /* Use GOTPLT entry.  */
-	    relocation = (h->plt.offset / plt_entry_size
-			  - htab->plt.has_plt0 + 3) * 4;
-
-	  if (!bfd_link_pic (info))
-	    {
-	      /* If not PIC, add the .got.plt section address for
-		 baseless addressing.  */
-	      unsigned int modrm;
-	      modrm = bfd_get_8 (input_bfd, contents + rel->r_offset - 1);
-	      if ((modrm & 0xc7) == 0x5)
-		relocation += offplt;
-	    }
-
-	  unresolved_reloc = FALSE;
-	  break;
-
 	case R_386_GOT32:
-r_386_got32:
 	  /* Relocation is to the entry for this symbol in the global
 	     offset table.  */
 	  if (htab->elf.sgot == NULL)
@@ -4178,6 +4146,7 @@ elf_i386_get_synthetic_symtab (bfd *abfd,
   switch (get_elf_x86_backend_data (abfd)->target_os)
     {
     case is_normal:
+    case is_solaris:
       non_lazy_plt = &elf_i386_non_lazy_plt;
       lazy_ibt_plt = &elf_i386_lazy_ibt_plt;
       non_lazy_ibt_plt = &elf_i386_non_lazy_ibt_plt;
@@ -4337,6 +4306,7 @@ elf_i386_link_setup_gnu_properties (struct bfd_link_info *info)
   switch (get_elf_x86_backend_data (info->output_bfd)->target_os)
     {
     case is_normal:
+    case is_solaris:
       init_table.plt0_pad_byte = 0x0;
       init_table.lazy_plt = &elf_i386_lazy_plt;
       init_table.non_lazy_plt = &elf_i386_non_lazy_plt;
@@ -4453,6 +4423,14 @@ elf_i386_fbsd_post_process_headers (bfd *abfd, struct bfd_link_info *info)
 #define	TARGET_LITTLE_SYM		i386_elf32_sol2_vec
 #undef	TARGET_LITTLE_NAME
 #define	TARGET_LITTLE_NAME		"elf32-i386-sol2"
+
+static const struct elf_x86_backend_data elf_i386_solaris_arch_bed =
+  {
+    is_solaris				/* os */
+  };
+
+#undef	elf_backend_arch_data
+#define	elf_backend_arch_data		&elf_i386_solaris_arch_bed
 
 #undef elf_backend_post_process_headers
 
@@ -4579,6 +4557,9 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 
 #undef	ELF_MACHINE_CODE
 #define	ELF_MACHINE_CODE		EM_IAMCU
+
+#undef	elf_backend_arch_data
+#define	elf_backend_arch_data		&elf_i386_arch_bed
 
 #undef	ELF_OSABI
 
@@ -4746,6 +4727,12 @@ static const struct elf_x86_lazy_plt_layout elf_i386_nacl_plt =
     sizeof (elf_i386_nacl_plt0_entry),	/* plt0_entry_size */
     elf_i386_nacl_plt_entry,		/* plt_entry */
     NACL_PLT_ENTRY_SIZE,		/* plt_entry_size */
+    NULL,				/* plt_tlsdesc_entry */
+    0,					/* plt_tlsdesc_entry_size*/
+    0,					/* plt_tlsdesc_got1_offset */
+    0,					/* plt_tlsdesc_got2_offset */
+    0,					/* plt_tlsdesc_got1_insn_end */
+    0,					/* plt_tlsdesc_got2_insn_end */
     2,					/* plt0_got1_offset */
     8,					/* plt0_got2_offset */
     0,					/* plt0_got2_insn_end */

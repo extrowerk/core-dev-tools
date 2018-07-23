@@ -23587,12 +23587,14 @@ md_apply_fix (fixS *	fixP,
 	      /* MOV accepts both Thumb2 modified immediate (T2 encoding) and
 		 UINT16 (T3 encoding), MOVW only accepts UINT16.  When
 		 disassembling, MOV is preferred when there is no encoding
-		 overlap.
-		 NOTE: MOV is using ORR opcode under Thumb 2 mode.  */
+		 overlap.  */
 	      if (((newval >> T2_DATA_OP_SHIFT) & 0xf) == T2_OPCODE_ORR
+		  /* NOTE: MOV uses the ORR opcode in Thumb 2 mode
+		     but with the Rn field [19:16] set to 1111.  */
+		  && (((newval >> 16) & 0xf) == 0xf)
 		  && ARM_CPU_HAS_FEATURE (cpu_variant, arm_ext_v6t2_v8m)
 		  && !((newval >> T2_SBIT_SHIFT) & 0x1)
-		  && value >= 0 && value <=0xffff)
+		  && value >= 0 && value <= 0xffff)
 		{
 		  /* Toggle bit[25] to change encoding from T2 to T3.  */
 		  newval ^= 1 << 25;
@@ -26930,7 +26932,7 @@ static const cpu_arch_ver_table cpu_arch_ver[] =
     {16, ARM_ARCH_V8M_BASE},
     {17, ARM_ARCH_V8M_MAIN},
     {15, ARM_ARCH_V8R},
-    {16, ARM_ARCH_V8_4A},
+    {14, ARM_ARCH_V8_4A},
     {-1, ARM_ARCH_NONE}
 };
 

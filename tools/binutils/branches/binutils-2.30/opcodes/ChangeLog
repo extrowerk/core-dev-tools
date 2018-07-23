@@ -1,3 +1,59 @@
+2018-06-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-01-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* i386-gen.c (cpu_flag_init): Delete CPU_CET_FLAGS, CpuCET.
+	Add CPU_IBT_FLAGS, CPU_SHSTK_FLAGS, CPY_ANY_IBT_FLAGS,
+	CPU_ANY_SHSTK_FLAGS, CpuIBT, CpuSHSTK.
+	(cpu_flags): Add CpuIBT, CpuSHSTK.
+	* i386-opc.h (enum): Add CpuIBT, CpuSHSTK.
+	(i386_cpu_flags): Add cpuibt, cpushstk.
+	* i386-opc.tbl: Change CpuCET to CpuSHSTK and CpuIBT.
+	* i386-init.h: Regenerate.
+	* i386-tbl.h: Likewise.
+
+2018-05-16  Tamar Christina  <tamar.christina@arm.com>
+
+	Backport from master branch
+
+	PR binutils/23109
+	* aarch64-tbl.h (aarch64_opcode_table): Correct sdot and udot.
+	* aarch64-dis-2.c: Regenerate.
+
+2018-04-25  Tamar Christina  <tamar.christina@arm.com>
+
+	Backport from master branch
+	* aarch64-tbl.h (sqrdmlah, sqrdmlsh): Fix masks.
+
+2018-04-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from master branch
+	2018-04-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/23025
+	* i386-dis.c (get_valid_dis386): Don't set vex.prefix nor vex.w
+	to 0.
+	(print_insn): Clear vex instead of vex.evex.
+
+2018-03-16  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2018-02-19  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* arm-dis.c (thumb_opcodes): Fix BXNS mask.
+
+2018-02-05  Nick Clifton  <nickc@redhat.com>
+
+	* po/pt_BR.po: Updated Brazilian Portuguese translation.
+
+2018-01-27  Nick Clifton  <nickc@redhat.com>
+
+	Back to development.
+
+	* configure: Regenerate.
+	* po/opcodes.pot: Regenerate.
+
 2018-01-27  Nick Clifton  <nickc@redhat.com>
 
 	This is the 2.30 release:
