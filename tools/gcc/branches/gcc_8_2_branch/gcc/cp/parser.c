@@ -5609,6 +5609,9 @@ cp_parser_primary_expression (cp_parser *parser,
 	      }
 	  }
 
+	if (processing_template_decl && is_overloaded_fn (decl))
+	  lookup_keep (get_fns (decl), true);
+
 	decl = (finish_id_expression
 		(id_expression, decl, parser->scope,
 		 idk,
@@ -7494,10 +7497,7 @@ cp_parser_postfix_dot_deref_expression (cp_parser *parser,
 	 access (5.2.5) outside the member function body.  */
       if (postfix_expression != current_class_ref
 	  && scope != error_mark_node
-	  && !(processing_template_decl
-	       && current_class_type
-	       && (same_type_ignoring_top_level_qualifiers_p
-		   (scope, current_class_type))))
+	  && !currently_open_class (scope))
 	{
 	  scope = complete_type (scope);
 	  if (!COMPLETE_TYPE_P (scope)
@@ -12293,12 +12293,9 @@ cp_parser_init_statement (cp_parser* parser, tree *decl)
 	  cp_lexer_consume_token (parser->lexer);
 	  is_range_for = true;
 	  if (cxx_dialect < cxx11)
-	    {
-	      pedwarn (cp_lexer_peek_token (parser->lexer)->location, 0,
-		       "range-based %<for%> loops only available with "
-		       "-std=c++11 or -std=gnu++11");
-	      *decl = error_mark_node;
-	    }
+	    pedwarn (cp_lexer_peek_token (parser->lexer)->location, 0,
+		     "range-based %<for%> loops only available with "
+		     "-std=c++11 or -std=gnu++11");
 	}
       else
 	  /* The ';' is not consumed yet because we told
@@ -21601,7 +21598,8 @@ cp_parser_parameter_declaration (cp_parser *parser,
      parameter was introduced during cp_parser_parameter_declaration,
      change any implicit parameters introduced into packs.  */
   if (parser->implicit_template_parms
-      && (token->type == CPP_ELLIPSIS
+      && ((token->type == CPP_ELLIPSIS
+	   && declarator_can_be_parameter_pack (declarator))
 	  || (declarator && declarator->parameter_pack_p)))
     {
       int latest_template_parm_idx = TREE_VEC_LENGTH
@@ -34847,7 +34845,7 @@ cp_parser_omp_for_incr (cp_parser *parser, tree decl)
 static tree
 cp_parser_omp_for_loop_init (cp_parser *parser,
 			     tree &this_pre_body,
-			     vec<tree, va_gc> *for_block,
+			     vec<tree, va_gc> *&for_block,
 			     tree &init,
 			     tree &orig_init,
 			     tree &decl,

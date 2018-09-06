@@ -6180,6 +6180,7 @@ extern bool trivial_default_constructor_is_constexpr (tree);
 extern bool type_has_constexpr_default_constructor (tree);
 extern bool type_has_virtual_destructor		(tree);
 extern bool classtype_has_move_assign_or_move_ctor_p (tree, bool user_declared);
+extern bool classtype_has_non_deleted_move_ctor (tree);
 extern bool type_build_ctor_call		(tree);
 extern bool type_build_dtor_call		(tree);
 extern void explain_non_literal_class		(tree);
@@ -6644,7 +6645,7 @@ extern bool template_parameter_pack_p           (const_tree);
 extern bool function_parameter_pack_p		(const_tree);
 extern bool function_parameter_expanded_from_pack_p (tree, tree);
 extern tree make_pack_expansion                 (tree, tsubst_flags_t = tf_warning_or_error);
-extern bool check_for_bare_parameter_packs      (tree);
+extern bool check_for_bare_parameter_packs      (tree, location_t = UNKNOWN_LOCATION);
 extern tree build_template_info			(tree, tree);
 extern tree get_template_info			(const_tree);
 extern vec<qualified_typedef_usage_t, va_gc> *get_types_needing_access_check (tree);
@@ -6827,9 +6828,9 @@ extern bool perform_or_defer_access_check	(tree, tree, tree,
 
 struct deferring_access_check_sentinel
 {
-  deferring_access_check_sentinel ()
+  deferring_access_check_sentinel (enum deferring_kind kind = dk_deferred)
   {
-    push_deferring_access_checks (dk_deferred);
+    push_deferring_access_checks (kind);
   }
   ~deferring_access_check_sentinel ()
   {
@@ -7035,6 +7036,7 @@ extern tree finish_builtin_launder		(location_t, tree,
 						 tsubst_flags_t);
 extern void start_lambda_scope			(tree);
 extern void record_lambda_scope			(tree);
+extern void record_null_lambda_scope		(tree);
 extern void finish_lambda_scope			(void);
 extern tree start_lambda_function		(tree fn, tree lambda_expr);
 extern void finish_lambda_function		(tree body);
@@ -7544,7 +7546,7 @@ extern tree cxx_constant_value			(tree, tree = NULL_TREE);
 extern tree cxx_constant_init			(tree, tree = NULL_TREE);
 extern tree maybe_constant_value		(tree, tree = NULL_TREE);
 extern tree maybe_constant_init			(tree, tree = NULL_TREE);
-extern tree fold_non_dependent_expr		(tree);
+extern tree fold_non_dependent_expr		(tree, tsubst_flags_t = tf_none);
 extern tree fold_simple				(tree);
 extern bool is_sub_constant_expr                (tree);
 extern bool reduced_constant_expression_p       (tree);
