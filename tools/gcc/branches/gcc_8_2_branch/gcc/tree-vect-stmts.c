@@ -3745,7 +3745,7 @@ vectorizable_simd_clone_call (gimple *stmt, gimple_stmt_iterator *gsi,
 	dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
 			 "not considering SIMD clones; not yet supported"
 			 " for variable-width vectors.\n");
-      return NULL;
+      return false;
     }
 
   unsigned int badness = 0;
@@ -8510,7 +8510,7 @@ vect_is_simple_cond (tree cond, vec_info *vinfo,
 
   *comp_vectype = vectype1 ? vectype1 : vectype2;
   /* Invariant comparison.  */
-  if (! *comp_vectype)
+  if (! *comp_vectype && vectype)
     {
       tree scalar_type = TREE_TYPE (lhs);
       /* If we can widen the comparison to match vectype do so.  */
@@ -8622,7 +8622,7 @@ vectorizable_condition (gimple *stmt, gimple_stmt_iterator *gsi,
   else_clause = gimple_assign_rhs3 (stmt);
 
   if (!vect_is_simple_cond (cond_expr, stmt_info->vinfo,
-			    &comp_vectype, &dts[0], vectype)
+			    &comp_vectype, &dts[0], slp_node ? NULL : vectype)
       || !comp_vectype)
     return false;
 
@@ -9602,7 +9602,7 @@ vect_transform_stmt (gimple *stmt, gimple_stmt_iterator *gsi,
       if (gimple_code (stmt) == GIMPLE_PHI)
         scalar_dest = PHI_RESULT (stmt);
       else
-        scalar_dest = gimple_assign_lhs (stmt);
+        scalar_dest = gimple_get_lhs (stmt);
 
       FOR_EACH_IMM_USE_FAST (use_p, imm_iter, scalar_dest)
        {

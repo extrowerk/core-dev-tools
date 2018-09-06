@@ -204,6 +204,7 @@ function hook_preconfigure {
 		fi
 	fi
 	
+	echo SYSNAME=${SYSNAME}
 }
 
 function hook_premake {

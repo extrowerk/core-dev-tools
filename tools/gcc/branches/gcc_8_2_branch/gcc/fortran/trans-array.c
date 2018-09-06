@@ -3414,11 +3414,7 @@ gfc_conv_scalarized_array_ref (gfc_se * se, gfc_array_ref * ar)
   if (is_pointer_array (info->descriptor))
     {
       if (TREE_CODE (info->descriptor) == COMPONENT_REF)
-	{
-	  decl = gfc_evaluate_now (info->descriptor, &se->pre);
-	  GFC_DECL_PTR_ARRAY_P (decl) = 1;
-	  TREE_USED (decl) = 1;
-	}
+	decl = info->descriptor;
       else if (TREE_CODE (info->descriptor) == INDIRECT_REF)
 	decl = TREE_OPERAND (info->descriptor, 0);
 
@@ -3659,11 +3655,7 @@ gfc_conv_array_ref (gfc_se * se, gfc_array_ref * ar, gfc_expr *expr,
       && is_pointer_array (se->expr))
     {
       if (TREE_CODE (se->expr) == COMPONENT_REF)
-	{
-	  decl = gfc_evaluate_now (se->expr, &se->pre);
-	  GFC_DECL_PTR_ARRAY_P (decl) = 1;
-	  TREE_USED (decl) = 1;
-	}
+	decl = se->expr;
       else if (TREE_CODE (se->expr) == INDIRECT_REF)
 	decl = TREE_OPERAND (se->expr, 0);
       else
@@ -4304,7 +4296,7 @@ done:
 	}
     }
 
-  /* The rest is just runtime bound checking.  */
+  /* The rest is just runtime bounds checking.  */
   if (gfc_option.rtcheck & GFC_RTCHECK_BOUNDS)
     {
       stmtblock_t block;
@@ -4334,7 +4326,7 @@ done:
 	    continue;
 
 	  /* Catch allocatable lhs in f2003.  */
-	  if (flag_realloc_lhs && ss->is_alloc_lhs)
+	  if (flag_realloc_lhs && ss->no_bounds_check)
 	    continue;
 
 	  expr = ss_info->expr;
@@ -8839,7 +8831,7 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 	  break;
 
 	case COPY_ALLOC_COMP:
-	  if (c->attr.pointer)
+	  if (c->attr.pointer || c->attr.proc_pointer)
 	    continue;
 
 	  /* We need source and destination components.  */
@@ -9948,6 +9940,8 @@ gfc_alloc_allocatable_for_assignment (gfc_loopinfo *loop,
 			     gfc_array_index_type, tmp,
 			     expr1->ts.u.cl->backend_decl);
     }
+  else if (UNLIMITED_POLY (expr1) && expr2->ts.type != BT_CLASS)
+    tmp = TYPE_SIZE_UNIT (gfc_typenode_for_spec (&expr2->ts));
   else
     tmp = TYPE_SIZE_UNIT (gfc_typenode_for_spec (&expr1->ts));
   tmp = fold_convert (gfc_array_index_type, tmp);
@@ -9973,6 +9967,28 @@ gfc_alloc_allocatable_for_assignment (gfc_loopinfo *loop,
 
       gfc_add_modify (&fblock, tmp,
 		      gfc_get_dtype_rank_type (expr1->rank,type));
+    }
+  else if (UNLIMITED_POLY (expr1) && expr2->ts.type != BT_CLASS)
+    {
+      tree type;
+      tmp = gfc_conv_descriptor_dtype (desc);
+      type = gfc_typenode_for_spec (&expr2->ts);
+      gfc_add_modify (&fblock, tmp,
+		      gfc_get_dtype_rank_type (expr2->rank,type));
+      /* Set the _len field as well...  */
+      tmp = gfc_class_len_get (TREE_OPERAND (desc, 0));
+      if (expr2->ts.type == BT_CHARACTER)
+	gfc_add_modify (&fblock, tmp,
+			fold_convert (TREE_TYPE (tmp),
+				      TYPE_SIZE_UNIT (type)));
+      else
+	gfc_add_modify (&fblock, tmp,
+			build_int_cst (TREE_TYPE (tmp), 0));
+      /* ...and the vptr.  */
+      tmp = gfc_class_vptr_get (TREE_OPERAND (desc, 0));
+      tmp2 = gfc_get_symbol_decl (gfc_find_vtab (&expr2->ts));
+      tmp2 = gfc_build_addr_expr (TREE_TYPE (tmp), tmp2);
+      gfc_add_modify (&fblock, tmp, tmp2);
     }
   else if (coarray && GFC_DESCRIPTOR_TYPE_P (TREE_TYPE (desc)))
     {
@@ -10079,10 +10095,11 @@ gfc_alloc_allocatable_for_assignment (gfc_loopinfo *loop,
 
 
   /* We already set the dtype in the case of deferred character
-     length arrays.  */
+     length arrays and unlimited polymorphic arrays.  */
   if (!(GFC_DESCRIPTOR_TYPE_P (TREE_TYPE (desc))
 	&& ((expr1->ts.type == BT_CHARACTER && expr1->ts.deferred)
-	    || coarray)))
+	    || coarray))
+      && !UNLIMITED_POLY (expr1))
     {
       tmp = gfc_conv_descriptor_dtype (desc);
       gfc_add_modify (&alloc_block, tmp, gfc_get_dtype (TREE_TYPE (desc)));
