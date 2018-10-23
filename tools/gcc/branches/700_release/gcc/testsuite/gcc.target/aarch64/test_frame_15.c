@@ -7,7 +7,7 @@
        the first could be optimized into "stp !".  */
 
 /* { dg-do run } */
-/* { dg-options "-O2 --save-temps" } */
+/* { dg-options "-O2 -fno-stack-protector --save-temps" } */
 
 #include "test_frame_common.h"
 
