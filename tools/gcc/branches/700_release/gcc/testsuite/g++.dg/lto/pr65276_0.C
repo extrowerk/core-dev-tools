@@ -1,3 +1,4 @@
+// { dg-skip-if "#pragma implementation not supported on ARM"  { arm*-*-* } { "*" } { "" } }
 // { dg-lto-do link }
 // { dg-lto-options {{-flto -O0 -std=c++11}} }
 
