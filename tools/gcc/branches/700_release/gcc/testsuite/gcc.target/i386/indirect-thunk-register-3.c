@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O2 -mindirect-branch=thunk-extern -mindirect-branch-register -fno-pic" } */
+/* { dg-options "-O2 -mindirect-branch=thunk-extern -mindirect-branch-register -fno-pie" } */
 
 typedef void (*dispatch_t)(long offset);
 
