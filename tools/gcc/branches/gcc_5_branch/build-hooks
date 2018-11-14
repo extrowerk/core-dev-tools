@@ -74,6 +74,7 @@ function hook_preconfigure {
 			win64-*) 	
 			basedir=/c/${qnx_target}/host/win64/${cpu}/usr
 			qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+			export LDFLAGS="${LDFLAGS} -static"
 			;;
 			nto-*)
 			CPPFLAGS=
