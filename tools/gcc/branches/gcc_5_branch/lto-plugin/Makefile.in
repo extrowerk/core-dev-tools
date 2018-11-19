@@ -547,7 +547,7 @@ uninstall-am: uninstall-libexecsubLTLIBRARIES
 	uninstall-libexecsubLTLIBRARIES
 
 override CFLAGS := $(filter-out -fsanitize=address,$(CFLAGS))
-override LDFLAGS := $(filter-out -fsanitize=address,$(LDFLAGS))
+override LDFLAGS := $(filter-out -fsanitize=address,$(filter-out -static,$(LDFLAGS)))
 
 all-local: $(in_gcc_libs)
 

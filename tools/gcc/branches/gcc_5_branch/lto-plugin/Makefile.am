@@ -12,7 +12,7 @@ AM_CFLAGS = @ac_lto_plugin_warn_cflags@
 AM_LDFLAGS = @ac_lto_plugin_ldflags@
 AM_LIBTOOLFLAGS = --tag=disable-static
 override CFLAGS := $(filter-out -fsanitize=address,$(CFLAGS))
-override LDFLAGS := $(filter-out -fsanitize=address,$(LDFLAGS))
+override LDFLAGS := $(filter-out -fsanitize=address,$(filter-out -static,$(LDFLAGS)))
 
 libexecsub_LTLIBRARIES = liblto_plugin.la
 gcc_build_dir = @gcc_build_dir@
