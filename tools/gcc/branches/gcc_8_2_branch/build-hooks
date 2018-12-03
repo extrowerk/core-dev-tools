@@ -4,13 +4,9 @@ targ_root=${PWD}
 gcc_version=$(cat ../gcc/BASE-VER)
 QNX_TARGET_VERSION=${QNX_TARGET_VERSION:-7.0.0}
 
+qnx_target_version=${QNX_TARGET_VERSION}
+qnx_target=qnx$(echo ${QNX_TARGET_VERSION} | sed 's/\.//g')
 qnx_os_dir=qnx$(echo ${QNX_TARGET_VERSION} | sed 's/^\([0-9]*\)\..*/\1/g')
-
-if [ ${QNX_VERSION}x == x ]; then
-  qnx_target=qnx$(echo ${QNX_TARGET_VERSION} | sed 's/\.//g')
-else
-  qnx_target=${QNX_VERSION}
-fi
 
 nto_target=${PWD##*-}
 nto_targdir=${PWD##*-o-nto}
@@ -34,7 +30,7 @@ case ${cpu_string} in
 	*)		targetarch=${cpu_string} ;;
 esac
 
-tmpstring=$(echo ${targetarch}-nto-qnx${QNX_TARGET_VERSION}${os_variant})
+tmpstring=$(echo ${targetarch}-nto-qnx${qnx_target_version}${os_variant})
 target=$(${srcdir}/config.sub ${tmpstring})
 basedir='/usr'
 
@@ -63,12 +59,12 @@ function hook_preconfigure {
 	case ${SYSNAME} in
 	nto)
 		case "${target}" in
-		*nto-qnx*)	
+		*nto-qnx*)
 			TOOL_PATH=${TOOL_PATH:-${QNX_HOST:-/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}}}
-			basedir=${TOOL_PATH}/usr 
+			basedir=${TOOL_PATH}/usr
 			;;
-		*)	
-			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr 
+		*)
+			basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
 			;;
 		esac
 		;;
@@ -78,13 +74,14 @@ function hook_preconfigure {
 		;;
 	linux)
 		case "${host_target}" in
-			win32-*) 	
+			win32-*)
 				basedir=/c/${qnx_target}/host/win32/${cpu}/usr
-				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
 				;;
-			win64-*) 	
+			win64-*)
 				basedir=/c/${qnx_target}/host/win64/${cpu}/usr
-				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
+				export LDFLAGS="${LDFLAGS} -static"
 				;;
 			nto-*)
 				CPPFLAGS=
@@ -109,6 +106,7 @@ function hook_preconfigure {
 	win64)
 		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win64/${cpu}}
 		basedir=${tooldir}/usr
+		export LDFLAGS="${LDFLAGS} -static"
 		;;
 	*)
 		echo "Don't have config for ${SYSNAME}"
@@ -140,8 +138,8 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --with-ld=${target}-ld"
 		;;
 	esac
-	
-# Set TARGET CPU specific flags	
+
+# Set TARGET CPU specific flags
 	case ${cpu_string} in
 		x86*)
 			configure_opts="${configure_opts} --with-tune=generic"
@@ -166,11 +164,10 @@ function hook_preconfigure {
 			;;
 	esac
 
-# Installation root - set to /opt/qnxXXX/... so packager will find binaries 
+# Installation root - set to /opt/qnxXXX/... so packager will find binaries
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --libexecdir=${basedir}/lib"
 	configure_opts="${configure_opts} --with-gxx-include-dir=${qnxtarget}/usr/include/c++/$gcc_version"
-#	configure_opts="${configure_opts} --with-local-prefix=${basedir}"
 	configure_opts="${configure_opts} --enable-threads=posix"
 	configure_opts="${configure_opts} --enable-__cxa_atexit"
 	configure_opts="${configure_opts} --enable-languages=c++"
@@ -178,9 +175,8 @@ function hook_preconfigure {
 
 #cross options
 	configure_opts="${configure_opts} --with-sysroot=${QNX_TARGET}"
-#	configure_opts="${configure_opts} --with-build-sysroot=${QNX_TARGET}/${nto_targdir}"
 	configure_opts="${configure_opts} --target=${target}"
-	
+
 	configure_opts="${configure_opts} --disable-nls"
 	configure_opts="${configure_opts} --disable-tls"
 	configure_opts="${configure_opts} --disable-libssp"
@@ -199,12 +195,10 @@ function hook_preconfigure {
 	# but we aren't currently using it. Thus the symlink is safe for now.
 
 	if test "${SYSNAME}" = "nto"; then
-		if test -n "${USE_ROOT_nto}"; then 
+		if test -n "${USE_ROOT_nto}"; then
 			op ln -sP ${USE_ROOT_nto}/usr/include ${basedir}/${target}/include
 		fi
 	fi
-	
-	echo SYSNAME=${SYSNAME}
 }
 
 function hook_premake {
@@ -221,7 +215,7 @@ function hook_postmake {
 		else
 			ldrel -L -S $STACKSIZE gcc/cc1
 			ldrel -L -S $STACKSIZE gcc/cc1plus
-		fi			
+		fi
 		echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
 		${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
 		# If we are mips weaken the be variant
@@ -229,7 +223,7 @@ function hook_postmake {
 		ntomips)
 			echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
 			${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a
-			;;	
+			;;
 		esac
 	fi
 }
@@ -242,4 +236,3 @@ function hook_pinfo {
 
 	# Executables
 }
-
