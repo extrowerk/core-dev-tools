@@ -80,11 +80,12 @@ function hook_preconfigure {
 		case "${host_target}" in
 			win32-*) 	
 				basedir=/c/${qnx_target}/host/win32/${cpu}/usr
-				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
 				;;
 			win64-*) 	
 				basedir=/c/${qnx_target}/host/win64/${cpu}/usr
-				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}/
+				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
+				export LDFLAGS="${LDFLAGS} -static"
 				;;
 			nto-*)
 				CPPFLAGS=
@@ -109,6 +110,7 @@ function hook_preconfigure {
 	win64)
 		tooldir=${QNX_HOST:-c:/${qnx_target}/host/win64/${cpu}}
 		basedir=${tooldir}/usr
+		export LDFLAGS="${LDFLAGS} -static"
 		;;
 	*)
 		echo "Don't have config for ${SYSNAME}"
@@ -203,7 +205,6 @@ function hook_preconfigure {
 			op ln -sP ${USE_ROOT_nto}/usr/include ${basedir}/${target}/include
 		fi
 	fi
-	
 }
 
 function hook_premake {
