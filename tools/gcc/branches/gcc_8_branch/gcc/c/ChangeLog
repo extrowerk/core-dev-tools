@@ -1,3 +1,29 @@
+2018-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/85704
+	* c-typeck.c (init_field_decl_cmp): New function.
+	(output_pending_init_elements): Use it for field comparisons
+	instead of pure bit_position comparisons.
+
+2018-07-26  Release Manager
+
+	* GCC 8.2.0 released.
+
+2018-07-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-decl.c (c_decl_attributes): Don't diagnose vars without mappable
+	type here, instead add "omp declare target implicit" attribute.
+	(finish_decl): Diagnose vars without mappable type here.
+
+2018-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-06-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/86093
+	* c-typeck.c (pointer_diff): Cast both pointers to unqualified types
+	before doing POINTER_DIFF_EXPR.
+
 2018-05-30  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline

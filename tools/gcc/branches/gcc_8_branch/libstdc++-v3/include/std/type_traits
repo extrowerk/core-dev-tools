@@ -1136,7 +1136,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   /// is_trivially_constructible
   template<typename _Tp, typename... _Args>
     struct is_trivially_constructible
-    : public __bool_constant<__is_trivially_constructible(_Tp, _Args...)>
+    : public __and_<is_constructible<_Tp, _Args...>, __bool_constant<
+             __is_trivially_constructible(_Tp, _Args...)>>::type
     { };
 
   /// is_trivially_default_constructible

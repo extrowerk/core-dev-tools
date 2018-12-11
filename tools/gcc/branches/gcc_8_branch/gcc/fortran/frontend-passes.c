@@ -57,6 +57,8 @@ static bool has_dimen_vector_ref (gfc_expr *);
 static int matmul_temp_args (gfc_code **, int *,void *data);
 static int index_interchange (gfc_code **, int*, void *);
 
+static bool is_fe_temp (gfc_expr *e);
+
 #ifdef CHECKING_P
 static void check_locus (gfc_namespace *);
 #endif
@@ -252,6 +254,9 @@ realloc_string_callback (gfc_code **c, int *walk_subtrees ATTRIBUTE_UNUSED,
   if (expr1->ts.type != BT_CHARACTER
       || !gfc_expr_attr(expr1).allocatable
       || !expr1->ts.deferred)
+    return 0;
+
+  if (is_fe_temp (expr1))
     return 0;
 
   expr2 = gfc_discard_nops (co->expr2);
@@ -1094,6 +1099,31 @@ convert_elseif (gfc_code **c, int *walk_subtrees ATTRIBUTE_UNUSED,
   return 0;
 }
 
+/* Callback function to var_in_expr - return true if expr1 and
+   expr2 are identical variables. */
+static int
+var_in_expr_callback (gfc_expr **e, int *walk_subtrees ATTRIBUTE_UNUSED,
+		      void *data)
+{
+  gfc_expr *expr1 = (gfc_expr *) data;
+  gfc_expr *expr2 = *e;
+
+  if (expr2->expr_type != EXPR_VARIABLE)
+    return 0;
+
+  return expr1->symtree->n.sym == expr2->symtree->n.sym;
+}
+
+/* Return true if expr1 is found in expr2. */
+
+static bool
+var_in_expr (gfc_expr *expr1, gfc_expr *expr2)
+{
+  gcc_assert (expr1->expr_type == EXPR_VARIABLE);
+
+  return gfc_expr_walker (&expr2, var_in_expr_callback, (void *) expr1);
+}
+
 struct do_stack
 {
   struct do_stack *prev;
@@ -1246,9 +1276,9 @@ traverse_io_block (gfc_code *code, bool *has_reached, gfc_code *prev)
 	  for (int j = i - 1; j < i; j++)
 	    {
 	      if (iters[j]
-		  && (gfc_check_dependency (var, iters[j]->start, true)
-		      || gfc_check_dependency (var, iters[j]->end, true)
-		      || gfc_check_dependency (var, iters[j]->step, true)))
+		  && (var_in_expr (var, iters[j]->start)
+		      || var_in_expr (var, iters[j]->end)
+		      || var_in_expr (var, iters[j]->step)))
 		  return false;
 	    }		  
 	}
