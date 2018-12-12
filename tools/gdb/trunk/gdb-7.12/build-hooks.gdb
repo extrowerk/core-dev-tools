@@ -230,6 +230,7 @@ function hook_preconfigure {
   case ${TARGET_SYSNAME} in
 	win64*)
 	  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+	  LDFLAGS="${LDFLAGS} -static"
 	  ;;
 	win32*)
 	  with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
