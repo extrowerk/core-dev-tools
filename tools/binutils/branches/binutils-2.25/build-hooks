@@ -62,6 +62,7 @@ function hook_preconfigure {
 		win64*) 
 			execdir=/c/${qnx_target}/host/win64/${cpu}/usr
 			sysroot=/c/${qnx_target}/target/qnx7
+			export LDFLAGS="${LDFLAGS} -static"
                 ;;
                 darwin*)
 			execdir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
