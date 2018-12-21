@@ -621,7 +621,7 @@ default_options_optimization (struct gcc_options *opts,
   /* Track fields in field-sensitive alias analysis.  */
   maybe_set_param_value
     (PARAM_MAX_FIELDS_FOR_FIELD_SENSITIVE,
-     opt2 ? 100 : default_param_value (PARAM_MAX_FIELDS_FOR_FIELD_SENSITIVE),
+     default_param_value (PARAM_MAX_FIELDS_FOR_FIELD_SENSITIVE),
      opts->x_param_values, opts_set->x_param_values);
 
   /* For -O1 only do loop invariant motion for very small loops.  */
