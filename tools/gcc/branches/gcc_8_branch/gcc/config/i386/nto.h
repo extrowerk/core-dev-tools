@@ -24,15 +24,9 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_OS_CPP_BUILTINS()		\
   do						\
     {						\
-        builtin_define ("__X86__");		\
-        builtin_define ("__QNXNTO__");		\
-        builtin_define ("__QNX__");		\
-        builtin_define ("__ELF__");		\
-        builtin_define ("__LITTLEENDIAN__");	\
-        builtin_assert ("system=qnx");		\
-        builtin_assert ("system=qnxnto");	\
-        builtin_assert ("system=nto");		\
-        builtin_assert ("system=unix");		\
+        NTO_TARGET_OS_CPP_BUILTINS();           \
+        builtin_define_std ("__X86__");		\
+        builtin_define ("__LITTLEENDIAN__");    \
     }						\
   while (0)
 
