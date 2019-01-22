@@ -6549,7 +6549,7 @@ func_mode_link ()
 
 	qnx)
 	  major=".$current"
-	  versuffix=".$current"
+	  versuffix=".$current.$age.$revision"
 	  ;;
 
 	sunos)
