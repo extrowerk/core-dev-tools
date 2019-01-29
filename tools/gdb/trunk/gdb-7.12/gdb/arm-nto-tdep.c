@@ -300,19 +300,12 @@ armnto_read_description (unsigned cpuflags)
 static int
 armnto_breakpoint_size (const CORE_ADDR addr)
 {
-  unsigned short inst;
   int size;
-  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  inst = read_memory_unsigned_integer (addr, 2, byte_order);
   if (arm_pc_is_thumb (target_gdbarch (), addr))
-    {
-      if ((inst & 0xe000) == 0xe000 && (inst & 0x1800) != 0)
-	size = 4;
-      else
-	size = 2;
-    }
+    size = 2;
   else
-    size = 0;
+    size = 4;
+  nto_trace (0) ("%08x is in %s mode\n", addr, (size==4)?"ARM":"Thumb");
   return size;
 }
 
