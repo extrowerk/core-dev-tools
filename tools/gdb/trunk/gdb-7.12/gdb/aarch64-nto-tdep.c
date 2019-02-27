@@ -105,7 +105,7 @@ aarch64nto_register_area (int regset, unsigned cpuflags)
   if (regset == NTO_REG_GENERAL)
     return AARCH64_GREGSZ * AARCH64_V0_REGNUM;
   else if (regset == NTO_REG_FLOAT)
-    return sizeof (AARCH64_CPU_REGISTERS);
+    return sizeof (AARCH64_FPU_REGISTERS);
   else
       warning(_("Only general and floatpoint registers supported on aarch64 for now\n"));
   return -1;
