@@ -185,7 +185,7 @@ function hook_preconfigure {
 	configure_opts="${configure_opts} --enable-shared"
 	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
-	configure_opts="${configure_opts} --enable-stack-protector"
+	configure_opts="${configure_opts} --enable-default-ssp"
 
 	# The cross compilation of libgcc.a and libstdc++ require system headers
 	# from the next version of Neutrino while gcc itself should be compiled
