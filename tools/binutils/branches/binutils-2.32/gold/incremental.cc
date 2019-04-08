@@ -1,6 +1,6 @@
 // inremental.cc -- incremental linking support for gold
 
-// Copyright (C) 2009-2014 Free Software Foundation, Inc.
+// Copyright (C) 2009-2019 Free Software Foundation, Inc.
 // Written by Mikolaj Zalewski <mikolajz@google.com>.
 
 // This file is part of gold.
@@ -33,7 +33,6 @@
 #include "incremental.h"
 #include "archive.h"
 #include "object.h"
-#include "output.h"
 #include "target-select.h"
 #include "target.h"
 #include "fileread.h"
@@ -174,8 +173,8 @@ Incremental_binary::error(const char* format, ...) const
 
 // Return TRUE if a section of type SH_TYPE can be updated in place
 // during an incremental update.  We can update sections of type PROGBITS,
-// NOBITS, INIT_ARRAY, FINI_ARRAY, PREINIT_ARRAY, and NOTE.  All others
-// will be regenerated.
+// NOBITS, INIT_ARRAY, FINI_ARRAY, PREINIT_ARRAY, NOTE, and
+// (processor-specific) unwind sections.  All others will be regenerated.
 
 bool
 can_incremental_update(unsigned int sh_type)
@@ -185,7 +184,8 @@ can_incremental_update(unsigned int sh_type)
 	  || sh_type == elfcpp::SHT_INIT_ARRAY
 	  || sh_type == elfcpp::SHT_FINI_ARRAY
 	  || sh_type == elfcpp::SHT_PREINIT_ARRAY
-	  || sh_type == elfcpp::SHT_NOTE);
+	  || sh_type == elfcpp::SHT_NOTE
+	  || sh_type == parameters->target().unwind_section_type());
 }
 
 // Find the .gnu_incremental_inputs section and related sections.
@@ -311,7 +311,11 @@ Sized_incremental_binary<size, big_endian>::setup_readers()
   for (unsigned int i = 0; i < count; i++)
     {
       Input_entry_reader input_file = inputs.input_file(i);
+#if __cplusplus >= 2001103L
+      this->input_entry_readers_.emplace_back(input_file);
+#else
       this->input_entry_readers_.push_back(Sized_input_reader(input_file));
+#endif
       switch (input_file.type())
 	{
 	case INCREMENTAL_INPUT_OBJECT:
@@ -1819,6 +1823,8 @@ struct Got_plt_view_info
   unsigned int first_plt_entry_offset;
   // Size of a PLT entry (this is a target-dependent value).
   unsigned int plt_entry_size;
+  // Size of a GOT entry (this is a target-dependent value).
+  unsigned int got_entry_size;
   // Symbol index to write in the GOT descriptor array.  For global symbols,
   // this is the global symbol table index; for local symbols, it is the
   // local symbol table index.
@@ -1844,7 +1850,7 @@ class Local_got_offset_visitor : public Got_offset_list::Visitor
   void
   visit(unsigned int got_type, unsigned int got_offset)
   {
-    unsigned int got_index = got_offset / this->got_entry_size_;
+    unsigned int got_index = got_offset / this->info_.got_entry_size;
     gold_assert(got_index < this->info_.got_count);
     // We can only handle GOT entry types in the range 0..0x7e
     // because we use a byte array to store them, and we use the
@@ -1857,7 +1863,6 @@ class Local_got_offset_visitor : public Got_offset_list::Visitor
   }
 
  private:
-  static const unsigned int got_entry_size_ = size / 8;
   struct Got_plt_view_info& info_;
 };
 
@@ -1876,7 +1881,7 @@ class Global_got_offset_visitor : public Got_offset_list::Visitor
   void
   visit(unsigned int got_type, unsigned int got_offset)
   {
-    unsigned int got_index = got_offset / this->got_entry_size_;
+    unsigned int got_index = got_offset / this->info_.got_entry_size;
     gold_assert(got_index < this->info_.got_count);
     // We can only handle GOT entry types in the range 0..0x7e
     // because we use a byte array to store them, and we use the
@@ -1889,7 +1894,6 @@ class Global_got_offset_visitor : public Got_offset_list::Visitor
   }
 
  private:
-  static const unsigned int got_entry_size_ = size / 8;
   struct Got_plt_view_info& info_;
 };
 
@@ -1949,6 +1953,7 @@ Output_section_incremental_inputs<size, big_endian>::write_got_plt(
   view_info.plt_count = target->plt_entry_count();
   view_info.first_plt_entry_offset = target->first_plt_entry_offset();
   view_info.plt_entry_size = target->plt_entry_size();
+  view_info.got_entry_size = target->got_entry_size();
   view_info.got_type_p = pov + 8;
   view_info.got_desc_p = (view_info.got_type_p
 			  + ((view_info.got_count + 3) & ~3));
@@ -2536,8 +2541,8 @@ Sized_relobj_incr<size, big_endian>::do_set_local_dynsym_offset(off_t)
 // Relocate the input sections and write out the local symbols.
 // We don't actually do any relocation here.  For unchanged input files,
 // we reapply relocations only for symbols that have changed; that happens
-// in queue_final_tasks.  We do need to rewrite the incremental relocations
-// for this object.
+// in Layout_task_runner::run().  We do need to rewrite the incremental
+// relocations for this object.
 
 template<int size, bool big_endian>
 void

@@ -1,5 +1,5 @@
 /* ELF executable support for BFD.
-   Copyright (C) 1991-2014 Free Software Foundation, Inc.
+   Copyright (C) 1991-2019 Free Software Foundation, Inc.
 
    Written by Fred Fish @ Cygnus Support, from information published
    in "UNIX System V Release 4, Programmers Guide: ANSI C and
@@ -314,6 +314,14 @@ elf_swap_shdr_in (bfd *abfd,
     dst->sh_addr = H_GET_WORD (abfd, src->sh_addr);
   dst->sh_offset = H_GET_WORD (abfd, src->sh_offset);
   dst->sh_size = H_GET_WORD (abfd, src->sh_size);
+  /* PR 23657.  Check for invalid section size, in sections with contents.
+     Note - we do not set an error value here because the contents
+     of this particular section might not be needed by the consumer.  */
+  if (dst->sh_type != SHT_NOBITS
+      && dst->sh_size > bfd_get_file_size (abfd))
+    _bfd_error_handler
+      (_("warning: %pB has a corrupt section with a size (%" BFD_VMA_FMT "x) larger than the file size"),
+       abfd, dst->sh_size);
   dst->sh_link = H_GET_32 (abfd, src->sh_link);
   dst->sh_info = H_GET_32 (abfd, src->sh_info);
   dst->sh_addralign = H_GET_WORD (abfd, src->sh_addralign);
@@ -605,13 +613,10 @@ elf_object_p (bfd *abfd)
 
   if (i_ehdrp->e_shoff != 0)
     {
-      bfd_signed_vma where = i_ehdrp->e_shoff;
-
-      if (where != (file_ptr) where)
-	goto got_wrong_format_error;
+      file_ptr where = (file_ptr) i_ehdrp->e_shoff;
 
       /* Seek to the section header table in the file.  */
-      if (bfd_seek (abfd, (file_ptr) where, SEEK_SET) != 0)
+      if (bfd_seek (abfd, where, SEEK_SET) != 0)
 	goto got_no_match;
 
       /* Read the first section header at index 0, and convert to internal
@@ -657,19 +662,17 @@ elf_object_p (bfd *abfd)
 	    goto got_wrong_format_error;
 
 	  where += (i_ehdrp->e_shnum - 1) * sizeof (x_shdr);
-	  if (where != (file_ptr) where)
-	    goto got_wrong_format_error;
 	  if ((bfd_size_type) where <= i_ehdrp->e_shoff)
 	    goto got_wrong_format_error;
 
-	  if (bfd_seek (abfd, (file_ptr) where, SEEK_SET) != 0)
+	  if (bfd_seek (abfd, where, SEEK_SET) != 0)
 	    goto got_no_match;
 	  if (bfd_bread (&x_shdr, sizeof x_shdr, abfd) != sizeof (x_shdr))
 	    goto got_no_match;
 
 	  /* Back to where we were.  */
 	  where = i_ehdrp->e_shoff + sizeof (x_shdr);
-	  if (bfd_seek (abfd, (file_ptr) where, SEEK_SET) != 0)
+	  if (bfd_seek (abfd, where, SEEK_SET) != 0)
 	    goto got_no_match;
 	}
     }
@@ -681,7 +684,11 @@ elf_object_p (bfd *abfd)
       Elf_Internal_Shdr *shdrp;
       unsigned int num_sec;
 
-      amt = sizeof (*i_shdrp) * i_ehdrp->e_shnum;
+#ifndef BFD64
+      if (i_ehdrp->e_shnum > ((bfd_size_type) -1) / sizeof (*i_shdrp))
+	goto got_wrong_format_error;
+#endif
+      amt = sizeof (*i_shdrp) * (bfd_size_type) i_ehdrp->e_shnum;
       i_shdrp = (Elf_Internal_Shdr *) bfd_alloc (abfd, amt);
       if (!i_shdrp)
 	goto got_no_match;
@@ -712,7 +719,7 @@ elf_object_p (bfd *abfd)
 	      switch (ebd->elf_machine_code)
 		{
 		case EM_386:
-		case EM_486:
+		case EM_IAMCU:
 		case EM_X86_64:
 		case EM_OLD_SPARCV9:
 		case EM_SPARC32PLUS:
@@ -757,7 +764,9 @@ elf_object_p (bfd *abfd)
 	     So we are kind, and reset the string index value to 0
 	     so that at least some processing can be done.  */
 	  i_ehdrp->e_shstrndx = SHN_UNDEF;
-	  _bfd_error_handler (_("warning: %s has a corrupt string table index - ignoring"), abfd->filename);
+	  _bfd_error_handler
+	    (_("warning: %pB has a corrupt string table index - ignoring"),
+	     abfd);
 	}
     }
   else if (i_ehdrp->e_shstrndx != SHN_UNDEF)
@@ -771,7 +780,16 @@ elf_object_p (bfd *abfd)
       Elf_Internal_Phdr *i_phdr;
       unsigned int i;
 
-      amt = i_ehdrp->e_phnum * sizeof (Elf_Internal_Phdr);
+#ifndef BFD64
+      if (i_ehdrp->e_phnum > ((bfd_size_type) -1) / sizeof (*i_phdr))
+	goto got_wrong_format_error;
+#endif
+      /* Check for a corrupt input file with an impossibly large number
+	 of program headers.  */
+      if (bfd_get_file_size (abfd) > 0
+	  && i_ehdrp->e_phnum > bfd_get_file_size (abfd))
+	goto got_no_match;
+      amt = (bfd_size_type) i_ehdrp->e_phnum * sizeof (*i_phdr);
       elf_tdata (abfd)->phdr = (Elf_Internal_Phdr *) bfd_alloc (abfd, amt);
       if (elf_tdata (abfd)->phdr == NULL)
 	goto got_no_match;
@@ -953,6 +971,12 @@ elf_write_relocs (bfd *abfd, asection *sec, void *data)
 	  return;
 	}
 
+      if (ptr->howto == NULL)
+	{
+	  *failedp = TRUE;
+	  return;
+	}
+
       src_rela.r_offset = ptr->address + addr_offset;
       src_rela.r_info = ELF_R_INFO (n, ptr->howto->type);
       src_rela.r_addend = ptr->addend;
@@ -970,6 +994,7 @@ elf_write_out_phdrs (bfd *abfd,
   while (count--)
     {
       Elf_External_Phdr extphdr;
+
       elf_swap_phdr_out (abfd, phdr, &extphdr);
       if (bfd_bwrite (&extphdr, sizeof (Elf_External_Phdr), abfd)
 	  != sizeof (Elf_External_Phdr))
@@ -1182,10 +1207,12 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
       if (verhdr != NULL
 	  && verhdr->sh_size / sizeof (Elf_External_Versym) != symcount)
 	{
-	  (*_bfd_error_handler)
-	    (_("%s: version count (%ld) does not match symbol count (%ld)"),
-	     abfd->filename,
-	     (long) (verhdr->sh_size / sizeof (Elf_External_Versym)),
+	  _bfd_error_handler
+	    /* xgettext:c-format */
+	    (_("%pB: version count (%" PRId64 ")"
+	       " does not match symbol count (%ld)"),
+	     abfd,
+	     (int64_t) (verhdr->sh_size / sizeof (Elf_External_Versym)),
 	     symcount);
 
 	  /* Slurp in the symbols without the version information,
@@ -1214,10 +1241,9 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
       for (isym = isymbuf + 1, sym = symbase; isym < isymend; isym++, sym++)
 	{
 	  memcpy (&sym->internal_elf_sym, isym, sizeof (Elf_Internal_Sym));
+
 	  sym->symbol.the_bfd = abfd;
-
 	  sym->symbol.name = bfd_elf_sym_name (abfd, hdr, isym, NULL);
-
 	  sym->symbol.value = isym->st_value;
 
 	  if (isym->st_shndx == SHN_UNDEF)
@@ -1300,6 +1326,7 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
 	    case STT_COMMON:
 	      /* FIXME: Do we have to put the size field into the value field
 		 as we do with symbols in SHN_COMMON sections (see above) ?  */
+	      sym->symbol.flags |= BSF_ELF_COMMON;
 	      /* Fall through.  */
 	    case STT_OBJECT:
 	      sym->symbol.flags |= BSF_OBJECT;
@@ -1416,6 +1443,7 @@ elf_slurp_reloc_table_from_section (bfd *abfd,
        i < reloc_count;
        i++, relent++, native_relocs += entsize)
     {
+      bfd_boolean res;
       Elf_Internal_Rela rela;
 
       if (entsize == sizeof (Elf_External_Rela))
@@ -1433,12 +1461,16 @@ elf_slurp_reloc_table_from_section (bfd *abfd,
 	relent->address = rela.r_offset - asect->vma;
 
       if (ELF_R_SYM (rela.r_info) == STN_UNDEF)
+	/* FIXME: This and the error case below mean that we have a
+	   symbol on relocs that is not elf_symbol_type.  */
 	relent->sym_ptr_ptr = bfd_abs_section_ptr->symbol_ptr_ptr;
       else if (ELF_R_SYM (rela.r_info) > symcount)
 	{
-	  (*_bfd_error_handler)
-	    (_("%s(%s): relocation %d has invalid symbol index %ld"),
-	     abfd->filename, asect->name, i, ELF_R_SYM (rela.r_info));
+	  _bfd_error_handler
+	    /* xgettext:c-format */
+	    (_("%pB(%pA): relocation %d has invalid symbol index %ld"),
+	     abfd, asect, i, (long) ELF_R_SYM (rela.r_info));
+	  bfd_set_error (bfd_error_bad_value);
 	  relent->sym_ptr_ptr = bfd_abs_section_ptr->symbol_ptr_ptr;
 	}
       else
@@ -1455,14 +1487,16 @@ elf_slurp_reloc_table_from_section (bfd *abfd,
       if ((entsize == sizeof (Elf_External_Rela)
 	   && ebd->elf_info_to_howto != NULL)
 	  || ebd->elf_info_to_howto_rel == NULL)
-	(*ebd->elf_info_to_howto) (abfd, relent, &rela);
+	res = ebd->elf_info_to_howto (abfd, relent, &rela);
       else
-	(*ebd->elf_info_to_howto_rel) (abfd, relent, &rela);
+	res = ebd->elf_info_to_howto_rel (abfd, relent, &rela);
+
+      if (! res || relent->howto == NULL)
+	goto error_return;
     }
 
   if (allocated != NULL)
     free (allocated);
-
   return TRUE;
 
  error_return:

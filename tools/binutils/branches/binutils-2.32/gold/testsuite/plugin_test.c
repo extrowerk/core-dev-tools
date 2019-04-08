@@ -1,6 +1,6 @@
 /* test_plugin.c -- simple linker plugin test
 
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2019 Free Software Foundation, Inc.
    Written by Cary Coutant <ccoutant@google.com>.
 
    This file is part of gold.
@@ -46,6 +46,7 @@ struct sym_info
   char* vis;
   char* sect;
   char* name;
+  char* ver;
 };
 
 static struct claimed_file* first_claimed_file = NULL;
@@ -57,6 +58,7 @@ static ld_plugin_register_cleanup register_cleanup_hook = NULL;
 static ld_plugin_add_symbols add_symbols = NULL;
 static ld_plugin_get_symbols get_symbols = NULL;
 static ld_plugin_get_symbols get_symbols_v2 = NULL;
+static ld_plugin_get_symbols get_symbols_v3 = NULL;
 static ld_plugin_add_input_file add_input_file = NULL;
 static ld_plugin_message message = NULL;
 static ld_plugin_get_input_file get_input_file = NULL;
@@ -67,6 +69,7 @@ static ld_plugin_get_input_section_name get_input_section_name = NULL;
 static ld_plugin_get_input_section_contents get_input_section_contents = NULL;
 static ld_plugin_update_section_order update_section_order = NULL;
 static ld_plugin_allow_section_ordering allow_section_ordering = NULL;
+static ld_plugin_get_wrap_symbols get_wrap_symbols = NULL;
 
 #define MAXOPTS 10
 
@@ -124,6 +127,9 @@ onload(struct ld_plugin_tv *tv)
         case LDPT_GET_SYMBOLS_V2:
           get_symbols_v2 = entry->tv_u.tv_get_symbols;
           break;
+        case LDPT_GET_SYMBOLS_V3:
+          get_symbols_v3 = entry->tv_u.tv_get_symbols;
+          break;
         case LDPT_ADD_INPUT_FILE:
           add_input_file = entry->tv_u.tv_add_input_file;
           break;
@@ -153,6 +159,9 @@ onload(struct ld_plugin_tv *tv)
 	  break;
 	case LDPT_ALLOW_SECTION_ORDERING:
 	  allow_section_ordering = *entry->tv_u.tv_allow_section_ordering;
+	  break;
+	case LDPT_GET_WRAP_SYMBOLS:
+	  get_wrap_symbols = *entry->tv_u.tv_get_wrap_symbols;
 	  break;
         default:
           break;
@@ -243,6 +252,28 @@ onload(struct ld_plugin_tv *tv)
       return LDPS_ERR;
     }
 
+  if (get_wrap_symbols == NULL)
+    {
+      fprintf(stderr, "tv_get_wrap_symbols interface missing\n");
+      return LDPS_ERR;
+    }
+  else
+    {
+      const char **wrap_symbols;
+      uint64_t count = 0;
+      if (get_wrap_symbols(&count, &wrap_symbols) == LDPS_OK)
+	{
+	  (*message)(LDPL_INFO, "Number of wrap symbols = %lu", count);
+	  for (; count > 0; --count)
+            (*message)(LDPL_INFO, "Wrap symbol %s", wrap_symbols[count - 1]);
+	}
+      else
+	{
+          fprintf(stderr, "tv_get_wrap_symbols interface call failed\n");
+          return LDPS_ERR;
+	}
+    }
+
   return LDPS_OK;
 }
 
@@ -263,15 +294,35 @@ claim_file_hook (const struct ld_plugin_input_file* file, int* claimed)
   int vis;
   int is_comdat;
   int i;
+  int irfile_was_opened = 0;
+  char syms_name[80];
 
   (*message)(LDPL_INFO,
              "%s: claim file hook called (offset = %ld, size = %ld)",
              file->name, (long)file->offset, (long)file->filesize);
 
+  /* Look for matching syms file for an archive member.  */
+  if (file->offset == 0)
+    snprintf(syms_name, sizeof(syms_name), "%s.syms", file->name);
+  else
+    snprintf(syms_name, sizeof(syms_name), "%s-%d.syms",
+	     file->name, (int)file->offset);
+  irfile = fopen(syms_name, "r");
+  if (irfile != NULL)
+    {
+      irfile_was_opened = 1;
+      end_offset = 1 << 20;
+    }
+
+  /* Otherwise, see if the file itself is a syms file.  */
+  if (!irfile_was_opened)
+    {
+      irfile = fdopen(file->fd, "r");
+      (void)fseek(irfile, file->offset, SEEK_SET);
+      end_offset = file->offset + file->filesize;
+    }
+
   /* Look for the beginning of output from readelf -s.  */
-  irfile = fdopen(file->fd, "r");
-  (void)fseek(irfile, file->offset, SEEK_SET);
-  end_offset = file->offset + file->filesize;
   len = fread(buf, 1, 13, irfile);
   if (len < 13 || strncmp(buf, "\nSymbol table", 13) != 0)
     return LDPS_OK;
@@ -347,7 +398,14 @@ claim_file_hook (const struct ld_plugin_input_file* file, int* claimed)
           syms[nsyms].name = malloc(len + 1);
           strncpy(syms[nsyms].name, info.name, len + 1);
         }
-      syms[nsyms].version = NULL;
+      if (info.ver == NULL)
+        syms[nsyms].version = NULL;
+      else
+        {
+          len = strlen(info.ver);
+          syms[nsyms].version = malloc(len + 1);
+          strncpy(syms[nsyms].version, info.ver, len + 1);
+        }
       syms[nsyms].def = def;
       syms[nsyms].visibility = vis;
       syms[nsyms].size = info.size;
@@ -378,6 +436,8 @@ claim_file_hook (const struct ld_plugin_input_file* file, int* claimed)
     (*add_symbols)(file->handle, nsyms, syms);
 
   *claimed = 1;
+  if (irfile_was_opened)
+    fclose(irfile);
   return LDPS_OK;
 }
 
@@ -398,9 +458,9 @@ all_symbols_read_hook(void)
 
   (*message)(LDPL_INFO, "all symbols read hook called");
 
-  if (get_symbols_v2 == NULL)
+  if (get_symbols_v3 == NULL)
     {
-      fprintf(stderr, "tv_get_symbols (v2) interface missing\n");
+      fprintf(stderr, "tv_get_symbols (v3) interface missing\n");
       return LDPS_ERR;
     }
 
@@ -408,8 +468,13 @@ all_symbols_read_hook(void)
        claimed_file != NULL;
        claimed_file = claimed_file->next)
     {
-      (*get_symbols_v2)(claimed_file->handle, claimed_file->nsyms,
-                     claimed_file->syms);
+      enum ld_plugin_status status = (*get_symbols_v3)(
+          claimed_file->handle, claimed_file->nsyms, claimed_file->syms);
+      if (status == LDPS_NO_SYMS)
+        {
+          (*message)(LDPL_INFO, "%s: no symbols", claimed_file->name);
+          continue;
+        }
 
       for (i = 0; i < claimed_file->nsyms; ++i)
         {
@@ -474,12 +539,31 @@ all_symbols_read_hook(void)
        claimed_file != NULL;
        claimed_file = claimed_file->next)
     {
+      int irfile_was_opened = 0;
+      char syms_name[80];
+
       (*get_input_file) (claimed_file->handle, &file);
 
+      if (file.offset == 0)
+	snprintf(syms_name, sizeof(syms_name), "%s.syms", file.name);
+      else
+	snprintf(syms_name, sizeof(syms_name), "%s-%d.syms",
+		 file.name, (int)file.offset);
+      irfile = fopen(syms_name, "r");
+      if (irfile != NULL)
+	{
+	  irfile_was_opened = 1;
+	  end_offset = 1 << 20;
+	}
+
+      if (!irfile_was_opened)
+	{
+	  irfile = fdopen(file.fd, "r");
+	  (void)fseek(irfile, file.offset, SEEK_SET);
+	  end_offset = file.offset + file.filesize;
+	}
+
       /* Look for the beginning of output from readelf -s.  */
-      irfile = fdopen(file.fd, "r");
-      (void)fseek(irfile, file.offset, SEEK_SET);
-      end_offset = file.offset + file.filesize;
       len = fread(buf, 1, 13, irfile);
       if (len < 13 || strncmp(buf, "\nSymbol table", 13) != 0)
         {
@@ -508,6 +592,9 @@ all_symbols_read_hook(void)
               break;
             }
         }
+
+      if (irfile_was_opened)
+	fclose(irfile);
 
       (*release_input_file) (claimed_file->handle);
 
@@ -597,11 +684,26 @@ parse_readelf_line(char* p, struct sym_info* info)
   p += strspn(p, " ");
 
   /* Name field.  */
-  /* FIXME:  Look for version.  */
-  len = strlen(p);
-  if (len == 0)
-    p = NULL;
-  else if (p[len-1] == '\n')
-    p[--len] = '\0';
-  info->name = p;
+  len = strcspn(p, "@\n");
+  if (len > 0 && p[len] == '@')
+    {
+      /* Get the symbol version.  */
+      char* vp = p + len;
+      int vlen;
+
+      vp += strspn(vp, "@");
+      vlen = strcspn(vp, "\n");
+      vp[vlen] = '\0';
+      if (vlen > 0)
+	info->ver = vp;
+      else
+	info->ver = NULL;
+    }
+  else
+    info->ver = NULL;
+  p[len] = '\0';
+  if (len > 0)
+    info->name = p;
+  else
+    info->name = NULL;
 }

@@ -1,6 +1,6 @@
 /* tc-avr.c -- Assembler code for the ATMEL AVR
 
-   Copyright (C) 1999-2014 Free Software Foundation, Inc.
+   Copyright (C) 1999-2019 Free Software Foundation, Inc.
    Contributed by Denis Chertykov <denisc@overta.ru>
 
    This file is part of GAS, the GNU Assembler.
@@ -25,13 +25,21 @@
 #include "subsegs.h"
 #include "dwarf2dbg.h"
 #include "dw2gencfi.h"
+#include "elf/avr.h"
+#include "elf32-avr.h"
 
+/* For building a linked list of AVR_PROPERTY_RECORD structures.  */
+struct avr_property_record_link
+{
+  struct avr_property_record record;
+  struct avr_property_record_link *next;
+};
 
 struct avr_opcodes_s
 {
-  char *        name;
-  char *        constraints;
-  char *        opcode;
+  const char *        name;
+  const char *        constraints;
+  const char *        opcode;
   int           insn_size;		/* In words.  */
   int           isa;
   unsigned int  bin_opcode;
@@ -46,6 +54,107 @@ struct avr_opcodes_s avr_opcodes[] =
   {NULL, NULL, NULL, 0, 0, 0}
 };
 
+
+/* Stuff for the `__gcc_isr' pseudo instruction.
+
+   Purpose of the pseudo instruction is to emit more efficient ISR prologues
+   and epilogues than GCC currently does.  GCC has no explicit (on RTL level)
+   modelling of SREG, TMP_REG or ZERO_REG.  These regs are used implicitly
+   during instruction printing.  That doesn't hurt too much for ordinary
+   functions, however for small ISRs there might be some overhead.
+
+   As implementing http://gcc.gnu.org/PR20296 would imply an almost complete
+   rewite of GCC's AVR back-end (which might pop up less optimized code in
+   other places), we provide a pseudo-instruction which is resolved by GAS
+   into ISR prologue / epilogue as expected by GCC.
+
+   Using GAS for this purpose has the additional benefit that it can scan
+   code emit by inline asm which is opaque to GCC.
+
+   The pseudo-instruction is only supposed to handle the starting of
+   prologue and the ending of epilogues (without RETI) which deal with
+   SREG, TMP_REG and ZERO_REG and one additional, optional general purpose
+   register.
+
+   __gcc_isr consists of 3 different "chunks":
+
+   __gcc_isr 1
+	Chunk 1 (ISR_CHUNK_Prologue)
+	Start the ISR code.  Will be replaced by ISR prologue by next Done chunk.
+	Must be the 1st chunk in a file or follow a Done chunk from previous
+	ISR (which has been patched already).
+
+	It will finish the current frag and emit a new frag of
+	type rs_machine_dependent, subtype ISR_CHUNK_Prologue.
+
+   __gcc_isr 2
+	Chunk 2 (ISR_CHUNK_Epilogue)
+	Will be replaced by ISR epilogue by next Done chunk. Must follow
+	chunk 1 (Prologue) or chunk 2 (Epilogue).  Functions might come
+	without epilogue or with more than one epilogue, and even code
+	located statically after the last epilogue might belong to a function.
+
+	It will finish the current frag and emit a new frag of
+	type rs_machine_dependent, subtype ISR_CHUNK_Epilogue.
+
+   __gcc_isr 0, Rx
+	Chunk 0 (ISR_CHUNK_Done)
+	Must follow chunk 1 (Prologue) or chunk 2 (Epilogue) and finishes
+	the ISR code.  Only GCC can know where a function's code ends.
+
+	It triggers the patch-up of all rs_machine_dependent frags in the
+	current frag chain and turns them into ordinary rs_fill code frags.
+
+	If Rx is a register > ZERO_REG then GCC also wants to push / pop Rx.
+	If neither TMP_REG nor ZERO_REG are needed, Rx will be used in
+	the push / pop sequence avoiding the need for TMP_REG / ZERO_REG.
+	If Rx <= ZERO_REG then GCC doesn't assume anything about Rx.
+
+   Assumptions:
+
+	o  GCC takes care of code that is opaque to GAS like tail calls
+	or non-local goto.
+
+	o  Using SEI / CLI does not count as clobbering SREG.  This is
+	because a final RETI will restore the I-flag.
+
+	o  Using OUT or ST* is supposed not to clobber SREG.  Sequences like
+
+		IN-SREG  +  CLI  +  Atomic-Code  +  OUT-SREG
+
+	will still work as expected because the scan will reveal any
+	clobber of SREG other than I-flag and emit PUSH / POP of SREG.
+*/
+
+enum
+  {
+    ISR_CHUNK_Done = 0,
+    ISR_CHUNK_Prologue = 1,
+    ISR_CHUNK_Epilogue = 2
+  };
+
+static struct
+{
+  /* Previous __gcc_isr chunk (one of the enums above)
+     and it's location for diagnostics.  */
+  int prev_chunk;
+  unsigned line;
+  const char *file;
+  /* Replacer for __gcc_isr.n_pushed once we know how many regs are
+     pushed by the Prologue chunk.  */
+  symbolS *sym_n_pushed;
+
+  /* Set and used during parse from chunk 1 (Prologue) up to chunk 0 (Done).
+     Set by `avr_update_gccisr' and used by `avr_patch_gccisr_frag'.  */
+  int need_reg_tmp;
+  int need_reg_zero;
+  int need_sreg;
+} avr_isr;
+
+static void avr_gccisr_operands (struct avr_opcodes_s*, char**);
+static void avr_update_gccisr (struct avr_opcodes_s*, int, int);
+static struct avr_opcodes_s *avr_gccisr_opcode;
+
 const char comment_chars[] = ";";
 const char line_comment_chars[] = "#";
 const char line_separator_chars[] = "$";
@@ -53,7 +162,7 @@ const char line_separator_chars[] = "$";
 const char *md_shortopts = "m:";
 struct mcu_type_s
 {
-  char *name;
+  const char *name;
   int isa;
   int mach;
 };
@@ -64,19 +173,19 @@ struct mcu_type_s
 static struct mcu_type_s mcu_types[] =
 {
   {"avr1",       AVR_ISA_AVR1,    bfd_mach_avr1},
-/* TODO: insruction set for avr2 architecture should be AVR_ISA_AVR2,
+/* TODO: instruction set for avr2 architecture should be AVR_ISA_AVR2,
  but set to AVR_ISA_AVR25 for some following version
  of GCC (from 4.3) for backward compatibility.  */
   {"avr2",       AVR_ISA_AVR25,   bfd_mach_avr2},
   {"avr25",      AVR_ISA_AVR25,   bfd_mach_avr25},
-/* TODO: insruction set for avr3 architecture should be AVR_ISA_AVR3,
+/* TODO: instruction set for avr3 architecture should be AVR_ISA_AVR3,
  but set to AVR_ISA_AVR3_ALL for some following version
  of GCC (from 4.3) for backward compatibility.  */
   {"avr3",       AVR_ISA_AVR3_ALL, bfd_mach_avr3},
   {"avr31",      AVR_ISA_AVR31,   bfd_mach_avr31},
   {"avr35",      AVR_ISA_AVR35,   bfd_mach_avr35},
   {"avr4",       AVR_ISA_AVR4,    bfd_mach_avr4},
-/* TODO: insruction set for avr5 architecture should be AVR_ISA_AVR5,
+/* TODO: instruction set for avr5 architecture should be AVR_ISA_AVR5,
  but set to AVR_ISA_AVR51 for some following version
  of GCC (from 4.3) for backward compatibility.  */
   {"avr5",       AVR_ISA_AVR51,   bfd_mach_avr5},
@@ -292,6 +401,21 @@ static struct mcu_type_s mcu_types[] =
   {"atxmega16e5", AVR_ISA_XMEGA,  bfd_mach_avrxmega2},
   {"atxmega8e5",  AVR_ISA_XMEGA,  bfd_mach_avrxmega2},
   {"atxmega32x1", AVR_ISA_XMEGA,  bfd_mach_avrxmega2},
+  {"attiny212",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny214",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny412",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny414",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny416",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny417",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny814",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny816",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny817",   AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny1614",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny1616",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny1617",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny3214",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny3216",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
+  {"attiny3217",  AVR_ISA_XMEGA,  bfd_mach_avrxmega3},
   {"atxmega64a3", AVR_ISA_XMEGA,  bfd_mach_avrxmega4},
   {"atxmega64a3u",AVR_ISA_XMEGAU, bfd_mach_avrxmega4},
   {"atxmega64a4u",AVR_ISA_XMEGAU, bfd_mach_avrxmega4},
@@ -345,11 +469,12 @@ struct avr_opt_s
   int all_opcodes;  /* -mall-opcodes: accept all known AVR opcodes.  */
   int no_skip_bug;  /* -mno-skip-bug: no warnings for skipping 2-word insns.  */
   int no_wrap;      /* -mno-wrap: reject rjmp/rcall with 8K wrap-around.  */
-  int link_relax;   /* -mlink-relax: generate relocations for linker
-                       relaxation.  */
+  int no_link_relax;   /* -mno-link-relax / -mlink-relax: generate (or not)
+                          relocations for linker relaxation.  */
+  int have_gccisr;      /* Whether "__gcc_isr" is a known (pseudo) insn.  */
 };
 
-static struct avr_opt_s avr_opt = { 0, 0, 0, 0 };
+static struct avr_opt_s avr_opt = { 0, 0, 0, 0, 0 };
 
 const char EXP_CHARS[] = "eE";
 const char FLT_CHARS[] = "dD";
@@ -372,7 +497,7 @@ const pseudo_typeS md_pseudo_table[] =
 
 struct exp_mod_s
 {
-  char *                    name;
+  const char *                    name;
   bfd_reloc_code_real_type  reloc;
   bfd_reloc_code_real_type  neg_reloc;
   int                       have_pm;
@@ -390,7 +515,7 @@ static struct exp_mod_s exp_mod[] =
   {"hhi8",   BFD_RELOC_AVR_MS8_LDI,    BFD_RELOC_AVR_MS8_LDI_NEG,    0},
 };
 
-/* A union used to store indicies into the exp_mod[] array
+/* A union used to store indices into the exp_mod[] array
    in a hash table which expects void * data types.  */
 typedef union
 {
@@ -404,6 +529,33 @@ static struct hash_control *avr_hash;
 /* Reloc modifiers hash control (hh8,hi8,lo8,pm_xx).  */
 static struct hash_control *avr_mod_hash;
 
+/* Whether some opcode does not change SREG.  */
+static struct hash_control *avr_no_sreg_hash;
+
+static const char* const avr_no_sreg[] =
+  {
+    /* Arithmetic */
+    "ldi", "swap", "mov", "movw",
+    /* Special instructions.  I-Flag will be restored by RETI, and we don't
+       consider I-Flag as being clobbered when changed.  */
+    "sei", "cli", "reti", "brie", "brid",
+    "nop", "wdr", "sleep",
+    /* Load / Store */
+    "ld", "ldd", "lds", "pop",  "in", "lpm", "elpm",
+    "st", "std", "sts", "push", "out",
+    /* Jumps and Calls.  Calls might call code that changes SREG.
+       GCC has to filter out ABI calls.  The non-ABI transparent calls
+       must use [R]CALL and are filtered out now by not mentioning them.  */
+    "rjmp", "jmp", "ijmp", "ret",
+    /* Skipping.  Branches need SREG to be set, hence we regard them
+       as if they changed SREG and don't list them here.  */
+    "sbrc", "sbrs", "sbic", "sbis", "cpse",
+    /* I/O Manipulation */
+    "sbi", "cbi",
+    /* Read-Modify-Write */
+    "lac", "las", "lat", "xch"
+  };
+
 #define OPTION_MMCU 'm'
 enum options
 {
@@ -411,7 +563,9 @@ enum options
   OPTION_NO_SKIP_BUG,
   OPTION_NO_WRAP,
   OPTION_ISA_RMW,
-  OPTION_LINK_RELAX
+  OPTION_LINK_RELAX,
+  OPTION_NO_LINK_RELAX,
+  OPTION_HAVE_GCCISR
 };
 
 struct option md_longopts[] =
@@ -422,6 +576,8 @@ struct option md_longopts[] =
   { "mno-wrap",     no_argument, NULL, OPTION_NO_WRAP     },
   { "mrmw",         no_argument, NULL, OPTION_ISA_RMW     },
   { "mlink-relax",  no_argument, NULL, OPTION_LINK_RELAX  },
+  { "mno-link-relax",  no_argument, NULL, OPTION_NO_LINK_RELAX  },
+  { "mgcc-isr",     no_argument, NULL, OPTION_HAVE_GCCISR },
   { NULL, no_argument, NULL, 0 }
 };
 
@@ -515,7 +671,7 @@ md_show_usage (FILE *stream)
 	"                   avr51 - enhanced AVR core with up to 128K program memory\n"
 	"                   avr6  - enhanced AVR core with up to 256K program memory\n"
 	"                   avrxmega2 - XMEGA, > 8K, < 64K FLASH, < 64K RAM\n"
-	"                   avrxmega3 - XMEGA, > 8K, <= 64K FLASH, > 64K RAM\n"
+	"                   avrxmega3 - XMEGA, RAM + FLASH < 64K, Flash visible in RAM\n"
 	"                   avrxmega4 - XMEGA, > 64K, <= 128K FLASH, <= 64K RAM\n"
 	"                   avrxmega5 - XMEGA, > 64K, <= 128K FLASH, > 64K RAM\n"
 	"                   avrxmega6 - XMEGA, > 128K, <= 256K FLASH, <= 64K RAM\n"
@@ -528,8 +684,10 @@ md_show_usage (FILE *stream)
 	"  -mno-wrap        reject rjmp/rcall instructions with 8K wrap-around\n"
 	"                   (default for avr3, avr5)\n"
 	"  -mrmw            accept Read-Modify-Write instructions\n"
-    "  -mlink-relax     generate relocations for linker relaxation\n"
-    ));
+	"  -mlink-relax     generate relocations for linker relaxation (default)\n"
+	"  -mno-link-relax  don't generate relocations for linker relaxation.\n"
+	"  -mgcc-isr        accept the __gcc_isr pseudo-instruction.\n"
+        ));
   show_mcu_list (stream);
 }
 
@@ -544,26 +702,16 @@ avr_set_arch (int dummy ATTRIBUTE_UNUSED)
 }
 
 int
-md_parse_option (int c, char *arg)
+md_parse_option (int c, const char *arg)
 {
   switch (c)
     {
     case OPTION_MMCU:
       {
 	int i;
-	char *s = alloca (strlen (arg) + 1);
-
-	{
-	  char *t = s;
-	  char *arg1 = arg;
-
-	  do
-	    *t = TOLOWER (*arg1++);
-	  while (*t++);
-	}
 
 	for (i = 0; mcu_types[i].name; ++i)
-	  if (strcmp (mcu_types[i].name, s) == 0)
+	  if (strcasecmp (mcu_types[i].name, arg) == 0)
 	    break;
 
 	if (!mcu_types[i].name)
@@ -576,12 +724,12 @@ md_parse_option (int c, char *arg)
 	   type - this for allows passing -mmcu=... via gcc ASM_SPEC as well
 	   as .arch ... in the asm output at the same time.  */
 	if (avr_mcu == &default_mcu || avr_mcu->mach == mcu_types[i].mach)
-      {
-        specified_mcu.name = mcu_types[i].name;
-        specified_mcu.isa  |= mcu_types[i].isa;
-        specified_mcu.mach = mcu_types[i].mach;
-        avr_mcu = &specified_mcu;
-      }
+	  {
+	    specified_mcu.name = mcu_types[i].name;
+	    specified_mcu.isa  |= mcu_types[i].isa;
+	    specified_mcu.mach = mcu_types[i].mach;
+	    avr_mcu = &specified_mcu;
+	  }
 	else
 	  as_fatal (_("redefinition of mcu type `%s' to `%s'"),
 		    avr_mcu->name, mcu_types[i].name);
@@ -600,20 +748,47 @@ md_parse_option (int c, char *arg)
       specified_mcu.isa |= AVR_ISA_RMW;
       return 1;
     case OPTION_LINK_RELAX:
-      avr_opt.link_relax = 1;
+      avr_opt.no_link_relax = 0;
+      return 1;
+    case OPTION_NO_LINK_RELAX:
+      avr_opt.no_link_relax = 1;
+      return 1;
+    case OPTION_HAVE_GCCISR:
+      avr_opt.have_gccisr = 1;
       return 1;
     }
 
   return 0;
 }
 
+
+/* Implement `md_undefined_symbol' */
+/* If we are in `__gcc_isr' chunk, pop up `__gcc_isr.n_pushed.<NUM>'
+   instead of `__gcc_isr.n_pushed'.  This will be resolved by the Done
+   chunk in `avr_patch_gccisr_frag' to the number of PUSHes produced by
+   the Prologue chunk.  */
+
 symbolS *
-md_undefined_symbol (char *name ATTRIBUTE_UNUSED)
+avr_undefined_symbol (char *name)
 {
+  if (ISR_CHUNK_Done != avr_isr.prev_chunk
+      && 0 == strcmp (name, "__gcc_isr.n_pushed"))
+    {
+      if (!avr_isr.sym_n_pushed)
+	{
+	  static unsigned suffix;
+	  char xname[30];
+	  sprintf (xname, "%s.%03u", name, (++suffix) % 1000);
+	  avr_isr.sym_n_pushed = symbol_new (xname, undefined_section,
+					     (valueT) 0, &zero_address_frag);
+	}
+      return avr_isr.sym_n_pushed;
+    }
+
   return NULL;
 }
 
-char *
+const char *
 md_atof (int type, char *litP, int *sizeP)
 {
   return ieee_md_atof (type, litP, sizeP, FALSE);
@@ -651,8 +826,19 @@ md_begin (void)
       hash_insert (avr_mod_hash, EXP_MOD_NAME (i), m.ptr);
     }
 
+  avr_no_sreg_hash = hash_new ();
+
+  for (i = 0; i < ARRAY_SIZE (avr_no_sreg); ++i)
+    {
+      gas_assert (hash_find (avr_hash, avr_no_sreg[i]));
+      hash_insert (avr_no_sreg_hash, avr_no_sreg[i], (char*) 4 /* dummy */);
+    }
+
+  avr_gccisr_opcode = (struct avr_opcodes_s*) hash_find (avr_hash, "__gcc_isr");
+  gas_assert (avr_gccisr_opcode);
+
   bfd_set_arch_mach (stdoutput, TARGET_ARCH, avr_mcu->mach);
-  linkrelax = avr_opt.link_relax;
+  linkrelax = !avr_opt.no_link_relax;
 }
 
 /* Resolve STR as a constant expression and return the result.
@@ -846,8 +1032,9 @@ avr_ldi_expression (expressionS *exp)
 static unsigned int
 avr_operand (struct avr_opcodes_s *opcode,
 	     int where,
-	     char *op,
-	     char **line)
+	     const char *op,
+	     char **line,
+	     int *pregno)
 {
   expressionS op_expr;
   unsigned int op_mask = 0;
@@ -895,6 +1082,9 @@ avr_operand (struct avr_opcodes_s *opcode,
             str = input_line_pointer;
           }
       }
+
+      if (pregno)
+	*pregno = op_mask;
 
       if (avr_mcu->mach == bfd_mach_avrtiny)
         {
@@ -984,7 +1174,7 @@ avr_operand (struct avr_opcodes_s *opcode,
       if (*str == '+')
 	{
 	  ++str;
-          char *s;
+          const char *s;
           for (s = opcode->opcode; *s; ++s)
             {
               if (*s == '+')
@@ -1071,6 +1261,16 @@ avr_operand (struct avr_opcodes_s *opcode,
       }
       break;
 
+    case 'N':
+      {
+	unsigned int x;
+
+	x = avr_get_constant (str, 255);
+	str = input_line_pointer;
+	op_mask = x;
+      }
+      break;
+
     case 'K':
       input_line_pointer = str;
       avr_offset_expression (& op_expr);
@@ -1125,18 +1325,28 @@ avr_operand (struct avr_opcodes_s *opcode,
   return op_mask;
 }
 
+/* TC_FRAG_INIT hook */
+
+void
+avr_frag_init (fragS *frag)
+{
+  memset (& frag->tc_frag_data, 0, sizeof frag->tc_frag_data);
+}
+
+
 /* Parse instruction operands.
    Return binary opcode.  */
 
 static unsigned int
 avr_operands (struct avr_opcodes_s *opcode, char **line)
 {
-  char *op = opcode->constraints;
+  const char *op = opcode->constraints;
   unsigned int bin = opcode->bin_opcode;
   char *frag = frag_more (opcode->insn_size * 2);
   char *str = *line;
   int where = frag - frag_now->fr_literal;
-  static unsigned int prev = 0;  /* Previous opcode.  */
+  int regno1 = -2;
+  int regno2 = -2;
 
   /* Opcode have operands.  */
   if (*op)
@@ -1149,7 +1359,7 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
       /* Parse first operand.  */
       if (REGISTER_P (*op))
 	reg1_present = 1;
-      reg1 = avr_operand (opcode, where, op, &str);
+      reg1 = avr_operand (opcode, where, op, &str, &regno1);
       ++op;
 
       /* Parse second operand.  */
@@ -1162,6 +1372,7 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
 	    {
 	      reg2 = reg1;
 	      reg2_present = 1;
+	      regno2 = regno1;
 	    }
 	  else
 	    {
@@ -1173,7 +1384,7 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
 		as_bad (_("`,' required"));
 	      str = skip_space (str);
 
-	      reg2 = avr_operand (opcode, where, op, &str);
+	      reg2 = avr_operand (opcode, where, op, &str, &regno2);
 	    }
 
 	  if (reg1_present && reg2_present)
@@ -1186,6 +1397,9 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
       bin |= reg1 | reg2;
     }
 
+  if (avr_opt.have_gccisr)
+    avr_update_gccisr (opcode, regno1, regno2);
+
   /* Detect undefined combinations (like ld r31,Z+).  */
   if (!avr_opt.all_opcodes && AVR_UNDEF_P (bin))
     as_warn (_("undefined combination of operands"));
@@ -1196,7 +1410,7 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
          (AVR core bug, fixed in the newer devices).  */
       if (!(avr_opt.no_skip_bug ||
             (avr_mcu->isa & (AVR_ISA_MUL | AVR_ISA_MOVW)))
-	  && AVR_SKIP_P (prev))
+	  && AVR_SKIP_P (frag_now->tc_frag_data.prev_opcode))
 	as_warn (_("skipping two-word instruction"));
 
       bfd_putl32 ((bfd_vma) bin, frag);
@@ -1204,7 +1418,7 @@ avr_operands (struct avr_opcodes_s *opcode, char **line)
   else
     bfd_putl16 ((bfd_vma) bin, frag);
 
-  prev = bin;
+  frag_now->tc_frag_data.prev_opcode = bin;
   *line = str;
   return bin;
 }
@@ -1216,7 +1430,7 @@ valueT
 md_section_align (asection *seg, valueT addr)
 {
   int align = bfd_get_section_alignment (stdoutput, seg);
-  return ((addr + (1 << align) - 1) & (-1 << align));
+  return ((addr + (1 << align) - 1) & (-1UL << align));
 }
 
 /* If you define this macro, it should return the offset between the
@@ -1239,7 +1453,9 @@ md_pcrel_from_section (fixS *fixp, segT sec)
 static bfd_boolean
 relaxable_section (asection *sec)
 {
-  return (sec->flags & SEC_DEBUGGING) == 0;
+  return ((sec->flags & SEC_DEBUGGING) == 0
+          && (sec->flags & SEC_CODE) != 0
+          && (sec->flags & SEC_ALLOC) != 0);
 }
 
 /* Does whatever the xtensa port does.  */
@@ -1336,6 +1552,7 @@ md_apply_fix (fixS *fixP, valueT * valP, segT seg)
 
       value = S_GET_VALUE (fixP->fx_addsy) +
           fixP->fx_offset - S_GET_VALUE (fixP->fx_subsy);
+      *valP = value;
 
       fixP->fx_subsy = NULL;
   }
@@ -1601,6 +1818,7 @@ tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED,
 	      fixS *fixp)
 {
   arelent *reloc;
+  bfd_reloc_code_real_type code = fixp->fx_r_type;
 
   if (fixp->fx_subsy != NULL)
     {
@@ -1608,13 +1826,27 @@ tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED,
       return NULL;
     }
 
-  reloc = xmalloc (sizeof (arelent));
+  reloc = XNEW (arelent);
 
-  reloc->sym_ptr_ptr = xmalloc (sizeof (asymbol *));
+  reloc->sym_ptr_ptr = XNEW (asymbol *);
   *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
 
   reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
-  reloc->howto = bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type);
+
+  if ((fixp->fx_r_type == BFD_RELOC_32) && (fixp->fx_pcrel))
+    {
+      if (seg->use_rela_p)
+        fixp->fx_offset -= md_pcrel_from_section (fixp, seg);
+      else
+        fixp->fx_offset = reloc->address;
+
+      code = BFD_RELOC_32_PCREL;
+    }
+
+  reloc->addend = fixp->fx_offset;
+
+  reloc->howto = bfd_reloc_type_lookup (stdoutput, code);
+
   if (reloc->howto == (reloc_howto_type *) NULL)
     {
       as_bad_where (fixp->fx_file, fixp->fx_line,
@@ -1627,7 +1859,6 @@ tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED,
       || fixp->fx_r_type == BFD_RELOC_VTABLE_ENTRY)
     reloc->address = fixp->fx_offset;
 
-  reloc->addend = fixp->fx_offset;
 
   return reloc;
 }
@@ -1652,7 +1883,7 @@ md_assemble (char *str)
 	 specifications with same mnemonic who's ISA bits matches.
 
          This requires include/opcode/avr.h to have the instructions with
-         same mnenomic to be specified in sequence.  */
+         same mnemonic to be specified in sequence.  */
 
       while ((opcode->isa & avr_mcu->isa) != opcode->isa)
         {
@@ -1673,6 +1904,13 @@ md_assemble (char *str)
       return;
     }
 
+    if (opcode == avr_gccisr_opcode
+	&& !avr_opt.have_gccisr)
+    {
+      as_bad (_("pseudo instruction `%s' not supported"), op);
+      return;
+    }
+
   /* Special case for opcodes with optional operands (lpm, elpm) -
      version with operands exists in avr_opcodes[] in the next entry.  */
 
@@ -1686,7 +1924,10 @@ md_assemble (char *str)
   {
     char *t = input_line_pointer;
 
-    avr_operands (opcode, &str);
+    if (opcode == avr_gccisr_opcode)
+      avr_gccisr_operands (opcode, &str);
+    else
+      avr_operands (opcode, &str);
     if (*skip_space (str))
       as_bad (_("garbage at end of line"));
     input_line_pointer = t;
@@ -1710,8 +1951,6 @@ const exp_mod_data_t exp_mod_data[] =
   { "hi8",  1, BFD_RELOC_AVR_8_HI,  "`hi8' "  },
   { "hlo8", 1, BFD_RELOC_AVR_8_HLO, "`hlo8' " },
   { "hh8",  1, BFD_RELOC_AVR_8_HLO, "`hh8' "  },
-  /* End of list.  */
-  { NULL, 0, 0, NULL }
 };
 
 /* Parse special CONS expression: pm (expression) or alternatively
@@ -1721,16 +1960,17 @@ const exp_mod_data_t exp_mod_data[] =
 const exp_mod_data_t *
 avr_parse_cons_expression (expressionS *exp, int nbytes)
 {
-  const exp_mod_data_t *pexp = &exp_mod_data[0];
   char *tmp;
+  unsigned int i;
 
   tmp = input_line_pointer = skip_space (input_line_pointer);
 
   /* The first entry of exp_mod_data[] contains an entry if no
      expression modifier is present.  Skip it.  */
 
-  for (pexp++; pexp->name; pexp++)
+  for (i = 0; i < ARRAY_SIZE (exp_mod_data); i++)
     {
+      const exp_mod_data_t *pexp = &exp_mod_data[i];
       int len = strlen (pexp->name);
 
       if (nbytes == pexp->nbytes
@@ -1799,7 +2039,7 @@ avr_cons_fix_new (fragS *frag,
     }
 
   if (bad)
-    as_bad (_("illegal %srelocation size: %d"), pexp_mod_data->error, nbytes);
+    as_bad (_("illegal %s relocation size: %d"), pexp_mod_data->error, nbytes);
 }
 
 static bfd_boolean
@@ -1823,7 +2063,7 @@ tc_cfi_frame_initial_instructions (void)
   cfi_add_CFA_def_cfa (32, return_size);
 
   /* Note that AVR consistently uses post-decrement, which means that things
-     do not line up the same way as for targers that use pre-decrement.  */
+     do not line up the same way as for targets that use pre-decrement.  */
   cfi_add_CFA_offset (DWARF2_DEFAULT_RETURN_COLUMN, 1-return_size);
 }
 
@@ -1847,4 +2087,724 @@ avr_allow_local_subtract (expressionS * left,
      two symbols and that relaxation may increase the distance between
      them.  */
   return FALSE;
+}
+
+void
+avr_elf_final_processing (void)
+{
+  if (linkrelax)
+    elf_elfheader (stdoutput)->e_flags |= EF_AVR_LINKRELAX_PREPARED;
+}
+
+/* Write out the header of a .avr.prop section into the area pointed to by
+   DATA.  The RECORD_COUNT will be placed in the header as the number of
+   records that are to follow.
+   The area DATA must be big enough the receive the header, which is
+   AVR_PROPERTY_SECTION_HEADER_SIZE bytes long.  */
+
+static char *
+avr_output_property_section_header (char *data,
+                                    unsigned int record_count)
+{
+  char *orig_data = data;
+
+  md_number_to_chars (data, AVR_PROPERTY_RECORDS_VERSION, 1);
+  data++;
+  /* There's space for a single byte flags field, but right now there's
+     nothing to go in here, so just set the value to zero.  */
+  md_number_to_chars (data, 0, 1);
+  data++;
+  md_number_to_chars (data, record_count, 2);
+  data+=2;
+
+  gas_assert (data - orig_data == AVR_PROPERTY_SECTION_HEADER_SIZE);
+
+  return data;
+}
+
+/* Return the number of bytes required to store RECORD into the .avr.prop
+   section. The size returned is the compressed size that corresponds to
+   how the record will be written out in AVR_OUTPUT_PROPERTY_RECORD.  */
+
+static int
+avr_record_size (const struct avr_property_record *record)
+{
+  /* The first 5 bytes are a 4-byte address, followed by a 1-byte type
+     identifier.  */
+  int size = 5;
+
+  switch (record->type)
+    {
+    case RECORD_ORG:
+      size += 0; /* No extra information.  */
+      break;
+
+    case RECORD_ORG_AND_FILL:
+      size += 4; /* A 4-byte fill value.  */
+      break;
+
+    case RECORD_ALIGN:
+      size += 4; /* A 4-byte alignment value.  */
+      break;
+
+    case RECORD_ALIGN_AND_FILL:
+      size += 8; /* A 4-byte alignment, and 4-byte fill value.  */
+      break;
+
+    default:
+      as_fatal (_("unknown record type %d (in %s)"),
+                record->type, __PRETTY_FUNCTION__);
+    }
+
+  return size;
+}
+
+/* Write out RECORD.  FRAG_BASE points to the start of the data area setup
+   to hold all of the .avr.prop content, FRAG_PTR points to the next
+   writable location.  The data area must be big enough to hold all of the
+   records.  The size of the data written out for this RECORD must match
+   the size from AVR_RECORD_SIZE.  */
+
+static char *
+avr_output_property_record (char * const frag_base, char *frag_ptr,
+                            const struct avr_property_record *record)
+{
+  fixS *fix;
+  int where;
+  char *init_frag_ptr = frag_ptr;
+
+  where = frag_ptr - frag_base;
+  fix = fix_new (frag_now, where, 4,
+                 section_symbol (record->section),
+                 record->offset, FALSE, BFD_RELOC_32);
+  fix->fx_file = "<internal>";
+  fix->fx_line = 0;
+  frag_ptr += 4;
+
+  md_number_to_chars (frag_ptr, (bfd_byte) record->type, 1);
+  frag_ptr += 1;
+
+  /* Write out the rest of the data.  */
+  switch (record->type)
+    {
+    case RECORD_ORG:
+      break;
+
+    case RECORD_ORG_AND_FILL:
+      md_number_to_chars (frag_ptr, record->data.org.fill, 4);
+      frag_ptr += 4;
+      break;
+
+    case RECORD_ALIGN:
+      md_number_to_chars (frag_ptr, record->data.align.bytes, 4);
+      frag_ptr += 4;
+      break;
+
+    case RECORD_ALIGN_AND_FILL:
+      md_number_to_chars (frag_ptr, record->data.align.bytes, 4);
+      md_number_to_chars (frag_ptr + 4, record->data.align.fill, 4);
+      frag_ptr += 8;
+      break;
+
+    default:
+      as_fatal (_("unknown record type %d (in %s)"),
+                record->type, __PRETTY_FUNCTION__);
+    }
+
+  gas_assert (frag_ptr - init_frag_ptr == avr_record_size (record));
+
+  return frag_ptr;
+}
+
+/* Create the section to hold the AVR property information.  Return the
+   section.  */
+
+static asection *
+avr_create_property_section (void)
+{
+  asection *sec;
+  flagword flags = (SEC_RELOC | SEC_HAS_CONTENTS | SEC_READONLY);
+  const char *section_name = AVR_PROPERTY_RECORD_SECTION_NAME;
+
+  sec = bfd_make_section (stdoutput, section_name);
+  if (sec == NULL)
+    as_fatal (_("Failed to create property section `%s'\n"), section_name);
+  bfd_set_section_flags (stdoutput, sec, flags);
+  sec->output_section = sec;
+  return sec;
+}
+
+/* This hook is called when alignment is performed, and allows us to
+   capture the details of both .org and .align directives.  */
+
+void
+avr_handle_align (fragS *fragP)
+{
+  if (linkrelax)
+    {
+      /* Ignore alignment requests at FR_ADDRESS 0, these are at the very
+         start of a section, and will be handled by the standard section
+         alignment mechanism.  */
+      if ((fragP->fr_type == rs_align
+           || fragP->fr_type == rs_align_code)
+          && fragP->fr_offset > 0)
+        {
+          char *p = fragP->fr_literal + fragP->fr_fix;
+
+          fragP->tc_frag_data.is_align = TRUE;
+          fragP->tc_frag_data.alignment = fragP->fr_offset;
+          fragP->tc_frag_data.fill = *p;
+          fragP->tc_frag_data.has_fill = (fragP->tc_frag_data.fill != 0);
+        }
+
+      if (fragP->fr_type == rs_org && fragP->fr_offset > 0)
+        {
+          char *p = fragP->fr_literal + fragP->fr_fix;
+
+          fragP->tc_frag_data.is_org = TRUE;
+          fragP->tc_frag_data.fill = *p;
+          fragP->tc_frag_data.has_fill = (fragP->tc_frag_data.fill != 0);
+        }
+    }
+}
+
+/* Return TRUE if this section is not one for which we need to record
+   information in the avr property section.  */
+
+static bfd_boolean
+exclude_section_from_property_tables (segT sec)
+{
+  /* Only generate property information for sections on which linker
+     relaxation could be performed.  */
+  return !relaxable_section (sec);
+}
+
+/* Create a property record for fragment FRAGP from section SEC and place
+   it into an AVR_PROPERTY_RECORD_LINK structure, which can then formed
+   into a linked list by the caller.  */
+
+static struct avr_property_record_link *
+create_record_for_frag (segT sec, fragS *fragP)
+{
+  struct avr_property_record_link *prop_rec_link;
+
+  prop_rec_link = XCNEW (struct avr_property_record_link);
+  gas_assert (fragP->fr_next != NULL);
+
+  if (fragP->tc_frag_data.is_org)
+    {
+      prop_rec_link->record.offset = fragP->fr_next->fr_address;
+      prop_rec_link->record.section = sec;
+
+      if (fragP->tc_frag_data.has_fill)
+        {
+          prop_rec_link->record.data.org.fill = fragP->tc_frag_data.fill;
+          prop_rec_link->record.type = RECORD_ORG_AND_FILL;
+        }
+      else
+        prop_rec_link->record.type = RECORD_ORG;
+    }
+  else
+    {
+      prop_rec_link->record.offset = fragP->fr_next->fr_address;
+      prop_rec_link->record.section = sec;
+
+      gas_assert (fragP->tc_frag_data.is_align);
+      if (fragP->tc_frag_data.has_fill)
+        {
+          prop_rec_link->record.data.align.fill = fragP->tc_frag_data.fill;
+          prop_rec_link->record.type = RECORD_ALIGN_AND_FILL;
+        }
+      else
+        prop_rec_link->record.type = RECORD_ALIGN;
+      prop_rec_link->record.data.align.bytes = fragP->tc_frag_data.alignment;
+    }
+
+  return prop_rec_link;
+}
+
+/* Build a list of AVR_PROPERTY_RECORD_LINK structures for section SEC, and
+   merged them onto the list pointed to by NEXT_PTR.  Return a pointer to
+   the last list item created.  */
+
+static struct avr_property_record_link **
+append_records_for_section (segT sec,
+                            struct avr_property_record_link **next_ptr)
+{
+  segment_info_type *seginfo = seg_info (sec);
+  fragS *fragP;
+
+  if (seginfo && seginfo->frchainP)
+    {
+      for (fragP = seginfo->frchainP->frch_root;
+           fragP;
+           fragP = fragP->fr_next)
+	{
+          if (fragP->tc_frag_data.is_align
+              || fragP->tc_frag_data.is_org)
+            {
+              /* Create a single new entry.  */
+              struct avr_property_record_link *new_link
+                = create_record_for_frag (sec, fragP);
+
+              *next_ptr = new_link;
+              next_ptr = &new_link->next;
+            }
+	}
+    }
+
+  return next_ptr;
+}
+
+/* Create the AVR property section and fill it with records of .org and
+   .align directives that were used.  The section is only created if it
+   will actually have any content.  */
+
+static void
+avr_create_and_fill_property_section (void)
+{
+  segT *seclist;
+  asection *prop_sec;
+  struct avr_property_record_link *r_list, **next_ptr;
+  char *frag_ptr, *frag_base;
+  bfd_size_type sec_size;
+  struct avr_property_record_link *rec;
+  unsigned int record_count;
+
+  /* First walk over all sections.  For sections on which linker
+     relaxation could be applied, extend the record list.  The record list
+     holds information that the linker will need to know.  */
+
+  prop_sec = NULL;
+  r_list = NULL;
+  next_ptr = &r_list;
+  for (seclist = &stdoutput->sections;
+       seclist && *seclist;
+       seclist = &(*seclist)->next)
+    {
+      segT sec = *seclist;
+
+      if (exclude_section_from_property_tables (sec))
+	continue;
+
+      next_ptr = append_records_for_section (sec, next_ptr);
+    }
+
+  /* Create property section and ensure the size is correct.  We've already
+     passed the point where gas could size this for us.  */
+  sec_size = AVR_PROPERTY_SECTION_HEADER_SIZE;
+  record_count = 0;
+  for (rec = r_list; rec != NULL; rec = rec->next)
+    {
+      record_count++;
+      sec_size += avr_record_size (&rec->record);
+    }
+
+  if (record_count == 0)
+    return;
+
+  prop_sec = avr_create_property_section ();
+  bfd_set_section_size (stdoutput, prop_sec, sec_size);
+
+  subseg_set (prop_sec, 0);
+  frag_base = frag_more (sec_size);
+
+  frag_ptr =
+    avr_output_property_section_header (frag_base, record_count);
+
+  for (rec = r_list; rec != NULL; rec = rec->next)
+    frag_ptr = avr_output_property_record (frag_base, frag_ptr, &rec->record);
+
+  frag_wane (frag_now);
+  frag_new (0);
+  frag_wane (frag_now);
+}
+
+/* We're using this hook to build up the AVR property section.  It's called
+   late in the assembly process which suits our needs.  */
+void
+avr_post_relax_hook (void)
+{
+  avr_create_and_fill_property_section ();
+}
+
+
+/* Accumulate information about instruction sequence to `avr_isr':
+   wheter TMP_REG, ZERO_REG and SREG might be touched.  Used during parse.
+   REG1 is either -1 or a register number used by the instruction as input
+   or output operand.  Similar for REG2.  */
+
+static void
+avr_update_gccisr (struct avr_opcodes_s *opcode, int reg1, int reg2)
+{
+  const int tiny_p = avr_mcu->mach == bfd_mach_avrtiny;
+  const int reg_tmp = tiny_p ? 16 : 0;
+  const int reg_zero = 1 + reg_tmp;
+
+  if (ISR_CHUNK_Done == avr_isr.prev_chunk
+      || (avr_isr.need_sreg
+	  && avr_isr.need_reg_tmp
+	  && avr_isr.need_reg_zero))
+    {
+      /* Nothing (more) to do */
+      return;
+    }
+
+  /* SREG: Look up instructions that don't clobber SREG.  */
+
+  if (!avr_isr.need_sreg
+      && !hash_find (avr_no_sreg_hash, opcode->name))
+    {
+      avr_isr.need_sreg = 1;
+    }
+
+  /* Handle explicit register operands.  Record *any* use as clobber.
+     This is because TMP_REG and ZERO_REG are not global and using
+     them makes no sense without a previous set.  */
+
+  avr_isr.need_reg_tmp  |= reg1 == reg_tmp  || reg2 == reg_tmp;
+  avr_isr.need_reg_zero |= reg1 == reg_zero || reg2 == reg_zero;
+
+  /* Handle implicit register operands and some opaque stuff.  */
+
+  if (strstr (opcode->name, "lpm")
+      && '?' == *opcode->constraints)
+    {
+      avr_isr.need_reg_tmp = 1;
+    }
+
+  if (strstr (opcode->name, "call")
+      || strstr (opcode->name, "mul")
+      || 0 == strcmp (opcode->name, "des")
+      || (0 == strcmp (opcode->name, "movw")
+	  && (reg1 == reg_tmp || reg2 == reg_tmp)))
+    {
+      avr_isr.need_reg_tmp = 1;
+      avr_isr.need_reg_zero = 1;
+    }
+}
+
+
+/* Emit some 1-word instruction to **PWHERE and advance *PWHERE by the number
+   of octets written.  INSN specifies the desired instruction and REG is the
+   register used by it.  This function is only used with restricted subset of
+   instructions as might be emit by `__gcc_isr'.  IN / OUT will use SREG
+   and LDI loads 0.  */
+
+static void
+avr_emit_insn (const char *insn, int reg, char **pwhere)
+{
+  const int sreg = 0x3f;
+  unsigned bin = 0;
+  const struct avr_opcodes_s *op
+    = (struct avr_opcodes_s*) hash_find (avr_hash, insn);
+
+  /* We only have to deal with: IN, OUT, PUSH, POP, CLR, LDI 0.  All of
+     these deal with at least one Reg and are 1-word instructions.  */
+
+  gas_assert (op && 1 == op->insn_size);
+  gas_assert (reg >= 0 && reg <= 31);
+
+  if (strchr (op->constraints, 'r'))
+    {
+      bin = op->bin_opcode | (reg << 4);
+    }
+  else if (strchr (op->constraints, 'd'))
+    {
+      gas_assert (reg >= 16);
+      bin = op->bin_opcode | ((reg & 0xf) << 4);
+    }
+  else
+    abort();
+
+  if (strchr (op->constraints, 'P'))
+    {
+      bin |= ((sreg & 0x30) << 5) | (sreg & 0x0f);
+    }
+  else if (0 == strcmp ("r=r", op->constraints))
+    {
+      bin |= ((reg & 0x10) << 5) | (reg & 0x0f);
+    }
+  else
+    gas_assert (0 == strcmp ("r", op->constraints)
+		|| 0 == strcmp ("ldi", op->name));
+
+  bfd_putl16 ((bfd_vma) bin, *pwhere);
+  (*pwhere) += 2 * op->insn_size;
+}
+
+
+/* Turn rs_machine_dependent frag *FR into an ordinary rs_fill code frag,
+   using information gathered in `avr_isr'.  REG is the register number as
+   supplied by Done chunk "__gcc_isr 0,REG".  */
+
+static void
+avr_patch_gccisr_frag (fragS *fr, int reg)
+{
+  int treg;
+  int n_pushed = 0;
+  char *where = fr->fr_literal;
+  const int tiny_p = avr_mcu->mach == bfd_mach_avrtiny;
+  const int reg_tmp = tiny_p ? 16 : 0;
+  const int reg_zero = 1 + reg_tmp;
+
+  /* Clearing ZERO_REG on non-Tiny needs CLR which clobbers SREG.  */
+
+  avr_isr.need_sreg |= !tiny_p && avr_isr.need_reg_zero;
+
+  /* A working register to PUSH / POP the SREG.  We might use the register
+     as supplied by ISR_CHUNK_Done for that purpose as GCC wants to push
+     it anyways.  If GCC passes ZERO_REG or TMP_REG, it has no clue (and
+     no additional regs to safe) and we use that reg.  */
+
+  treg
+    = avr_isr.need_reg_tmp   ? reg_tmp
+    : avr_isr.need_reg_zero  ? reg_zero
+    : avr_isr.need_sreg      ? reg
+    : reg > reg_zero         ? reg
+    : -1;
+
+  if (treg >= 0)
+    {
+      /* Non-empty prologue / epilogue */
+
+      if (ISR_CHUNK_Prologue == fr->fr_subtype)
+	{
+	  avr_emit_insn ("push", treg, &where);
+	  n_pushed++;
+
+	  if (avr_isr.need_sreg)
+	    {
+	      avr_emit_insn ("in",   treg, &where);
+	      avr_emit_insn ("push", treg, &where);
+	      n_pushed++;
+	    }
+
+	  if (avr_isr.need_reg_zero)
+	    {
+	      if (reg_zero != treg)
+		{
+		  avr_emit_insn ("push", reg_zero, &where);
+		  n_pushed++;
+		}
+	      avr_emit_insn (tiny_p ? "ldi" : "clr", reg_zero, &where);
+	    }
+
+	  if (reg > reg_zero && reg != treg)
+	    {
+	      avr_emit_insn ("push", reg, &where);
+	      n_pushed++;
+	    }
+	}
+      else if (ISR_CHUNK_Epilogue == fr->fr_subtype)
+	{
+	  /* Same logic as in Prologue but in reverse order and with counter
+	     parts of either instruction:  POP instead of PUSH and OUT instead
+	     of IN.  Clearing ZERO_REG has no couter part.  */
+
+	  if (reg > reg_zero && reg != treg)
+	    avr_emit_insn ("pop", reg, &where);
+
+	  if (avr_isr.need_reg_zero
+	      && reg_zero != treg)
+	    avr_emit_insn ("pop", reg_zero, &where);
+
+	  if (avr_isr.need_sreg)
+	    {
+	      avr_emit_insn ("pop", treg, &where);
+	      avr_emit_insn ("out", treg, &where);
+	    }
+
+	  avr_emit_insn ("pop", treg, &where);
+	}
+      else
+	abort();
+    } /* treg >= 0 */
+
+  if (ISR_CHUNK_Prologue == fr->fr_subtype
+      && avr_isr.sym_n_pushed)
+    {
+      symbolS *sy = avr_isr.sym_n_pushed;
+      /* Turn magic `__gcc_isr.n_pushed' into its now known value.  */
+
+      S_SET_VALUE (sy, n_pushed);
+      S_SET_SEGMENT (sy, expr_section);
+      avr_isr.sym_n_pushed = NULL;
+    }
+
+  /* Turn frag into ordinary code frag of now known size.  */
+
+  fr->fr_var = 0;
+  fr->fr_fix = (offsetT) (where - fr->fr_literal);
+  gas_assert (fr->fr_fix <= fr->fr_offset);
+  fr->fr_offset = 0;
+  fr->fr_type = rs_fill;
+  fr->fr_subtype = 0;
+}
+
+
+/* Implements `__gcc_isr' pseudo-instruction.  For Prologue and Epilogue
+   chunks, emit a new rs_machine_dependent frag.  For Done chunks, traverse
+   the current segment and patch all rs_machine_dependent frags to become
+   appropriate rs_fill code frags.  If chunks are seen in an odd ordering,
+   throw an error instead.  */
+
+static void
+avr_gccisr_operands (struct avr_opcodes_s *opcode, char **line)
+{
+  int bad = 0;
+  int chunk, reg = 0;
+  char *str = *line;
+
+  gas_assert (avr_opt.have_gccisr);
+
+  /* We only use operands "N" and "r" which don't pop new fix-ups.  */
+
+  /* 1st operand: Which chunk of __gcc_isr: 0...2.  */
+
+  chunk = avr_operand (opcode, -1, "N", &str, NULL);
+  if (chunk < 0 || chunk > 2)
+    as_bad (_("%s requires value 0-2 as operand 1"), opcode->name);
+
+  if (ISR_CHUNK_Done == chunk)
+    {
+      /* 2nd operand: A register to push / pop.  */
+
+      str = skip_space (str);
+      if (*str == '\0' || *str++ != ',')
+	as_bad (_("`,' required"));
+      else
+	avr_operand (opcode, -1, "r", &str, &reg);
+    }
+
+  *line = str;
+
+  /* Chunks must follow in a specific order:
+     - Prologue: Exactly one
+     - Epilogue: Any number
+     - Done: Exactly one.  */
+  bad |= ISR_CHUNK_Prologue == chunk && avr_isr.prev_chunk != ISR_CHUNK_Done;
+  bad |= ISR_CHUNK_Epilogue == chunk && avr_isr.prev_chunk == ISR_CHUNK_Done;
+  bad |= ISR_CHUNK_Done == chunk && avr_isr.prev_chunk == ISR_CHUNK_Done;
+  if (bad)
+    {
+      if (avr_isr.file)
+	as_bad (_("`%s %d' after `%s %d' from %s:%u"), opcode->name, chunk,
+		opcode->name, avr_isr.prev_chunk, avr_isr.file, avr_isr.line);
+      else
+	as_bad (_("`%s %d' but no chunk open yet"), opcode->name, chunk);
+    }
+
+  if (!had_errors())
+    {
+      /* The longest sequence (prologue) might have up to 6 insns (words):
+
+	 push  R0
+	 in    R0, SREG
+	 push  R0
+	 push  R1
+	 clr   R1
+	 push  Rx
+      */
+      unsigned int size = 2 * 6;
+      fragS *fr;
+
+      switch (chunk)
+	{
+	case ISR_CHUNK_Prologue:
+	  avr_isr.need_reg_tmp = 0;
+	  avr_isr.need_reg_zero = 0;
+	  avr_isr.need_sreg = 0;
+	  avr_isr.sym_n_pushed = NULL;
+	  /* FALLTHRU */
+
+	case ISR_CHUNK_Epilogue:
+	  /* Emit a new rs_machine_dependent fragment into the fragment chain.
+	     It will be patched and cleaned up once we see the matching
+	     ISR_CHUNK_Done.  */
+	  frag_wane (frag_now);
+	  frag_new (0);
+	  frag_more (size);
+
+	  frag_now->fr_var = 1;
+	  frag_now->fr_offset = size;
+	  frag_now->fr_fix = 0;
+	  frag_now->fr_type = rs_machine_dependent;
+	  frag_now->fr_subtype = chunk;
+	  frag_new (size);
+	  break;
+
+	case ISR_CHUNK_Done:
+	  /* Traverse all frags of the current subseg and turn ones of type
+	     rs_machine_dependent into ordinary code as expected by GCC.  */
+
+	  for (fr = frchain_now->frch_root; fr; fr = fr->fr_next)
+	    if (fr->fr_type == rs_machine_dependent)
+	      avr_patch_gccisr_frag (fr, reg);
+	  break;
+
+	default:
+	  abort();
+	  break;
+	}
+    } /* !had_errors */
+
+  avr_isr.prev_chunk = chunk;
+  avr_isr.file = as_where (&avr_isr.line);
+}
+
+
+/* Callback used by the function below.  Diagnose any dangling stuff from
+   `__gcc_isr', i.e. frags of type rs_machine_dependent.  Such frags should
+   have been resolved during parse by ISR_CHUNK_Done.  If such a frag is
+   seen, report an error and turn it into something harmless.  */
+
+static void
+avr_check_gccisr_done (bfd *abfd ATTRIBUTE_UNUSED,
+		       segT section,
+		       void *xxx ATTRIBUTE_UNUSED)
+{
+  segment_info_type *info = seg_info (section);
+
+  if (SEG_NORMAL (section)
+      /* BFD may have introduced its own sections without using
+	 subseg_new, so it is possible that seg_info is NULL.  */
+      && info)
+    {
+      fragS *fr;
+      frchainS *frch;
+
+      for (frch = info->frchainP; frch; frch = frch->frch_next)
+	for (fr = frch->frch_root; fr; fr = fr->fr_next)
+	  if (fr->fr_type == rs_machine_dependent)
+	    {
+	      if (avr_isr.file)
+		as_bad_where (avr_isr.file, avr_isr.line,
+			      _("dangling `__gcc_isr %d'"), avr_isr.prev_chunk);
+	      else if (!had_errors())
+		as_bad (_("dangling `__gcc_isr'"));
+
+	      avr_isr.file = NULL;
+
+	      /* Avoid Internal errors due to rs_machine_dependent in the
+		 remainder:  Turn frag into something harmless.   */
+	      fr->fr_var = 0;
+	      fr->fr_fix = 0;
+	      fr->fr_offset = 0;
+	      fr->fr_type = rs_fill;
+	      fr->fr_subtype = 0;
+	    }
+    }
+}
+
+
+/* Implement `md_pre_output_hook' */
+/* Run over all relevant sections and diagnose any dangling `__gcc_isr'.
+   This runs after parsing all inputs but before relaxing and writing.  */
+
+void
+avr_pre_output_hook (void)
+{
+  if (avr_opt.have_gccisr)
+    bfd_map_over_sections (stdoutput, avr_check_gccisr_done, NULL);
 }

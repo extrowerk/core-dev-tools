@@ -1,5 +1,5 @@
 /* Plugin support for BFD.
-   Copyright (C) 2009-2014 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -69,42 +69,46 @@ dlerror (void)
 
 #endif /* !defined (HAVE_DLFCN_H) && defined (HAVE_WINDOWS_H)  */
 
-#define bfd_plugin_close_and_cleanup                  _bfd_generic_close_and_cleanup
-#define bfd_plugin_bfd_free_cached_info               _bfd_generic_bfd_free_cached_info
-#define bfd_plugin_new_section_hook                   _bfd_generic_new_section_hook
-#define bfd_plugin_get_section_contents               _bfd_generic_get_section_contents
+#define bfd_plugin_close_and_cleanup		      _bfd_generic_close_and_cleanup
+#define bfd_plugin_bfd_free_cached_info		      _bfd_generic_bfd_free_cached_info
+#define bfd_plugin_new_section_hook		      _bfd_generic_new_section_hook
+#define bfd_plugin_get_section_contents		      _bfd_generic_get_section_contents
 #define bfd_plugin_get_section_contents_in_window     _bfd_generic_get_section_contents_in_window
-#define bfd_plugin_bfd_copy_private_header_data       _bfd_generic_bfd_copy_private_header_data
-#define bfd_plugin_bfd_merge_private_bfd_data         _bfd_generic_bfd_merge_private_bfd_data
-#define bfd_plugin_bfd_copy_private_header_data       _bfd_generic_bfd_copy_private_header_data
-#define bfd_plugin_bfd_set_private_flags              _bfd_generic_bfd_set_private_flags
+#define bfd_plugin_bfd_copy_private_header_data	      _bfd_generic_bfd_copy_private_header_data
+#define bfd_plugin_bfd_merge_private_bfd_data	      _bfd_generic_bfd_merge_private_bfd_data
+#define bfd_plugin_bfd_copy_private_header_data	      _bfd_generic_bfd_copy_private_header_data
+#define bfd_plugin_bfd_set_private_flags	      _bfd_generic_bfd_set_private_flags
 #define bfd_plugin_core_file_matches_executable_p     generic_core_file_matches_executable_p
-#define bfd_plugin_bfd_is_local_label_name            _bfd_nosymbols_bfd_is_local_label_name
-#define bfd_plugin_bfd_is_target_special_symbol       ((bfd_boolean (*) (bfd *, asymbol *)) bfd_false)
-#define bfd_plugin_get_lineno                         _bfd_nosymbols_get_lineno
-#define bfd_plugin_find_nearest_line                  _bfd_nosymbols_find_nearest_line
-#define bfd_plugin_find_line                          _bfd_nosymbols_find_line
-#define bfd_plugin_find_inliner_info                  _bfd_nosymbols_find_inliner_info
-#define bfd_plugin_bfd_make_debug_symbol              _bfd_nosymbols_bfd_make_debug_symbol
-#define bfd_plugin_read_minisymbols                   _bfd_generic_read_minisymbols
-#define bfd_plugin_minisymbol_to_symbol               _bfd_generic_minisymbol_to_symbol
-#define bfd_plugin_set_arch_mach                      bfd_default_set_arch_mach
-#define bfd_plugin_set_section_contents               _bfd_generic_set_section_contents
+#define bfd_plugin_bfd_is_local_label_name	      _bfd_nosymbols_bfd_is_local_label_name
+#define bfd_plugin_bfd_is_target_special_symbol	      _bfd_bool_bfd_asymbol_false
+#define bfd_plugin_get_lineno			      _bfd_nosymbols_get_lineno
+#define bfd_plugin_find_nearest_line		      _bfd_nosymbols_find_nearest_line
+#define bfd_plugin_find_line			      _bfd_nosymbols_find_line
+#define bfd_plugin_find_inliner_info		      _bfd_nosymbols_find_inliner_info
+#define bfd_plugin_get_symbol_version_string	      _bfd_nosymbols_get_symbol_version_string
+#define bfd_plugin_bfd_make_debug_symbol	      _bfd_nosymbols_bfd_make_debug_symbol
+#define bfd_plugin_read_minisymbols		      _bfd_generic_read_minisymbols
+#define bfd_plugin_minisymbol_to_symbol		      _bfd_generic_minisymbol_to_symbol
+#define bfd_plugin_set_arch_mach		      bfd_default_set_arch_mach
+#define bfd_plugin_set_section_contents		      _bfd_generic_set_section_contents
 #define bfd_plugin_bfd_get_relocated_section_contents bfd_generic_get_relocated_section_contents
-#define bfd_plugin_bfd_relax_section                  bfd_generic_relax_section
-#define bfd_plugin_bfd_link_hash_table_create         _bfd_generic_link_hash_table_create
-#define bfd_plugin_bfd_link_add_symbols               _bfd_generic_link_add_symbols
-#define bfd_plugin_bfd_link_just_syms                 _bfd_generic_link_just_syms
-#define bfd_plugin_bfd_final_link                     _bfd_generic_final_link
-#define bfd_plugin_bfd_link_split_section             _bfd_generic_link_split_section
-#define bfd_plugin_bfd_gc_sections                    bfd_generic_gc_sections
-#define bfd_plugin_bfd_lookup_section_flags           bfd_generic_lookup_section_flags
-#define bfd_plugin_bfd_merge_sections                 bfd_generic_merge_sections
-#define bfd_plugin_bfd_is_group_section               bfd_generic_is_group_section
-#define bfd_plugin_bfd_discard_group                  bfd_generic_discard_group
-#define bfd_plugin_section_already_linked             _bfd_generic_section_already_linked
-#define bfd_plugin_bfd_define_common_symbol           bfd_generic_define_common_symbol
+#define bfd_plugin_bfd_relax_section		      bfd_generic_relax_section
+#define bfd_plugin_bfd_link_hash_table_create	      _bfd_generic_link_hash_table_create
+#define bfd_plugin_bfd_link_add_symbols		      _bfd_generic_link_add_symbols
+#define bfd_plugin_bfd_link_just_syms		      _bfd_generic_link_just_syms
+#define bfd_plugin_bfd_final_link		      _bfd_generic_final_link
+#define bfd_plugin_bfd_link_split_section	      _bfd_generic_link_split_section
+#define bfd_plugin_bfd_gc_sections		      bfd_generic_gc_sections
+#define bfd_plugin_bfd_lookup_section_flags	      bfd_generic_lookup_section_flags
+#define bfd_plugin_bfd_merge_sections		      bfd_generic_merge_sections
+#define bfd_plugin_bfd_is_group_section		      bfd_generic_is_group_section
+#define bfd_plugin_bfd_discard_group		      bfd_generic_discard_group
+#define bfd_plugin_section_already_linked	      _bfd_generic_section_already_linked
+#define bfd_plugin_bfd_define_common_symbol	      bfd_generic_define_common_symbol
+#define bfd_plugin_bfd_link_hide_symbol		      _bfd_generic_link_hide_symbol
+#define bfd_plugin_bfd_define_start_stop	      bfd_generic_define_start_stop
 #define bfd_plugin_bfd_copy_link_hash_symbol_type     _bfd_generic_copy_link_hash_symbol_type
+#define bfd_plugin_bfd_link_check_relocs	      _bfd_generic_link_check_relocs
 
 static enum ld_plugin_status
 message (int level ATTRIBUTE_UNUSED,
@@ -120,7 +124,7 @@ message (int level ATTRIBUTE_UNUSED,
 }
 
 /* Register a claim-file handler. */
-static ld_plugin_claim_file_handler claim_file;
+static ld_plugin_claim_file_handler claim_file = NULL;
 
 static enum ld_plugin_status
 register_claim_file (ld_plugin_claim_file_handler handler)
@@ -156,71 +160,117 @@ bfd_plugin_set_program_name (const char *program_name)
   plugin_program_name = program_name;
 }
 
+int
+bfd_plugin_open_input (bfd *ibfd, struct ld_plugin_input_file *file)
+{
+  bfd *iobfd;
+
+  iobfd = ibfd;
+  while (iobfd->my_archive
+	 && !bfd_is_thin_archive (iobfd->my_archive))
+    iobfd = iobfd->my_archive;
+  file->name = iobfd->filename;
+
+  if (!iobfd->iostream && !bfd_open_file (iobfd))
+    return 0;
+
+  /* The plugin API expects that the file descriptor won't be closed
+     and reused as done by the bfd file cache.  So open it again.
+     dup isn't good enough.  plugin IO uses lseek/read while BFD uses
+     fseek/fread.  It isn't wise to mix the unistd and stdio calls on
+     the same underlying file descriptor.  */
+  file->fd = open (file->name, O_RDONLY | O_BINARY);
+  if (file->fd < 0)
+    return 0;
+
+  if (iobfd == ibfd)
+    {
+      struct stat stat_buf;
+
+      if (fstat (file->fd, &stat_buf))
+	{
+	  close(file->fd);
+	  return 0;
+	}
+
+      file->offset = 0;
+      file->filesize = stat_buf.st_size;
+    }
+  else
+    {
+      file->offset = ibfd->origin;
+      file->filesize = arelt_size (ibfd);
+    }
+  return 1;
+}
+
 static int
 try_claim (bfd *abfd)
 {
   int claimed = 0;
   struct ld_plugin_input_file file;
-  bfd *iobfd;
-
-  file.name = abfd->filename;
-
-  if (abfd->my_archive)
-    {
-      iobfd = abfd->my_archive;
-      file.offset = abfd->origin;
-      file.filesize = arelt_size (abfd);
-    }
-  else
-    {
-      iobfd = abfd;
-      file.offset = 0;
-      file.filesize = 0;
-    }
-
-  if (!iobfd->iostream && !bfd_open_file (iobfd))
-    return 0;
-
-  file.fd = fileno ((FILE *) iobfd->iostream);
-
-  if (!abfd->my_archive)
-    {
-      struct stat stat_buf;
-      if (fstat (file.fd, &stat_buf))
-        return 0;
-      file.filesize = stat_buf.st_size;
-    }
 
   file.handle = abfd;
-  off_t cur_offset = lseek(file.fd, 0, SEEK_CUR);
-  claim_file (&file, &claimed);
-  lseek(file.fd, cur_offset, SEEK_SET);
-  if (!claimed)
+  if (!bfd_plugin_open_input (abfd, &file))
     return 0;
-
-  return 1;
+  if (claim_file)
+    claim_file (&file, &claimed);
+  close (file.fd);
+  return claimed;
 }
 
-static int
-try_load_plugin (const char *pname, bfd *abfd)
+struct plugin_list_entry
 {
-  void *plugin_handle;
-  int tv_size = 4;
-  struct ld_plugin_tv tv[tv_size];
+  void *                        handle;
+  ld_plugin_claim_file_handler  claim_file;
+  struct plugin_list_entry *    next;
+};
+
+static struct plugin_list_entry * plugin_list = NULL;
+
+static int
+try_load_plugin (const char *pname, bfd *abfd, int *has_plugin_p)
+{
+  void *plugin_handle = NULL;
+  struct ld_plugin_tv tv[4];
   int i;
   ld_plugin_onload onload;
   enum ld_plugin_status status;
+  struct plugin_list_entry *plugin_list_iter;
+
+  *has_plugin_p = 0;
 
   plugin_handle = dlopen (pname, RTLD_NOW);
   if (!plugin_handle)
     {
-      (*_bfd_error_handler)("%s\n", dlerror ());
+      _bfd_error_handler ("%s\n", dlerror ());
       return 0;
     }
 
+  for (plugin_list_iter = plugin_list;
+       plugin_list_iter;
+       plugin_list_iter = plugin_list_iter->next)
+    {
+      if (plugin_handle == plugin_list_iter->handle)
+        {
+          dlclose (plugin_handle);
+          if (!plugin_list_iter->claim_file)
+            return 0;
+
+          register_claim_file (plugin_list_iter->claim_file);
+          goto have_claim_file;
+        }
+    }
+
+  plugin_list_iter = (struct plugin_list_entry *) xmalloc (sizeof *plugin_list_iter);
+  plugin_list_iter->handle = plugin_handle;
+  plugin_list_iter->claim_file = NULL;
+  plugin_list_iter->next = plugin_list;
+  plugin_list = plugin_list_iter;
+
   onload = dlsym (plugin_handle, "onload");
   if (!onload)
-    goto err;
+    return 0;
 
   i = 0;
   tv[i].tv_tag = LDPT_MESSAGE;
@@ -241,20 +291,30 @@ try_load_plugin (const char *pname, bfd *abfd)
   status = (*onload)(tv);
 
   if (status != LDPS_OK)
-    goto err;
+    return 0;
+
+  plugin_list_iter->claim_file = claim_file;
+
+have_claim_file:
+  *has_plugin_p = 1;
+
+  abfd->plugin_format = bfd_plugin_no;
 
   if (!claim_file)
-    goto err;
+    return 0;
 
   if (!try_claim (abfd))
-    goto err;
+    return 0;
 
+  abfd->plugin_format = bfd_plugin_yes;
   return 1;
-
- err:
-  plugin_handle = NULL;
-  return 0;
 }
+
+/* There may be plugin libraries in lib/bfd-plugins.  */
+
+static int has_plugin = -1;
+
+static const bfd_target *(*ld_plugin_object_p) (bfd *);
 
 static const char *plugin_name;
 
@@ -262,6 +322,43 @@ void
 bfd_plugin_set_plugin (const char *p)
 {
   plugin_name = p;
+  has_plugin = p != NULL;
+}
+
+/* Return TRUE if a plugin library is used.  */
+
+bfd_boolean
+bfd_plugin_specified_p (void)
+{
+  return has_plugin > 0;
+}
+
+/* Return TRUE if ABFD can be claimed by linker LTO plugin.  */
+
+bfd_boolean
+bfd_link_plugin_object_p (bfd *abfd)
+{
+  if (ld_plugin_object_p)
+    return ld_plugin_object_p (abfd) != NULL;
+  return FALSE;
+}
+
+extern const bfd_target plugin_vec;
+
+/* Return TRUE if TARGET is a pointer to plugin_vec.  */
+
+bfd_boolean
+bfd_plugin_target_p (const bfd_target *target)
+{
+  return target == &plugin_vec;
+}
+
+/* Register OBJECT_P to be used by bfd_plugin_object_p.  */
+
+void
+register_ld_plugin_object_p (const bfd_target *(*object_p) (bfd *))
+{
+  ld_plugin_object_p = object_p;
 }
 
 static int
@@ -273,11 +370,14 @@ load_plugin (bfd *abfd)
   struct dirent *ent;
   int found = 0;
 
+  if (!has_plugin)
+    return found;
+
   if (plugin_name)
-    return try_load_plugin (plugin_name, abfd);
+    return try_load_plugin (plugin_name, abfd, &has_plugin);
 
   if (plugin_program_name == NULL)
-    return 0;
+    return found;
 
   plugin_dir = concat (BINDIR, "/../lib/bfd-plugins", NULL);
   p = make_relative_prefix (plugin_program_name,
@@ -294,10 +394,13 @@ load_plugin (bfd *abfd)
     {
       char *full_name;
       struct stat s;
+      int valid_plugin;
 
       full_name = concat (p, "/", ent->d_name, NULL);
-      if (stat(full_name, &s) == 0 && S_ISREG (s.st_mode))
-	found = try_load_plugin (full_name, abfd);
+      if (stat (full_name, &s) == 0 && S_ISREG (s.st_mode))
+	found = try_load_plugin (full_name, abfd, &valid_plugin);
+      if (has_plugin <= 0)
+	has_plugin = valid_plugin;
       free (full_name);
       if (found)
 	break;
@@ -315,10 +418,13 @@ load_plugin (bfd *abfd)
 static const bfd_target *
 bfd_plugin_object_p (bfd *abfd)
 {
-  if (!load_plugin (abfd))
+  if (ld_plugin_object_p)
+    return ld_plugin_object_p (abfd);
+
+  if (abfd->plugin_format == bfd_plugin_unknown && !load_plugin (abfd))
     return NULL;
 
-  return abfd->xvec;
+  return abfd->plugin_format == bfd_plugin_yes ? abfd->xvec : NULL;
 }
 
 /* Copy any private info we understand from the input bfd
@@ -516,7 +622,7 @@ const bfd_target plugin_vec =
   0,				/* symbol_leading_char.  */
   '/',				/* ar_pad_char.  */
   15,				/* ar_max_namelen.  */
-  0,				/* match priority.  */
+  255,				/* match priority.  */
 
   bfd_getl64, bfd_getl_signed_64, bfd_putl64,
   bfd_getl32, bfd_getl_signed_32, bfd_putl32,
@@ -532,22 +638,26 @@ const bfd_target plugin_vec =
     _bfd_dummy_target
   },
   {				/* bfd_set_format.  */
-    bfd_false,
-    bfd_false,
+    _bfd_bool_bfd_false_error,
+    _bfd_bool_bfd_false_error,
     _bfd_generic_mkarchive,
-    bfd_false,
+    _bfd_bool_bfd_false_error,
   },
   {				/* bfd_write_contents.  */
-    bfd_false,
-    bfd_false,
+    _bfd_bool_bfd_false_error,
+    _bfd_bool_bfd_false_error,
     _bfd_write_archive_contents,
-    bfd_false,
+    _bfd_bool_bfd_false_error,
   },
 
   BFD_JUMP_TABLE_GENERIC (bfd_plugin),
   BFD_JUMP_TABLE_COPY (bfd_plugin),
   BFD_JUMP_TABLE_CORE (bfd_plugin),
+#ifdef USE_64_BIT_ARCHIVE
+  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_64_bit),
+#else
   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
+#endif
   BFD_JUMP_TABLE_SYMBOLS (bfd_plugin),
   BFD_JUMP_TABLE_RELOCS (_bfd_norelocs),
   BFD_JUMP_TABLE_WRITE (bfd_plugin),
@@ -556,6 +666,6 @@ const bfd_target plugin_vec =
 
   NULL,
 
-  NULL  			/* backend_data.  */
+  NULL				/* backend_data.  */
 };
 #endif /* BFD_SUPPORTS_PLUGIN */

@@ -1,5 +1,5 @@
 /* Print SPARC instructions.
-   Copyright (C) 1989-2014 Free Software Foundation, Inc.
+   Copyright (C) 1989-2019 Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
 
@@ -28,7 +28,13 @@
 /* Bitmask of v9 architectures.  */
 #define MASK_V9 ((1 << SPARC_OPCODE_ARCH_V9) \
 		 | (1 << SPARC_OPCODE_ARCH_V9A) \
-		 | (1 << SPARC_OPCODE_ARCH_V9B))
+		 | (1 << SPARC_OPCODE_ARCH_V9B) \
+		 | (1 << SPARC_OPCODE_ARCH_V9C) \
+		 | (1 << SPARC_OPCODE_ARCH_V9D) \
+		 | (1 << SPARC_OPCODE_ARCH_V9E) \
+		 | (1 << SPARC_OPCODE_ARCH_V9V) \
+		 | (1 << SPARC_OPCODE_ARCH_V9M) \
+		 | (1 << SPARC_OPCODE_ARCH_M8))
 /* 1 if INSN is for v9 only.  */
 #define V9_ONLY_P(insn) (! ((insn)->architecture & ~MASK_V9))
 /* 1 if INSN is for v9.  */
@@ -86,7 +92,7 @@ static char *v9_priv_reg_names[] =
   "tpc", "tnpc", "tstate", "tt", "tick", "tba", "pstate", "tl",
   "pil", "cwp", "cansave", "canrestore", "cleanwin", "otherwin",
   "wstate", "fq", "gl"
-  /* "ver" - special cased */
+  /* "ver" and "pmcdper" - special cased */
 };
 
 /* These are ordered according to there register number in
@@ -94,9 +100,9 @@ static char *v9_priv_reg_names[] =
 static char *v9_hpriv_reg_names[] =
 {
   "hpstate", "htstate", "resv2", "hintp", "resv4", "htba", "hver",
-  "resv7", "resv8", "resv9", "resv10", "resv11", "resv12", "resv13", 
+  "resv7", "resv8", "resv9", "resv10", "resv11", "resv12", "resv13",
   "resv14", "resv15", "resv16", "resv17", "resv18", "resv19", "resv20",
-  "resv21", "resv22", "resv23", "resv24", "resv25", "resv26", "resv27",
+  "resv21", "resv22", "hmcdper", "hmcddfr", "resv25", "resv26", "hva_mask_nz",
   "hstick_offset", "hstick_enable", "resv30", "hstick_cmpr"
 };
 
@@ -104,7 +110,7 @@ static char *v9_hpriv_reg_names[] =
    rd and wr insns (-16).  */
 static char *v9a_asr_reg_names[] =
 {
-  "pcr", "pic", "dcr", "gsr", "set_softint", "clear_softint",
+  "pcr", "pic", "dcr", "gsr", "softint_set", "softint_clear",
   "softint", "tick_cmpr", "stick", "stick_cmpr", "cfr",
   "pause", "mwait"
 };
@@ -123,6 +129,7 @@ static char *v9a_asr_reg_names[] =
 #define X_DISP22(i)  (((i) >> 0) & 0x3fffff)
 #define X_IMM22(i)   X_DISP22 (i)
 #define X_DISP30(i)  (((i) >> 0) & 0x3fffffff)
+#define X_IMM2(i)    (((i & 0x10) >> 3) | (i & 0x1))
 
 /* These are for v9.  */
 #define X_DISP16(i)  (((((i) >> 20) & 3) << 14) | (((i) >> 0) & 0x3fff))
@@ -241,6 +248,24 @@ compute_arch_mask (unsigned long mach)
     case bfd_mach_sparc_v8plusb :
     case bfd_mach_sparc_v9b :
       return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9B);
+    case bfd_mach_sparc_v8plusc :
+    case bfd_mach_sparc_v9c :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9C);
+    case bfd_mach_sparc_v8plusd :
+    case bfd_mach_sparc_v9d :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9D);
+    case bfd_mach_sparc_v8pluse :
+    case bfd_mach_sparc_v9e :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9E);
+    case bfd_mach_sparc_v8plusv :
+    case bfd_mach_sparc_v9v :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9V);
+    case bfd_mach_sparc_v8plusm :
+    case bfd_mach_sparc_v9m :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_V9M);
+    case bfd_mach_sparc_v8plusm8 :
+    case bfd_mach_sparc_v9m8 :
+      return SPARC_OPCODE_ARCH_MASK (SPARC_OPCODE_ARCH_M8);
     }
   abort ();
 }
@@ -278,10 +303,9 @@ compare_opcodes (const void * a, const void * b)
      wrong with the opcode table.  */
   if (match0 & lose0)
     {
-      fprintf
-	(stderr,
-	 /* xgettext:c-format */
-	 _("Internal error:  bad sparc-opcode.h: \"%s\", %#.8lx, %#.8lx\n"),
+      opcodes_error_handler
+	/* xgettext:c-format */
+	(_("internal error: bad sparc-opcode.h: \"%s\", %#.8lx, %#.8lx\n"),
 	 op0->name, match0, lose0);
       op0->lose &= ~op0->match;
       lose0 = op0->lose;
@@ -289,10 +313,9 @@ compare_opcodes (const void * a, const void * b)
 
   if (match1 & lose1)
     {
-      fprintf
-	(stderr,
-	 /* xgettext:c-format */
-	 _("Internal error: bad sparc-opcode.h: \"%s\", %#.8lx, %#.8lx\n"),
+      opcodes_error_handler
+	/* xgettext:c-format */
+	(_("internal error: bad sparc-opcode.h: \"%s\", %#.8lx, %#.8lx\n"),
 	 op1->name, match1, lose1);
       op1->lose &= ~op1->match;
       lose1 = op1->lose;
@@ -349,10 +372,10 @@ compare_opcodes (const void * a, const void * b)
 	  return i;
 	}
       else
-	fprintf (stderr,
-		 /* xgettext:c-format */
-		 _("Internal error: bad sparc-opcode.h: \"%s\" == \"%s\"\n"),
-		 op0->name, op1->name);
+	opcodes_error_handler
+	  /* xgettext:c-format */
+	  (_("internal error: bad sparc-opcode.h: \"%s\" == \"%s\"\n"),
+	   op0->name, op1->name);
     }
 
   /* Fewer arguments are preferred.  */
@@ -633,6 +656,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    break;
 		  case 'v':	/* Double/even.  */
 		  case 'V':	/* Quad/multiple of 4.  */
+                  case ';':	/* Double/even multiple of 8 doubles.  */
 		    fregx (X_RS1 (insn));
 		    break;
 
@@ -641,6 +665,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    break;
 		  case 'B':	/* Double/even.  */
 		  case 'R':	/* Quad/multiple of 4.  */
+                  case ':':	/* Double/even multiple of 8 doubles.  */
 		    fregx (X_RS2 (insn));
 		    break;
 
@@ -659,6 +684,15 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		  case '}':     /* Double/even.  */
 		    fregx (X_RD (insn));
 		    break;
+                    
+                  case '^':	/* Double/even multiple of 8 doubles.  */
+                    fregx (X_RD (insn) & ~0x6);
+                    break;
+                    
+                  case '\'':	/* Double/even in FPCMPSHL.  */
+                    fregx (X_RS2 (insn | 0x11));
+                    break;
+                    
 #undef	freg
 #undef	fregx
 
@@ -798,6 +832,10 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    (*info->fprintf_func) (stream, "%%mcdper");
 		    break;
 
+                  case '&':
+                    (*info->fprintf_func) (stream, "%%entropy");
+                    break;
+
 		  case 'o':
 		    (*info->fprintf_func) (stream, "%%asi");
 		    break;
@@ -813,6 +851,8 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		  case '?':
 		    if (X_RS1 (insn) == 31)
 		      (*info->fprintf_func) (stream, "%%ver");
+		    else if (X_RS1 (insn) == 23)
+		      (*info->fprintf_func) (stream, "%%pmcdper");
 		    else if ((unsigned) X_RS1 (insn) < 17)
 		      (*info->fprintf_func) (stream, "%%%s",
 					     v9_priv_reg_names[X_RS1 (insn)]);
@@ -821,7 +861,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    break;
 
 		  case '!':
-		    if ((unsigned) X_RD (insn) < 17)
+                    if (X_RD (insn) == 31)
+                      (*info->fprintf_func) (stream, "%%ver");
+		    else if (X_RD (insn) == 23)
+		      (*info->fprintf_func) (stream, "%%pmcdper");
+		    else if ((unsigned) X_RD (insn) < 17)
 		      (*info->fprintf_func) (stream, "%%%s",
 					     v9_priv_reg_names[X_RD (insn)]);
 		    else
@@ -942,6 +986,10 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 					   ((X_LDST_I (insn) << 8)
 					    + X_ASI (insn)));
 		    break;
+
+                  case '|': /* 2-bit immediate  */
+                    (*info->fprintf_func) (stream, "%ld", X_IMM2 (insn));
+                    break;
 
 		  case 'y':
 		    (*info->fprintf_func) (stream, "%%y");

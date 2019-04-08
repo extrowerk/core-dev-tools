@@ -1,5 +1,5 @@
 /* This file is tc-avr.h
-   Copyright (C) 1999-2014 Free Software Foundation, Inc.
+   Copyright (C) 1999-2019 Free Software Foundation, Inc.
 
    Contributed by Denis Chertykov <denisc@overta.ru>
 
@@ -44,6 +44,8 @@
 /* If you define this macro, GAS will warn about the use of
    nonstandard escape sequences in a string.  */
 #define ONLY_STANDARD_ESCAPES
+
+#define DIFF_EXPR_OK    /* .-foo gets turned into PC relative relocs */
 
 /* GAS will call this function for any expression that can not be
    recognized.  When the function is called, `input_line_pointer'
@@ -121,7 +123,8 @@ extern void avr_cons_fix_new (fragS *,int, int, expressionS *,
    even when the value can be resolved locally. Do that if linkrelax is turned on */
 #define TC_FORCE_RELOCATION(fix)	avr_force_relocation (fix)
 #define TC_FORCE_RELOCATION_SUB_SAME(fix, seg) \
-  (! SEG_NORMAL (seg) || avr_force_relocation (fix))
+  (GENERIC_FORCE_RELOCATION_SUB_SAME (fix, seg)	\
+   || avr_force_relocation (fix))
 extern int avr_force_relocation (struct fix *);
 
 /* Values passed to md_apply_fix don't include the symbol value.  */
@@ -213,3 +216,32 @@ extern void tc_cfi_frame_initial_instructions (void);
    relaxation, so do not resolve such expressions in the assembler.  */
 #define md_allow_local_subtract(l,r,s) avr_allow_local_subtract (l, r, s)
 extern bfd_boolean avr_allow_local_subtract (expressionS *, expressionS *, segT);
+
+#define elf_tc_final_processing 	avr_elf_final_processing
+extern void avr_elf_final_processing (void);
+
+#define md_pre_output_hook avr_pre_output_hook ()
+extern void avr_pre_output_hook (void);
+
+#define md_undefined_symbol avr_undefined_symbol
+extern symbolS* avr_undefined_symbol (char*);
+
+#define md_post_relax_hook avr_post_relax_hook ()
+extern void avr_post_relax_hook (void);
+
+#define HANDLE_ALIGN(fragP) avr_handle_align (fragP)
+extern void avr_handle_align (fragS *);
+
+struct avr_frag_data
+{
+  unsigned is_org : 1;
+  unsigned is_align : 1;
+  unsigned has_fill : 1;
+
+  char fill;
+  offsetT alignment;
+  unsigned int prev_opcode;
+};
+#define TC_FRAG_TYPE			struct avr_frag_data
+#define TC_FRAG_INIT(frag)		avr_frag_init (frag)
+extern void avr_frag_init (fragS *);

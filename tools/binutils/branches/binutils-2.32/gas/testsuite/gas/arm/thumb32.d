@@ -1,9 +1,7 @@
 # name: 32-bit Thumb instructions
 # as: -march=armv6zkt2
 # objdump: -dr --prefix-addresses --show-raw-insn
-# The arm-aout and arm-pe ports do not support Thumb branch relocations.
-# not-target: *-*-*aout* *-*-pe
-# stderr: thumb32.l
+# warning_output: thumb32.l
 
 .*: +file format .*arm.*
 
@@ -895,18 +893,18 @@ Disassembly of section .text:
 0[0-9a-f]+ <[^>]+> fb40 f000 	smusd	r0, r0, r0
 0[0-9a-f]+ <[^>]+> fb40 f010 	smusdx	r0, r0, r0
 0[0-9a-f]+ <[^>]+> fb70 f000 	usad8	r0, r0, r0
-0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #0, r0
-0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #0, r0
-0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #0, r0
-0[0-9a-f]+ <[^>]+> f300 0900 	ssat	r9, #0, r0
-0[0-9a-f]+ <[^>]+> f300 0011 	ssat	r0, #17, r0
-0[0-9a-f]+ <[^>]+> f309 0000 	ssat	r0, #0, r9
-0[0-9a-f]+ <[^>]+> f300 7000 	ssat	r0, #0, r0, lsl #28
-0[0-9a-f]+ <[^>]+> f320 00c0 	ssat	r0, #0, r0, asr #3
-0[0-9a-f]+ <[^>]+> f320 0000 	ssat16	r0, #0, r0
-0[0-9a-f]+ <[^>]+> f320 0900 	ssat16	r9, #0, r0
-0[0-9a-f]+ <[^>]+> f320 0009 	ssat16	r0, #9, r0
-0[0-9a-f]+ <[^>]+> f329 0000 	ssat16	r0, #0, r9
+0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #1, r0
+0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #1, r0
+0[0-9a-f]+ <[^>]+> f300 0000 	ssat	r0, #1, r0
+0[0-9a-f]+ <[^>]+> f300 0900 	ssat	r9, #1, r0
+0[0-9a-f]+ <[^>]+> f300 0011 	ssat	r0, #18, r0
+0[0-9a-f]+ <[^>]+> f309 0000 	ssat	r0, #1, r9
+0[0-9a-f]+ <[^>]+> f300 7000 	ssat	r0, #1, r0, lsl #28
+0[0-9a-f]+ <[^>]+> f320 00c0 	ssat	r0, #1, r0, asr #3
+0[0-9a-f]+ <[^>]+> f320 0000 	ssat16	r0, #1, r0
+0[0-9a-f]+ <[^>]+> f320 0900 	ssat16	r9, #1, r0
+0[0-9a-f]+ <[^>]+> f320 0009 	ssat16	r0, #10, r0
+0[0-9a-f]+ <[^>]+> f329 0000 	ssat16	r0, #1, r9
 0[0-9a-f]+ <[^>]+> f380 0000 	usat	r0, #0, r0
 0[0-9a-f]+ <[^>]+> f380 0000 	usat	r0, #0, r0
 0[0-9a-f]+ <[^>]+> f380 0000 	usat	r0, #0, r0

@@ -1,5 +1,5 @@
 # This shell script emits a C file. -*- C -*-
-#   Copyright (C) 2013-2014 Free Software Foundation, Inc.
+#   Copyright (C) 2013-2019 Free Software Foundation, Inc.
 #
 # This file is part of GNU Binutils.
 #
@@ -50,7 +50,7 @@ nios2elf_create_output_section_statements (void)
   /* If --no-relax was not explicitly specified by the user, enable
      relaxation.  If it's not enabled (either explicitly or by default),
      we're done, as we won't need to create any stubs.  */
-  if (!link_info.relocatable && RELAXATION_DISABLED_BY_DEFAULT)
+  if (!bfd_link_relocatable (&link_info) && RELAXATION_DISABLED_BY_DEFAULT)
     ENABLE_RELAXATION;
   if (!RELAXATION_ENABLED)
     return;
@@ -64,7 +64,7 @@ nios2elf_create_output_section_statements (void)
 			      bfd_get_arch (link_info.output_bfd),
 			      bfd_get_mach (link_info.output_bfd)))
     {
-      einfo ("%X%P: can not create BFD %E\n");
+      einfo (_("%F%P: can not create BFD: %E\n"));
       return;
     }
 
@@ -195,7 +195,7 @@ nios2elf_add_stub_section (const char *stub_sec_name, asection *input_section,
     return stub_sec;
 
  err_ret:
-  einfo ("%X%P: can not make stub section: %E\n");
+  einfo (_("%X%P: can not make stub section: %E\n"));
   return NULL;
 }
 
@@ -245,7 +245,7 @@ gld${EMULATION_NAME}_after_allocation (void)
   ret = bfd_elf_discard_info (link_info.output_bfd, &link_info);
   if (ret < 0)
     {
-      einfo ("%X%P: .eh_frame/.stab edit: %E\n");
+      einfo (_("%X%P: .eh_frame/.stab edit: %E\n"));
       return;
     }
   else if (ret > 0)
@@ -253,14 +253,16 @@ gld${EMULATION_NAME}_after_allocation (void)
 
   /* If generating a relocatable output file, then we don't
      have to examine the relocs.  */
-  if (stub_file != NULL && !link_info.relocatable && RELAXATION_ENABLED)
+  if (stub_file != NULL
+      && !bfd_link_relocatable (&link_info)
+      && RELAXATION_ENABLED)
     {
       ret = nios2_elf32_setup_section_lists (link_info.output_bfd, &link_info);
       if (ret != 0)
 	{
 	  if (ret < 0)
 	    {
-	      einfo ("%X%P: can not size stub section: %E\n");
+	      einfo (_("%X%P: can not size stub section: %E\n"));
 	      return;
 	    }
 
@@ -273,7 +275,7 @@ gld${EMULATION_NAME}_after_allocation (void)
 					&nios2elf_add_stub_section,
 					&nios2elf_layout_sections_again))
 	    {
-	      einfo ("%X%P: can not size stub section: %E\n");
+	      einfo (_("%X%P: can not size stub section: %E\n"));
 	      return;
 	    }
 	}
@@ -282,13 +284,13 @@ gld${EMULATION_NAME}_after_allocation (void)
   if (need_laying_out != -1)
     gld${EMULATION_NAME}_map_segments (need_laying_out);
 
-  if (!link_info.relocatable && RELAXATION_ENABLED)
+  if (!bfd_link_relocatable (&link_info) && RELAXATION_ENABLED)
     {
       /* Now build the linker stubs.  */
       if (stub_file != NULL && stub_file->the_bfd->sections != NULL)
 	{
 	  if (! nios2_elf32_build_stubs (&link_info))
-	    einfo ("%X%P: can not build stubs: %E\n");
+	    einfo (_("%X%P: can not build stubs: %E\n"));
 	}
     }
 }

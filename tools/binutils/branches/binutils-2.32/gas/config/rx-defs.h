@@ -1,5 +1,5 @@
 /* rx-defs.h Renesas RX internal definitions
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -38,7 +38,10 @@ enum rx_cpu_types
   RX600,
   RX610,
   RX200,
-  RX100
+  RX100,
+  RXV2,
+  RXV3,
+  RXV3FPU,
 };
 
 extern int rx_pid_register;
@@ -56,12 +59,15 @@ extern void   rx_op (expressionS, int, int);
 extern void   rx_disp3 (expressionS, int);
 extern void   rx_field5s (expressionS);
 extern void   rx_field5s2 (expressionS);
+extern void   rx_bfield (expressionS, expressionS, expressionS);
 extern void   rx_relax (int, int);
 extern void   rx_linkrelax_dsp (int);
 extern void   rx_linkrelax_imm (int);
 extern void   rx_linkrelax_branch (void);
 extern int    rx_parse (void);
 extern int    rx_wrap (void);
+extern void   rx_note_string_insn_use (void);
+extern void   rx_post (char);
 
 extern char * rx_lex_start;
 extern char * rx_lex_end;

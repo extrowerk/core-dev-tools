@@ -1,6 +1,6 @@
 /* opc2c.c --- generate C opcode decoder code from from .opc file
 
-   Copyright (C) 2005-2014 Free Software Foundation, Inc.
+   Copyright (C) 2005-2019 Free Software Foundation, Inc.
    Contributed by Red Hat, Inc.
 
    This file is part of the GNU opcode library.
@@ -121,7 +121,7 @@ int n_varies = 0;
 
 unsigned char cur_bits[MAX_BYTES + 1];
 
-char * orig_filename;
+const char * orig_filename;
 
 FILE * sim_log = NULL;
 #define lprintf if (sim_log) fprintf
@@ -339,7 +339,10 @@ dump_lines (opcode * op, int level, Indirect * ind)
   printf ("#line %d \"%s\"\n", op->lineno + 1, orig_filename);
 
   for (i = 0; i < op->nlines; i++)
-    printf ("%*s%s", level, "", op->lines[i]);
+    if (op->lines[i][0] == '\n')
+      printf ("%s", op->lines[i]);
+    else
+      printf ("%*s%s", level, "", op->lines[i]);
 
   if (op->comment)
     printf ("%*s}\n", level, "");
@@ -574,14 +577,6 @@ main (int argc, char ** argv)
   VaryRef * vlist;
   int skipping_section = 0;
 
-  if (argc > 2 && strcmp (argv[1], "-l") == 0)
-    {
-      sim_log = fopen (argv[2], "w");
-      fprintf (stderr, "sim_log: %s\n", argv[2]);
-      argc -= 2;
-      argv += 2;
-    }
-
   if (argc < 2)
     {
       fprintf (stderr, "usage: opc2c infile.opc > outfile.opc\n");
@@ -798,6 +793,8 @@ main (int argc, char ** argv)
 
       store_opcode_bits (opcodes[i], 0, indirect);
     }
+
+  printf ("/* DO NOT EDIT!  -*- buffer-read-only: t -*- vi:set ro:  */\n");
 
   dump_lines (&prefix_text, 0, 0);
 

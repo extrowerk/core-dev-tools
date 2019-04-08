@@ -1,5 +1,5 @@
 /* tc-ia64.h -- Header file for tc-ia64.c.
-   Copyright (C) 1998-2014 Free Software Foundation, Inc.
+   Copyright (C) 1998-2019 Free Software Foundation, Inc.
    Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    This file is part of GAS, the GNU Assembler.
@@ -110,7 +110,7 @@ extern void ia64_cons_fix_new (fragS *, int, int, expressionS *,
 			       bfd_reloc_code_real_type);
 extern void ia64_validate_fix (struct fix *);
 extern char * ia64_canonicalize_symbol_name (char *);
-extern bfd_vma ia64_elf_section_letter (int, char **);
+extern bfd_vma ia64_elf_section_letter (int, const char **);
 extern flagword ia64_elf_section_flags (flagword, bfd_vma, int);
 extern int ia64_elf_section_type (const char *, size_t);
 extern long ia64_pcrel_from_section (struct fix *, segT);
@@ -320,9 +320,8 @@ typedef struct unwind_record
 
 #define TC_FORCE_RELOCATION_LOCAL(FIX)			\
   ((FIX)->fx_r_type != BFD_RELOC_UNUSED			\
-   && (!(FIX)->fx_pcrel					\
-       || (FIX)->fx_r_type == BFD_RELOC_IA64_PLTOFF22	\
-       || TC_FORCE_RELOCATION (FIX)))
+   && (GENERIC_FORCE_RELOCATION_LOCAL (FIX)		\
+       || (FIX)->fx_r_type == BFD_RELOC_IA64_PLTOFF22))
 
 /* VMS backtraces expect dwarf version 3.  */
 #ifdef TE_VMS

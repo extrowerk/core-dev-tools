@@ -1,6 +1,6 @@
 // elfcpp.h -- main header file for elfcpp    -*- C++ -*-
 
-// Copyright (C) 2006-2014 Free Software Foundation, Inc.
+// Copyright (C) 2006-2019 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of elfcpp.
@@ -173,7 +173,7 @@ enum EM
   EM_386 = 3,
   EM_68K = 4,
   EM_88K = 5,
-  // 6 used to be EM_486
+  EM_IAMCU = 6,
   EM_860 = 7,
   EM_MIPS = 8,
   EM_S370 = 9,
@@ -268,6 +268,7 @@ enum EM
   EM_UNICORE = 110,
   EM_ALTERA_NIOS2 = 113,
   EM_CRX = 114,
+  EM_TI_PRU = 144,
   EM_AARCH64 = 183,
   EM_TILEGX = 191,
   // The Morph MT.
@@ -406,6 +407,8 @@ enum SHT
   SHT_MIPS_REGINFO = 0x70000006,
   // Section contains miscellaneous options.
   SHT_MIPS_OPTIONS = 0x7000000d,
+  // ABI related flags section.
+  SHT_MIPS_ABIFLAGS = 0x7000002a,
 
   // AARCH64-specific section type.
   SHT_AARCH64_ATTRIBUTES = 0x70000003,
@@ -429,6 +432,7 @@ enum SHF
   SHF_OS_NONCONFORMING = 0x100,
   SHF_GROUP = 0x200,
   SHF_TLS = 0x400,
+  SHF_COMPRESSED = 0x800,
   SHF_MASKOS = 0x0ff00000,
   SHF_MASKPROC = 0xf0000000,
 
@@ -449,6 +453,17 @@ enum SHF
 
   // x86_64 specific large section.
   SHF_X86_64_LARGE = 0x10000000
+};
+
+// Values which appear in the first Elf_WXword of the section data
+// of a SHF_COMPRESSED section.
+enum
+{
+  ELFCOMPRESS_ZLIB = 1,
+  ELFCOMPRESS_LOOS = 0x60000000,
+  ELFCOMPRESS_HIOS = 0x6fffffff,
+  ELFCOMPRESS_LOPROC = 0x70000000,
+  ELFCOMPRESS_HIPROC = 0x7fffffff,
 };
 
 // Bit flags which appear in the first 32-bit word of the section data
@@ -500,7 +515,9 @@ enum PT
   // Platform architecture compatibility information
   PT_AARCH64_ARCHEXT = 0x70000000,
   // Exception unwind tables
-  PT_AARCH64_UNWIND = 0x70000001
+  PT_AARCH64_UNWIND = 0x70000001,
+  // 4k page table size
+  PT_S390_PGSTE = 0x70000000,
 };
 
 // The valid bit flags found in the Phdr p_flags field.
@@ -751,12 +768,18 @@ enum DT
   // Specify the value of _GLOBAL_OFFSET_TABLE_.
   DT_PPC_GOT = 0x70000000,
 
+  // Specify whether various optimisations are possible.
+  DT_PPC_OPT = 0x70000001,
+
   // Specify the start of the .glink section.
   DT_PPC64_GLINK = 0x70000000,
 
   // Specify the start and size of the .opd section.
   DT_PPC64_OPD = 0x70000001,
   DT_PPC64_OPDSZ = 0x70000002,
+
+  // Specify whether various optimisations are possible.
+  DT_PPC64_OPT = 0x70000003,
 
   // The index of an STT_SPARC_REGISTER symbol within the DT_SYMTAB
   // symbol table.  One dynamic entry exists for every STT_SPARC_REGISTER
@@ -854,6 +877,8 @@ enum DT
   DT_MIPS_PLTGOT = 0x70000032,
   // Points to the base of a writable PLT.
   DT_MIPS_RWPLT = 0x70000034,
+  // Relative offset of run time loader map, used for debugging.
+  DT_MIPS_RLD_MAP_REL = 0x70000035,
 
   DT_AUXILIARY = 0x7ffffffd,
   DT_USED = 0x7ffffffe,
@@ -959,7 +984,9 @@ enum
   NT_GNU_BUILD_ID = 3,
   // The version of gold used to link.  Th descriptor is just a
   // string.
-  NT_GNU_GOLD_VERSION = 4
+  NT_GNU_GOLD_VERSION = 4,
+  // Program property note, as described in "Linux Extensions to the gABI".
+  NT_GNU_PROPERTY_TYPE_0 = 5
 };
 
 // The OS values which may appear in word 0 of a NT_GNU_ABI_TAG note.
@@ -972,6 +999,21 @@ enum
   ELF_NOTE_OS_FREEBSD = 3,
   ELF_NOTE_OS_NETBSD = 4,
   ELF_NOTE_OS_SYLLABLE = 5
+};
+
+// Program property types for NT_GNU_PROPERTY_TYPE_0.
+
+enum
+{
+  GNU_PROPERTY_STACK_SIZE = 1,
+  GNU_PROPERTY_NO_COPY_ON_PROTECTED = 2,
+  GNU_PROPERTY_LOPROC = 0xc0000000,
+  GNU_PROPERTY_X86_ISA_1_USED = 0xc0000000,
+  GNU_PROPERTY_X86_ISA_1_NEEDED = 0xc0000001,
+  GNU_PROPERTY_X86_FEATURE_1_AND = 0xc0000002,
+  GNU_PROPERTY_HIPROC = 0xdfffffff,
+  GNU_PROPERTY_LOUSER = 0xe0000000,
+  GNU_PROPERTY_HIUSER = 0xffffffff
 };
 
 } // End namespace elfcpp.
@@ -997,6 +1039,8 @@ struct Elf_sizes
   static const int phdr_size = sizeof(internal::Phdr_data<size>);
   // Size of ELF section header.
   static const int shdr_size = sizeof(internal::Shdr_data<size>);
+  // Size of ELF compression header.
+  static const int chdr_size = sizeof(internal::Chdr_data<size>);
   // Size of ELF symbol table entry.
   static const int sym_size = sizeof(internal::Sym_data<size>);
   // Sizes of ELF reloc entries.
@@ -1271,6 +1315,82 @@ class Shdr_write
  private:
   internal::Shdr_data<size>* p_;
 };
+
+// Accessor class for an ELF compression header.
+
+template<int size, bool big_endian>
+class Chdr
+{
+ public:
+  Chdr(const unsigned char* p)
+    : p_(reinterpret_cast<const internal::Chdr_data<size>*>(p))
+  { }
+
+  template<typename File>
+  Chdr(File* file, typename File::Location loc)
+    : p_(reinterpret_cast<const internal::Chdr_data<size>*>(
+	   file->view(loc.file_offset, loc.data_size).data()))
+  { }
+
+  Elf_Word
+  get_ch_type() const
+  { return Convert<size, big_endian>::convert_host(this->p_->ch_type); }
+
+  typename Elf_types<size>::Elf_WXword
+  get_ch_size() const
+  { return Convert<size, big_endian>::convert_host(this->p_->ch_size); }
+
+  typename Elf_types<size>::Elf_WXword
+  get_ch_addralign() const
+  { return
+      Convert<size, big_endian>::convert_host(this->p_->ch_addralign); }
+
+ private:
+  const internal::Chdr_data<size>* p_;
+};
+
+// Write class for an ELF compression header.
+
+template<int size, bool big_endian>
+class Chdr_write
+{
+ public:
+  Chdr_write(unsigned char* p)
+    : p_(reinterpret_cast<internal::Chdr_data<size>*>(p))
+  { }
+
+  void
+  put_ch_type(typename Elf_types<size>::Elf_WXword v)
+  { this->p_->ch_type = Convert<size, big_endian>::convert_host(v); }
+
+  void
+  put_ch_size(typename Elf_types<size>::Elf_WXword v)
+  { this->p_->ch_size = Convert<size, big_endian>::convert_host(v); }
+
+  void
+  put_ch_addralign(typename Elf_types<size>::Elf_WXword v)
+  { this->p_->ch_addralign = Convert<size, big_endian>::convert_host(v); }
+
+  void
+  put_ch_reserved(Elf_Word);
+
+ private:
+  internal::Chdr_data<size>* p_;
+};
+
+template<>
+inline void
+elfcpp::Chdr_write<64, true>::put_ch_reserved(Elf_Word v)
+{
+  this->p_->ch_reserved = v;
+}
+
+template<>
+inline void
+elfcpp::Chdr_write<64, false>::put_ch_reserved(Elf_Word v)
+{
+  this->p_->ch_reserved = v;
+}
 
 // Accessor class for an ELF segment header.
 
@@ -1586,6 +1706,172 @@ class Rela_write
 
  private:
   internal::Rela_data<size>* p_;
+};
+
+// MIPS-64 has a non-standard relocation layout.
+
+template<bool big_endian>
+class Mips64_rel
+{
+ public:
+  Mips64_rel(const unsigned char* p)
+    : p_(reinterpret_cast<const internal::Mips64_rel_data*>(p))
+  { }
+
+  template<typename File>
+  Mips64_rel(File* file, typename File::Location loc)
+    : p_(reinterpret_cast<const internal::Mips64_rel_data*>(
+	   file->view(loc.file_offset, loc.data_size).data()))
+  { }
+
+  typename Elf_types<64>::Elf_Addr
+  get_r_offset() const
+  { return Convert<64, big_endian>::convert_host(this->p_->r_offset); }
+
+  Elf_Word
+  get_r_sym() const
+  { return Convert<32, big_endian>::convert_host(this->p_->r_sym); }
+
+  unsigned char
+  get_r_ssym() const
+  { return this->p_->r_ssym; }
+
+  unsigned char
+  get_r_type() const
+  { return this->p_->r_type; }
+
+  unsigned char
+  get_r_type2() const
+  { return this->p_->r_type2; }
+
+  unsigned char
+  get_r_type3() const
+  { return this->p_->r_type3; }
+
+ private:
+  const internal::Mips64_rel_data* p_;
+};
+
+template<bool big_endian>
+class Mips64_rel_write
+{
+ public:
+  Mips64_rel_write(unsigned char* p)
+    : p_(reinterpret_cast<internal::Mips64_rel_data*>(p))
+  { }
+
+  void
+  put_r_offset(typename Elf_types<64>::Elf_Addr v)
+  { this->p_->r_offset = Convert<64, big_endian>::convert_host(v); }
+
+  void
+  put_r_sym(Elf_Word v)
+  { this->p_->r_sym = Convert<32, big_endian>::convert_host(v); }
+
+  void
+  put_r_ssym(unsigned char v)
+  { this->p_->r_ssym = v; }
+
+  void
+  put_r_type(unsigned char v)
+  { this->p_->r_type = v; }
+
+  void
+  put_r_type2(unsigned char v)
+  { this->p_->r_type2 = v; }
+
+  void
+  put_r_type3(unsigned char v)
+  { this->p_->r_type3 = v; }
+
+ private:
+  internal::Mips64_rel_data* p_;
+};
+
+template<bool big_endian>
+class Mips64_rela
+{
+ public:
+  Mips64_rela(const unsigned char* p)
+    : p_(reinterpret_cast<const internal::Mips64_rela_data*>(p))
+  { }
+
+  template<typename File>
+  Mips64_rela(File* file, typename File::Location loc)
+    : p_(reinterpret_cast<const internal::Mips64_rela_data*>(
+	   file->view(loc.file_offset, loc.data_size).data()))
+  { }
+
+  typename Elf_types<64>::Elf_Addr
+  get_r_offset() const
+  { return Convert<64, big_endian>::convert_host(this->p_->r_offset); }
+
+  Elf_Word
+  get_r_sym() const
+  { return Convert<32, big_endian>::convert_host(this->p_->r_sym); }
+
+  unsigned char
+  get_r_ssym() const
+  { return this->p_->r_ssym; }
+
+  unsigned char
+  get_r_type() const
+  { return this->p_->r_type; }
+
+  unsigned char
+  get_r_type2() const
+  { return this->p_->r_type2; }
+
+  unsigned char
+  get_r_type3() const
+  { return this->p_->r_type3; }
+
+  typename Elf_types<64>::Elf_Swxword
+  get_r_addend() const
+  { return Convert<64, big_endian>::convert_host(this->p_->r_addend); }
+
+ private:
+  const internal::Mips64_rela_data* p_;
+};
+
+template<bool big_endian>
+class Mips64_rela_write
+{
+ public:
+  Mips64_rela_write(unsigned char* p)
+    : p_(reinterpret_cast<internal::Mips64_rela_data*>(p))
+  { }
+
+  void
+  put_r_offset(typename Elf_types<64>::Elf_Addr v)
+  { this->p_->r_offset = Convert<64, big_endian>::convert_host(v); }
+
+  void
+  put_r_sym(Elf_Word v)
+  { this->p_->r_sym = Convert<32, big_endian>::convert_host(v); }
+
+  void
+  put_r_ssym(unsigned char v)
+  { this->p_->r_ssym = v; }
+
+  void
+  put_r_type(unsigned char v)
+  { this->p_->r_type = v; }
+
+  void
+  put_r_type2(unsigned char v)
+  { this->p_->r_type2 = v; }
+
+  void
+  put_r_type3(unsigned char v)
+  { this->p_->r_type3 = v; }
+
+  void
+  put_r_addend(typename Elf_types<64>::Elf_Swxword v)
+  { this->p_->r_addend = Convert<64, big_endian>::convert_host(v); }
+
+ private:
+  internal::Mips64_rela_data* p_;
 };
 
 // Accessor classes for entries in the ELF SHT_DYNAMIC section aka

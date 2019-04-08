@@ -1,6 +1,6 @@
 // layout.h -- lay out output file sections for gold  -*- C++ -*-
 
-// Copyright (C) 2006-2014 Free Software Foundation, Inc.
+// Copyright (C) 2006-2019 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -65,6 +65,10 @@ struct Timespec;
 // Return TRUE if SECNAME is the name of a compressed debug section.
 extern bool
 is_compressed_debug_section(const char* secname);
+
+// Return the name of the corresponding uncompressed debug section.
+extern std::string
+corresponding_uncompressed_section_name(std::string secname);
 
 // Maintain a list of free space within a section, segment, or file.
 // Used for incremental update links.
@@ -418,8 +422,20 @@ enum Output_section_order
   // The PLT.
   ORDER_PLT,
 
+  // The hot text sections, prefixed by .text.hot.
+  ORDER_TEXT_HOT,
+
   // The regular text sections.
   ORDER_TEXT,
+
+  // The startup text sections, prefixed by .text.startup.
+  ORDER_TEXT_STARTUP,
+
+  // The startup text sections, prefixed by .text.startup.
+  ORDER_TEXT_EXIT,
+
+  // The unlikely text sections, prefixed by .text.unlikely.
+  ORDER_TEXT_UNLIKELY,
 
   // The .fini section.
   ORDER_FINI,
@@ -521,7 +537,8 @@ class Layout
   Output_section*
   layout(Sized_relobj_file<size, big_endian> *object, unsigned int shndx,
 	 const char* name, const elfcpp::Shdr<size, big_endian>& shdr,
-	 unsigned int reloc_shndx, unsigned int reloc_type, off_t* offset);
+	 unsigned int sh_type, unsigned int reloc_shndx,
+	 unsigned int reloc_type, off_t* offset);
 
   std::map<Section_id, unsigned int>*
   get_section_order_map()
@@ -535,7 +552,7 @@ class Layout
   // and ALIGN are the extra flags and alignment of the segment.
   struct Unique_segment_info
   {
-    // Identifier for the segment.  ELF segments dont have names.  This
+    // Identifier for the segment.  ELF segments don't have names.  This
     // is used as the name of the output section mapped to the segment.
     const char* name;
     // Additional segment flags.
@@ -635,6 +652,12 @@ class Layout
 		  unsigned int reloc_shndx, unsigned int reloc_type,
 		  off_t* offset);
 
+  // After processing all input files, we call this to make sure that
+  // the optimized .eh_frame sections have been added to the output
+  // section.
+  void
+  finalize_eh_frame_section();
+
   // Add .eh_frame information for a PLT.  The FDE must start with a
   // 4-byte PC-relative reference to the start of the PLT, followed by
   // a 4-byte size of PLT.
@@ -642,6 +665,13 @@ class Layout
   add_eh_frame_for_plt(Output_data* plt, const unsigned char* cie_data,
 		       size_t cie_length, const unsigned char* fde_data,
 		       size_t fde_length);
+
+  // Remove .eh_frame information for a PLT.  FDEs using the CIE must
+  // be removed in reverse order to the order they were added.
+  void
+  remove_eh_frame_for_plt(Output_data* plt, const unsigned char* cie_data,
+			  size_t cie_length, const unsigned char* fde_data,
+			  size_t fde_length);
 
   // Scan a .debug_info or .debug_types section, and add summary
   // information to the .gdb_index section.
@@ -662,6 +692,25 @@ class Layout
   void
   layout_gnu_stack(bool seen_gnu_stack, uint64_t gnu_stack_flags,
 		   const Object*);
+
+  // Layout a .note.gnu.property section.
+  void
+  layout_gnu_property(unsigned int note_type,
+		      unsigned int pr_type,
+		      size_t pr_datasz,
+		      const unsigned char* pr_data,
+		      const Object* object);
+
+  // Merge per-object properties with program properties.
+  void
+  merge_gnu_properties(const Object* object);
+
+  // Add a target-specific property for the output .note.gnu.property section.
+  void
+  add_gnu_property(unsigned int note_type,
+		   unsigned int pr_type,
+		   size_t pr_datasz,
+		   const unsigned char* pr_data);
 
   // Add an Output_section_data to the layout.  This is used for
   // special sections like the GOT section.  ORDER is where the
@@ -754,7 +803,8 @@ class Layout
 	    || strncmp(name, ".gnu.linkonce.wi.",
 		       sizeof(".gnu.linkonce.wi.") - 1) == 0
 	    || strncmp(name, ".line", sizeof(".line") - 1) == 0
-	    || strncmp(name, ".stab", sizeof(".stab") - 1) == 0);
+	    || strncmp(name, ".stab", sizeof(".stab") - 1) == 0
+	    || strncmp(name, ".pdr", sizeof(".pdr") - 1) == 0);
   }
 
   // Return true if RELOBJ is an input file whose base name matches
@@ -891,16 +941,13 @@ class Layout
 			  const Output_data_reloc_generic* dyn_rel,
 			  bool add_debug, bool dynrel_includes_plt);
 
-  // If a treehash is necessary to compute the build ID, then queue
-  // the necessary tasks and return a blocker that will unblock when
-  // they finish.  Otherwise return BUILD_ID_BLOCKER.
-  Task_token*
-  queue_build_id_tasks(Workqueue* workqueue, Task_token* build_id_blocker,
-		       Output_file* of);
+  // Add a target-specific dynamic tag with constant value.
+  void
+  add_target_specific_dynamic_tag(elfcpp::DT tag, unsigned int val);
 
   // Compute and write out the build ID if needed.
   void
-  write_build_id(Output_file*) const;
+  write_build_id(Output_file*, unsigned char*, size_t) const;
 
   // Rewrite output file in binary format.
   void
@@ -1000,6 +1047,14 @@ class Layout
   };
   static const Section_name_mapping section_name_mapping[];
   static const int section_name_mapping_count;
+  static const Section_name_mapping text_section_name_mapping[];
+  static const int text_section_name_mapping_count;
+
+  // Find section name NAME in map and return the mapped name if found
+  // with the length set in PLEN.
+  static const char* match_section_name(const Section_name_mapping* map,
+					const int count, const char* name,
+					size_t* plen);
 
   // During a relocatable link, a list of group sections and
   // signatures.
@@ -1025,13 +1080,17 @@ class Layout
   create_note(const char* name, int note_type, const char* section_name,
 	      size_t descsz, bool allocate, size_t* trailing_padding);
 
+  // Create a note section for gnu program properties.
+  void
+  create_gnu_properties_note();
+
   // Create a note section for gold version.
   void
   create_gold_note();
 
-  // Record whether the stack must be executable.
+  // Record whether the stack must be executable, and a user-supplied size.
   void
-  create_executable_stack_info();
+  create_stack_segment();
 
   // Create a build ID note if needed.
   void
@@ -1059,7 +1118,7 @@ class Layout
   // Create the output sections for the symbol table.
   void
   create_symtab_sections(const Input_objects*, Symbol_table*,
-			 unsigned int, off_t*);
+			 unsigned int, off_t*, unsigned int);
 
   // Create the .shstrtab section.
   Output_section*
@@ -1074,6 +1133,7 @@ class Layout
   create_dynamic_symtab(const Input_objects*, Symbol_table*,
 			Output_section** pdynstr,
 			unsigned int* plocal_dynamic_count,
+			unsigned int* pforced_local_dynamic_count,
 			std::vector<Symbol*>* pdynamic_symbols,
 			Versions* versions);
 
@@ -1141,7 +1201,7 @@ class Layout
   choose_output_section(const Relobj* relobj, const char* name,
 			elfcpp::Elf_Word type, elfcpp::Elf_Xword flags,
 			bool is_input_section, Output_section_order order,
-			bool is_relro);
+			bool is_relro, bool is_reloc, bool match_input_spec);
 
   // Create a new Output_section.
   Output_section*
@@ -1310,6 +1370,14 @@ class Layout
     std::vector<Section_info> section_infos_;
   };
 
+  // Program properties from .note.gnu.property sections.
+  struct Gnu_property
+  {
+    size_t pr_datasz;
+    unsigned char* pr_data;
+  };
+  typedef std::map<unsigned int, Gnu_property> Gnu_properties;
+
   // The number of input files, for sizing tables.
   int number_of_input_files_;
   // Information set by scripts or by command line options.
@@ -1374,12 +1442,6 @@ class Layout
   Gdb_index* gdb_index_data_;
   // The space for the build ID checksum if there is one.
   Output_section_data* build_id_note_;
-  // Temporary storage for tree hash of build ID.
-  unsigned char* array_of_hashes_;
-  // Size of array_of_hashes_ (in bytes).
-  size_t size_of_array_of_hashes_;
-  // Input view for computing tree hash of build ID.  Freed in write_build_id().
-  const unsigned char* input_view_;
   // The output section containing dwarf abbreviations
   Output_reduced_debug_abbrev_section* debug_abbrev_;
   // The output section containing the dwarf debug info tree
@@ -1442,6 +1504,8 @@ class Layout
   Incremental_binary* incremental_base_;
   // For incremental links, a list of free space within the file.
   Free_list free_list_;
+  // Program properties.
+  Gnu_properties gnu_properties_;
 };
 
 // This task handles writing out data in output sections which is not
@@ -1596,13 +1660,17 @@ class Write_after_input_sections_task : public Task
   Task_token* final_blocker_;
 };
 
-// This task function handles closing the file.
+// This task function handles computation of the build id.
+// When using --build-id=tree, it schedules the tasks that
+// compute the hashes for each chunk of the file. This task
+// cannot run until we have finalized the size of the output
+// file, after the completion of Write_after_input_sections_task.
 
-class Close_task_runner : public Task_function_runner
+class Build_id_task_runner : public Task_function_runner
 {
  public:
-  Close_task_runner(const General_options* options, const Layout* layout,
-		    Output_file* of)
+  Build_id_task_runner(const General_options* options, const Layout* layout,
+		       Output_file* of)
     : options_(options), layout_(layout), of_(of)
   { }
 
@@ -1614,6 +1682,30 @@ class Close_task_runner : public Task_function_runner
   const General_options* options_;
   const Layout* layout_;
   Output_file* of_;
+};
+
+// This task function handles closing the file.
+
+class Close_task_runner : public Task_function_runner
+{
+ public:
+  Close_task_runner(const General_options* options, const Layout* layout,
+		    Output_file* of, unsigned char* array_of_hashes,
+		    size_t size_of_hashes)
+    : options_(options), layout_(layout), of_(of),
+      array_of_hashes_(array_of_hashes), size_of_hashes_(size_of_hashes)
+  { }
+
+  // Run the operation.
+  void
+  run(Workqueue*, const Task*);
+
+ private:
+  const General_options* options_;
+  const Layout* layout_;
+  Output_file* of_;
+  unsigned char* const array_of_hashes_;
+  const size_t size_of_hashes_;
 };
 
 // A small helper function to align an address.

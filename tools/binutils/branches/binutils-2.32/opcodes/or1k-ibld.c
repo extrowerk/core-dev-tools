@@ -1,9 +1,10 @@
+/* DO NOT EDIT!  -*- buffer-read-only: t -*- vi:set ro:  */
 /* Instruction building/extraction support for or1k. -*- C -*-
 
    THIS FILE IS MACHINE GENERATED WITH CGEN: Cpu tools GENerator.
    - the resultant file is machine generated, cgen-ibld.in isn't
 
-   Copyright (C) 1996-2014 Free Software Foundation, Inc.
+   Copyright (C) 1996-2019 Free Software Foundation, Inc.
 
    This file is part of libopcodes.
 
@@ -154,7 +155,7 @@ insert_normal (CGEN_CPU_DESC cd,
     {
       long minval = - (1L << (length - 1));
       unsigned long maxval = mask;
-      
+
       if ((value > 0 && (unsigned long) value > maxval)
 	  || value < minval)
 	{
@@ -192,7 +193,7 @@ insert_normal (CGEN_CPU_DESC cd,
 	{
 	  long minval = - (1L << (length - 1));
 	  long maxval =   (1L << (length - 1)) - 1;
-	  
+
 	  if (value < minval || value > maxval)
 	    {
 	      sprintf
@@ -207,12 +208,19 @@ insert_normal (CGEN_CPU_DESC cd,
 #if CGEN_INT_INSN_P
 
   {
-    int shift;
+    int shift_within_word, shift_to_word, shift;
 
+    /* How to shift the value to BIT0 of the word.  */
+    shift_to_word = total_length - (word_offset + word_length);
+
+    /* How to shift the value to the field within the word.  */
     if (CGEN_INSN_LSB0_P)
-      shift = (word_offset + start + 1) - length;
+      shift_within_word = start + 1 - length;
     else
-      shift = total_length - (word_offset + start + length);
+      shift_within_word = word_length - start - length;
+
+    /* The total SHIFT, then mask in the value.  */
+    shift = shift_to_word + shift_within_word;
     *buffer = (*buffer & ~(mask << shift)) | ((value & mask) << shift);
   }
 
@@ -565,10 +573,17 @@ or1k_cgen_insert_operand (CGEN_CPU_DESC cd,
 
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      {
+        long value = fields->f_disp21;
+        value = ((((DI) (value) >> (13))) - (((DI) (pc) >> (13))));
+        errmsg = insert_normal (cd, value, 0|(1<<CGEN_IFLD_SIGNED)|(1<<CGEN_IFLD_ABS_ADDR), 0, 20, 21, 32, total_length, buffer);
+      }
+      break;
     case OR1K_OPERAND_DISP26 :
       {
         long value = fields->f_disp26;
-        value = ((SI) (((value) - (pc))) >> (2));
+        value = ((DI) (((value) - (pc))) >> (2));
         errmsg = insert_normal (cd, value, 0|(1<<CGEN_IFLD_SIGNED)|(1<<CGEN_IFLD_PCREL_ADDR), 0, 25, 26, 32, total_length, buffer);
       }
       break;
@@ -639,8 +654,9 @@ or1k_cgen_insert_operand (CGEN_CPU_DESC cd,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while building insn.\n"),
-	       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while building insn"),
+	 opindex);
       abort ();
   }
 
@@ -679,6 +695,14 @@ or1k_cgen_extract_operand (CGEN_CPU_DESC cd,
 
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      {
+        long value;
+        length = extract_normal (cd, ex_info, insn_value, 0|(1<<CGEN_IFLD_SIGNED)|(1<<CGEN_IFLD_ABS_ADDR), 0, 20, 21, 32, total_length, pc, & value);
+        value = ((((value) + (((DI) (pc) >> (13))))) << (13));
+        fields->f_disp21 = value;
+      }
+      break;
     case OR1K_OPERAND_DISP26 :
       {
         long value;
@@ -744,20 +768,21 @@ or1k_cgen_extract_operand (CGEN_CPU_DESC cd,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while decoding insn.\n"),
-	       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while decoding insn"),
+	 opindex);
       abort ();
     }
 
   return length;
 }
 
-cgen_insert_fn * const or1k_cgen_insert_handlers[] = 
+cgen_insert_fn * const or1k_cgen_insert_handlers[] =
 {
   insert_insn_normal,
 };
 
-cgen_extract_fn * const or1k_cgen_extract_handlers[] = 
+cgen_extract_fn * const or1k_cgen_extract_handlers[] =
 {
   extract_insn_normal,
 };
@@ -779,6 +804,9 @@ or1k_cgen_get_int_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      value = fields->f_disp21;
+      break;
     case OR1K_OPERAND_DISP26 :
       value = fields->f_disp26;
       break;
@@ -827,8 +855,9 @@ or1k_cgen_get_int_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while getting int operand.\n"),
-		       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while getting int operand"),
+	 opindex);
       abort ();
   }
 
@@ -844,6 +873,9 @@ or1k_cgen_get_vma_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      value = fields->f_disp21;
+      break;
     case OR1K_OPERAND_DISP26 :
       value = fields->f_disp26;
       break;
@@ -892,8 +924,9 @@ or1k_cgen_get_vma_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while getting vma operand.\n"),
-		       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while getting vma operand"),
+	 opindex);
       abort ();
   }
 
@@ -916,6 +949,9 @@ or1k_cgen_set_int_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 {
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      fields->f_disp21 = value;
+      break;
     case OR1K_OPERAND_DISP26 :
       fields->f_disp26 = value;
       break;
@@ -964,8 +1000,9 @@ or1k_cgen_set_int_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while setting int operand.\n"),
-		       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while setting int operand"),
+	 opindex);
       abort ();
   }
 }
@@ -978,6 +1015,9 @@ or1k_cgen_set_vma_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 {
   switch (opindex)
     {
+    case OR1K_OPERAND_DISP21 :
+      fields->f_disp21 = value;
+      break;
     case OR1K_OPERAND_DISP26 :
       fields->f_disp26 = value;
       break;
@@ -1026,8 +1066,9 @@ or1k_cgen_set_vma_operand (CGEN_CPU_DESC cd ATTRIBUTE_UNUSED,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while setting vma operand.\n"),
-		       opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while setting vma operand"),
+	 opindex);
       abort ();
   }
 }

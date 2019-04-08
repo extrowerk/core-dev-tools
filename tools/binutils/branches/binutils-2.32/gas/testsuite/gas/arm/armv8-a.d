@@ -1,4 +1,6 @@
 #name: Valid v8-a
+#source: armv8-ar.s
+#as: -march=armv8-a
 #objdump: -dr --prefix-addresses --show-raw-insn
 
 .*: +file format .*arm.*
@@ -32,9 +34,9 @@ Disassembly of section .text:
 0[0-9a-f]+ <[^>]+> e1d00c9f 	ldab	r0, \[r0\]
 0[0-9a-f]+ <[^>]+> e1d11c9f 	ldab	r1, \[r1\]
 0[0-9a-f]+ <[^>]+> e1deec9f 	ldab	lr, \[lr\]
-0[0-9a-f]+ <[^>]+> e1f00c9f 	ldaexh	r0, \[r0\]
-0[0-9a-f]+ <[^>]+> e1f11c9f 	ldaexh	r1, \[r1\]
-0[0-9a-f]+ <[^>]+> e1feec9f 	ldaexh	lr, \[lr\]
+0[0-9a-f]+ <[^>]+> e1f00c9f 	ldah	r0, \[r0\]
+0[0-9a-f]+ <[^>]+> e1f11c9f 	ldah	r1, \[r1\]
+0[0-9a-f]+ <[^>]+> e1feec9f 	ldah	lr, \[lr\]
 0[0-9a-f]+ <[^>]+> e1900c9f 	lda	r0, \[r0\]
 0[0-9a-f]+ <[^>]+> e1911c9f 	lda	r1, \[r1\]
 0[0-9a-f]+ <[^>]+> e19eec9f 	lda	lr, \[lr\]
