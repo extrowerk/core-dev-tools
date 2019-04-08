@@ -1,5 +1,5 @@
 /* tc-m32c.h -- Header file for tc-m32c.c.
-   Copyright (C) 2004-2014 Free Software Foundation, Inc.
+   Copyright (C) 2004-2019 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -14,9 +14,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with GAS; see the file COPYING.  If not, write to
-   the Free Software Foundation, 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA. */
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 #define TC_M32C
 
@@ -78,10 +78,10 @@ extern long md_pcrel_from_section (struct fix *, segT);
 
 /* We need a special version of the TC_START_LABEL macro so that we
    allow the :Z, :S, :Q and :G suffixes to be
-   parsed as such. We need to be able to change the contents of
-   the local variable 'c' which is passed to this macro as 'character'.  */
-#define TC_START_LABEL(character, s, i_l_p)				\
-  ((character) != ':' ? 0 : (character = m32c_is_colon_insn (s)) ? 0 : ((character = ':'), 1))
-extern char m32c_is_colon_insn (char *);
+   parsed as such.  We need to be able to change the contents of the
+   var storing what was at the NUL delimiter.  */
+#define TC_START_LABEL(STR, NUL_CHAR, NEXT_CHAR)		\
+  (NEXT_CHAR == ':' && !m32c_is_colon_insn (STR, &NUL_CHAR))
+extern int m32c_is_colon_insn (char *, char *);
 
 #define H_TICK_HEX 1

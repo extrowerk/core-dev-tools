@@ -1,23 +1,22 @@
 dnl Process this file with autoconf to produce a configure script
 dnl
-dnl   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+dnl   Copyright (C) 2012-2019 Free Software Foundation, Inc.
 dnl
 dnl This file is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
 dnl the Free Software Foundation; either version 3 of the License, or
 dnl (at your option) any later version.
-dnl 
+dnl
 dnl This program is distributed in the hope that it will be useful,
 dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
 dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 dnl GNU General Public License for more details.
-dnl 
+dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; see the file COPYING3.  If not see
 dnl <http://www.gnu.org/licenses/>.
 dnl
 
-AC_PREREQ(2.59)
 m4_include([../bfd/version.m4])
 AC_INIT([ld], BFD_VERSION)
 AC_CONFIG_SRCDIR(ldmain.c)
@@ -31,6 +30,7 @@ AM_MAINTAINER_MODE
 
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_GREP
 AC_GNU_SOURCE
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_INSTALL
@@ -43,7 +43,7 @@ AC_ARG_ENABLE(targets,
 [  --enable-targets        alternative target configurations],
 [case "${enableval}" in
   yes | "") AC_MSG_ERROR(enable-targets option must specify target names or 'all')
-            ;;
+	    ;;
   no)       enable_targets= ;;
   *)        enable_targets=$enableval ;;
 esac])dnl
@@ -119,7 +119,7 @@ AC_SUBST(installed_linker)
 
 AC_ARG_ENABLE([got],
 AS_HELP_STRING([--enable-got=<type>],
-               [GOT handling scheme (target, single, negative, multigot)]),
+	       [GOT handling scheme (target, single, negative, multigot)]),
 [case "${enableval}" in
   target | single | negative | multigot)  got_handling=$enableval ;;
   *)  AC_MSG_ERROR(bad value ${enableval} for --enable-got option) ;;
@@ -129,17 +129,87 @@ esac],
 case "${got_handling}" in
   target)
     AC_DEFINE([GOT_HANDLING_DEFAULT], [GOT_HANDLING_TARGET_DEFAULT],
-              [Define to choose default GOT handling scheme]) ;;
+	      [Define to choose default GOT handling scheme]) ;;
   single)
     AC_DEFINE([GOT_HANDLING_DEFAULT], [GOT_HANDLING_SINGLE],
-              [Define to choose default GOT handling scheme]) ;;
+	      [Define to choose default GOT handling scheme]) ;;
   negative)
     AC_DEFINE([GOT_HANDLING_DEFAULT], [GOT_HANDLING_NEGATIVE],
-              [Define to choose default GOT handling scheme]) ;;
+	      [Define to choose default GOT handling scheme]) ;;
   multigot)
     AC_DEFINE([GOT_HANDLING_DEFAULT], [GOT_HANDLING_MULTIGOT],
-              [Define to choose default GOT handling scheme]) ;;
+	      [Define to choose default GOT handling scheme]) ;;
   *)  AC_MSG_ERROR(bad value ${got_handling} for --enable-got option) ;;
+esac
+
+# PR gas/19109
+# Decide the default method for compressing debug sections.
+ac_default_compressed_debug_sections=unset
+# Provide a configure time option to override our default.
+AC_ARG_ENABLE(compressed_debug_sections,
+	      AS_HELP_STRING([--enable-compressed-debug-sections={all,ld,none}],
+	      [compress debug sections by default])],
+[case ,"${enableval}", in
+  ,yes, | ,all, | *,ld,*) ac_default_compressed_debug_sections=yes ;;
+  ,no, | ,none,)  ac_default_compressed_debug_sections=no ;;
+esac])dnl
+
+# Decide setting DT_RUNPATH instead of DT_RPATH by default
+ac_default_new_dtags=unset
+# Provide a configure time option to override our default.
+AC_ARG_ENABLE(new_dtags,
+	      AS_HELP_STRING([--enable-new-dtags],
+	      [set DT_RUNPATH instead of DT_RPATH by default])],
+[case "${enableval}" in
+  yes) ac_default_new_dtags=1 ;;
+  no) ac_default_new_dtags=0 ;;
+esac])dnl
+
+# Decide if -z relro should be enabled in ELF linker by default.
+ac_default_ld_z_relro=unset
+# Provide a configure time option to override our default.
+AC_ARG_ENABLE(relro,
+	      AS_HELP_STRING([--enable-relro],
+	      [enable -z relro in ELF linker by default]),
+[case "${enableval}" in
+  yes)  ac_default_ld_z_relro=1 ;;
+  no)  ac_default_ld_z_relro=0 ;;
+esac])dnl
+
+# Decide if -z separate-code should be enabled in ELF linker by default.
+ac_default_ld_z_separate_code=unset
+AC_ARG_ENABLE(separate-code,
+	      AS_HELP_STRING([--enable-separate-code],
+	      [enable -z separate-code in ELF linker by default]),
+[case "${enableval}" in
+  yes) ac_default_ld_z_separate_code=1 ;;
+  no) ac_default_ld_z_separate_code=0 ;;
+esac])
+
+# Decide which "--hash-style" to use by default
+# Provide a configure time option to override our default.
+AC_ARG_ENABLE([default-hash-style],
+AS_HELP_STRING([--enable-default-hash-style={sysv,gnu,both}],
+	       [use this default hash style]),
+[case "${enable_default_hash_style}" in
+  sysv | gnu | both) ;;
+  *) AC_MSG_ERROR([bad value ${enable_default_hash_style} for enable-default-hash-style option]) ;;
+esac],
+[case "${target}" in
+  # Enable gnu hash only on GNU targets, but not mips
+  mips*-*-*) enable_default_hash_style=sysv ;;
+  *-*-gnu* | *-*-linux* | *-*-nacl*) enable_default_hash_style=both ;;
+  *) enable_default_hash_style=sysv ;;
+esac])
+
+case "${enable_default_hash_style}" in
+  sysv | both) ac_default_emit_sysv_hash=1 ;;
+  *) ac_default_emit_sysv_hash=0 ;;
+esac
+
+case "${enable_default_hash_style}" in
+  gnu | both) ac_default_emit_gnu_hash=1 ;;
+  *) ac_default_emit_gnu_hash=0 ;;
 esac
 
 AM_BINUTILS_WARNINGS
@@ -166,7 +236,7 @@ fi
 
 # host-specific stuff:
 
-ALL_LINGUAS="fr sv tr es da vi zh_CN zh_TW ga fi id bg it uk"
+ALL_LINGUAS="bg da de es fi fr ga id it ja pt_BR ru sr sv tr uk vi zh_CN zh_TW"
 ZW_GNU_GETTEXT_SISTER_DIR
 AM_PO_SUBDIRS
 
@@ -182,10 +252,6 @@ ACX_PROG_CMP_IGNORE_INITIAL
 . ${srcdir}/configure.host
 
 AC_SUBST(HDEFINES)
-AC_SUBST(HOSTING_CRT0)
-AC_SUBST(HOSTING_SCRT0)
-AC_SUBST(HOSTING_LIBS)
-AC_SUBST(HOSTING_SLIBS)
 AC_SUBST(NATIVE_LIB_DIRS)
 
 AC_CHECK_HEADERS(string.h strings.h stdlib.h unistd.h elf-hints.h limits.h locale.h sys/param.h)
@@ -195,27 +261,18 @@ AC_CHECK_FUNCS(glob mkstemp realpath sbrk setlocale waitpid)
 AC_CHECK_FUNCS(open lseek close)
 AC_HEADER_DIRENT
 
+dnl AC_CHECK_HEADERS(sys/mman.h)
+AC_FUNC_MMAP
+
 AC_SEARCH_LIBS([dlopen], [dl])
 AM_CONDITIONAL([ENABLE_PLUGINS], [test x$plugins = xyes])
 
 AC_ARG_ENABLE(initfini-array,
-	[  --enable-initfini-array	use .init_array/.fini_array sections],
-	[], [
-AC_CACHE_CHECK(for .preinit_array/.init_array/.fini_array support,
-		 gcc_cv_initfini_array, [dnl
-  if test "x${build}" = "x${target}" ; then
-    AC_RUN_IFELSE([AC_LANG_SOURCE([
-static int x = -1;
-int main (void) { return x; }
-int foo (void) { x = 0; }
-int (*fp) (void) __attribute__ ((section (".init_array"))) = foo;])],
-	     [gcc_cv_initfini_array=yes], [gcc_cv_initfini_array=no],
-	     [gcc_cv_initfini_array=no])
-   else
-     gcc_cv_initfini_array=no
-   fi])
-  enable_initfini_array=$gcc_cv_initfini_array
-])
+[  --disable-initfini-array do not use .init_array/.fini_array sections],
+[case "${enableval}" in
+ yes|no) ;;
+ *) AC_MSG_ERROR([invalid --enable-initfini-array argument]) ;;
+ esac], [enable_initfini_array=yes])
 AC_SUBST(enable_initfini_array)
 if test $enable_initfini_array = yes; then
   AC_DEFINE(HAVE_INITFINI_ARRAY, 1,
@@ -235,10 +292,6 @@ fi
 BFD_BINARY_FOPEN
 
 AC_CHECK_DECLS([strstr, free, sbrk, getenv, environ])
-
-# Link in zlib if we can.  This is needed only for the bootstrap tests
-# right now, since those tests use libbfd, which depends on zlib.
-AM_ZLIB
 
 # When converting linker scripts into strings for use in emulation
 # files, use astring.sed if the compiler supports ANSI string
@@ -282,10 +335,16 @@ if test x${want64} = xfalse; then
   fi
 fi
 
+elf_list_options=FALSE
+elf_shlib_list_options=FALSE
+elf_plt_unwind_list_options=FALSE
 for targ_alias in `echo $target_alias $enable_targets | sed 's/,/ /g'`
 do
   if test "$targ_alias" = "all"; then
     all_targets=true
+    elf_list_options=TRUE
+    elf_shlib_list_options=TRUE
+    elf_plt_unwind_list_options=TRUE
   else
     # Canonicalize the secondary target names.
     result=`$ac_config_sub $targ_alias 2>/dev/null`
@@ -318,6 +377,25 @@ do
 	  eval result=\$tdir_$i
 	  test -z "$result" && result=$targ_alias
 	  echo tdir_$i=$result >> tdirs
+	  case "${i}" in
+	  *elf*)
+	    elf_list_options=TRUE
+	    ;;
+	  *)
+	    if $GREP "TEMPLATE_NAME=elf32" ${srcdir}/emulparams/${i}.sh >/dev/null 2>/dev/null; then
+	      elf_list_options=TRUE
+	    fi
+	    ;;
+	  esac
+	  if test "$elf_list_options" = "TRUE"; then
+	    . ${srcdir}/emulparams/${i}.sh
+	    if test x${GENERATE_SHLIB_SCRIPT} = xyes; then
+	      elf_shlib_list_options=TRUE
+	    fi
+	    if test x${PLT_UNWIND} = xyes; then
+	      elf_plt_unwind_list_options=TRUE
+	    fi
+	  fi
 	  ;;
 	esac
     done
@@ -347,6 +425,42 @@ do
   fi
 done
 
+if test x$ac_default_compressed_debug_sections = xyes ; then
+  AC_DEFINE(DEFAULT_FLAG_COMPRESS_DEBUG, 1, [Define if you want compressed debug sections by default.])
+fi
+
+if test "${ac_default_new_dtags}" = unset; then
+  ac_default_new_dtags=0
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_NEW_DTAGS,
+  $ac_default_new_dtags,
+  [Define to 1 if you want to set DT_RUNPATH instead of DT_RPATH by default.])
+
+if test "${ac_default_ld_z_relro}" = unset; then
+  ac_default_ld_z_relro=0
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_LD_Z_RELRO,
+  $ac_default_ld_z_relro,
+  [Define to 1 if you want to enable -z relro in ELF linker by default.])
+
+if test "${ac_default_ld_z_separate_code}" = unset; then
+  ac_default_ld_z_separate_code=0
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_LD_Z_SEPARATE_CODE,
+  $ac_default_ld_z_separate_code,
+  [Define to 1 if you want to enable -z separate-code in ELF linker by default.])
+
+AC_DEFINE_UNQUOTED([DEFAULT_EMIT_SYSV_HASH],
+  [$ac_default_emit_sysv_hash],
+  [Define to 1 if you want to emit sysv hash in the ELF linker by default.])
+
+AC_DEFINE_UNQUOTED([DEFAULT_EMIT_GNU_HASH],
+  [$ac_default_emit_gnu_hash],
+  [Define to 1 if you want to emit gnu hash in the ELF linker by default.])
+
+AC_SUBST(elf_list_options)
+AC_SUBST(elf_shlib_list_options)
+AC_SUBST(elf_plt_unwind_list_options)
 AC_SUBST(EMUL)
 
 TDIRS=tdirs
@@ -372,7 +486,7 @@ EMULATION_LIBPATH=$all_libpath
 AC_SUBST(EMULATION_LIBPATH)
 
 if test x${enable_static} = xno; then
-  TESTBFDLIB="--rpath ../bfd/.libs ../bfd/.libs/libbfd.so"
+  TESTBFDLIB="-Wl,--rpath,../bfd/.libs ../bfd/.libs/libbfd.so"
 else
   TESTBFDLIB="../bfd/.libs/libbfd.a"
 fi
@@ -392,6 +506,26 @@ if test x${EXTRA_SHLIB_EXTENSION} != x ; then
   AC_DEFINE_UNQUOTED(EXTRA_SHLIB_EXTENSION, "$EXTRA_SHLIB_EXTENSION",
    [Additional extension a shared object might have.])
 fi
+
+AC_CONFIG_COMMANDS([default],
+[[
+case "$srcdir" in
+  .) srcdirpre= ;;
+  *) srcdirpre='$(srcdir)/' ;;
+esac
+POFILES=
+GMOFILES=
+for lang in dummy $OBSOLETE_ALL_LINGUAS; do
+  if test $lang != dummy; then
+    POFILES="$POFILES $srcdirpre$lang.po"
+    GMOFILES="$GMOFILES $srcdirpre$lang.gmo"
+  fi
+done
+sed -e '/^SRC-POTFILES =/r po/SRC-POTFILES' \
+    -e '/^BLD-POTFILES =/r po/BLD-POTFILES' \
+    -e "s,@POFILES@,$POFILES," \
+    -e "s,@GMOFILES@,$GMOFILES," \
+    po/Makefile.in > po/Makefile]],[[]])
 
 dnl Required by html, pdf, install-pdf and install-html
 AC_SUBST(datarootdir)

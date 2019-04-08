@@ -1,9 +1,9 @@
-%option noinput nounput
+%option noinput nounput noyywrap
 
 %{
 /* arlex.l - Strange script language lexer */
 
-/* Copyright (C) 1992-2014 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2019 Free Software Foundation, Inc.
 
    This file is part of GNU Binutils.
 
@@ -33,7 +33,7 @@
 #ifndef YY_NO_UNPUT
 #define YY_NO_UNPUT
 #endif
- 
+
 extern int yylex (void);
 
 int linenumber;
@@ -91,10 +91,6 @@ int linenumber;
 "*".* 		{ }
 ";".* 		{ }
 " "		{ }
-"\n"	 	 { linenumber ++; return NEWLINE; }	
+"\n"	 	 { linenumber ++; return NEWLINE; }
 
 %%
-#ifndef yywrap
-/* Needed for lex, though not flex. */
-int yywrap(void) { return 1; }
-#endif

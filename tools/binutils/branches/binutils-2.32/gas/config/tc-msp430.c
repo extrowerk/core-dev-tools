@@ -1,6 +1,6 @@
 /* tc-msp430.c -- Assembler code for the Texas Instruments MSP430
 
-  Copyright (C) 2002-2014 Free Software Foundation, Inc.
+  Copyright (C) 2002-2019 Free Software Foundation, Inc.
   Contributed by Dmitry Diky <diwil@mail.ru>
 
   This file is part of GAS, the GNU Assembler.
@@ -22,12 +22,12 @@
 
 #include "as.h"
 #include <limits.h>
-#define PUSH_1X_WORKAROUND
 #include "subsegs.h"
 #include "opcode/msp430.h"
 #include "safe-ctype.h"
 #include "dwarf2dbg.h"
 #include "elf/msp430.h"
+#include "libiberty.h"
 
 /* We will disable polymorphs by default because it is dangerous.
    The potential problem here is the following: assume we got the
@@ -69,9 +69,6 @@
 int msp430_enable_relax;
 int msp430_enable_polys;
 
-/*  Set linkrelax here to avoid fixups in most sections.  */
-int linkrelax = 1;
-
 /* GCC uses the some condition codes which we'll
    implement as new polymorph instructions.
 
@@ -105,7 +102,7 @@ int linkrelax = 1;
 
 struct rcodes_s
 {
-  char * name;
+  const char * name;
   int    index;	/* Corresponding insn_opnumb.  */
   int    sop;	/* Opcode if jump length is short.  */
   long   lpos;	/* Label position.  */
@@ -160,7 +157,7 @@ static struct rcodes_s msp430x_rcodes[] =
 
 struct hcodes_s
 {
-  char * name;
+  const char * name;
   int    index;		/* Corresponding insn_opnumb.  */
   int    tlab;		/* Number of labels in short mode.  */
   int    op0;		/* Opcode for first word of short jump.  */
@@ -255,7 +252,7 @@ relax_typeS md_relax_table[] =
 };
 
 
-#define MAX_OP_LEN	256
+#define MAX_OP_LEN	4096
 
 typedef enum msp_isa
 {
@@ -297,7 +294,7 @@ target_is_430xv2 (void)
       ? BFD_RELOC_MSP430_16_BYTE : BFD_RELOC_MSP430_16))
 
 /* Generate a 16-bit pc-relative relocation.
-   For the 430X we generate a relocation without linkwer range checking.
+   For the 430X we generate a relocation without linker range checking.
    For the 430 we generate a relocation without assembler range checking
    if we are handling an immediate value or a byte-width instruction.  */
 #undef  CHECK_RELOC_MSP430_PCREL
@@ -418,6 +415,13 @@ parse_exp (char * s, expressionS * op)
   expression (op);
   if (op->X_op == O_absent)
     as_bad (_("missing operand"));
+  /* Our caller is likely to check that the entire expression was parsed.
+     If we have found a hex constant with an 'h' suffix, ilp will be left
+     pointing at the 'h', so skip it here.  */
+  if (input_line_pointer != NULL
+      && op->X_op == O_constant
+      && (*input_line_pointer == 'h' || *input_line_pointer == 'H'))
+    ++ input_line_pointer;
   return input_line_pointer;
 }
 
@@ -615,7 +619,7 @@ msp430_profiler (int dummy ATTRIBUTE_UNUSED)
   subseg = now_subseg;
 
   /* Now go to .profiler section.  */
-  obj_elf_change_section (".profiler", SHT_PROGBITS, 0, 0, 0, 0, 0);
+  obj_elf_change_section (".profiler", SHT_PROGBITS, 0, 0, 0, 0, 0, 0);
 
   /* Save flags.  */
   emit_expr (& exp, 2);
@@ -628,7 +632,7 @@ msp430_profiler (int dummy ATTRIBUTE_UNUSED)
       /* Now get profiling info.  */
       halt = extract_operand (input_line_pointer, str, 1024);
       /* Process like ".word xxx" directive.  */
-      parse_exp (str, & exp);
+      (void) parse_exp (str, & exp);
       emit_expr (& exp, 2);
       input_line_pointer = halt;
     }
@@ -679,11 +683,28 @@ static bfd_boolean warn_interrupt_nops = TRUE;
 #define OPTION_MCPU 'c'
 #define OPTION_MOVE_DATA 'd'
 static bfd_boolean move_data = FALSE;
+#define OPTION_DATA_REGION 'r'
+static bfd_boolean upper_data_region_in_use = FALSE;
+
+enum
+{
+  OPTION_SILICON_ERRATA = OPTION_MD_BASE,
+  OPTION_SILICON_ERRATA_WARN,
+};
+
+static unsigned int silicon_errata_fix = 0;
+static unsigned int silicon_errata_warn = 0;
+#define SILICON_ERRATA_CPU4 		(1 << 0)
+#define SILICON_ERRATA_CPU8		(1 << 1)
+#define SILICON_ERRATA_CPU11 		(1 << 2)
+#define SILICON_ERRATA_CPU12 		(1 << 3)
+#define SILICON_ERRATA_CPU13 		(1 << 4)
+#define SILICON_ERRATA_CPU19 		(1 << 5)
 
 static void
 msp430_set_arch (int option)
 {
-  char *str = (char *) alloca (32);	/* 32 for good measure.  */
+  char str[32];	/* 32 for good measure.  */
 
   input_line_pointer = extract_word (input_line_pointer, str, 32);
 
@@ -692,72 +713,678 @@ msp430_set_arch (int option)
 		     target_is_430x () ? bfd_mach_msp430x : bfd_mach_msp11);
 }
 
-/* This is the full list of MCU names that are known to only
-   support the 430 ISA.  */
-static const char * msp430_mcu_names [] =
+/* This is a copy of the same data structure found in gcc/config/msp430/msp430.c
+   Keep these two structures in sync.
+   The data in this structure has been extracted from version 1.194 of the
+   devices.csv file released by TI in September 2016.  */
+
+struct msp430_mcu_data
 {
-"msp430afe221",	"msp430afe222",	"msp430afe223",	"msp430afe231",	
-"msp430afe232",	"msp430afe233",	"msp430afe251",	"msp430afe252",	
-"msp430afe253",	"msp430c091",	"msp430c092",	"msp430c111",	
-"msp430c1111",	"msp430c112",	"msp430c1121",	"msp430c1331",	
-"msp430c1351",	"msp430c311s",	"msp430c312",	"msp430c313",	
-"msp430c314",	"msp430c315",	"msp430c323",	"msp430c325",	
-"msp430c336",	"msp430c337",	"msp430c412",	"msp430c413",	
-"msp430e112",	"msp430e313",	"msp430e315",	"msp430e325",	
-"msp430e337",	"msp430f110",	"msp430f1101",	"msp430f1101a",	
-"msp430f1111",	"msp430f1111a",	"msp430f112",	"msp430f1121",	
-"msp430f1121a",	"msp430f1122",	"msp430f1132",	"msp430f122",	
-"msp430f1222",	"msp430f123",	"msp430f1232",	"msp430f133",	
-"msp430f135",	"msp430f147",	"msp430f1471",	"msp430f148",	
-"msp430f1481",	"msp430f149",	"msp430f1491",	"msp430f155",	
-"msp430f156",	"msp430f157",	"msp430f1610",	"msp430f1611",	
-"msp430f1612",	"msp430f167",	"msp430f168",	"msp430f169",	
-"msp430f2001",	"msp430f2002",	"msp430f2003",	"msp430f2011",	
-"msp430f2012",	"msp430f2013",	"msp430f2101",	"msp430f2111",	
-"msp430f2112",	"msp430f2121",	"msp430f2122",	"msp430f2131",	
-"msp430f2132",	"msp430f2232",	"msp430f2234",	"msp430f2252",	
-"msp430f2254",	"msp430f2272",	"msp430f2274",	"msp430f233",	
-"msp430f2330",	"msp430f235",	"msp430f2350",	"msp430f2370",	
-"msp430f2410",	"msp430f247",	"msp430f2471",	"msp430f248",	
-"msp430f2481",	"msp430f249",	"msp430f2491",	"msp430f412",	
-"msp430f413",	"msp430f4132",	"msp430f415",	"msp430f4152",	
-"msp430f417",	"msp430f423",	"msp430f423a",	"msp430f425",	
-"msp430f4250",	"msp430f425a",	"msp430f4260",	"msp430f427",	
-"msp430f4270",	"msp430f427a",	"msp430f435",	"msp430f4351",	
-"msp430f436",	"msp430f4361",	"msp430f437",	"msp430f4371",	
-"msp430f438",	"msp430f439",	"msp430f447",	"msp430f448",	
-"msp430f4481",	"msp430f449",	"msp430f4491",	"msp430f477",	
-"msp430f478",	"msp430f4783",	"msp430f4784",	"msp430f479",	
-"msp430f4793",	"msp430f4794",	"msp430fe423",	"msp430fe4232",	
-"msp430fe423a",	"msp430fe4242",	"msp430fe425",	"msp430fe4252",	
-"msp430fe425a",	"msp430fe427",	"msp430fe4272",	"msp430fe427a",	
-"msp430fg4250",	"msp430fg4260",	"msp430fg4270",	"msp430fg437",	
-"msp430fg438",	"msp430fg439",	"msp430fg477",	"msp430fg478",	
-"msp430fg479",	"msp430fw423",	"msp430fw425",	"msp430fw427",	
-"msp430fw428",	"msp430fw429",	"msp430g2001",	"msp430g2101",	
-"msp430g2102",	"msp430g2111",	"msp430g2112",	"msp430g2113",	
-"msp430g2121",	"msp430g2131",	"msp430g2132",	"msp430g2152",	
-"msp430g2153",	"msp430g2201",	"msp430g2202",	"msp430g2203",	
-"msp430g2210",	"msp430g2211",	"msp430g2212",	"msp430g2213",	
-"msp430g2221",	"msp430g2230",	"msp430g2231",	"msp430g2232",	
-"msp430g2233",	"msp430g2252",	"msp430g2253",	"msp430g2302",	
-"msp430g2303",	"msp430g2312",	"msp430g2313",	"msp430g2332",	
-"msp430g2333",	"msp430g2352",	"msp430g2353",	"msp430g2402",	
-"msp430g2403",	"msp430g2412",	"msp430g2413",	"msp430g2432",	
-"msp430g2433",	"msp430g2444",	"msp430g2452",	"msp430g2453",	
-"msp430g2513",	"msp430g2533",	"msp430g2544",	"msp430g2553",	
-"msp430g2744",	"msp430g2755",	"msp430g2855",	"msp430g2955",	
-"msp430i2020",	"msp430i2021",	"msp430i2030",	"msp430i2031",	
-"msp430i2040",	"msp430i2041",	"msp430l092",   "msp430p112",	
-"msp430p313",	"msp430p315",	"msp430p315s",	"msp430p325",	
-"msp430p337",	"msp430tch5e"
-};
+  const char * name;
+  unsigned int revision; /* 0=> MSP430, 1=>MSP430X, 2=> MSP430Xv2.  */
+  unsigned int hwmpy;    /* 0=>none, 1=>16-bit, 2=>16-bit w/sign extend, 4=>32-bit, 8=> 32-bit (5xx).  */
+}
+msp430_mcu_data [] =
+{
+  { "cc430f5123",2,8 },
+  { "cc430f5125",2,8 },
+  { "cc430f5133",2,8 },
+  { "cc430f5135",2,8 },
+  { "cc430f5137",2,8 },
+  { "cc430f5143",2,8 },
+  { "cc430f5145",2,8 },
+  { "cc430f5147",2,8 },
+  { "cc430f6125",2,8 },
+  { "cc430f6126",2,8 },
+  { "cc430f6127",2,8 },
+  { "cc430f6135",2,8 },
+  { "cc430f6137",2,8 },
+  { "cc430f6143",2,8 },
+  { "cc430f6145",2,8 },
+  { "cc430f6147",2,8 },
+  { "msp430afe221",0,2 },
+  { "msp430afe222",0,2 },
+  { "msp430afe223",0,2 },
+  { "msp430afe231",0,2 },
+  { "msp430afe232",0,2 },
+  { "msp430afe233",0,2 },
+  { "msp430afe251",0,2 },
+  { "msp430afe252",0,2 },
+  { "msp430afe253",0,2 },
+  { "msp430bt5190",2,8 },
+  { "msp430c091",0,0 },
+  { "msp430c092",0,0 },
+  { "msp430c111",0,0 },
+  { "msp430c1111",0,0 },
+  { "msp430c112",0,0 },
+  { "msp430c1121",0,0 },
+  { "msp430c1331",0,0 },
+  { "msp430c1351",0,0 },
+  { "msp430c311s",0,0 },
+  { "msp430c312",0,0 },
+  { "msp430c313",0,0 },
+  { "msp430c314",0,0 },
+  { "msp430c315",0,0 },
+  { "msp430c323",0,0 },
+  { "msp430c325",0,0 },
+  { "msp430c336",0,1 },
+  { "msp430c337",0,1 },
+  { "msp430c412",0,0 },
+  { "msp430c413",0,0 },
+  { "msp430cg4616",1,1 },
+  { "msp430cg4617",1,1 },
+  { "msp430cg4618",1,1 },
+  { "msp430cg4619",1,1 },
+  { "msp430e112",0,0 },
+  { "msp430e313",0,0 },
+  { "msp430e315",0,0 },
+  { "msp430e325",0,0 },
+  { "msp430e337",0,1 },
+  { "msp430f110",0,0 },
+  { "msp430f1101",0,0 },
+  { "msp430f1101a",0,0 },
+  { "msp430f1111",0,0 },
+  { "msp430f1111a",0,0 },
+  { "msp430f112",0,0 },
+  { "msp430f1121",0,0 },
+  { "msp430f1121a",0,0 },
+  { "msp430f1122",0,0 },
+  { "msp430f1132",0,0 },
+  { "msp430f122",0,0 },
+  { "msp430f1222",0,0 },
+  { "msp430f123",0,0 },
+  { "msp430f1232",0,0 },
+  { "msp430f133",0,0 },
+  { "msp430f135",0,0 },
+  { "msp430f147",0,1 },
+  { "msp430f1471",0,1 },
+  { "msp430f148",0,1 },
+  { "msp430f1481",0,1 },
+  { "msp430f149",0,1 },
+  { "msp430f1491",0,1 },
+  { "msp430f155",0,0 },
+  { "msp430f156",0,0 },
+  { "msp430f157",0,0 },
+  { "msp430f1610",0,1 },
+  { "msp430f1611",0,1 },
+  { "msp430f1612",0,1 },
+  { "msp430f167",0,1 },
+  { "msp430f168",0,1 },
+  { "msp430f169",0,1 },
+  { "msp430f2001",0,0 },
+  { "msp430f2002",0,0 },
+  { "msp430f2003",0,0 },
+  { "msp430f2011",0,0 },
+  { "msp430f2012",0,0 },
+  { "msp430f2013",0,0 },
+  { "msp430f2101",0,0 },
+  { "msp430f2111",0,0 },
+  { "msp430f2112",0,0 },
+  { "msp430f2121",0,0 },
+  { "msp430f2122",0,0 },
+  { "msp430f2131",0,0 },
+  { "msp430f2132",0,0 },
+  { "msp430f2232",0,0 },
+  { "msp430f2234",0,0 },
+  { "msp430f2252",0,0 },
+  { "msp430f2254",0,0 },
+  { "msp430f2272",0,0 },
+  { "msp430f2274",0,0 },
+  { "msp430f233",0,2 },
+  { "msp430f2330",0,2 },
+  { "msp430f235",0,2 },
+  { "msp430f2350",0,2 },
+  { "msp430f2370",0,2 },
+  { "msp430f2410",0,2 },
+  { "msp430f2416",1,2 },
+  { "msp430f2417",1,2 },
+  { "msp430f2418",1,2 },
+  { "msp430f2419",1,2 },
+  { "msp430f247",0,2 },
+  { "msp430f2471",0,2 },
+  { "msp430f248",0,2 },
+  { "msp430f2481",0,2 },
+  { "msp430f249",0,2 },
+  { "msp430f2491",0,2 },
+  { "msp430f2616",1,2 },
+  { "msp430f2617",1,2 },
+  { "msp430f2618",1,2 },
+  { "msp430f2619",1,2 },
+  { "msp430f412",0,0 },
+  { "msp430f413",0,0 },
+  { "msp430f4132",0,0 },
+  { "msp430f415",0,0 },
+  { "msp430f4152",0,0 },
+  { "msp430f417",0,0 },
+  { "msp430f423",0,1 },
+  { "msp430f423a",0,1 },
+  { "msp430f425",0,1 },
+  { "msp430f4250",0,0 },
+  { "msp430f425a",0,1 },
+  { "msp430f4260",0,0 },
+  { "msp430f427",0,1 },
+  { "msp430f4270",0,0 },
+  { "msp430f427a",0,1 },
+  { "msp430f435",0,0 },
+  { "msp430f4351",0,0 },
+  { "msp430f436",0,0 },
+  { "msp430f4361",0,0 },
+  { "msp430f437",0,0 },
+  { "msp430f4371",0,0 },
+  { "msp430f438",0,0 },
+  { "msp430f439",0,0 },
+  { "msp430f447",0,1 },
+  { "msp430f448",0,1 },
+  { "msp430f4481",0,1 },
+  { "msp430f449",0,1 },
+  { "msp430f4491",0,1 },
+  { "msp430f4616",1,1 },
+  { "msp430f46161",1,1 },
+  { "msp430f4617",1,1 },
+  { "msp430f46171",1,1 },
+  { "msp430f4618",1,1 },
+  { "msp430f46181",1,1 },
+  { "msp430f4619",1,1 },
+  { "msp430f46191",1,1 },
+  { "msp430f47126",1,4 },
+  { "msp430f47127",1,4 },
+  { "msp430f47163",1,4 },
+  { "msp430f47166",1,4 },
+  { "msp430f47167",1,4 },
+  { "msp430f47173",1,4 },
+  { "msp430f47176",1,4 },
+  { "msp430f47177",1,4 },
+  { "msp430f47183",1,4 },
+  { "msp430f47186",1,4 },
+  { "msp430f47187",1,4 },
+  { "msp430f47193",1,4 },
+  { "msp430f47196",1,4 },
+  { "msp430f47197",1,4 },
+  { "msp430f477",0,0 },
+  { "msp430f478",0,0 },
+  { "msp430f4783",0,4 },
+  { "msp430f4784",0,4 },
+  { "msp430f479",0,0 },
+  { "msp430f4793",0,4 },
+  { "msp430f4794",0,4 },
+  { "msp430f5131",2,8 },
+  { "msp430f5132",2,8 },
+  { "msp430f5151",2,8 },
+  { "msp430f5152",2,8 },
+  { "msp430f5171",2,8 },
+  { "msp430f5172",2,8 },
+  { "msp430f5212",2,8 },
+  { "msp430f5213",2,8 },
+  { "msp430f5214",2,8 },
+  { "msp430f5217",2,8 },
+  { "msp430f5218",2,8 },
+  { "msp430f5219",2,8 },
+  { "msp430f5222",2,8 },
+  { "msp430f5223",2,8 },
+  { "msp430f5224",2,8 },
+  { "msp430f5227",2,8 },
+  { "msp430f5228",2,8 },
+  { "msp430f5229",2,8 },
+  { "msp430f5232",2,8 },
+  { "msp430f5234",2,8 },
+  { "msp430f5237",2,8 },
+  { "msp430f5239",2,8 },
+  { "msp430f5242",2,8 },
+  { "msp430f5244",2,8 },
+  { "msp430f5247",2,8 },
+  { "msp430f5249",2,8 },
+  { "msp430f5252",2,8 },
+  { "msp430f5253",2,8 },
+  { "msp430f5254",2,8 },
+  { "msp430f5255",2,8 },
+  { "msp430f5256",2,8 },
+  { "msp430f5257",2,8 },
+  { "msp430f5258",2,8 },
+  { "msp430f5259",2,8 },
+  { "msp430f5304",2,8 },
+  { "msp430f5308",2,8 },
+  { "msp430f5309",2,8 },
+  { "msp430f5310",2,8 },
+  { "msp430f5324",2,8 },
+  { "msp430f5325",2,8 },
+  { "msp430f5326",2,8 },
+  { "msp430f5327",2,8 },
+  { "msp430f5328",2,8 },
+  { "msp430f5329",2,8 },
+  { "msp430f5333",2,8 },
+  { "msp430f5335",2,8 },
+  { "msp430f5336",2,8 },
+  { "msp430f5338",2,8 },
+  { "msp430f5340",2,8 },
+  { "msp430f5341",2,8 },
+  { "msp430f5342",2,8 },
+  { "msp430f5358",2,8 },
+  { "msp430f5359",2,8 },
+  { "msp430f5418",2,8 },
+  { "msp430f5418a",2,8 },
+  { "msp430f5419",2,8 },
+  { "msp430f5419a",2,8 },
+  { "msp430f5435",2,8 },
+  { "msp430f5435a",2,8 },
+  { "msp430f5436",2,8 },
+  { "msp430f5436a",2,8 },
+  { "msp430f5437",2,8 },
+  { "msp430f5437a",2,8 },
+  { "msp430f5438",2,8 },
+  { "msp430f5438a",2,8 },
+  { "msp430f5500",2,8 },
+  { "msp430f5501",2,8 },
+  { "msp430f5502",2,8 },
+  { "msp430f5503",2,8 },
+  { "msp430f5504",2,8 },
+  { "msp430f5505",2,8 },
+  { "msp430f5506",2,8 },
+  { "msp430f5507",2,8 },
+  { "msp430f5508",2,8 },
+  { "msp430f5509",2,8 },
+  { "msp430f5510",2,8 },
+  { "msp430f5513",2,8 },
+  { "msp430f5514",2,8 },
+  { "msp430f5515",2,8 },
+  { "msp430f5517",2,8 },
+  { "msp430f5519",2,8 },
+  { "msp430f5521",2,8 },
+  { "msp430f5522",2,8 },
+  { "msp430f5524",2,8 },
+  { "msp430f5525",2,8 },
+  { "msp430f5526",2,8 },
+  { "msp430f5527",2,8 },
+  { "msp430f5528",2,8 },
+  { "msp430f5529",2,8 },
+  { "msp430f5630",2,8 },
+  { "msp430f5631",2,8 },
+  { "msp430f5632",2,8 },
+  { "msp430f5633",2,8 },
+  { "msp430f5634",2,8 },
+  { "msp430f5635",2,8 },
+  { "msp430f5636",2,8 },
+  { "msp430f5637",2,8 },
+  { "msp430f5638",2,8 },
+  { "msp430f5658",2,8 },
+  { "msp430f5659",2,8 },
+  { "msp430f5xx_6xxgeneric",2,8 },
+  { "msp430f6433",2,8 },
+  { "msp430f6435",2,8 },
+  { "msp430f6436",2,8 },
+  { "msp430f6438",2,8 },
+  { "msp430f6458",2,8 },
+  { "msp430f6459",2,8 },
+  { "msp430f6630",2,8 },
+  { "msp430f6631",2,8 },
+  { "msp430f6632",2,8 },
+  { "msp430f6633",2,8 },
+  { "msp430f6634",2,8 },
+  { "msp430f6635",2,8 },
+  { "msp430f6636",2,8 },
+  { "msp430f6637",2,8 },
+  { "msp430f6638",2,8 },
+  { "msp430f6658",2,8 },
+  { "msp430f6659",2,8 },
+  { "msp430f6720",2,8 },
+  { "msp430f6720a",2,8 },
+  { "msp430f6721",2,8 },
+  { "msp430f6721a",2,8 },
+  { "msp430f6723",2,8 },
+  { "msp430f6723a",2,8 },
+  { "msp430f6724",2,8 },
+  { "msp430f6724a",2,8 },
+  { "msp430f6725",2,8 },
+  { "msp430f6725a",2,8 },
+  { "msp430f6726",2,8 },
+  { "msp430f6726a",2,8 },
+  { "msp430f6730",2,8 },
+  { "msp430f6730a",2,8 },
+  { "msp430f6731",2,8 },
+  { "msp430f6731a",2,8 },
+  { "msp430f6733",2,8 },
+  { "msp430f6733a",2,8 },
+  { "msp430f6734",2,8 },
+  { "msp430f6734a",2,8 },
+  { "msp430f6735",2,8 },
+  { "msp430f6735a",2,8 },
+  { "msp430f6736",2,8 },
+  { "msp430f6736a",2,8 },
+  { "msp430f6745",2,8 },
+  { "msp430f67451",2,8 },
+  { "msp430f67451a",2,8 },
+  { "msp430f6745a",2,8 },
+  { "msp430f6746",2,8 },
+  { "msp430f67461",2,8 },
+  { "msp430f67461a",2,8 },
+  { "msp430f6746a",2,8 },
+  { "msp430f6747",2,8 },
+  { "msp430f67471",2,8 },
+  { "msp430f67471a",2,8 },
+  { "msp430f6747a",2,8 },
+  { "msp430f6748",2,8 },
+  { "msp430f67481",2,8 },
+  { "msp430f67481a",2,8 },
+  { "msp430f6748a",2,8 },
+  { "msp430f6749",2,8 },
+  { "msp430f67491",2,8 },
+  { "msp430f67491a",2,8 },
+  { "msp430f6749a",2,8 },
+  { "msp430f67621",2,8 },
+  { "msp430f67621a",2,8 },
+  { "msp430f67641",2,8 },
+  { "msp430f67641a",2,8 },
+  { "msp430f6765",2,8 },
+  { "msp430f67651",2,8 },
+  { "msp430f67651a",2,8 },
+  { "msp430f6765a",2,8 },
+  { "msp430f6766",2,8 },
+  { "msp430f67661",2,8 },
+  { "msp430f67661a",2,8 },
+  { "msp430f6766a",2,8 },
+  { "msp430f6767",2,8 },
+  { "msp430f67671",2,8 },
+  { "msp430f67671a",2,8 },
+  { "msp430f6767a",2,8 },
+  { "msp430f6768",2,8 },
+  { "msp430f67681",2,8 },
+  { "msp430f67681a",2,8 },
+  { "msp430f6768a",2,8 },
+  { "msp430f6769",2,8 },
+  { "msp430f67691",2,8 },
+  { "msp430f67691a",2,8 },
+  { "msp430f6769a",2,8 },
+  { "msp430f6775",2,8 },
+  { "msp430f67751",2,8 },
+  { "msp430f67751a",2,8 },
+  { "msp430f6775a",2,8 },
+  { "msp430f6776",2,8 },
+  { "msp430f67761",2,8 },
+  { "msp430f67761a",2,8 },
+  { "msp430f6776a",2,8 },
+  { "msp430f6777",2,8 },
+  { "msp430f67771",2,8 },
+  { "msp430f67771a",2,8 },
+  { "msp430f6777a",2,8 },
+  { "msp430f6778",2,8 },
+  { "msp430f67781",2,8 },
+  { "msp430f67781a",2,8 },
+  { "msp430f6778a",2,8 },
+  { "msp430f6779",2,8 },
+  { "msp430f67791",2,8 },
+  { "msp430f67791a",2,8 },
+  { "msp430f6779a",2,8 },
+  { "msp430fe423",0,0 },
+  { "msp430fe4232",0,0 },
+  { "msp430fe423a",0,0 },
+  { "msp430fe4242",0,0 },
+  { "msp430fe425",0,0 },
+  { "msp430fe4252",0,0 },
+  { "msp430fe425a",0,0 },
+  { "msp430fe427",0,0 },
+  { "msp430fe4272",0,0 },
+  { "msp430fe427a",0,0 },
+  { "msp430fg4250",0,0 },
+  { "msp430fg4260",0,0 },
+  { "msp430fg4270",0,0 },
+  { "msp430fg437",0,0 },
+  { "msp430fg438",0,0 },
+  { "msp430fg439",0,0 },
+  { "msp430fg4616",1,1 },
+  { "msp430fg4617",1,1 },
+  { "msp430fg4618",1,1 },
+  { "msp430fg4619",1,1 },
+  { "msp430fg477",0,0 },
+  { "msp430fg478",0,0 },
+  { "msp430fg479",0,0 },
+  { "msp430fg6425",2,8 },
+  { "msp430fg6426",2,8 },
+  { "msp430fg6625",2,8 },
+  { "msp430fg6626",2,8 },
+  { "msp430fr2032",2,0 },
+  { "msp430fr2033",2,0 },
+  { "msp430fr2110",2,0 },
+  { "msp430fr2111",2,0 },
+  { "msp430fr2310",2,0 },
+  { "msp430fr2311",2,0 },
+  { "msp430fr2433",2,8 },
+  { "msp430fr2532",2,8 },
+  { "msp430fr2533",2,8 },
+  { "msp430fr2632",2,8 },
+  { "msp430fr2633",2,8 },
+  { "msp430fr2xx_4xxgeneric",2,8 },
+  { "msp430fr4131",2,0 },
+  { "msp430fr4132",2,0 },
+  { "msp430fr4133",2,0 },
+  { "msp430fr5720",2,8 },
+  { "msp430fr5721",2,8 },
+  { "msp430fr5722",2,8 },
+  { "msp430fr5723",2,8 },
+  { "msp430fr5724",2,8 },
+  { "msp430fr5725",2,8 },
+  { "msp430fr5726",2,8 },
+  { "msp430fr5727",2,8 },
+  { "msp430fr5728",2,8 },
+  { "msp430fr5729",2,8 },
+  { "msp430fr5730",2,8 },
+  { "msp430fr5731",2,8 },
+  { "msp430fr5732",2,8 },
+  { "msp430fr5733",2,8 },
+  { "msp430fr5734",2,8 },
+  { "msp430fr5735",2,8 },
+  { "msp430fr5736",2,8 },
+  { "msp430fr5737",2,8 },
+  { "msp430fr5738",2,8 },
+  { "msp430fr5739",2,8 },
+  { "msp430fr57xxgeneric",2,8 },
+  { "msp430fr5847",2,8 },
+  { "msp430fr58471",2,8 },
+  { "msp430fr5848",2,8 },
+  { "msp430fr5849",2,8 },
+  { "msp430fr5857",2,8 },
+  { "msp430fr5858",2,8 },
+  { "msp430fr5859",2,8 },
+  { "msp430fr5867",2,8 },
+  { "msp430fr58671",2,8 },
+  { "msp430fr5868",2,8 },
+  { "msp430fr5869",2,8 },
+  { "msp430fr5870",2,8 },
+  { "msp430fr5872",2,8 },
+  { "msp430fr58721",2,8 },
+  { "msp430fr5887",2,8 },
+  { "msp430fr5888",2,8 },
+  { "msp430fr5889",2,8 },
+  { "msp430fr58891",2,8 },
+  { "msp430fr5922",2,8 },
+  { "msp430fr59221",2,8 },
+  { "msp430fr5947",2,8 },
+  { "msp430fr59471",2,8 },
+  { "msp430fr5948",2,8 },
+  { "msp430fr5949",2,8 },
+  { "msp430fr5957",2,8 },
+  { "msp430fr5958",2,8 },
+  { "msp430fr5959",2,8 },
+  { "msp430fr5962",2,8 },
+  { "msp430fr5964",2,8 },
+  { "msp430fr5967",2,8 },
+  { "msp430fr5968",2,8 },
+  { "msp430fr5969",2,8 },
+  { "msp430fr59691",2,8 },
+  { "msp430fr5970",2,8 },
+  { "msp430fr5972",2,8 },
+  { "msp430fr59721",2,8 },
+  { "msp430fr5986",2,8 },
+  { "msp430fr5987",2,8 },
+  { "msp430fr5988",2,8 },
+  { "msp430fr5989",2,8 },
+  { "msp430fr59891",2,8 },
+  { "msp430fr5992",2,8 },
+  { "msp430fr5994",2,8 },
+  { "msp430fr59941",2,8 },
+  { "msp430fr5xx_6xxgeneric",2,8 },
+  { "msp430fr6820",2,8 },
+  { "msp430fr6822",2,8 },
+  { "msp430fr68221",2,8 },
+  { "msp430fr6870",2,8 },
+  { "msp430fr6872",2,8 },
+  { "msp430fr68721",2,8 },
+  { "msp430fr6877",2,8 },
+  { "msp430fr6879",2,8 },
+  { "msp430fr68791",2,8 },
+  { "msp430fr6887",2,8 },
+  { "msp430fr6888",2,8 },
+  { "msp430fr6889",2,8 },
+  { "msp430fr68891",2,8 },
+  { "msp430fr6920",2,8 },
+  { "msp430fr6922",2,8 },
+  { "msp430fr69221",2,8 },
+  { "msp430fr6927",2,8 },
+  { "msp430fr69271",2,8 },
+  { "msp430fr6928",2,8 },
+  { "msp430fr6970",2,8 },
+  { "msp430fr6972",2,8 },
+  { "msp430fr69721",2,8 },
+  { "msp430fr6977",2,8 },
+  { "msp430fr6979",2,8 },
+  { "msp430fr69791",2,8 },
+  { "msp430fr6987",2,8 },
+  { "msp430fr6988",2,8 },
+  { "msp430fr6989",2,8 },
+  { "msp430fr69891",2,8 },
+  { "msp430fw423",0,0 },
+  { "msp430fw425",0,0 },
+  { "msp430fw427",0,0 },
+  { "msp430fw428",0,0 },
+  { "msp430fw429",0,0 },
+  { "msp430g2001",0,0 },
+  { "msp430g2101",0,0 },
+  { "msp430g2102",0,0 },
+  { "msp430g2111",0,0 },
+  { "msp430g2112",0,0 },
+  { "msp430g2113",0,0 },
+  { "msp430g2121",0,0 },
+  { "msp430g2131",0,0 },
+  { "msp430g2132",0,0 },
+  { "msp430g2152",0,0 },
+  { "msp430g2153",0,0 },
+  { "msp430g2201",0,0 },
+  { "msp430g2202",0,0 },
+  { "msp430g2203",0,0 },
+  { "msp430g2210",0,0 },
+  { "msp430g2211",0,0 },
+  { "msp430g2212",0,0 },
+  { "msp430g2213",0,0 },
+  { "msp430g2221",0,0 },
+  { "msp430g2230",0,0 },
+  { "msp430g2231",0,0 },
+  { "msp430g2232",0,0 },
+  { "msp430g2233",0,0 },
+  { "msp430g2252",0,0 },
+  { "msp430g2253",0,0 },
+  { "msp430g2302",0,0 },
+  { "msp430g2303",0,0 },
+  { "msp430g2312",0,0 },
+  { "msp430g2313",0,0 },
+  { "msp430g2332",0,0 },
+  { "msp430g2333",0,0 },
+  { "msp430g2352",0,0 },
+  { "msp430g2353",0,0 },
+  { "msp430g2402",0,0 },
+  { "msp430g2403",0,0 },
+  { "msp430g2412",0,0 },
+  { "msp430g2413",0,0 },
+  { "msp430g2432",0,0 },
+  { "msp430g2433",0,0 },
+  { "msp430g2444",0,0 },
+  { "msp430g2452",0,0 },
+  { "msp430g2453",0,0 },
+  { "msp430g2513",0,0 },
+  { "msp430g2533",0,0 },
+  { "msp430g2544",0,0 },
+  { "msp430g2553",0,0 },
+  { "msp430g2744",0,0 },
+  { "msp430g2755",0,0 },
+  { "msp430g2855",0,0 },
+  { "msp430g2955",0,0 },
+  { "msp430i2020",0,2 },
+  { "msp430i2021",0,2 },
+  { "msp430i2030",0,2 },
+  { "msp430i2031",0,2 },
+  { "msp430i2040",0,2 },
+  { "msp430i2041",0,2 },
+  { "msp430i2xxgeneric",0,2 },
+  { "msp430l092",0,0 },
+  { "msp430p112",0,0 },
+  { "msp430p313",0,0 },
+  { "msp430p315",0,0 },
+  { "msp430p315s",0,0 },
+  { "msp430p325",0,0 },
+  { "msp430p337",0,1 },
+  { "msp430sl5438a",2,8 },
+  { "msp430tch5e",0,0 },
+  { "msp430xgeneric",2,8 },
+  { "rf430f5144",2,8 },
+  { "rf430f5155",2,8 },
+  { "rf430f5175",2,8 },
+  { "rf430frl152h",0,0 },
+  { "rf430frl152h_rom",0,0 },
+  { "rf430frl153h",0,0 },
+  { "rf430frl153h_rom",0,0 },
+  { "rf430frl154h",0,0 },
+  { "rf430frl154h_rom",0,0 }
+};  
 
 int
-md_parse_option (int c, char * arg)
+md_parse_option (int c, const char * arg)
 {
   switch (c)
     {
+    case OPTION_SILICON_ERRATA:
+    case OPTION_SILICON_ERRATA_WARN:
+      {
+	signed int i;
+	const struct
+	{
+	  const char *       name;
+	  unsigned int length;
+	  unsigned int bitfield;
+	} erratas[] =
+	{
+	  { STRING_COMMA_LEN ("cpu4"), SILICON_ERRATA_CPU4 },
+	  { STRING_COMMA_LEN ("cpu8"), SILICON_ERRATA_CPU8 },
+	  { STRING_COMMA_LEN ("cpu11"), SILICON_ERRATA_CPU11 },
+	  { STRING_COMMA_LEN ("cpu12"), SILICON_ERRATA_CPU12 },
+	  { STRING_COMMA_LEN ("cpu13"), SILICON_ERRATA_CPU13 },
+	  { STRING_COMMA_LEN ("cpu19"), SILICON_ERRATA_CPU19 },
+	};
+
+	do
+	  {
+	    for (i = ARRAY_SIZE (erratas); i--;)
+	      if (strncasecmp (arg, erratas[i].name, erratas[i].length) == 0)
+		{
+		  if (c == OPTION_SILICON_ERRATA)
+		    silicon_errata_fix |= erratas[i].bitfield;
+		  else
+		    silicon_errata_warn |= erratas[i].bitfield;
+		  arg += erratas[i].length;
+		  break;
+		}
+	    if (i < 0)
+	      {
+		as_warn (_("Unrecognised CPU errata name starting here: %s"), arg);
+		break;
+	      }
+	    if (*arg == 0)
+	      break;
+	    if (*arg != ',')
+	      as_warn (_("Expecting comma after CPU errata name, not: %s"), arg);
+	    else
+	      arg ++;
+	  }
+	while (*arg != 0);
+      }
+      return 1;
+
     case OPTION_MMCU:
       if (arg == NULL)
 	as_fatal (_("MCU option requires a name\n"));
@@ -772,10 +1399,15 @@ md_parse_option (int c, char * arg)
 	{
 	  int i;
 
-	  for (i = sizeof msp430_mcu_names / sizeof msp430_mcu_names[0]; i--;)
-	    if (strcasecmp (msp430_mcu_names[i], arg) == 0)
+	  for (i = ARRAY_SIZE (msp430_mcu_data); i--;)
+	    if (strcasecmp (msp430_mcu_data[i].name, arg) == 0)
 	      {
-		selected_isa = MSP_ISA_430;
+		switch (msp430_mcu_data[i].revision)
+		  {
+		  case 0: selected_isa = MSP_ISA_430; break;
+		  case 1: selected_isa = MSP_ISA_430X; break;
+		  case 2: selected_isa = MSP_ISA_430Xv2; break;
+		  }
 		break;
 	    }
 	}
@@ -825,6 +1457,12 @@ md_parse_option (int c, char * arg)
     case OPTION_MOVE_DATA:
       move_data = TRUE;
       return 1;
+
+    case OPTION_DATA_REGION:
+      if (strcmp (arg, "upper") == 0
+	  || strcmp (arg, "either") == 0)
+	upper_data_region_in_use = TRUE;
+      return 1;
     }
 
   return 0;
@@ -840,14 +1478,11 @@ md_parse_option (int c, char * arg)
 
    The code which initializes these sections should have a global
    label for these symbols, and should be marked with KEEP() in the
-   linker script.
- */
-static void
-msp430_section (int arg)
-{
-  char * saved_ilp = input_line_pointer;
-  char * name = obj_elf_section_name ();
+   linker script.  */
 
+static void
+msp430_make_init_symbols (const char * name)
+{
   if (strncmp (name, ".bss", 4) == 0
       || strncmp (name, ".gnu.linkonce.b.", 16) == 0)
     (void) symbol_find_or_make ("__crt0_init_bss");
@@ -855,6 +1490,32 @@ msp430_section (int arg)
   if (strncmp (name, ".data", 5) == 0
       || strncmp (name, ".gnu.linkonce.d.", 16) == 0)
     (void) symbol_find_or_make ("__crt0_movedata");
+
+  /* Note - data assigned to the .either.data section may end up being
+     placed in the .upper.data section if the .lower.data section is
+     full.  Hence the need to define the crt0 symbol.
+     The linker may create upper or either data sections, even when none exist
+     at the moment, so use the value of the data-region flag to determine if
+     the symbol is needed.  */
+  if (strncmp (name, ".either.data", 12) == 0
+      || strncmp (name, ".upper.data", 11) == 0
+      || upper_data_region_in_use)
+    (void) symbol_find_or_make ("__crt0_move_highdata");
+
+  /* See note about .either.data above.  */
+  if (strncmp (name, ".upper.bss", 10) == 0
+      || strncmp (name, ".either.bss", 11) == 0
+      || upper_data_region_in_use)
+    (void) symbol_find_or_make ("__crt0_init_highbss");
+}
+
+static void
+msp430_section (int arg)
+{
+  char * saved_ilp = input_line_pointer;
+  const char * name = obj_elf_section_name ();
+
+  msp430_make_init_symbols (name);
 
   input_line_pointer = saved_ilp;
   obj_elf_section (arg);
@@ -868,13 +1529,7 @@ msp430_frob_section (asection *sec)
   if (sec->size == 0)
     return;
 
-  if (strncmp (name, ".bss", 4) == 0
-      || strncmp (name, ".gnu.linkonce.b.", 16) == 0)
-    (void) symbol_find_or_make ("__crt0_init_bss");
-
-  if (strncmp (name, ".data", 5) == 0
-      || strncmp (name, ".gnu.linkonce.d.", 16) == 0)
-    (void) symbol_find_or_make ("__crt0_movedata");
+  msp430_make_init_symbols (name);
 }
 
 static void
@@ -923,6 +1578,8 @@ const char *md_shortopts = "mm:,mP,mQ,ml,mN,mn,my,mY";
 
 struct option md_longopts[] =
 {
+  {"msilicon-errata", required_argument, NULL, OPTION_SILICON_ERRATA},
+  {"msilicon-errata-warn", required_argument, NULL, OPTION_SILICON_ERRATA_WARN},
   {"mmcu", required_argument, NULL, OPTION_MMCU},
   {"mcpu", required_argument, NULL, OPTION_MCPU},
   {"mP", no_argument, NULL, OPTION_POLYMORPHS},
@@ -933,6 +1590,7 @@ struct option md_longopts[] =
   {"mY", no_argument, NULL, OPTION_NO_WARN_INTR_NOPS},
   {"my", no_argument, NULL, OPTION_WARN_INTR_NOPS},
   {"md", no_argument, NULL, OPTION_MOVE_DATA},
+  {"mdata-region", required_argument, NULL, OPTION_DATA_REGION},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -945,6 +1603,10 @@ md_show_usage (FILE * stream)
 	   _("MSP430 options:\n"
 	     "  -mmcu=<msp430-name>     - select microcontroller type\n"
              "  -mcpu={430|430x|430xv2} - select microcontroller architecture\n"));
+  fprintf (stream,
+	   _("  -msilicon-errata=<name>[,<name>...] - enable fixups for silicon errata\n"
+	     "  -msilicon-errata-warn=<name>[,<name>...] - warn when a fixup might be needed\n"
+	     "   supported errata names: cpu4, cpu8, cpu11, cpu12, cpu13, cpu19\n"));
   fprintf (stream,
 	   _("  -mQ - enable relaxation at assembly time. DANGEROUS!\n"
 	     "  -mP - enable polymorph instructions\n"));
@@ -960,6 +1622,9 @@ md_show_usage (FILE * stream)
 	   _("  -my - warn about missing NOPs after changing interrupts (default)\n"));
   fprintf (stream,
 	   _("  -md - Force copying of data from ROM to RAM at startup\n"));
+  fprintf (stream,
+	   _("  -mdata-region={none|lower|upper|either} - select region data will be\n"
+	     "    placed in.\n"));
 }
 
 symbolS *
@@ -985,7 +1650,7 @@ extract_cmd (char * from, char * to, int limit)
   return from;
 }
 
-char *
+const char *
 md_atof (int type, char * litP, int * sizeP)
 {
   return ieee_md_atof (type, litP, sizeP, FALSE);
@@ -1002,8 +1667,17 @@ md_begin (void)
 
   bfd_set_arch_mach (stdoutput, TARGET_ARCH,
 		     target_is_430x () ? bfd_mach_msp430x : bfd_mach_msp11);
+
+  /*  Set linkrelax here to avoid fixups in most sections.  */
+  linkrelax = 1;
 }
 
+static inline bfd_boolean
+is_regname_end (char c)
+{
+  return (c == 0 || ! ISALNUM (c));
+}
+  
 /* Returns the register number equivalent to the string T.
    Returns -1 if there is no such register.
    Skips a leading 'r' or 'R' character if there is one.
@@ -1012,32 +1686,36 @@ md_begin (void)
 static signed int
 check_reg (char * t)
 {
-  signed int val;
+  char * endt;
+  signed long int val;
 
-  if (t == NULL)
+  if (t == NULL || t[0] == 0)
     return -1;
 
   if (*t == 'r' || *t == 'R')
     ++t;
 
-  if (strncasecmp (t, "pc", 2) == 0)
+  if (strncasecmp (t, "pc", 2) == 0 && is_regname_end (t[2]))
     return 0;
 
-  if (strncasecmp (t, "sp", 2) == 0)
+  if (strncasecmp (t, "sp", 2) == 0 && is_regname_end (t[2]))
     return 1;
 
-  if (strncasecmp (t, "sr", 2) == 0)
+  if (strncasecmp (t, "sr", 2) == 0 && is_regname_end (t[2]))
     return 2;
 
-  if (*t == '0')
+  if (*t == '0' && is_regname_end (t[1]))
     return 0;
 
-  val = atoi (t);
+  val = strtol (t, & endt, 0);
 
   if (val < 1 || val > 15)
     return -1;
 
-  return val;
+  if (is_regname_end (*endt))
+    return val;
+
+  return -1;
 }
 
 static int
@@ -1048,6 +1726,7 @@ msp430_srcoperand (struct msp430_operand_s * op,
 		   bfd_boolean allow_20bit_values,
 		   bfd_boolean constants_allowed)
 {
+  char * end;
   char *__tl = l;
 
   /* Check if an immediate #VALUE.  The hash sign should be only at the beginning!  */
@@ -1104,7 +1783,12 @@ msp430_srcoperand (struct msp430_operand_s * op,
       op->mode = OP_EXP;
       op->vshift = vshift;
 
-      parse_exp (__tl, &(op->exp));
+      end = parse_exp (__tl, &(op->exp));
+      if (end != NULL && *end != 0 && *end != ')' )
+	{
+	  as_bad (_("extra characters '%s' at end of immediate expression '%s'"), end, l);
+	  return 1;
+	}
       if (op->exp.X_op == O_constant)
 	{
 	  int x = op->exp.X_add_number;
@@ -1182,14 +1866,14 @@ msp430_srcoperand (struct msp430_operand_s * op,
 	    }
 	  else if (x == 4)
 	    {
-#ifdef PUSH_1X_WORKAROUND
-	      if (bin == 0x1200)
+	      if (bin == 0x1200 && ! target_is_430x ())
 		{
-		  /* Remove warning as confusing.
-		     as_warn (_("Hardware push bug workaround")); */
+		  /* CPU4: The shorter form of PUSH #4 is not supported on MSP430.  */
+		  if (silicon_errata_warn & SILICON_ERRATA_CPU4)
+		    as_warn (_("cpu4: not converting PUSH #4 to shorter form"));
+		  /* No need to check silicon_errata_fixes - this fix is always implemented.  */
 		}
 	      else
-#endif
 		{
 		  op->reg = 2;
 		  op->am = 2;
@@ -1199,14 +1883,13 @@ msp430_srcoperand (struct msp430_operand_s * op,
 	    }
 	  else if (x == 8)
 	    {
-#ifdef PUSH_1X_WORKAROUND
-	      if (bin == 0x1200)
+	      if (bin == 0x1200 && ! target_is_430x ())
 		{
-		  /* Remove warning as confusing.
-		     as_warn (_("Hardware push bug workaround")); */
+		  /* CPU4: The shorter form of PUSH #8 is not supported on MSP430.  */
+		  if (silicon_errata_warn & SILICON_ERRATA_CPU4)
+		    as_warn (_("cpu4: not converting PUSH #8 to shorter form"));
 		}
 	      else
-#endif
 		{
 		  op->reg = 2;
 		  op->am = 3;
@@ -1235,7 +1918,7 @@ msp430_srcoperand (struct msp430_operand_s * op,
 	  else
 	    {
 	      as_bad (_
-		      ("unknown expression in operand %s. use #llo() #lhi() #hlo() #hhi() "),
+		      ("unknown expression in operand %s.  Use #llo(), #lhi(), #hlo() or #hhi()"),
 		      l);
 	      return 1;
 	    }
@@ -1302,7 +1985,12 @@ msp430_srcoperand (struct msp430_operand_s * op,
       op->am = 1;		/* mode As == 01 bin.  */
       op->ol = 1;		/* Immediate value followed by instruction.  */
       __tl = h + 1;
-      parse_exp (__tl, &(op->exp));
+      end = parse_exp (__tl, &(op->exp));
+      if (end != NULL && *end != 0)
+	{
+	  as_bad (_("extra characters '%s' at the end of absolute operand '%s'"), end, l);
+	  return 1;
+	}
       op->mode = OP_EXP;
       op->vshift = 0;
       if (op->exp.X_op == O_constant)
@@ -1413,7 +2101,12 @@ msp430_srcoperand (struct msp430_operand_s * op,
       *h = 0;
       op->mode = OP_EXP;
       op->vshift = 0;
-      parse_exp (__tl, &(op->exp));
+      end = parse_exp (__tl, &(op->exp));
+      if (end != NULL && *end != 0)
+	{
+	  as_bad (_("extra characters '%s' at end of operand '%s'"), end, l);
+	  return 1;
+	}
       if (op->exp.X_op == O_constant)
 	{
 	  int x = op->exp.X_add_number;
@@ -1438,6 +2131,14 @@ msp430_srcoperand (struct msp430_operand_s * op,
 	      op->am = 2;
 	      op->ol = 0;
 	      return 0;
+	    }
+
+	  if (op->reg == 1 && (x & 1))
+	    {
+	      if (silicon_errata_fix & SILICON_ERRATA_CPU8)
+		as_bad (_("CPU8: Stack pointer accessed with an odd offset"));
+	      else if (silicon_errata_warn & SILICON_ERRATA_CPU8)
+		as_warn (_("CPU8: Stack pointer accessed with an odd offset"));
 	    }
 	}
       else if (op->exp.X_op == O_symbol)
@@ -1467,23 +2168,20 @@ msp430_srcoperand (struct msp430_operand_s * op,
     }
 
   /* Symbolic mode 'mov a, b' == 'mov x(pc), y(pc)'.  */
-  do
+  op->mode = OP_EXP;
+  op->reg = 0;		/* PC relative... be careful.  */
+  /* An expression starting with a minus sign is a constant, not an address.  */
+  op->am = (*l == '-' ? 3 : 1);
+  op->ol = 1;
+  op->vshift = 0;
+  __tl = l;
+  end = parse_exp (__tl, &(op->exp));
+  if (end != NULL && * end != 0)
     {
-      op->mode = OP_EXP;
-      op->reg = 0;		/* PC relative... be careful.  */
-      /* An expression starting with a minus sign is a constant, not an address.  */
-      op->am = (*l == '-' ? 3 : 1);
-      op->ol = 1;
-      op->vshift = 0;
-      __tl = l;
-      parse_exp (__tl, &(op->exp));
-      return 0;
+      as_bad (_("extra characters '%s' at end of operand '%s'"), end, l);
+      return 1;
     }
-  while (0);
-
-  /* Unreachable.  */
-  as_bad (_("unknown addressing mode for operand %s"), l);
-  return 1;
+  return 0;
 }
 
 
@@ -1504,13 +2202,13 @@ msp430_dstoperand (struct msp430_operand_s * op,
 
   if (op->am == 2)
     {
-      char *__tl = "0";
+      char *__tl = (char *) "0";
 
       op->mode = OP_EXP;
       op->am = 1;
       op->ol = 1;
       op->vshift = 0;
-      parse_exp (__tl, &(op->exp));
+      (void) parse_exp (__tl, &(op->exp));
 
       if (op->exp.X_op != O_constant || op->exp.X_add_number != 0)
 	{
@@ -1789,9 +2487,86 @@ try_encode_mova (bfd_boolean imm_op,
   return 0;
 }
 
-static bfd_boolean check_for_nop = FALSE;
+#define NOP_CHECK_INTERRUPT  (1 << 0)
+#define NOP_CHECK_CPU12      (1 << 1)
+#define NOP_CHECK_CPU19      (1 << 2)
+
+static signed int check_for_nop = 0;
 
 #define is_opcode(NAME) (strcmp (opcode->name, NAME) == 0)
+
+/* is_{e,d}int only check the explicit enabling/disabling of interrupts.
+   For MOV insns, more sophisticated processing is needed to determine if they
+   result in enabling/disabling interrupts.  */
+#define is_dint(OPCODE, BIN) ((strcmp (OPCODE, "dint") == 0) \
+				   || ((strcmp (OPCODE, "bic") == 0) \
+				       && BIN == 0xc232) \
+				   || ((strcmp (OPCODE, "clr") == 0) \
+				       && BIN == 0x4302))
+
+#define is_eint(OPCODE, BIN) ((strcmp (OPCODE, "eint") == 0) \
+				   || ((strcmp (OPCODE, "bis") == 0) \
+				       && BIN == 0xd232))
+
+const char * const INSERT_NOP_BEFORE_EINT = "NOP inserted here, before an interrupt enable instruction";
+const char * const INSERT_NOP_AFTER_DINT = "NOP inserted here, after an interrupt disable instruction";
+const char * const INSERT_NOP_AFTER_EINT = "NOP inserted here, after an interrupt enable instruction";
+const char * const INSERT_NOP_BEFORE_UNKNOWN = "NOP inserted here, before this interrupt state change";
+const char * const INSERT_NOP_AFTER_UNKNOWN ="NOP inserted here, after the instruction that changed interrupt state";
+const char * const INSERT_NOP_AT_EOF = "NOP inserted after the interrupt state change at the end of the file";
+
+const char * const WARN_NOP_BEFORE_EINT = "a NOP might be needed here, before an interrupt enable instruction";
+const char * const WARN_NOP_AFTER_DINT = "a NOP might be needed here, after an interrupt disable instruction";
+const char * const WARN_NOP_AFTER_EINT = "a NOP might be needed here, after an interrupt enable instruction";
+const char * const WARN_NOP_BEFORE_UNKNOWN = "a NOP might be needed here, before this interrupt state change";
+const char * const WARN_NOP_AFTER_UNKNOWN = "a NOP might also be needed here, after the instruction that changed interrupt state";
+const char * const WARN_NOP_AT_EOF = "a NOP might be needed after the interrupt state change at the end of the file";
+
+static void
+gen_nop (void)
+{
+  char *frag;
+  frag = frag_more (2);
+  bfd_putl16 ((bfd_vma) 0x4303 /* NOP */, frag);
+  dwarf2_emit_insn (2);
+}
+
+/* Insert/inform about adding a NOP if this insn enables interrupts.  */
+static void
+warn_eint_nop (bfd_boolean prev_insn_is_nop, bfd_boolean prev_insn_is_dint)
+{
+  if (prev_insn_is_nop
+      /* Prevent double warning for DINT immediately before EINT.  */
+      || prev_insn_is_dint
+      /* 430 ISA does not require a NOP before EINT.  */
+      || (! target_is_430x ()))
+    return;
+  if (gen_interrupt_nops)
+    {
+      gen_nop ();
+      if (warn_interrupt_nops)
+	as_warn (_(INSERT_NOP_BEFORE_EINT));
+    }
+  else if (warn_interrupt_nops)
+    as_warn (_(WARN_NOP_BEFORE_EINT));
+}
+
+/* Use when unsure what effect the insn will have on the interrupt status,
+   to insert/warn about adding a NOP before the current insn.  */
+static void
+warn_unsure_interrupt (void)
+{
+  /* Since this could enable or disable interrupts, need to add/warn about
+     adding a NOP before and after this insn.  */
+  if (gen_interrupt_nops)
+    {
+      gen_nop ();
+      if (warn_interrupt_nops)
+	as_warn (_(INSERT_NOP_BEFORE_UNKNOWN));
+    }
+  else if (warn_interrupt_nops)
+    as_warn (_(WARN_NOP_BEFORE_UNKNOWN));
+}
 
 /* Parse instruction operands.
    Return binary opcode.  */
@@ -1803,6 +2578,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
   int insn_length = 0;
   char l1[MAX_OP_LEN], l2[MAX_OP_LEN];
   char *frag;
+  char *end;
   int where;
   struct msp430_operand_s op1, op2;
   int res = 0;
@@ -1815,8 +2591,14 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
   bfd_boolean addr_op;
   const char * error_message;
   static signed int repeat_count = 0;
+  static bfd_boolean prev_insn_is_nop = FALSE;
+  static bfd_boolean prev_insn_is_dint = FALSE;
+  static bfd_boolean prev_insn_is_eint = FALSE;
+  /* We might decide before the end of the function that the current insn is
+     equivalent to DINT/EINT.  */
+  bfd_boolean this_insn_is_dint = FALSE;
+  bfd_boolean this_insn_is_eint = FALSE;
   bfd_boolean fix_emitted;
-  bfd_boolean nop_check_needed = FALSE;
 
   /* Opcode is the one from opcodes table
      line contains something like
@@ -1883,11 +2665,11 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
      instruction that does not support it.  Look for an alternative extended
      instruction that has the same name without the period.  Eg: "add.a"
      becomes "adda".  Although this not an officially supported way of
-     specifing instruction aliases other MSP430 assemblers allow it.  So we
+     specifying instruction aliases other MSP430 assemblers allow it.  So we
      support it for compatibility purposes.  */
   if (addr_op && opcode->fmt >= 0)
     {
-      char * old_name = opcode->name;
+      const char * old_name = opcode->name;
       char real_name[32];
 
       sprintf (real_name, "%sa", old_name);
@@ -1908,7 +2690,9 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
       && opcode->insn_opnumb
       && (!*line || *line == '\n'))
     {
-      as_bad (_("instruction %s requires %d operand(s)"),
+      as_bad (ngettext ("instruction %s requires %d operand",
+			"instruction %s requires %d operands",
+			opcode->insn_opnumb),
 	      opcode->name, opcode->insn_opnumb);
       return 0;
     }
@@ -1928,7 +2712,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		  opcode->name);
 	  return 0;
 	}
-	
+
       fmt = (-fmt) - 1;
       extended_op = TRUE;
     }
@@ -1949,8 +2733,97 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
       repeat_count = 0;
     }
 
-  if (check_for_nop && is_opcode ("nop"))
-    check_for_nop = FALSE;
+  /* The previous instruction set this flag if it wants to check if this insn
+     is a NOP.  */
+  if (check_for_nop)
+    {
+      if (! is_opcode ("nop"))
+	{
+	  do
+	    {
+	      switch (check_for_nop & - check_for_nop)
+		{
+		case NOP_CHECK_INTERRUPT:
+		  /* NOP_CHECK_INTERRUPT rules:
+		     1.  430 and 430x ISA require a NOP after DINT.
+		     2.  Only the 430x ISA requires NOP before EINT (this has
+			been dealt with in the previous call to this function).
+		     3.  Only the 430x ISA requires NOP after every EINT.
+			CPU42 errata.  */
+		  if (gen_interrupt_nops || warn_interrupt_nops)
+		    {
+		      if (prev_insn_is_dint)
+			{
+			  if (gen_interrupt_nops)
+			    {
+			      gen_nop ();
+			      if (warn_interrupt_nops)
+				as_warn (_(INSERT_NOP_AFTER_DINT));
+			    }
+			  else
+			    as_warn (_(WARN_NOP_AFTER_DINT));
+			}
+		      else if (prev_insn_is_eint)
+			{
+			  if (gen_interrupt_nops)
+			    {
+			      gen_nop ();
+			      if (warn_interrupt_nops)
+				as_warn (_(INSERT_NOP_AFTER_EINT));
+			    }
+			  else
+			    as_warn (_(WARN_NOP_AFTER_EINT));
+			}
+		      /* If we get here it's because the last instruction was
+			 determined to either disable or enable interrupts, but
+			 we're not sure which.
+			 We have no information yet about what effect the
+			 current instruction has on interrupts, that has to be
+			 sorted out later.
+			 The last insn may have required a NOP after it, so we
+			 deal with that now.  */
+		      else
+			{
+			  if (gen_interrupt_nops)
+			    {
+			      gen_nop ();
+			      if (warn_interrupt_nops)
+				as_warn (_(INSERT_NOP_AFTER_UNKNOWN));
+			    }
+			  else
+			    /* warn_unsure_interrupt was called on the previous
+			       insn.  */
+			    as_warn (_(WARN_NOP_AFTER_UNKNOWN));
+			}
+		    }
+		  break;
+
+		case NOP_CHECK_CPU12:
+		  if (silicon_errata_warn & SILICON_ERRATA_CPU12)
+		    as_warn (_("CPU12: CMP/BIT with PC destination ignores next instruction"));
+
+		  if (silicon_errata_fix & SILICON_ERRATA_CPU12)
+		    gen_nop ();
+		  break;
+
+		case NOP_CHECK_CPU19:
+		  if (silicon_errata_warn & SILICON_ERRATA_CPU19)
+		    as_warn (_("CPU19: Instruction setting CPUOFF must be followed by a NOP"));
+
+		  if (silicon_errata_fix & SILICON_ERRATA_CPU19)
+		    gen_nop ();
+		  break;
+		  
+		default:
+		  as_bad (_("internal error: unknown nop check state"));
+		  break;
+		}
+	      check_for_nop &= ~ (check_for_nop & - check_for_nop);
+	    }
+	  while (check_for_nop);
+	}
+      check_for_nop = 0;
+    }
 
   switch (fmt)
     {
@@ -1958,30 +2831,8 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
       switch (opcode->insn_opnumb)
 	{
 	case 0:
-	  if (is_opcode ("eint") || is_opcode ("dint"))
-	    {
-	      if (check_for_nop)
-		{
-		  if (warn_interrupt_nops)
-		    {
-		      if (gen_interrupt_nops)
-			as_warn (_("NOP inserted between two instructions that change interrupt state"));
-		      else
-			as_warn (_("a NOP might be needed here because of successive changes in interrupt state"));
-		    }
-
-		  if (gen_interrupt_nops)
-		    {
-		      /* Emit a NOP between interrupt enable/disable.
-			 See 1.3.4.1 of the MSP430x5xx User Guide.  */
-		      insn_length += 2;
-		      frag = frag_more (2);
-		      bfd_putl16 ((bfd_vma) 0x4303 /* NOP */, frag);
-		    }
-		}
-
-	      nop_check_needed = TRUE;
-	    }
+	  if (is_opcode ("eint"))
+	    warn_eint_nop (prev_insn_is_nop, prev_insn_is_dint);
 
 	  /* Set/clear bits instructions.  */
 	  if (extended_op)
@@ -2010,31 +2861,35 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	  bin |= (op1.reg | (op1.am << 7));
 
-	  if (is_opcode ("clr") && bin == 0x4302 /* CLR R2*/)
+	  /* If the PC is the destination...  */
+	  if (op1.am == 0 && op1.reg == 0
+	      /* ... and the opcode alters the SR.  */
+	      && !(is_opcode ("bic") || is_opcode ("bis") || is_opcode ("mov")
+		   || is_opcode ("bicx") || is_opcode ("bisx") || is_opcode ("movx")))
 	    {
-	      if (check_for_nop)
-		{
-		  if (warn_interrupt_nops)
-		    {
-		      if (gen_interrupt_nops)
-			as_warn (_("NOP inserted between two instructions that change interrupt state"));
-		      else
-			as_warn (_("a NOP might be needed here because of successive changes in interrupt state"));
-		    }
-
-		  if (gen_interrupt_nops)
-		    {
-		      /* Emit a NOP between interrupt enable/disable.
-			 See 1.3.4.1 of the MSP430x5xx User Guide.  */
-		      insn_length += 2;
-		      frag = frag_more (2);
-		      bfd_putl16 ((bfd_vma) 0x4303 /* NOP */, frag);
-		    }
-		}
-
-	      nop_check_needed = TRUE;
+	      if (silicon_errata_fix & SILICON_ERRATA_CPU11)
+		as_bad (_("CPU11: PC is destination of SR altering instruction"));
+	      else if (silicon_errata_warn & SILICON_ERRATA_CPU11)
+		as_warn (_("CPU11: PC is destination of SR altering instruction"));
 	    }
-
+	  
+	  /* If the status register is the destination...  */
+	  if (op1.am == 0 && op1.reg == 2
+	      /* ... and the opcode alters the SR.  */
+	      && (is_opcode ("adc") || is_opcode ("dec") || is_opcode ("decd")
+		  || is_opcode ("inc") || is_opcode ("incd") || is_opcode ("inv")
+		  || is_opcode ("sbc") || is_opcode ("sxt")
+		  || is_opcode ("adcx") || is_opcode ("decx") || is_opcode ("decdx")
+		  || is_opcode ("incx") || is_opcode ("incdx") || is_opcode ("invx")
+		  || is_opcode ("sbcx")
+		  ))
+	    {
+	      if (silicon_errata_fix & SILICON_ERRATA_CPU13)
+		as_bad (_("CPU13: SR is destination of SR altering instruction"));
+	      else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
+		as_warn (_("CPU13: SR is destination of SR altering instruction"));
+	    }
+	  
 	  /* Compute the entire instruction length, in bytes.  */
 	  op_length = (extended_op ? 2 : 0) + 2 + (op1.ol * 2);
 	  insn_length += op_length;
@@ -2057,7 +2912,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		  if (op1.exp.X_op == O_constant)
 		    extended |= ((op1.exp.X_add_number >> 16) & 0xf) << 7;
 
-		  else if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+		  else if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		    fix_new_exp (frag_now, where, 6, &(op1.exp), FALSE,
 				 BFD_RELOC_MSP430X_ABS20_EXT_SRC);
 		  else
@@ -2127,6 +2982,21 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      break;
 	    }
 
+	  /* If the status register is the destination...  */
+	  if (op1.am == 0 && op1.reg == 2
+	      /* ... and the opcode alters the SR.  */
+	      && (is_opcode ("rla") || is_opcode ("rlc")
+		  || is_opcode ("rlax") || is_opcode ("rlcx")
+		  || is_opcode ("sxt") || is_opcode ("sxtx")
+		  || is_opcode ("swpb")
+		  ))
+	    {
+	      if (silicon_errata_fix & SILICON_ERRATA_CPU13)
+		as_bad (_("CPU13: SR is destination of SR altering instruction"));
+	      else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
+		as_warn (_("CPU13: SR is destination of SR altering instruction"));
+	    }
+	  
 	  if (extended_op)
 	    {
 	      if (!addr_op)
@@ -2143,7 +3013,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		  if (op1.exp.X_op == O_constant)
 		    extended |= ((op1.exp.X_add_number >> 16) & 0xf) << 7;
 
-		  else if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+		  else if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		    fix_new_exp (frag_now, where, 6, &(op1.exp), FALSE,
 				 BFD_RELOC_MSP430X_ABS20_EXT_SRC);
 		  else
@@ -2189,7 +3059,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 		  if (!extended_op)
 		    {
-		      if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+		      if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 			fix_new_exp (frag_now, where, 2,
 				     &(op1.exp), FALSE, CHECK_RELOC_MSP430 (op1));
 		      else
@@ -2259,7 +3129,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 		  bfd_putl16 ((bfd_vma) ZEROS, frag + 2);
 
-		  if (op1.reg || (op1.reg == 0 && op1.am == 3))
+		  if (op1.reg || op1.am == 3)
 		    fix_new_exp (frag_now, where, 2,
 				 &(op1.exp), FALSE, CHECK_RELOC_MSP430 (op1));
 		  else
@@ -2362,10 +3232,15 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		as_bad (_("expected #n as first argument of %s"), opcode->name);
 		break;
 	      }
-	    parse_exp (l1 + 1, &(op1.exp));
+	    end = parse_exp (l1 + 1, &(op1.exp));
+	    if (end != NULL && *end != 0)
+	      {
+		as_bad (_("extra characters '%s' at end of constant expression '%s'"), end, l1);
+		break;
+	      }
 	    if (op1.exp.X_op != O_constant)
 	      {
-		as_bad (_("expected constant expression for first argument of %s"),
+		as_bad (_("expected constant expression as first argument of %s"),
 			opcode->name);
 		break;
 	      }
@@ -2433,10 +3308,15 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 		as_bad (_("expected #n as first argument of %s"), opcode->name);
 		break;
 	      }
-	    parse_exp (l1 + 1, &(op1.exp));
+	    end = parse_exp (l1 + 1, &(op1.exp));
+	    if (end != NULL && *end != 0)
+	      {
+		as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+		break;
+	      }
 	    if (op1.exp.X_op != O_constant)
 	      {
-		as_bad (_("expected constant expression for first argument of %s"),
+		as_bad (_("expected constant expression as first argument of %s"),
 			opcode->name);
 		break;
 	      }
@@ -2476,63 +3356,6 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	    break;
 	  }
 
-	case 7:
-	  {
-	    int reg;
-
-	    /* RRUX: Synthetic unsigned right shift of a register by one bit.  */
-	    if (extended & 0xff)
-	      {
-		as_bad (_("repeat count cannot be used with %s"), opcode->name);
-		break;
-	      }
-
-	    line = extract_operand (line, l1, sizeof (l1));
-	    if ((reg = check_reg (l1)) == -1)
-	      {
-		as_bad (_("expected register as argument of %s"),
-			opcode->name);
-		break;
-	      }
-
-	    if (target_is_430xv2 () && reg == 0)
-	      {
-		as_bad (_("%s: attempt to rotate the PC register"), opcode->name);
-		break;
-	      }
-
-	    if (byte_op)
-	      {
-		/* Tricky - there is no single instruction that will do this.
-		   Encode as: RRA.B rN { BIC.B #0x80, rN  */
-		op_length = 6;
-		frag = frag_more (op_length);
-		where = frag - frag_now->fr_literal;
-		bin = 0x1140 | reg;
-		bfd_putl16 ((bfd_vma) bin, frag);
-		dwarf2_emit_insn (2);
-		bin = 0xc070 | reg;
-		bfd_putl16 ((bfd_vma) bin, frag + 2);
-		bin = 0x0080;
-		bfd_putl16 ((bfd_vma) bin, frag + 4);
-		dwarf2_emit_insn (4);
-	      }
-	    else
-	      {
-		/* Encode as RRUM[.A] rN.  */
-		bin = opcode->bin_opcode;
-		if (! addr_op)
-		  bin |= 0x10;
-		bin |= reg;
-		op_length = 2;
-		frag = frag_more (op_length);
-		where = frag - frag_now->fr_literal;
-		bfd_putl16 ((bfd_vma) bin, frag);
-		dwarf2_emit_insn (op_length);
-	      }
-	    break;
-	  }
-
 	case 8:
 	  {
 	    bfd_boolean need_reloc = FALSE;
@@ -2553,7 +3376,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	    if (*l1 == '#')
 	      {
-		parse_exp (l1 + 1, &(op1.exp));
+		end = parse_exp (l1 + 1, &(op1.exp));
+		if (end != NULL && *end != 0)
+		  {
+		    as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+		    break;
+		  }
 
 		if (op1.exp.X_op == O_constant)
 		  {
@@ -2665,7 +3493,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  /* The RPT instruction only accepted immediates and registers.  */
 	  if (*l1 == '#')
 	    {
-	      parse_exp (l1 + 1, &(op1.exp));
+	      end = parse_exp (l1 + 1, &(op1.exp));
+	      if (end != NULL && *end != 0)
+		{
+		  as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+		  break;
+		}
 	      if (op1.exp.X_op != O_constant)
 		{
 		  as_bad (_("expected constant value as argument to RPT"));
@@ -2702,10 +3535,16 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  break;
 
 	default:
-	  as_bad (_("Illegal emulated instruction "));
+	  as_bad (_("Illegal emulated instruction"));
 	  break;
 	}
       break;
+
+      /* FIXME: Emit warning when dest reg SR(R2) is addressed with .B or .A.
+	 From f5 ref man 6.3.3:
+	   The 16-bit Status Register (SR, also called R2), used as a source or
+	   destination register, can only be used in register mode addressed
+	   with word instructions.  */
 
     case 1:			/* Format 1, double operand.  */
       line = extract_operand (line, l1, sizeof (l1));
@@ -2733,31 +3572,97 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
       bin |= (op2.reg | (op1.reg << 8) | (op1.am << 4) | (op2.am << 7));
 
-      if (   (is_opcode ("bic") && bin == 0xc232)
-	  || (is_opcode ("bis") && bin == 0xd232)
-	  || (is_opcode ("mov") && op2.mode == OP_REG && op2.reg == 2))
+      /* If the PC is the destination...  */
+      if (op2.am == 0 && op2.reg == 0
+	  /* ... and the opcode alters the SR.  */
+	  && !(is_opcode ("bic") || is_opcode ("bis") || is_opcode ("mov")
+	       || is_opcode ("bicx") || is_opcode ("bisx") || is_opcode ("movx")))
 	{
-	  if (check_for_nop)
+	  if (silicon_errata_fix & SILICON_ERRATA_CPU11)
+	    as_bad (_("CPU11: PC is destination of SR altering instruction"));
+	  else if (silicon_errata_warn & SILICON_ERRATA_CPU11)
+	    as_warn (_("CPU11: PC is destination of SR altering instruction"));
+	}
+	  
+      /* If the status register is the destination...  */
+      if (op2.am == 0 && op2.reg == 2
+	  /* ... and the opcode alters the SR.  */
+	  && (is_opcode ("add") || is_opcode ("addc") || is_opcode ("and")
+	      || is_opcode ("dadd") || is_opcode ("sub") || is_opcode ("subc")
+	      || is_opcode ("xor")
+	      || is_opcode ("addx") || is_opcode ("addcx") || is_opcode ("andx")
+	      || is_opcode ("daddx") || is_opcode ("subx") || is_opcode ("subcx")
+	      || is_opcode ("xorx")
+	      ))
+	{
+	  if (silicon_errata_fix & SILICON_ERRATA_CPU13)
+	    as_bad (_("CPU13: SR is destination of SR altering instruction"));
+	  else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
+	    as_warn (_("CPU13: SR is destination of SR altering instruction"));
+	}
+
+      /* Chain these checks for SR manipulations so we can warn if they are not
+	 caught.  */
+      if (((is_opcode ("bis") && bin == 0xd032)
+	   || (is_opcode ("mov") && bin == 0x4032)
+	   || (is_opcode ("xor") && bin == 0xe032))
+	  && op1.mode == OP_EXP
+	  && op1.exp.X_op == O_constant
+	  && (op1.exp.X_add_number & 0x10) == 0x10)
+	check_for_nop |= NOP_CHECK_CPU19;
+      else if ((is_opcode ("mov") && op2.mode == OP_REG && op2.reg == 2))
+	{
+	  /* Any MOV with the SR as the destination either enables or disables
+	     interrupts.  */
+	  if (op1.mode == OP_EXP
+	      && op1.exp.X_op == O_constant)
 	    {
-	      if (warn_interrupt_nops)
+	      if ((op1.exp.X_add_number & 0x8) == 0x8)
 		{
-		  if (gen_interrupt_nops)
-		    as_warn (_("NOP inserted between two instructions that change interrupt state"));
-		  else
-		    as_warn (_("a NOP might be needed here because of successive changes in interrupt state"));
+		  /* The GIE bit is being set.  */
+		  warn_eint_nop (prev_insn_is_nop, prev_insn_is_dint);
+		  this_insn_is_eint = TRUE;
 		}
-
-	      if (gen_interrupt_nops)
-		{
-		  /* Emit a NOP between interrupt enable/disable.
-		     See 1.3.4.1 of the MSP430x5xx User Guide.  */
-		  insn_length += 2;
-		  frag = frag_more (2);
-		  bfd_putl16 ((bfd_vma) 0x4303 /* NOP */, frag);
-		}
+	      else
+		/* The GIE bit is being cleared.  */
+		this_insn_is_dint = TRUE;
 	    }
-
-	  nop_check_needed = TRUE;
+	  /* If an immediate value which is covered by the constant generator
+	     is the src, then op1 will have been changed to either R2 or R3 by
+	     this point.
+	     The only constants covered by CG1 and CG2, which have bit 3 set
+	     and therefore would enable interrupts when writing to the SR, are
+	     R2 with addresing mode 0b11 and R3 with 0b11.
+	     The addressing mode is in bits 5:4 of the binary opcode.  */
+	  else if (op1.mode == OP_REG
+		   && (op1.reg == 2 || op1.reg == 3)
+		   && (bin & 0x30) == 0x30)
+	    {
+	      warn_eint_nop (prev_insn_is_nop, prev_insn_is_dint);
+	      this_insn_is_eint = TRUE;
+	    }
+	  /* Any other use of the constant generator with destination R2, will
+	     disable interrupts.  */
+	  else if (op1.mode == OP_REG
+		   && (op1.reg == 2 || op1.reg == 3))
+	    this_insn_is_dint = TRUE;
+	  else
+	    {
+	      /* FIXME: Couldn't work out whether the insn is enabling or
+		 disabling interrupts, so for safety need to treat it as both
+		 a DINT and EINT.  */
+	      warn_unsure_interrupt ();
+	      check_for_nop |= NOP_CHECK_INTERRUPT;
+	    }
+	}
+      else if (is_eint (opcode->name, bin))
+	warn_eint_nop (prev_insn_is_nop, prev_insn_is_dint);
+      else if ((bin & 0x32) == 0x32)
+	{
+	  /* Double-operand insn with the As==0b11 and Rdst==0x2 will result in
+	   * an interrupt state change if a write happens.  */
+	  /* FIXME: How strict to be here? */
+	  ;
 	}
 
       /* Compute the entire length of the instruction in bytes.  */
@@ -2787,7 +3692,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      if (op1.exp.X_op == O_constant)
 		extended |= ((op1.exp.X_add_number >> 16) & 0xf) << 7;
 
-	      else  if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+	      else  if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		fix_new_exp (frag_now, where, 6, &(op1.exp), FALSE,
 			     BFD_RELOC_MSP430X_ABS20_EXT_SRC);
 	      else
@@ -2833,7 +3738,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	      if (!extended_op)
 		{
-		  if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+		  if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		    fix_new_exp (frag_now, where, 2,
 				 &(op1.exp), FALSE, CHECK_RELOC_MSP430 (op1));
 		  else
@@ -2869,6 +3774,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	}
 
       dwarf2_emit_insn (insn_length);
+
+      /* If the PC is the destination...  */
+      if (op2.am == 0 && op2.reg == 0
+	  /* ... but the opcode does not alter the destination.  */
+	  && (is_opcode ("cmp") || is_opcode ("bit") || is_opcode ("cmpx")))
+	check_for_nop |= NOP_CHECK_CPU12;
       break;
 
     case 2:			/* Single-operand mostly instr.  */
@@ -2900,6 +3811,17 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  break;
 	}
 
+      /* If the status register is the destination...  */
+      if (op1.am == 0 && op1.reg == 2
+	  /* ... and the opcode alters the SR.  */
+	  && (is_opcode ("rra") || is_opcode ("rrc") || is_opcode ("sxt")))
+	{
+	  if (silicon_errata_fix & SILICON_ERRATA_CPU13)
+	    as_bad (_("CPU13: SR is destination of SR altering instruction"));
+	  else if (silicon_errata_warn & SILICON_ERRATA_CPU13)
+	    as_warn (_("CPU13: SR is destination of SR altering instruction"));
+	}
+	  
       insn_length = (extended_op ? 2 : 0) + 2 + (op1.ol * 2);
       frag = frag_more (insn_length);
       where = frag - frag_now->fr_literal;
@@ -2924,6 +3846,9 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  else if (! addr_op)
 	    extended |= BYTE_OPERATION;
 
+	  if (is_opcode ("rrux"))
+	    extended |= IGNORE_CARRY_BIT;
+	  
 	  if (op1.ol != 0 && ((extended & 0xf) != 0))
 	    {
 	      as_bad (_("repeat instruction used with non-register mode instruction"));
@@ -2935,7 +3860,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	      if (op1.exp.X_op == O_constant)
 		extended |= ((op1.exp.X_add_number >> 16) & 0xf) << 7;
 
-	      else if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+	      else if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		fix_new_exp (frag_now, where, 6, &(op1.exp), FALSE,
 			     BFD_RELOC_MSP430X_ABS20_EXT_SRC);
 	      else
@@ -2966,7 +3891,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	      if (!extended_op)
 		{
-		  if (op1.reg || (op1.reg == 0 && op1.am == 3))	/* Not PC relative.  */
+		  if (op1.reg || op1.am == 3)	/* Not PC relative.  */
 		    fix_new_exp (frag_now, where, 2,
 				 &(op1.exp), FALSE, CHECK_RELOC_MSP430 (op1));
 		  else
@@ -2990,7 +3915,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  if (*m == '$')
 	    m++;
 
-	  parse_exp (m, &exp);
+	  end = parse_exp (m, &exp);
+	  if (end != NULL && *end != 0)
+	    {
+	      as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+	      break;
+	    }
 
 	  /* In order to handle something like:
 
@@ -3030,7 +3960,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 
 	      if (x > 512 || x < -511)
 		{
-		  as_bad (_("Wrong displacement  %d"), x << 1);
+		  as_bad (_("Wrong displacement %d"), x << 1);
 		  break;
 		}
 
@@ -3073,7 +4003,7 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  as_bad (_("polymorphs are not enabled. Use -mP option to enable."));
 	  break;
 	}
-	
+
       line = extract_operand (line, l1, sizeof (l1));
       if (l1[0])
 	{
@@ -3084,7 +4014,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  if (*m == '#' || *m == '$')
 	    m++;
 
-	  parse_exp (m, & exp);
+	  end = parse_exp (m, & exp);
+	  if (end != NULL && *end != 0)
+	    {
+	      as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+	      break;
+	    }
 	  if (exp.X_op == O_symbol)
 	    {
 	      /* Relaxation required.  */
@@ -3130,7 +4065,12 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
 	  if (*m == '#' || *m == '$')
 	    m++;
 
-	  parse_exp (m, & exp);
+	  end = parse_exp (m, & exp);
+	  if (end != NULL && *end != 0)
+	    {
+	      as_bad (_("extra characters '%s' at end of operand '%s'"), end, l1);
+	      break;
+	    }
 	  if (exp.X_op == O_symbol)
 	    {
 	      /* Relaxation required.  */
@@ -3161,8 +4101,35 @@ msp430_operands (struct msp430_opcode_s * opcode, char * line)
       as_bad (_("Illegal instruction or not implemented opcode."));
     }
 
+    if (is_opcode ("nop"))
+      {
+	prev_insn_is_nop = TRUE;
+	prev_insn_is_dint = FALSE;
+	prev_insn_is_eint = FALSE;
+      }
+    else if (this_insn_is_dint || is_dint (opcode->name, bin))
+      {
+	prev_insn_is_dint = TRUE;
+	prev_insn_is_eint = FALSE;
+	prev_insn_is_nop = FALSE;
+	check_for_nop |= NOP_CHECK_INTERRUPT;
+      }
+    /* NOP is not needed after EINT for 430 ISA.  */
+    else if (target_is_430x () && (this_insn_is_eint || is_eint (opcode->name, bin)))
+      {
+	prev_insn_is_eint = TRUE;
+	prev_insn_is_nop = FALSE;
+	prev_insn_is_dint = FALSE;
+	check_for_nop |= NOP_CHECK_INTERRUPT;
+      }
+    else
+      {
+	prev_insn_is_nop = FALSE;
+	prev_insn_is_dint = FALSE;
+	prev_insn_is_eint = FALSE;
+      }
+
   input_line_pointer = line;
-  check_for_nop = nop_check_needed;
   return 0;
 }
 
@@ -3174,9 +4141,9 @@ md_assemble (char * str)
   unsigned int i = 0;
 
   str = skip_space (str);	/* Skip leading spaces.  */
-  str = extract_cmd (str, cmd, sizeof (cmd));
+  str = extract_cmd (str, cmd, sizeof (cmd) - 1);
 
-  while (cmd[i] && i < sizeof (cmd))
+  while (cmd[i])
     {
       char a = TOLOWER (cmd[i]);
       cmd[i] = a;
@@ -3185,7 +4152,7 @@ md_assemble (char * str)
 
   if (!cmd[0])
     {
-      as_bad (_("can't find opcode "));
+      as_bad (_("can't find opcode"));
       return;
     }
 
@@ -3213,7 +4180,7 @@ md_section_align (asection * seg, valueT addr)
 {
   int align = bfd_get_section_alignment (stdoutput, seg);
 
-  return ((addr + (1 << align) - 1) & (-1 << align));
+  return ((addr + (1 << align) - 1) & -(1 << align));
 }
 
 /* If you define this macro, it should return the offset between the
@@ -3233,7 +4200,7 @@ md_pcrel_from_section (fixS * fixp, segT sec)
   return fixp->fx_frag->fr_address + fixp->fx_where;
 }
 
-/* Replaces standard TC_FORCE_RELOCATION_LOCAL.
+/* Addition to the standard TC_FORCE_RELOCATION_LOCAL.
    Now it handles the situation when relocations
    have to be passed to linker.  */
 int
@@ -3247,8 +4214,7 @@ msp430_force_relocation_local (fixS *fixp)
         && !msp430_enable_relax)
     return 1;
 
-  return (!fixp->fx_pcrel
-	  || generic_force_reloc (fixp));
+  return 0;
 }
 
 
@@ -3311,8 +4277,8 @@ md_apply_fix (fixS * fixp, valueT * valuep, segT seg)
   if (msp430_enable_polys
       && !msp430_enable_relax)
     {
-      if (!fixp->fx_addsy || (fixp->fx_addsy
-	  && S_GET_SEGMENT (fixp->fx_addsy) == absolute_section))
+      if (!fixp->fx_addsy
+	  || S_GET_SEGMENT (fixp->fx_addsy) == absolute_section)
 	fixp->fx_done = 1;	/* It is ok to kill 'abs' reloc.  */
       else
       	fixp->fx_done = 0;
@@ -3373,7 +4339,7 @@ md_apply_fix (fixS * fixp, valueT * valuep, segT seg)
 	  value &= 0xffff;	/* Get rid of extended sign.  */
 	  bfd_putl16 ((bfd_vma) value, where);
 	  break;
-	  
+
 	case BFD_RELOC_32:
 	  bfd_putl16 ((bfd_vma) value, where);
 	  break;
@@ -3469,7 +4435,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
   static arelent * relocs[MAX_RELOC_EXPANSION + 1];
   arelent *reloc;
 
-  reloc = xmalloc (sizeof (arelent));
+  reloc = XNEW (arelent);
   reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
   reloc->howto = bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type);
 
@@ -3508,7 +4474,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
 	 because there can be multiple incarnations of the same label, with
 	 exactly the same name, in any given section and the linker will have
 	 no way to identify the correct one.  Instead we just have to hope
-	 that no relaxtion will occur between the local label and the other
+	 that no relaxation will occur between the local label and the other
 	 symbol in the expression.
 
 	 Similarly we have to compute differences between symbols in the .eh_frame
@@ -3520,7 +4486,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
 	  && ! S_IS_GAS_LOCAL (fixp->fx_addsy)
 	  && ! S_IS_GAS_LOCAL (fixp->fx_subsy))
 	{
-	  arelent * reloc2 = xmalloc (sizeof * reloc);
+	  arelent * reloc2 = XNEW (arelent);
 
 	  relocs[0] = reloc2;
 	  relocs[1] = reloc;
@@ -3534,7 +4500,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
 	    reloc2->sym_ptr_ptr = bfd_abs_section_ptr->symbol_ptr_ptr;
 	  else
 	    {
-	      reloc2->sym_ptr_ptr = xmalloc (sizeof (asymbol *));
+	      reloc2->sym_ptr_ptr = XNEW (asymbol *);
 	      *reloc2->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_subsy);
 	    }
 
@@ -3546,7 +4512,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
 	    }
 	  else
 	    {
-	      reloc->sym_ptr_ptr = xmalloc (sizeof (asymbol *));
+	      reloc->sym_ptr_ptr = XNEW (asymbol *);
 	      *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
 	    }
 
@@ -3603,7 +4569,7 @@ tc_gen_reloc (asection * seg ATTRIBUTE_UNUSED, fixS * fixp)
 	  return & no_relocs;
 	}
 #endif
-      reloc->sym_ptr_ptr = xmalloc (sizeof (asymbol *));
+      reloc->sym_ptr_ptr = XNEW (asymbol *);
       *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
       reloc->addend = fixp->fx_offset;
 
@@ -3628,7 +4594,7 @@ md_estimate_size_before_relax (fragS * fragP ATTRIBUTE_UNUSED,
     }
   else if (fragP->fr_symbol)
     {
-      /* Its got a segment, but its not ours.   Even if fr_symbol is in
+      /* It's got a segment, but it's not ours.   Even if fr_symbol is in
 	 an absolute segment, we don't know a displacement until we link
 	 object files. So it will always be long. This also applies to
 	 labels in a subsegment of current. Liker may relax it to short
@@ -3789,7 +4755,7 @@ md_convert_frag (bfd * abfd ATTRIBUTE_UNUSED,
       break;
 
     default:
-      as_fatal (_("internal inconsistency problem in %s:  %lx"),
+      as_fatal (_("internal inconsistency problem in %s: %lx"),
 		__FUNCTION__, (long) fragP->fr_subtype);
       break;
     }
@@ -3897,8 +4863,17 @@ msp430_fix_adjustable (struct fix *fixp ATTRIBUTE_UNUSED)
 void
 msp430_md_end (void)
 {
-  if (check_for_nop == TRUE && warn_interrupt_nops)
-    as_warn ("assembly finished with the last instruction changing interrupt state - a NOP might be needed");
+  if (check_for_nop)
+    {
+      if (gen_interrupt_nops)
+	{
+	  gen_nop ();
+	  if (warn_interrupt_nops)
+	    as_warn (INSERT_NOP_AT_EOF);
+	}
+      else if (warn_interrupt_nops)
+	as_warn (_(WARN_NOP_AT_EOF));
+    }
 
   bfd_elf_add_proc_attr_int (stdoutput, OFBA_MSPABI_Tag_ISA,
 			     target_is_430x () ? 2 : 1);

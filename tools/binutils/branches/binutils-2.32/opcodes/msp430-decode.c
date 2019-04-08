@@ -1,6 +1,7 @@
+/* DO NOT EDIT!  -*- buffer-read-only: t -*- vi:set ro:  */
 #line 1 "msp430-decode.opc"
 /* -*- c -*- */
-/* Copyright (C) 2013-2014 Free Software Foundation, Inc.
+/* Copyright (C) 2013-2019 Free Software Foundation, Inc.
    Contributed by Red Hat.
    Written by DJ Delorie.
 
@@ -25,7 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ansidecl.h"
+#include "bfd.h"
+#include "opintl.h"
 #include "opcode/msp430-decode.h"
 
 static int trace = 0;
@@ -141,9 +143,9 @@ immediate (int bytes, int sign_extend, LocalData *ld)
 	i -= 0x100000000ULL;
       break;
     default:
-      fprintf (stderr,
-	       "Programmer error: immediate() called with invalid byte count %d\n",
-	       bytes);
+      opcodes_error_handler
+	(_("internal error: immediate() called with invalid byte count %d"),
+	   bytes);
       abort ();
     }
   return i;
@@ -238,6 +240,7 @@ encode_as (int reg, int as, LocalData *ld, int ext)
 	  break;
 	case MSR_None:
 	  SA (0);
+	  break;
 	default:
 	  SM (reg, 0);
 	  break;
@@ -358,9 +361,9 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_1:
               {
                 /** 0000 srcr 0000 dstr		MOVA @%1, %0 */
-#line 438 "msp430-decode.opc"
+#line 440 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 438 "msp430-decode.opc"
+#line 440 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -371,20 +374,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA @%1, %0");
-#line 438 "msp430-decode.opc"
+#line 440 "msp430-decode.opc"
                 ID (MSO_mov); SM (srcr, 0); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x10:
             op_semantics_2:
               {
                 /** 0000 srcr 0001 dstr		MOVA @%1+, %0 */
-#line 443 "msp430-decode.opc"
+#line 445 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 443 "msp430-decode.opc"
+#line 445 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -395,20 +398,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA @%1+, %0");
-#line 443 "msp430-decode.opc"
+#line 445 "msp430-decode.opc"
                 ID (MSO_mov); SI (srcr); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x20:
             op_semantics_3:
               {
                 /** 0000 srcr 0010 dstr		MOVA &%1, %0 */
-#line 448 "msp430-decode.opc"
+#line 450 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 448 "msp430-decode.opc"
+#line 450 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -419,20 +422,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA &%1, %0");
-#line 448 "msp430-decode.opc"
+#line 450 "msp430-decode.opc"
                 ID (MSO_mov); SA ((srcr << 16) + IMMU(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x30:
             op_semantics_4:
               {
                 /** 0000 srcr 0011 dstr		MOVA %1, %0 */
-#line 453 "msp430-decode.opc"
+#line 455 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 453 "msp430-decode.opc"
+#line 455 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -443,11 +446,11 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA %1, %0");
-#line 453 "msp430-decode.opc"
+#line 455 "msp430-decode.opc"
                 ID (MSO_mov); SM (srcr, IMMS(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x40:
@@ -455,11 +458,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_5:
               {
                 /** 0000 bt00 010w dstr		RRCM.A %c, %0 */
-#line 520 "msp430-decode.opc"
+#line 522 "msp430-decode.opc"
                 int bt AU = (op[0] >> 2) & 0x03;
-#line 520 "msp430-decode.opc"
+#line 522 "msp430-decode.opc"
                 int w AU = (op[1] >> 4) & 0x01;
-#line 520 "msp430-decode.opc"
+#line 522 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -471,22 +474,22 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("RRCM.A %c, %0");
-#line 520 "msp430-decode.opc"
+#line 522 "msp430-decode.opc"
                 ID (MSO_rrc); DR (dstr); SR (dstr);
                 msp430->repeats = bt;
                 msp430->size = w ? 16 : 20;
                 msp430->ofs_430x = 1;
                 F_0NZC;
-              
+
               }
             break;
           case 0x60:
             op_semantics_6:
               {
                 /** 0000 srcr 0110 dstr		MOVA %1, &%0 */
-#line 458 "msp430-decode.opc"
+#line 460 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 458 "msp430-decode.opc"
+#line 460 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -497,20 +500,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA %1, &%0");
-#line 458 "msp430-decode.opc"
+#line 460 "msp430-decode.opc"
                 ID (MSO_mov); SR (srcr); DA ((dstr << 16) + IMMU(2));
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x70:
             op_semantics_7:
               {
                 /** 0000 srcr 0111 dstr		MOVA %1, &%0 */
-#line 463 "msp430-decode.opc"
+#line 465 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 463 "msp430-decode.opc"
+#line 465 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -521,20 +524,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA %1, &%0");
-#line 463 "msp430-decode.opc"
+#line 465 "msp430-decode.opc"
                 ID (MSO_mov); SR (srcr); DM (dstr, IMMS(2));
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x80:
             op_semantics_8:
               {
                 /** 0000 srcr 1000 dstr		MOVA %1, %0 */
-#line 468 "msp430-decode.opc"
+#line 470 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 468 "msp430-decode.opc"
+#line 470 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -545,20 +548,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA %1, %0");
-#line 468 "msp430-decode.opc"
+#line 470 "msp430-decode.opc"
                 ID (MSO_mov); SC ((srcr << 16) + IMMU(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x90:
             op_semantics_9:
               {
                 /** 0000 srcr 1001 dstr		CMPA %1, %0 */
-#line 473 "msp430-decode.opc"
+#line 475 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 473 "msp430-decode.opc"
+#line 475 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -569,21 +572,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("CMPA %1, %0");
-#line 473 "msp430-decode.opc"
+#line 475 "msp430-decode.opc"
                 ID (MSO_cmp); SC ((srcr << 16) + IMMU(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
           case 0xa0:
             op_semantics_10:
               {
                 /** 0000 srcr 1010 dstr		ADDA %1, %0 */
-#line 479 "msp430-decode.opc"
+#line 481 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 479 "msp430-decode.opc"
+#line 481 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -594,21 +597,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("ADDA %1, %0");
-#line 479 "msp430-decode.opc"
+#line 481 "msp430-decode.opc"
                 ID (MSO_add); SC ((srcr << 16) + IMMU(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
           case 0xb0:
             op_semantics_11:
               {
                 /** 0000 srcr 1011 dstr		SUBA %1, %0 */
-#line 485 "msp430-decode.opc"
+#line 487 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 485 "msp430-decode.opc"
+#line 487 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -619,21 +622,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("SUBA %1, %0");
-#line 485 "msp430-decode.opc"
+#line 487 "msp430-decode.opc"
                 ID (MSO_sub); SC ((srcr << 16) + IMMU(2)); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
           case 0xc0:
             op_semantics_12:
               {
                 /** 0000 srcr 1100 dstr		MOVA %1, %0 */
-#line 497 "msp430-decode.opc"
+#line 499 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 497 "msp430-decode.opc"
+#line 499 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -644,20 +647,20 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("MOVA %1, %0");
-#line 497 "msp430-decode.opc"
+#line 499 "msp430-decode.opc"
                 ID (MSO_mov); SR (srcr); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0xd0:
             op_semantics_13:
               {
                 /** 0000 srcr 1101 dstr		CMPA %1, %0 */
-#line 502 "msp430-decode.opc"
+#line 504 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 502 "msp430-decode.opc"
+#line 504 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -668,21 +671,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("CMPA %1, %0");
-#line 502 "msp430-decode.opc"
+#line 504 "msp430-decode.opc"
                 ID (MSO_cmp); SR (srcr); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
           case 0xe0:
             op_semantics_14:
               {
                 /** 0000 srcr 1110 dstr		ADDA %1, %0 */
-#line 508 "msp430-decode.opc"
+#line 510 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 508 "msp430-decode.opc"
+#line 510 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -693,21 +696,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("ADDA %1, %0");
-#line 508 "msp430-decode.opc"
+#line 510 "msp430-decode.opc"
                 ID (MSO_add); SR (srcr); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
           case 0xf0:
             op_semantics_15:
               {
                 /** 0000 srcr 1111 dstr		SUBA %1, %0 */
-#line 514 "msp430-decode.opc"
+#line 516 "msp430-decode.opc"
                 int srcr AU = op[0] & 0x0f;
-#line 514 "msp430-decode.opc"
+#line 516 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -718,12 +721,12 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("SUBA %1, %0");
-#line 514 "msp430-decode.opc"
+#line 516 "msp430-decode.opc"
                 ID (MSO_sub); SR (srcr); DR (dstr);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
                 F_VNZC;
-              
+
               }
             break;
         }
@@ -749,11 +752,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_16:
               {
                 /** 0000 bt01 010w dstr		RRAM.A %c, %0 */
-#line 527 "msp430-decode.opc"
+#line 529 "msp430-decode.opc"
                 int bt AU = (op[0] >> 2) & 0x03;
-#line 527 "msp430-decode.opc"
+#line 529 "msp430-decode.opc"
                 int w AU = (op[1] >> 4) & 0x01;
-#line 527 "msp430-decode.opc"
+#line 529 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -765,13 +768,13 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("RRAM.A %c, %0");
-#line 527 "msp430-decode.opc"
+#line 529 "msp430-decode.opc"
                 ID (MSO_rra); DR (dstr); SR (dstr);
                 msp430->repeats = bt;
                 msp430->size = w ? 16 : 20;
                 msp430->ofs_430x = 1;
                 F_0NZC;
-              
+
               }
             break;
           case 0x60:
@@ -827,11 +830,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_17:
               {
                 /** 0000 bt10 010w dstr		RLAM.A %c, %0 */
-#line 534 "msp430-decode.opc"
+#line 536 "msp430-decode.opc"
                 int bt AU = (op[0] >> 2) & 0x03;
-#line 534 "msp430-decode.opc"
+#line 536 "msp430-decode.opc"
                 int w AU = (op[1] >> 4) & 0x01;
-#line 534 "msp430-decode.opc"
+#line 536 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -843,13 +846,13 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("RLAM.A %c, %0");
-#line 534 "msp430-decode.opc"
+#line 536 "msp430-decode.opc"
                 ID (MSO_add); DR (dstr); SR (dstr);
                 msp430->repeats = bt;
                 msp430->size = w ? 16 : 20;
                 msp430->ofs_430x = 1;
                 F_0NZC;
-              
+
               }
             break;
           case 0x60:
@@ -905,11 +908,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_18:
               {
                 /** 0000 bt11 010w dstr		RRUM.A %c, %0 */
-#line 541 "msp430-decode.opc"
+#line 543 "msp430-decode.opc"
                 int bt AU = (op[0] >> 2) & 0x03;
-#line 541 "msp430-decode.opc"
+#line 543 "msp430-decode.opc"
                 int w AU = (op[1] >> 4) & 0x01;
-#line 541 "msp430-decode.opc"
+#line 543 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -921,13 +924,13 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("RRUM.A %c, %0");
-#line 541 "msp430-decode.opc"
+#line 543 "msp430-decode.opc"
                 ID (MSO_rru); DR (dstr); SR (dstr);
                 msp430->repeats = bt;
                 msp430->size = w ? 16 : 20;
                 msp430->ofs_430x = 1;
                 F_0NZC;
-              
+
               }
             break;
           case 0x60:
@@ -1594,15 +1597,15 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_19:
               {
                 /** 0001 00so c b ad dreg	%S%b	%1				*/
-#line 394 "msp430-decode.opc"
+#line 396 "msp430-decode.opc"
                 int so AU = op[0] & 0x03;
-#line 394 "msp430-decode.opc"
+#line 396 "msp430-decode.opc"
                 int c AU = (op[1] >> 7) & 0x01;
-#line 394 "msp430-decode.opc"
+#line 396 "msp430-decode.opc"
                 int b AU = (op[1] >> 6) & 0x01;
-#line 394 "msp430-decode.opc"
+#line 396 "msp430-decode.opc"
                 int ad AU = (op[1] >> 4) & 0x03;
-#line 394 "msp430-decode.opc"
+#line 396 "msp430-decode.opc"
                 int dreg AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -1616,21 +1619,21 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dreg = 0x%x\n", dreg);
                   }
                 SYNTAX("%S%b	%1");
-#line 394 "msp430-decode.opc"
-              
+#line 396 "msp430-decode.opc"
+
                 ID (sopc_to_id (so,c)); ASX (dreg, ad, srxt_bits); ABW (al_bit, b);
-              
+
                 if (ad == 0)
                   REPZC (srxt_bits, dsxt_bits);
-              
+
                 /* The helper functions encode for source, but it's
                    both source and dest, with a few documented exceptions.  */
                 msp430->op[0] = msp430->op[1];
-              
+
                 /* RETI ignores the operand.  */
                 if (msp430->id == MSO_reti)
                   msp430->syntax = "%S";
-              
+
                 switch (msp430->id)
                   {
                   case MSO_rrc:	F_VNZC; break;
@@ -1642,7 +1645,7 @@ msp430_decode_opcode (unsigned long pc,
                   case MSO_reti:	F_VNZC; break;
                   default: break;
                   }
-              
+
                 /* 20xx 0010 0000 ---- ----
                    3cxx 0011 1100 ---- ----
                         001j mp-- ---- ----.  */
@@ -1682,11 +1685,11 @@ msp430_decode_opcode (unsigned long pc,
                            op[0], op[1]);
                   }
                 SYNTAX("RETI");
-#line 548 "msp430-decode.opc"
+#line 550 "msp430-decode.opc"
                 ID (MSO_reti);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x01:
@@ -1900,9 +1903,9 @@ msp430_decode_opcode (unsigned long pc,
           case 0x7f:
               {
                 /** 0001 0011 01as dstr		CALLA %0 */
-#line 553 "msp430-decode.opc"
+#line 555 "msp430-decode.opc"
                 int as AU = (op[1] >> 4) & 0x03;
-#line 553 "msp430-decode.opc"
+#line 555 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -1913,11 +1916,11 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("CALLA %0");
-#line 553 "msp430-decode.opc"
+#line 555 "msp430-decode.opc"
                 ID (MSO_call); AS (dstr, as);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x80:
@@ -1938,7 +1941,7 @@ msp430_decode_opcode (unsigned long pc,
           case 0x8f:
               {
                 /** 0001 0011 1000 extb		CALLA %0 */
-#line 558 "msp430-decode.opc"
+#line 560 "msp430-decode.opc"
                 int extb AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -1948,11 +1951,11 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  extb = 0x%x\n", extb);
                   }
                 SYNTAX("CALLA %0");
-#line 558 "msp430-decode.opc"
+#line 560 "msp430-decode.opc"
                 ID (MSO_call); SA (IMMU(2) | (extb << 16));
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0x90:
@@ -1973,7 +1976,7 @@ msp430_decode_opcode (unsigned long pc,
           case 0x9f:
               {
                 /** 0001 0011 1001 extb		CALLA %0 */
-#line 563 "msp430-decode.opc"
+#line 565 "msp430-decode.opc"
                 int extb AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -1983,14 +1986,14 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  extb = 0x%x\n", extb);
                   }
                 SYNTAX("CALLA %0");
-#line 563 "msp430-decode.opc"
+#line 565 "msp430-decode.opc"
                 raddr = IMMU(2) | (extb << 16);
                 if (raddr & 0x80000)
                   raddr -= 0x100000;
                 ID (MSO_call); SA (pc + raddr + msp430->n_bytes);
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
           case 0xb0:
@@ -2011,7 +2014,7 @@ msp430_decode_opcode (unsigned long pc,
           case 0xbf:
               {
                 /** 0001 0011 1011 extb		CALLA %0 */
-#line 571 "msp430-decode.opc"
+#line 573 "msp430-decode.opc"
                 int extb AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -2021,11 +2024,11 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  extb = 0x%x\n", extb);
                   }
                 SYNTAX("CALLA %0");
-#line 571 "msp430-decode.opc"
+#line 573 "msp430-decode.opc"
                 ID (MSO_call); SC (IMMU(2) | (extb << 16));
                 msp430->size = 20;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
         }
@@ -2038,11 +2041,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_20:
               {
                 /** 0001 010w bits srcr		PUSHM.A %0 */
-#line 576 "msp430-decode.opc"
+#line 578 "msp430-decode.opc"
                 int w AU = op[0] & 0x01;
-#line 576 "msp430-decode.opc"
+#line 578 "msp430-decode.opc"
                 int bits AU = (op[1] >> 4) & 0x0f;
-#line 576 "msp430-decode.opc"
+#line 578 "msp430-decode.opc"
                 int srcr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -2054,12 +2057,12 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  srcr = 0x%x\n", srcr);
                   }
                 SYNTAX("PUSHM.A %0");
-#line 576 "msp430-decode.opc"
+#line 578 "msp430-decode.opc"
                 ID (MSO_push); SR (srcr);
                 msp430->size = w ? 16 : 20;
                 msp430->repeats = bits;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
         }
@@ -2081,11 +2084,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_21:
               {
                 /** 0001 011w bits dstr		POPM.A %0 */
-#line 582 "msp430-decode.opc"
+#line 584 "msp430-decode.opc"
                 int w AU = op[0] & 0x01;
-#line 582 "msp430-decode.opc"
+#line 584 "msp430-decode.opc"
                 int bits AU = (op[1] >> 4) & 0x0f;
-#line 582 "msp430-decode.opc"
+#line 584 "msp430-decode.opc"
                 int dstr AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -2097,12 +2100,12 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dstr = 0x%x\n", dstr);
                   }
                 SYNTAX("POPM.A %0");
-#line 582 "msp430-decode.opc"
+#line 584 "msp430-decode.opc"
                 ID (MSO_pop); DR (dstr);
                 msp430->size = w ? 16 : 20;
                 msp430->repeats = bits;
                 msp430->ofs_430x = 1;
-              
+
               }
             break;
         }
@@ -2124,13 +2127,13 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_22:
               {
                 /** 0001 1srx t l 00 dsxt 	430x */
-#line 350 "msp430-decode.opc"
+#line 352 "msp430-decode.opc"
                 int srx AU = op[0] & 0x07;
-#line 350 "msp430-decode.opc"
+#line 352 "msp430-decode.opc"
                 int t AU = (op[1] >> 7) & 0x01;
-#line 350 "msp430-decode.opc"
+#line 352 "msp430-decode.opc"
                 int l AU = (op[1] >> 6) & 0x01;
-#line 350 "msp430-decode.opc"
+#line 352 "msp430-decode.opc"
                 int dsxt AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -2143,26 +2146,26 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dsxt = 0x%x\n", dsxt);
                   }
                 SYNTAX("430x");
-#line 350 "msp430-decode.opc"
-              
+#line 352 "msp430-decode.opc"
+
                 al_bit = l;
                 srxt_bits = srx * 2 + t;
                 dsxt_bits = dsxt;
                 op = op_buf + lds.op_ptr;
                 msp430->ofs_430x = 1;
                 goto post_extension_word;
-              
+
               /* double-op insns:
                  opcode:4 sreg:4 Ad:1 BW:1 As:2 Dreg:4
-              
+
                  single-op insn:
                  opcode:9 BW:1 Ad:2 DSreg:4
-              
+
                  jumps:
                  opcode:3 Cond:3  pcrel:10. */
-              
+
               /* Double-Operand "opcode" fields.  */
-              
+
               }
             break;
           default: UNSUPPORTED(); break;
@@ -2246,11 +2249,11 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_23:
               {
                 /** 001jmp aa addrlsbs		%J	%1				*/
-#line 424 "msp430-decode.opc"
+#line 426 "msp430-decode.opc"
                 int jmp AU = (op[0] >> 2) & 0x07;
-#line 424 "msp430-decode.opc"
+#line 426 "msp430-decode.opc"
                 int aa AU = op[0] & 0x03;
-#line 424 "msp430-decode.opc"
+#line 426 "msp430-decode.opc"
                 int addrlsbs AU = op[1];
                 if (trace)
                   {
@@ -2262,8 +2265,8 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  addrlsbs = 0x%x\n", addrlsbs);
                   }
                 SYNTAX("%J	%1");
-#line 424 "msp430-decode.opc"
-              
+#line 426 "msp430-decode.opc"
+
                 raddr = (aa << 9) | (addrlsbs << 1);
                 if (raddr & 0x400)
                   raddr = raddr - 0x800;
@@ -2273,9 +2276,9 @@ msp430_decode_opcode (unsigned long pc,
                    data at that address.  */
                 ID (MSO_jmp); SC (pc + raddr + msp430->n_bytes);
                 msp430->cond = jmp;
-              
+
                 /* Extended instructions.  */
-              
+
               }
             break;
         }
@@ -2567,17 +2570,17 @@ msp430_decode_opcode (unsigned long pc,
             op_semantics_24:
               {
                 /** dopc sreg a b as dreg	%D%b	%1,%0				*/
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int dopc AU = (op[0] >> 4) & 0x0f;
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int sreg AU = op[0] & 0x0f;
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int a AU = (op[1] >> 7) & 0x01;
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int b AU = (op[1] >> 6) & 0x01;
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int as AU = (op[1] >> 4) & 0x03;
-#line 371 "msp430-decode.opc"
+#line 373 "msp430-decode.opc"
                 int dreg AU = op[1] & 0x0f;
                 if (trace)
                   {
@@ -2592,12 +2595,12 @@ msp430_decode_opcode (unsigned long pc,
                     printf ("  dreg = 0x%x\n", dreg);
                   }
                 SYNTAX("%D%b	%1,%0");
-#line 371 "msp430-decode.opc"
-              
+#line 373 "msp430-decode.opc"
+
                 ID (dopc_to_id (dopc)); ASX (sreg, as, srxt_bits); ADX (dreg, a, dsxt_bits); ABW (al_bit, b);
                 if (a == 0 && as == 0)
                   REPZC (srxt_bits, dsxt_bits);
-              
+
                 switch (msp430->id)
                   {
                   case MSO_mov:	F_____; break;
@@ -2614,7 +2617,7 @@ msp430_decode_opcode (unsigned long pc,
                   case MSO_and:	F_0NZC; break;
                   default: break;
                   }
-              
+
               }
             break;
         }
@@ -4339,7 +4342,7 @@ msp430_decode_opcode (unsigned long pc,
         }
       break;
   }
-#line 588 "msp430-decode.opc"
+#line 590 "msp430-decode.opc"
 
   return msp430->n_bytes;
 }

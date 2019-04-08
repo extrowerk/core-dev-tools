@@ -1,6 +1,7 @@
+#source: ./pushc.s
 #objdump: -dr
 
-dump\.o:     file format .*
+.*:     file format .*
 
 
 Disassembly of section \.text:
@@ -14,4 +15,5 @@ Disassembly of section \.text:
    a:	7e c8                         	pushc	bpsw
    c:	7e c9                         	pushc	bpc
    e:	7e cb                         	pushc	fintv
+  10:	7e cd                         	pushc	extb
 

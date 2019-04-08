@@ -1,7 +1,7 @@
 #source: ehdr_start.s
 #ld: -e _start -shared
 #nm: -n
-#target: *-*-linux* *-*-gnu* *-*-nacl* *-*-nto*
+#target: *-*-linux* *-*-gnu* arm*-*-uclinuxfdpiceabi-*-nto*
 #xfail: cris*-*-* frv-*-*
 
 #...

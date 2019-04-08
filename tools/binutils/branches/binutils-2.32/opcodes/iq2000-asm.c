@@ -1,10 +1,11 @@
+/* DO NOT EDIT!  -*- buffer-read-only: t -*- vi:set ro:  */
 /* Assembler interface for targets using CGEN. -*- C -*-
    CGEN: Cpu tools GENerator
 
    THIS FILE IS MACHINE GENERATED WITH CGEN.
    - the resultant file is machine generated, cgen-asm.in isn't
 
-   Copyright (C) 1996-2014 Free Software Foundation, Inc.
+   Copyright (C) 1996-2019 Free Software Foundation, Inc.
 
    This file is part of libopcodes.
 
@@ -70,16 +71,16 @@ iq2000_cgen_isa_register (const char **strp)
   int len;
   int ch1, ch2;
 
-  if (**strp == 'r' || **strp == 'R') 
+  if (**strp == 'r' || **strp == 'R')
     {
       len = strlen (*strp);
-      if (len == 2) 
+      if (len == 2)
         {
           ch1 = (*strp)[1];
           if ('0' <= ch1 && ch1 <= '9')
             return 1;
-        } 
-      else if (len == 3) 
+        }
+      else if (len == 3)
         {
 	  ch1 = (*strp)[1];
           ch2 = (*strp)[2];
@@ -112,7 +113,7 @@ parse_mimm (CGEN_CPU_DESC cd,
   else
     {
       long value;
-      
+
       errmsg = cgen_parse_signed_integer (cd, strp, opindex, & value);
       if (errmsg == NULL)
 	{
@@ -455,14 +456,16 @@ iq2000_cgen_parse_operand (CGEN_CPU_DESC cd,
 
     default :
       /* xgettext:c-format */
-      fprintf (stderr, _("Unrecognized field %d while parsing.\n"), opindex);
+      opcodes_error_handler
+	(_("internal error: unrecognized field %d while parsing"),
+	 opindex);
       abort ();
   }
 
   return errmsg;
 }
 
-cgen_parse_fn * const iq2000_cgen_parse_handlers[] = 
+cgen_parse_fn * const iq2000_cgen_parse_handlers[] =
 {
   parse_insn_normal,
 };
@@ -492,9 +495,9 @@ CGEN_ASM_INIT_HOOK
 
    Returns NULL for success, an error message for failure.  */
 
-char * 
+char *
 iq2000_cgen_build_insn_regex (CGEN_INSN *insn)
-{  
+{
   CGEN_OPCODE *opc = (CGEN_OPCODE *) CGEN_INSN_OPCODE (insn);
   const char *mnem = CGEN_INSN_MNEMONIC (insn);
   char rxbuf[CGEN_MAX_RX_ELEMENTS];
@@ -533,18 +536,18 @@ iq2000_cgen_build_insn_regex (CGEN_INSN *insn)
   /* Copy any remaining literals from the syntax string into the rx.  */
   for(; * syn != 0 && rx <= rxbuf + (CGEN_MAX_RX_ELEMENTS - 7 - 4); ++syn)
     {
-      if (CGEN_SYNTAX_CHAR_P (* syn)) 
+      if (CGEN_SYNTAX_CHAR_P (* syn))
 	{
 	  char c = CGEN_SYNTAX_CHAR (* syn);
 
-	  switch (c) 
+	  switch (c)
 	    {
 	      /* Escape any regex metacharacters in the syntax.  */
-	    case '.': case '[': case '\\': 
-	    case '*': case '^': case '$': 
+	    case '.': case '[': case '\\':
+	    case '*': case '^': case '$':
 
 #ifdef CGEN_ESCAPE_EXTENDED_REGEX
-	    case '?': case '{': case '}': 
+	    case '?': case '{': case '}':
 	    case '(': case ')': case '*':
 	    case '|': case '+': case ']':
 #endif
@@ -574,20 +577,20 @@ iq2000_cgen_build_insn_regex (CGEN_INSN *insn)
     }
 
   /* Trailing whitespace ok.  */
-  * rx++ = '['; 
-  * rx++ = ' '; 
-  * rx++ = '\t'; 
-  * rx++ = ']'; 
-  * rx++ = '*'; 
+  * rx++ = '[';
+  * rx++ = ' ';
+  * rx++ = '\t';
+  * rx++ = ']';
+  * rx++ = '*';
 
   /* But anchor it after that.  */
-  * rx++ = '$'; 
+  * rx++ = '$';
   * rx = '\0';
 
   CGEN_INSN_RX (insn) = xmalloc (sizeof (regex_t));
   reg_err = regcomp ((regex_t *) CGEN_INSN_RX (insn), rxbuf, REG_NOSUB);
 
-  if (reg_err == 0) 
+  if (reg_err == 0)
     return NULL;
   else
     {
@@ -786,7 +789,7 @@ iq2000_cgen_assemble_insn (CGEN_CPU_DESC cd,
       const CGEN_INSN *insn = ilist->insn;
       recognized_mnemonic = 1;
 
-#ifdef CGEN_VALIDATE_INSN_SUPPORTED 
+#ifdef CGEN_VALIDATE_INSN_SUPPORTED
       /* Not usually needed as unsupported opcodes
 	 shouldn't be in the hash lists.  */
       /* Is this insn supported by the selected cpu?  */
@@ -846,7 +849,7 @@ iq2000_cgen_assemble_insn (CGEN_CPU_DESC cd,
 	if (strlen (start) > 50)
 	  /* xgettext:c-format */
 	  sprintf (errbuf, "%s `%.50s...'", tmp_errmsg, start);
-	else 
+	else
 	  /* xgettext:c-format */
 	  sprintf (errbuf, "%s `%.50s'", tmp_errmsg, start);
       }
@@ -855,11 +858,11 @@ iq2000_cgen_assemble_insn (CGEN_CPU_DESC cd,
 	if (strlen (start) > 50)
 	  /* xgettext:c-format */
 	  sprintf (errbuf, _("bad instruction `%.50s...'"), start);
-	else 
+	else
 	  /* xgettext:c-format */
 	  sprintf (errbuf, _("bad instruction `%.50s'"), start);
       }
-      
+
     *errmsg = errbuf;
     return NULL;
   }

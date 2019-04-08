@@ -359,5 +359,41 @@
 	.byte 0x36
 	.byte 0x90
 
+# repz; rdseed %eax
+	.byte 0xf3
+	.byte 0x0f
+	.byte 0xc7
+	.byte 0xf8
+
+	nop
+
+# repz; rdrand %eax
+	.byte 0xf3
+	.byte 0x0f
+	.byte 0xc7
+	.byte 0xf0
+
+	nop
+
+# repnz; rdseed %eax
+	.byte 0xf2
+	.byte 0x0f
+	.byte 0xc7
+	.byte 0xf8
+
+	nop
+
+# repnz; rdrand %eax
+	.byte 0xf2
+	.byte 0x0f
+	.byte 0xc7
+	.byte 0xf0
+
+	nop
+
+	vcvtpd2dqx 0x20(%eax),%xmm0
+	vcvtpd2dq 0x20(%eax){1to2},%xmm0
+	vcvtpd2dqx 0x20(%eax),%xmm0
+
 # Get a good alignment.
  .p2align	4,0

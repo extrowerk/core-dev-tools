@@ -1,5 +1,5 @@
 /* tc-z80.c -- Assemble code for the Zilog Z80 and ASCII R800
-   Copyright (C) 2005-2014 Free Software Foundation, Inc.
+   Copyright (C) 2005-2019 Free Software Foundation, Inc.
    Contributed by Arnold Metselaar <arnold_m@operamail.com>
 
    This file is part of GAS, the GNU Assembler.
@@ -81,7 +81,7 @@ static int ins_err = INS_R800;
 static int ins_used = INS_Z80;
 
 int
-md_parse_option (int c, char* arg ATTRIBUTE_UNUSED)
+md_parse_option (int c, const char* arg ATTRIBUTE_UNUSED)
 {
   switch (c)
     {
@@ -156,14 +156,14 @@ CPU model/instruction set options:\n\
   -Fup\n\
 \ttreat undocumented z80-instructions that do not work on R800 as errors\n\
   -r800\t  assemble for R800\n\n\
-Default: -z80 -ignore-undocument-instructions -warn-unportable-instructions.\n");
+Default: -z80 -ignore-undocumented-instructions -warn-unportable-instructions.\n");
 }
 
 static symbolS * zero;
 
 struct reg_entry
 {
-  char* name;
+  const char* name;
   int number;
 };
 #define R_STACKABLE (0x80)
@@ -249,7 +249,7 @@ md_begin (void)
         }
     }
   p = input_line_pointer;
-  input_line_pointer = "0";
+  input_line_pointer = (char *) "0";
   nul.X_md=0;
   expression (& nul);
   input_line_pointer = p;
@@ -317,6 +317,7 @@ z80_start_line_hook (void)
 	      *p++ = buf[2];
 	      break;
 	    }
+	  /* Fall through.  */
 	case '"':
 	  for (quote = *p++; quote != *p && '\n' != *p; ++p)
 	    /* No escapes.  */ ;
@@ -332,6 +333,7 @@ z80_start_line_hook (void)
   /* Check for <label>[:] [.](EQU|DEFL) <value>.  */
   if (is_name_beginner (*input_line_pointer))
     {
+      char *name;
       char c, *rest, *line_start;
       int len;
 
@@ -339,7 +341,7 @@ z80_start_line_hook (void)
       if (ignore_input ())
 	return 0;
 
-      c = get_symbol_end ();
+      c = get_symbol_name (&name);
       rest = input_line_pointer + 1;
 
       if (*rest == ':')
@@ -364,13 +366,13 @@ z80_start_line_hook (void)
 	    }
 	  input_line_pointer = rest + len - 1;
 	  /* Allow redefining with "DEFL" (len == 4), but not with "EQU".  */
-	  equals (line_start, len == 4);
+	  equals (name, len == 4);
 	  return 1;
 	}
       else
 	{
 	  /* Restore line and pointer.  */
-	  *input_line_pointer = c;
+	  (void) restore_line_pointer (c);
 	  input_line_pointer = line_start;
 	}
     }
@@ -383,7 +385,7 @@ md_undefined_symbol (char *name ATTRIBUTE_UNUSED)
   return NULL;
 }
 
-char *
+const char *
 md_atof (int type ATTRIBUTE_UNUSED, char *litP ATTRIBUTE_UNUSED,
 	 int *sizeP ATTRIBUTE_UNUSED)
 {
@@ -407,9 +409,9 @@ typedef const char * (asfunc)(char, char, const char*);
 
 typedef struct _table_t
 {
-  char* name;
-  char prefix;
-  char opcode;
+  const char* name;
+  unsigned char prefix;
+  unsigned char opcode;
   asfunc * fp;
 } table_t;
 
@@ -524,21 +526,21 @@ is_indir (const char *s)
 }
 
 /* Check whether a symbol involves a register.  */
-static int 
+static int
 contains_register(symbolS *sym)
 {
   if (sym)
   {
     expressionS * ex = symbol_get_value_expression(sym);
-    return (O_register == ex->X_op) 
-      || (ex->X_add_symbol && contains_register(ex->X_add_symbol)) 
+    return (O_register == ex->X_op)
+      || (ex->X_add_symbol && contains_register(ex->X_add_symbol))
       || (ex->X_op_symbol && contains_register(ex->X_op_symbol));
   }
   else
     return 0;
 }
 
-/* Parse general expression, not loooking for indexed adressing.  */
+/* Parse general expression, not looking for indexed addressing.  */
 static const char *
 parse_exp_not_indexed (const char *s, expressionS *op)
 {
@@ -556,6 +558,8 @@ parse_exp_not_indexed (const char *s, expressionS *op)
       break;
     case O_illegal:
       error (_("bad expression syntax"));
+      break;
+    default:
       break;
     }
   return input_line_pointer;
@@ -604,6 +608,8 @@ parse_exp (const char *s, expressionS *op)
 	  op->X_op = O_md1;
 	}
 	break;
+    default:
+      break;
     }
   return res;
 }
@@ -689,7 +695,7 @@ void z80_cons_fix_new (fragS *frag_p, int offset, int nbytes, expressionS *exp)
       BFD_RELOC_32
     };
 
-  if (nbytes < 1 || nbytes > 4) 
+  if (nbytes < 1 || nbytes > 4)
     {
       as_bad (_("unsupported BFD relocation size %u"), nbytes);
     }
@@ -843,8 +849,9 @@ emit_m (char prefix, char opcode, const char *args)
 /* The operand m may be as above or one of the undocumented
    combinations (ix+d),r and (iy+d),r (if unportable instructions
    are allowed).  */
+
 static const char *
-emit_mr (char prefix, char opcode, const char *args)
+emit_mr (char prefix, char opcode, const char *args, bfd_boolean unportable)
 {
   expressionS arg_m, arg_r;
   const char *p;
@@ -861,21 +868,37 @@ emit_mr (char prefix, char opcode, const char *args)
 	  if ((arg_r.X_md == 0)
 	      && (arg_r.X_op == O_register)
 	      && (arg_r.X_add_number < 8))
-	    opcode += arg_r.X_add_number-6; /* Emit_mx () will add 6.  */
+	    opcode += arg_r.X_add_number - 6; /* Emit_mx () will add 6.  */
 	  else
 	    {
 	      ill_op ();
 	      break;
 	    }
 	  check_mach (INS_UNPORT);
+          unportable = TRUE;
 	}
+      /* Fall through.  */
     case O_register:
+      if (unportable)
+	check_mach (INS_UNPORT);
       emit_mx (prefix, opcode, 0, & arg_m);
       break;
     default:
       ill_op ();
     }
   return p;
+}
+
+static const char *
+emit_mr_z80 (char prefix, char opcode, const char *args)
+{
+  return emit_mr (prefix, opcode, args, FALSE);
+}
+
+static const char *
+emit_mr_unport (char prefix, char opcode, const char *args)
+{
+  return emit_mr (prefix, opcode, args, TRUE);
 }
 
 static void
@@ -1196,7 +1219,7 @@ emit_bit (char prefix, char opcode, const char * args)
 	p = emit_m (prefix, opcode + (bn << 3), p);
       else
 	/* Set, res : resulting byte can be copied to register.  */
-	p = emit_mr (prefix, opcode + (bn << 3), p);
+        p = emit_mr (prefix, opcode + (bn << 3), p, FALSE);
     }
   else
     ill_op ();
@@ -1771,6 +1794,7 @@ emit_mulub (char prefix ATTRIBUTE_UNUSED, char opcode, const char * args)
 	      *q = opcode + ((reg - 'b') << 3);
 	      break;
 	    }
+	  /* Fall through.  */
 	default:
 	  ill_op ();
 	}
@@ -1818,7 +1842,7 @@ const pseudo_typeS md_pseudo_table[] =
   { "d32", cons, 4},
   { "def24", cons, 3},
   { "def32", cons, 4},
-  { "defb", emit_data, 1},  
+  { "defb", emit_data, 1},
   { "defs", s_space, 1}, /* Synonym for ds on some assemblers.  */
   { "defw", cons, 2},
   { "ds",   s_space, 1}, /* Fill with bytes rather than words.  */
@@ -1880,31 +1904,31 @@ static table_t instab[] =
   { "ret",  0xC9, 0xC0, emit_retcc },
   { "reti", 0xED, 0x4D, emit_insn },
   { "retn", 0xED, 0x45, emit_insn },
-  { "rl",   0xCB, 0x10, emit_mr },
+  { "rl",   0xCB, 0x10, emit_mr_z80 },
   { "rla",  0x00, 0x17, emit_insn },
-  { "rlc",  0xCB, 0x00, emit_mr },
+  { "rlc",  0xCB, 0x00, emit_mr_z80 },
   { "rlca", 0x00, 0x07, emit_insn },
   { "rld",  0xED, 0x6F, emit_insn },
-  { "rr",   0xCB, 0x18, emit_mr },
+  { "rr",   0xCB, 0x18, emit_mr_z80 },
   { "rra",  0x00, 0x1F, emit_insn },
-  { "rrc",  0xCB, 0x08, emit_mr },
+  { "rrc",  0xCB, 0x08, emit_mr_z80 },
   { "rrca", 0x00, 0x0F, emit_insn },
   { "rrd",  0xED, 0x67, emit_insn },
   { "rst",  0x00, 0xC7, emit_rst},
   { "sbc",  0x98, 0x42, emit_adc },
   { "scf",  0x00, 0x37, emit_insn },
   { "set",  0xCB, 0xC0, emit_bit },
-  { "sla",  0xCB, 0x20, emit_mr },
-  { "sli",  0xCB, 0x30, emit_mr },
-  { "sll",  0xCB, 0x30, emit_mr },
-  { "sra",  0xCB, 0x28, emit_mr },
-  { "srl",  0xCB, 0x38, emit_mr },
+  { "sla",  0xCB, 0x20, emit_mr_z80 },
+  { "sli",  0xCB, 0x30, emit_mr_unport },
+  { "sll",  0xCB, 0x30, emit_mr_unport },
+  { "sra",  0xCB, 0x28, emit_mr_z80 },
+  { "srl",  0xCB, 0x38, emit_mr_z80 },
   { "sub",  0x00, 0x90, emit_s },
   { "xor",  0x00, 0xA8, emit_s },
 } ;
 
 void
-md_assemble (char* str)
+md_assemble (char *str)
 {
   const char *p;
   char * old_ptr;
@@ -1925,12 +1949,12 @@ md_assemble (char* str)
     }
   else if ((*p) && (!ISSPACE (*p)))
     as_bad (_("syntax error"));
-  else 
+  else
     {
       buf[i] = 0;
       p = skip_space (p);
       key = buf;
-      
+
       insp = bsearch (&key, instab, ARRAY_SIZE (instab),
 		    sizeof (instab[0]), key_cmp);
       if (!insp)
@@ -1983,7 +2007,7 @@ md_apply_fix (fixS * fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED)
 	  fixP->fx_no_overflow = (-128 <= val && val < 128);
 	  if (!fixP->fx_no_overflow)
             as_bad_where (fixP->fx_file, fixP->fx_line,
-			  _("index offset  out of range"));
+			  _("index offset out of range"));
 	  *p_lit++ = val;
           fixP->fx_done = 1;
         }
@@ -1993,7 +2017,7 @@ md_apply_fix (fixS * fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED)
       if (val > 255 || val < -128)
 	as_warn_where (fixP->fx_file, fixP->fx_line, _("overflow"));
       *p_lit++ = val;
-      fixP->fx_no_overflow = 1; 
+      fixP->fx_no_overflow = 1;
       if (fixP->fx_addsy == NULL)
 	fixP->fx_done = 1;
       break;
@@ -2001,7 +2025,7 @@ md_apply_fix (fixS * fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED)
     case BFD_RELOC_16:
       *p_lit++ = val;
       *p_lit++ = (val >> 8);
-      fixP->fx_no_overflow = 1; 
+      fixP->fx_no_overflow = 1;
       if (fixP->fx_addsy == NULL)
 	fixP->fx_done = 1;
       break;
@@ -2010,7 +2034,7 @@ md_apply_fix (fixS * fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED)
       *p_lit++ = val;
       *p_lit++ = (val >> 8);
       *p_lit++ = (val >> 16);
-      fixP->fx_no_overflow = 1; 
+      fixP->fx_no_overflow = 1;
       if (fixP->fx_addsy == NULL)
 	fixP->fx_done = 1;
       break;
@@ -2053,8 +2077,8 @@ tc_gen_reloc (asection *seg ATTRIBUTE_UNUSED , fixS *fixp)
       return NULL;
     }
 
-  reloc               = xmalloc (sizeof (arelent));
-  reloc->sym_ptr_ptr  = xmalloc (sizeof (asymbol *));
+  reloc               = XNEW (arelent);
+  reloc->sym_ptr_ptr  = XNEW (asymbol *);
   *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
   reloc->address      = fixp->fx_frag->fr_address + fixp->fx_where;
   reloc->howto        = bfd_reloc_type_lookup (stdoutput, fixp->fx_r_type);

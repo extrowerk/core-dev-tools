@@ -1,5 +1,5 @@
 /* PowerPC64-specific support for 64-bit ELF.
-   Copyright (C) 2002-2014 Free Software Foundation, Inc.
+   Copyright (C) 2002-2019 Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -34,7 +34,7 @@ struct ppc64_elf_params
   bfd_signed_vma group_size;
 
   /* Whether to use a special call stub for __tls_get_addr.  */
-  int no_tls_get_addr_opt;
+  int tls_get_addr_opt;
 
   /* Whether to allow multiple toc sections.  */
   int no_multi_toc;
@@ -48,6 +48,9 @@ struct ppc64_elf_params
   /* Set if individual PLT call stubs should be aligned.  */
   int plt_stub_align;
 
+  /* Set if PLT call stubs for localentry:0 functions should omit r2 save.  */
+  int plt_localentry0;
+
   /* Whether to canonicalize .opd so that there are no overlapping
      .opd entries.  */
   int non_overlapping_opd;
@@ -57,11 +60,16 @@ struct ppc64_elf_params
 
   /* Whether to generate out-of-line register save/restore for gcc -Os code.  */
   int save_restore_funcs;
+
+  /* Set when a potential variable is detected in .toc.  */
+  int object_in_toc;
 };
 
 bfd_boolean ppc64_elf_init_stub_bfd
   (struct bfd_link_info *, struct ppc64_elf_params *);
 bfd_boolean ppc64_elf_edit_opd
+  (struct bfd_link_info *);
+bfd_boolean ppc64_elf_inline_plt
   (struct bfd_link_info *);
 asection *ppc64_elf_tls_setup
   (struct bfd_link_info *);
@@ -91,5 +99,3 @@ bfd_boolean ppc64_elf_size_stubs
 (struct bfd_link_info *);
 bfd_boolean ppc64_elf_build_stubs
   (struct bfd_link_info *, char **);
-void ppc64_elf_restore_symbols
-  (struct bfd_link_info *info);

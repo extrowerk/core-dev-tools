@@ -1,7 +1,7 @@
 #objdump: -d -mmips:8000
 #as: -mabi=o64 -march=8000 -EB -mfp32 -KPIC
 #name: MIPS -mgp64 -mfp32 (SVR4 PIC)
-#stderr: mips-gp64-fp32-pic.l
+#warning_output: mips-gp64-fp32-pic.l
 
 .*: +file format.*
 
@@ -93,7 +93,7 @@ Disassembly of section .text:
  148:	2c840001 	sltiu	a0,a0,1
  14c:	64a40064 	daddiu	a0,a1,100
  150:	0004202b 	sltu	a0,zero,a0
- 154:	00a0202d 	move	a0,a1
+ 154:	00a02025 	move	a0,a1
  158:	8f840000 	lw	a0,0\(gp\)
  15c:	24840000 	addiu	a0,a0,0
  160:	8f840000 	lw	a0,0\(gp\)

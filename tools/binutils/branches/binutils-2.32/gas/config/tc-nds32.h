@@ -1,5 +1,5 @@
 /* tc-nds32.h -- Header file for tc-nds32.c.
-   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+   Copyright (C) 2012-2019 Free Software Foundation, Inc.
    Contributed by Andes Technology Corporation.
 
    This file is part of GAS.
@@ -24,6 +24,21 @@
 
 #include "bfd_stdint.h"
 
+/* Enum mapping symbol.  */
+enum mstate
+{
+  MAP_UNDEFINED = 0,	/* Must be zero, for seginfo in new sections.  */
+  MAP_DATA,
+  MAP_CODE,
+};
+#define TC_SEGMENT_INFO_TYPE struct nds32_segment_info_type
+
+/* For mapping symbol.  */
+struct nds32_segment_info_type
+{
+  enum mstate mapstate;
+};
+
 #define LISTING_HEADER \
   (target_big_endian ? "NDS32 GAS" : "NDS32 GAS Little Endian")
 
@@ -44,7 +59,7 @@
 
 /* as.c.  */
 /* Extend GAS command line option handling capability.  */
-extern int nds32_parse_option (int, char *);
+extern int nds32_parse_option (int, const char *);
 extern void nds32_after_parse_args (void);
 /* The endianness of the target format may change based on command
    line arguments.  */
@@ -91,7 +106,8 @@ extern void tc_nds32_frame_initial_instructions (void);
 /* For DIFF relocations.  The default behavior is inconsistent with the
    asm internal document.  */
 #define TC_FORCE_RELOCATION_SUB_SAME(FIX, SEC)		\
-  (! SEG_NORMAL (SEC) || TC_FORCE_RELOCATION (FIX))
+  (GENERIC_FORCE_RELOCATION_SUB_SAME (FIX, SEC)		\
+   || TC_FORCE_RELOCATION (FIX))
 #define TC_FORCE_RELOCATION(fix)		nds32_force_relocation (fix)
 #define TC_VALIDATE_FIX_SUB(FIX,SEG)		nds32_validate_fix_sub (FIX,SEG)
 #define SET_SECTION_RELOCS(sec, relocs, n)	nds32_set_section_relocs (sec, relocs, n)
@@ -131,7 +147,8 @@ extern void nds32_do_align (int);
 #define md_macro_start()			nds32_macro_start ()
 #define md_macro_end()				nds32_macro_end ()
 #define md_macro_info(args)			nds32_macro_info (args)
-#define TC_START_LABEL(C, S, STR)		(C == ':' && nds32_start_label (0, 0))
+#define TC_START_LABEL(STR, NUL_CHAR, NEXT_CHAR)	\
+  (NEXT_CHAR == ':' && nds32_start_label (0, 0))
 #define tc_check_label(label)			nds32_check_label (label)
 #define tc_frob_label(label)			nds32_frob_label (label)
 #define md_end					md_end
@@ -151,17 +168,23 @@ extern void nds32_do_align (int);
 
 /* frags.c.  */
 
-#define NDS32_FRAG_RELAXABLE 0x1
-#define NDS32_FRAG_RELAXED 0x2
-#define NDS32_FRAG_BRANCH 0x4
-#define NDS32_FRAG_LABEL 0x8
+enum FRAG_ATTR
+{
+  NDS32_FRAG_RELAXABLE  = 0x1,
+  NDS32_FRAG_RELAXED = 0x2,
+  NDS32_FRAG_BRANCH = 0x4,
+  NDS32_FRAG_LABEL = 0x8,
+  NDS32_FRAG_FINAL = 0x10,
+  NDS32_FRAG_RELAXABLE_BRANCH = 0x20,
+  NDS32_FRAG_ALIGN = 0x40
+};
 
 struct nds32_frag_type
 {
   relax_substateT flag;
   struct nds32_opcode *opcode;
   uint32_t insn;
-  /* To Save previos label fixup if existence.  */
+  /* To Save previous label fixup if existence.  */
   struct fix *fixup;
 };
 
@@ -222,7 +245,12 @@ enum nds32_ramp
   NDS32_HINT = (1 << 6),
   NDS32_FIX = (1 << 7),
   NDS32_ADDEND = (1 << 8),
-  NDS32_SYM = (1 << 9)
+  NDS32_SYM = (1 << 9),
+  NDS32_PCREL = (1 << 10),
+  NDS32_PTR_PATTERN = (1 << 11),
+  NDS32_PTR_MULTIPLE = (1 << 12),
+  NDS32_GROUP = (1 << 13),
+  NDS32_SYM_DESC_MEM = (1 << 14)
 };
 
 typedef struct nds32_relax_fixup_info
@@ -244,9 +272,9 @@ typedef struct nds32_cond_field
 
 /* The max relaxation pattern is 20-bytes including the nop.  */
 #define NDS32_MAXCHAR 20
-/* In current, the max entend number of instruction for one pseudo instruction
-   is 4, but its number of relocation may be 12.  */
-#define MAX_RELAX_NUM 4
+/* In current, the max extended number of instruction for one pseudo instruction
+   is 6, but its number of relocation may be 12.  */
+#define MAX_RELAX_NUM 6
 #define MAX_RELAX_FIX 12
 
 typedef struct nds32_relax_info
@@ -266,8 +294,17 @@ typedef struct nds32_relax_info
 enum nds32_relax_hint_type
 {
   NDS32_RELAX_HINT_NONE = 0,
-  NDS32_RELAX_HINT_LA,
-  NDS32_RELAX_HINT_LS
+  NDS32_RELAX_HINT_LA_FLSI,
+  NDS32_RELAX_HINT_LALS,
+  NDS32_RELAX_HINT_LA_PLT,
+  NDS32_RELAX_HINT_LA_GOT,
+  NDS32_RELAX_HINT_LA_GOTOFF,
+  NDS32_RELAX_HINT_TLS_START = 0x100,
+  NDS32_RELAX_HINT_TLS_LE_LS,
+  NDS32_RELAX_HINT_TLS_IE_LS,
+  NDS32_RELAX_HINT_TLS_IE_LA,
+  NDS32_RELAX_HINT_TLS_IEGP_LA,
+  NDS32_RELAX_HINT_TLS_DESC_LS,
 };
 
 struct nds32_relax_hint_table

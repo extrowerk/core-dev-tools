@@ -1,6 +1,7 @@
+#source: ./popc.s
 #objdump: -dr
 
-dump\.o:     file format .*
+.*:     file format .*
 
 
 Disassembly of section \.text:
@@ -14,4 +15,5 @@ Disassembly of section \.text:
    a:	7e e8                         	popc	bpsw
    c:	7e e9                         	popc	bpc
    e:	7e eb                         	popc	fintv
+  10:	7e ed                         	popc	extb
 

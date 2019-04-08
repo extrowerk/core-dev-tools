@@ -1,8 +1,8 @@
 srcdir=${PWD}/..
 nto_target=${PWD##*-}
 host_target=${PWD##*/}
-qnx_target_version=7.0.0
-qnx_target=qnx700
+qnx_target_version=7.1.0
+qnx_target=qnx710
 cpu_target=`echo ${nto_target} | sed 's/nto//'`
 
 if [ ${nto_target} != ntomulti ]; then
@@ -88,7 +88,6 @@ function hook_preconfigure {
 	esac
 
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
-	configure_opts="${configure_opts} --enable-gold"
 	configure_opts="${configure_opts} --enable-fix-cortex-a53-843419"
 	configure_opts="${configure_opts} --enable-fix-cortex-a53-835769"
 	configure_opts="${configure_opts} --enable-plugins"

@@ -9,6 +9,7 @@ Hello from testplugin.
 .*: LDPT_REGISTER_CLEANUP_HOOK func@0x.*
 .*: LDPT_ADD_SYMBOLS func@0x.*
 .*: LDPT_GET_INPUT_FILE func@0x.*
+.*: LDPT_GET_VIEW func@0x.*
 .*: LDPT_RELEASE_INPUT_FILE func@0x.*
 .*: LDPT_GET_SYMBOLS func@0x.*
 .*: LDPT_GET_SYMBOLS_V2 func@0x.*
@@ -26,7 +27,7 @@ hook called: claim_file tmpdir/func.o \[@0/.* CLAIMED
 hook called: claim_file tmpdir/text.o \[@0/.* not claimed
 #...
 hook called: all symbols read.
-tmpdir/main.o: In function `main':
-.*main.c.*: undefined reference to `func'
+.*: tmpdir/main.o: in function `main':
+.*main.c.*: undefined reference to `\.?func'
 hook called: cleanup.
 #...

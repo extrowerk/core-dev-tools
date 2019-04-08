@@ -1,5 +1,5 @@
 /* obj-evax.c - EVAX (openVMS/Alpha) object file format.
-   Copyright (C) 1996-2014 Free Software Foundation, Inc.
+   Copyright (C) 1996-2019 Free Software Foundation, Inc.
    Contributed by Klaus Kämpf (kkaempf@progis.de) of
      proGIS Software, Aachen, Germany.
    Extensively enhanced by Douglas Rupp of AdaCore.
@@ -27,7 +27,6 @@
 #include "bfd.h"
 #include "vms.h"
 #include "subsegs.h"
-#include "struc-symbol.h"
 #include "safe-ctype.h"
 
 static void s_evax_weak (int);
@@ -60,10 +59,9 @@ s_evax_weak (int ignore ATTRIBUTE_UNUSED)
 
   do
     {
-      name = input_line_pointer;
-      c = get_symbol_end ();
+      c = get_symbol_name (&name);
       symbolP = symbol_find_or_make (name);
-      *input_line_pointer = c;
+      (void) restore_line_pointer (c);
       SKIP_WHITESPACE ();
       S_SET_WEAK (symbolP);
       if (c == ',')
@@ -87,8 +85,7 @@ evax_symbol_new_hook (symbolS *sym)
 {
   struct evax_private_udata_struct *udata;
 
-  udata = (struct evax_private_udata_struct *)
-    xmalloc (sizeof (struct evax_private_udata_struct));
+  udata = XNEW (struct evax_private_udata_struct);
 
   udata->bsym = symbol_get_bfdsym (sym);
   udata->enbsym = NULL;
@@ -218,7 +215,7 @@ evax_frob_file_before_fix (void)
 
 /* The length is computed from the maximum allowable length of 64 less the
    4 character ..xx extension that must be preserved (removed before
-   krunching and appended back on afterwards).  The $<nnn>.. prefix is
+   crunching and appended back on afterwards).  The $<nnn>.. prefix is
    also removed and prepened back on, but doesn't enter into the length
    computation because symbols with that prefix are always resolved
    by the assembler and will never appear in the symbol table. At least
@@ -273,10 +270,8 @@ evax_shorten_name (char *id)
         }
     }
 
-  /* We only need worry about krunching the base symbol.  */
-  base_id = xmalloc (suffix_dotdot - prefix_dotdot + 1);
-  strncpy (base_id, &id[prefix_dotdot], suffix_dotdot - prefix_dotdot);
-  base_id [suffix_dotdot - prefix_dotdot] = 0;
+  /* We only need worry about crunching the base symbol.  */
+  base_id = xmemdup0 (&id[prefix_dotdot], suffix_dotdot - prefix_dotdot);
 
   if (strlen (base_id) > MAX_LABEL_LENGTH)
     {
@@ -300,8 +295,7 @@ evax_shorten_name (char *id)
 	strcat (new_id, suffix);
 
       /* Save it on the heap and return.  */
-      return_id = xmalloc (strlen (new_id) + 1);
-      strcpy (return_id, new_id);
+      return_id = xstrdup (new_id);
 
       return return_id;
     }
@@ -332,7 +326,7 @@ evax_shorten_name (char *id)
    which further designates that the name was truncated):
 
    "original_identifier"_haaaaabbbccc
-   
+
    aaaaa = 32-bit CRC
    bbb = length of original identifier
    ccc = sum of 32-bit CRC characters
@@ -358,10 +352,10 @@ static const int number_of_codings = sizeof (codings) / sizeof (char);
    an integer.  */
 static char decodings[256];
 
-/* Table used by the crc32 function to calcuate the checksum.  */
+/* Table used by the crc32 function to calculate the checksum.  */
 static unsigned int crc32_table[256] = {0, 0};
 
-/* Given a string in BUF, calculate a 32-bit CRC for it. 
+/* Given a string in BUF, calculate a 32-bit CRC for it.
 
    This is used as a reasonably unique hash for the given string.  */
 
@@ -475,13 +469,13 @@ shorten_identifier (char *name)
   newname [MAX_LABEL_LENGTH] = 0;
   /* Now append the suffix of the original identifier, if any.  */
   if (suffix_length)
-  strncpy (newname + MAX_LABEL_LENGTH - suffix_length,
-	   name + len - suffix_length,
-	   suffix_length);
-  strncpy (newname + final_len, "_h", 2);
-  strncpy (newname + final_len + 2 , crc_chars, 5);
-  strncpy (newname + final_len + 2 + 5, encode_16 (len), 3);
-  strncpy (newname + final_len + 2 + 5 + 3, encode_16 (sum), 3);
+    strncpy (newname + MAX_LABEL_LENGTH - suffix_length,
+	     name + len - suffix_length,
+	     suffix_length);
+  memcpy (newname + final_len, "_h", 2);
+  memcpy (newname + final_len + 2 , crc_chars, 5);
+  memcpy (newname + final_len + 2 + 5, encode_16 (len), 3);
+  memcpy (newname + final_len + 2 + 5 + 3, encode_16 (sum), 3);
   if (!is_truncated_identifier (newname))
     abort ();
   return newname;
@@ -499,7 +493,7 @@ is_truncated_identifier (char *id)
      a truncated identifier.  */
   if (len != MAX_LABEL_LENGTH)
     return 0;
-  
+
   /* Start scanning backwards for a _h.  */
   len = len - 3 - 3 - 5 - 2;
   ptr = id + len;
@@ -507,7 +501,7 @@ is_truncated_identifier (char *id)
     {
       if (ptr[0] == '_' && ptr[1] == 'h')
 	{
-	  /* Now see if the sum encoded in the identifer matches.  */
+	  /* Now see if the sum encoded in the identifier matches.  */
 	  int x, sum;
 	  sum = 0;
 	  for (x = 0; x < 5; x++)
