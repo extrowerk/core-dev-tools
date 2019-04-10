@@ -440,14 +440,8 @@ mips*el-*-netbsd*)	targ_emul=elf32ltsmip
 mips*-*-netbsd*)	targ_emul=elf32btsmip
 			targ_extra_emuls="elf32ltsmip elf64btsmip elf64ltsmip"
 			;;
-mips*el-*-nto*)		targ_emul=elf32ltsmip
-			targ_extra_emuls="elf32btsmip elf64ltsmip elf64btsmip"
-			;;
 mips64el-*-openbsd*)	targ_emul=elf64ltsmip
 			targ_extra_emuls=elf64btsmip
-			;;
-mips*-*-nto*)		targ_emul=elf32btsmip
-			targ_extra_emuls="elf32ltsmip elf64btsmip elf64ltsmip"
 			;;
 mips64-*-openbsd*)	targ_emul=elf64btsmip
 			targ_extra_emuls=elf64ltsmip
@@ -631,8 +625,6 @@ powerpc*-*-elf* | powerpc*-*-eabi* | powerpc*-*-sysv* \
 			eval test -n \"\$${td}sim\" || eval ${td}sim="${ta32}"
 			eval test -n \"\$${td64}\" || eval ${td64}="${ta64}"
 			;;
-powerpc-*-nto*)		targ_emul=elf32ppcnto ;;
-powerpcle-*-nto*)	targ_emul=elf32lppcnto ;;
 powerpc-*-macos*)	targ_emul=ppcmacos ;;
 powerpcle-*-pe | powerpcle-*-winnt* | powerpcle-*-cygwin*)
 			targ_emul=ppcpe
@@ -696,8 +688,6 @@ sh-*-uclinux* | sh[12]-*-uclinux*)
 			targ_extra_emuls="shelf shlelf sh shl shelf_fd shlelf_fd" ;;
 sh-*-vxworks)		targ_emul=shelf_vxworks
 			targ_extra_emuls=shlelf_vxworks ;;
-sh-*-nto*)		targ_emul=shlelf_nto
-			targ_extra_emuls=shelf_nto ;;
 sh-*-pe)		targ_emul=shpe ;
 			targ_extra_ofiles="deffilep.o pe-dll.o" ;;
 sh-*-*)			targ_emul=sh; targ_extra_emuls=shl ;;

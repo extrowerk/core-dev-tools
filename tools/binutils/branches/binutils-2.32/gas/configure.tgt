@@ -361,7 +361,6 @@ case ${generic_target} in
   ppc-*-linux-*)			fmt=elf em=linux ;;
   ppc-*-solaris*)			fmt=elf em=solaris ;;
   ppc-*-macos*)				fmt=coff em=macos ;;
-  ppc-*-nto*)				fmt=elf ;;
   ppc-*-kaos*)				fmt=elf ;;
   ppc-*-lynxos*)			fmt=elf em=lynx ;;
 
@@ -389,7 +388,6 @@ case ${generic_target} in
   sh-*-elf*)				fmt=elf ;;
   sh-*-uclinux* | sh[12]-*-uclinux*)	fmt=elf em=uclinux ;;
   sh-*-coff*)				fmt=coff ;;
-  sh-*-nto*)				fmt=elf endian=little;;
   sh-*-pe*)				fmt=coff em=pe bfd_gas=yes endian=little ;;
   sh-*-kaos*)				fmt=elf ;;
   shle*-*-kaos*)			fmt=elf ;;
