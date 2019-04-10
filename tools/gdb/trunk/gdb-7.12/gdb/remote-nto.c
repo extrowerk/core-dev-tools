@@ -973,7 +973,7 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
 							byte_order));
 	  if (report_errors)
 	    {
-	      switch (recv->pkt.hdr.subcmd)
+	      switch (errno)
 		{
 		case PDEBUG_ENOERR:
 		  break;
@@ -4344,37 +4344,71 @@ nto_meminfo (char *args, int from_tty)
     }
 }
 
+/*
+ * for some reason this was not designed analogue to the
+ * nto_to_insert_breakpoint nto_insert_breakpoint pair
+ */
 static int
 nto_insert_hw_breakpoint (struct target_ops *ops, struct gdbarch *gdbarch,
 			  struct bp_target_info *bp_tg_inf)
 {
   DScomm_t tran, recv;
+  size_t sizeof_pkt;
   const enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
 
-  nto_trace (0) ("nto_insert_hw_breakpoint(addr %s, contents_cache %p)\n",
-		 paddress (gdbarch, bp_tg_inf->placed_address),
-		 bp_tg_inf->shadow_contents);
+  nto_trace (0) ("nto_insert_hw_breakpoint(addr %s) pid:%d\n",
+		 paddress (gdbarch, bp_tg_inf->reqstd_address),
+		 ptid_get_pid (inferior_ptid));
 
-  if (bp_tg_inf == NULL)
-    return -1;
+  /* if target info is unset, something really bad is going on! */
+  if ( bp_tg_inf == NULL )
+    {
+      internal_error(__FILE__, __LINE__, _("Target info invalid."));
+    }
+
+  /* Must select appropriate inferior.  Due to our pdebug protocol,
+     the following looks convoluted.  But in reality all we are doing is
+     making sure pdebug selects an existing thread in the inferior_ptid.
+     We need to switch pdebug internal current prp pointer.   */
+  if (!set_thread (
+        ptid_get_tid (nto_get_thread_alive (NULL, pid_to_ptid (
+				        ptid_get_pid (inferior_ptid))))))
+    {
+      nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n",
+		     ptid_get_pid (inferior_ptid), ptid_get_tid (inferior_ptid));
+      return 1;
+    }
+
+  /* imagine that all will succeed */
+  bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
 
   nto_send_init (&tran, DStMsg_brk, DSMSG_BRK_EXEC | DSMSG_BRK_HW,
 		 SET_CHANNEL_DEBUG);
+
   if (supports64bit())
     {
-      tran.pkt.brk.size = nto_breakpoint_size (bp_tg_inf->placed_address);
+      tran.pkt.brk.size = 0;
       tran.pkt.brk.addr
-	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, 4,
+	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, sizeof(uint64_t),
 				  byte_order);
+      sizeof_pkt = sizeof (tran.pkt.brk);
     }
   else
     {
-      tran.pkt.brk32.size = nto_breakpoint_size (bp_tg_inf->placed_address);
+      tran.pkt.brk32.size = 0;
       tran.pkt.brk32.addr
-	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, 4,
+	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, sizeof(uint32_t),
 				  byte_order);
+      sizeof_pkt = sizeof (tran.pkt.brk32);
     }
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.brk), 0);
+
+  nto_send_recv (&tran, &recv, sizeof_pkt, 1);
+  if (recv.pkt.hdr.cmd == DSrMsg_err)
+    {
+      bp_tg_inf->placed_address = 0;
+      nto_trace (0) ("Unable to set HW breakpoint\n");
+    }
+
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
 
