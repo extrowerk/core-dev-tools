@@ -93,6 +93,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-cfgcleanup.h"
 #include "builtins.h"
 
+#ifdef TARGET_NEUTRINO
+#include "diagnostic-core.h"
+#endif
+
 /* Specifies types of loops that may be unrolled.  */
 
 enum unroll_level
@@ -666,6 +670,15 @@ unloop_loops (bitmap loop_closed_ssa_invalidated,
 
       gsi = gsi_start_bb (latch_edge->dest);
       gsi_insert_after (&gsi, stmt, GSI_NEW_STMT);
+#ifdef TARGET_NEUTRINO
+	  /* CLT-5076: An inner loop was unrolled to a latch back but no outer loop
+	     was invalidated */
+      if( ( n_unroll == 0 ) && !loop_closed_ssa_invalidated ) {
+        warning_at ((LOCATION_LINE (locus) > 0) ? locus : input_location,
+           OPT_Waggressive_loop_optimizations,
+           "Potentially breaking an infinite outer loop!" );
+      }
+#endif
     }
   loops_to_unloop.release ();
   loops_to_unloop_nunroll.release ();
