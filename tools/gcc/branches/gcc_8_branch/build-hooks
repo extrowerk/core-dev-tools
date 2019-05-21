@@ -168,17 +168,6 @@ function hook_preconfigure {
 			;;
 	esac
 
-# multilib support
-case ${cpu_string} in
-		x86_64)
-			# disabled because we build x86 binaries separately
-			configure_opts="${configure_opts} --disable-multilib"
-		;;
-		*)
-			configure_opts="${configure_opts} --enable-multilib"
-		;;
-esac
-
 # Installation root - set to /opt/qnxXXX/... so packager will find binaries 
 	configure_opts="${configure_opts} --prefix=${basedir}"
 	configure_opts="${configure_opts} --libexecdir=${basedir}/lib"
@@ -200,6 +189,7 @@ esac
 	configure_opts="${configure_opts} --disable-libstdcxx-pch"
 	configure_opts="${configure_opts} --enable-libgomp"
 	configure_opts="${configure_opts} --enable-shared"
+	configure_opts="${configure_opts} --enable-multilib"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com"
 	configure_opts="${configure_opts} --enable-default-ssp"
 
