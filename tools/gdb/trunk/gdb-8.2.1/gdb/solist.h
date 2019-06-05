@@ -86,6 +86,19 @@ struct so_list
        that supports outputting multiple segments once the related code
        supports them.  */
     CORE_ADDR addr_low, addr_high;
+
+#ifdef __QNXTARGET__
+    /* Build id in raw format, contains verbatim contents of
+       .note.gnu.build-id note data.  This is actual
+       BUILD_ID which comes either from the remote target via qXfer
+       packet or via reading target memory.  Therefore, it may differ
+       from the build-id of the associated bfd.  In a normal
+       scenario, this so would soon lose its abfd due to failed
+       validation.  */
+    size_t build_idsz;
+    gdb_byte *build_id;
+
+#endif
   };
 
 struct target_so_ops

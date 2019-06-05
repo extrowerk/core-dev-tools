@@ -301,6 +301,13 @@ gdb_signal_from_host (int hostsig)
     return GDB_SIGNAL_PRIO;
 #endif
 
+#ifdef __QNXTARGET__
+#if defined (SIGSELECT)
+  if (hostsig == SIGSELECT)
+    return GDB_SIGNAL_SELECT;
+#endif
+#endif
+
   /* Mach exceptions.  Assumes that the values for EXC_ are positive! */
 #if defined (EXC_BAD_ACCESS) && defined (_NSIG)
   if (hostsig == _NSIG + EXC_BAD_ACCESS)

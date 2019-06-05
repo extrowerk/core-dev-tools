@@ -148,6 +148,15 @@ inline_frame_this_id (struct frame_info *this_frame,
      long as we're careful not to create any cycles.  */
   *this_id = get_frame_id (get_prev_frame_always (this_frame));
 
+  /* todo: bweb: if the memory is corrupted we may return with a null_frame
+   * this will trigger the assertion below.
+   * For now we return and hope that the error will not be lost.
+   */
+  if( !frame_id_p(*this_id) ) {
+	  warning("Corrupted parent frame found for inline frame!");
+	  *this_id = get_frame_id ( this_frame );
+  }
+
   /* We need a valid frame ID, so we need to be based on a valid
      frame.  FSF submission NOTE: this would be a good assertion to
      apply to all frames, all the time.  That would fix the ambiguity

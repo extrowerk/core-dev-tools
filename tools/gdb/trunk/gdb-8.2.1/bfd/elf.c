@@ -7212,6 +7212,21 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
   map_first = NULL;
   pointer_to_map = &map_first;
 
+/* TODO: this should be obsolete */
+#ifdef __QNXTARGET_TODO__
+  /* ldrel has produced binaries that PT_LOAD segments with valid
+     p_paddr and other segments with zero fields. */
+  p_paddr_valid = TRUE;
+  num_segments = elf_elfheader (ibfd)->e_phnum;
+  for (i = 0, segment = elf_tdata (ibfd)->phdr;
+       i < num_segments;
+       i++, segment++)
+    if (!segment->p_paddr)
+      {
+        p_paddr_valid = FALSE;
+        break;
+      }
+#else
   /* If all the segment p_paddr fields are zero, don't set
      map->p_paddr_valid.  */
   p_paddr_valid = FALSE;
@@ -7224,6 +7239,7 @@ copy_elf_program_header (bfd *ibfd, bfd *obfd)
 	p_paddr_valid = TRUE;
 	break;
       }
+#endif
 
   for (i = 0, segment = elf_tdata (ibfd)->phdr;
        i < num_segments;
@@ -9880,6 +9896,16 @@ elfobj_grok_gnu_build_id (bfd *abfd, Elf_Internal_Note *note)
   if (note->descsz == 0)
     return FALSE;
 
+#ifdef __QNXTARGET__
+  if (abfd->build_id != NULL)
+    {
+      /* Already found. Duplicate build-id????*/
+      (*_bfd_error_handler)
+	(_("warning: %pB: GNU build_id note already read. Duplicated build-ids?  (Please check your build)."), abfd);
+      return TRUE;
+    }
+#endif /* __QNXTARGET__ */
+
   build_id = bfd_alloc (abfd, sizeof (struct bfd_build_id) - 1 + note->descsz);
   if (build_id == NULL)
     return FALSE;
@@ -10395,6 +10421,8 @@ elfcore_grok_nto_regs (bfd *abfd,
 #define BFD_QNT_CORE_STATUS	8
 #define BFD_QNT_CORE_GREG	9
 #define BFD_QNT_CORE_FPREG	10
+#define BFD_QNT_LINK_MAP	11
+#define BFD_QNT_LINK_MAP_SEC_NAME ".qnx_link_map"
 
 static bfd_boolean
 elfcore_grok_nto_note (bfd *abfd, Elf_Internal_Note *note)
@@ -10414,6 +10442,9 @@ elfcore_grok_nto_note (bfd *abfd, Elf_Internal_Note *note)
       return elfcore_grok_nto_regs (abfd, note, tid, ".reg");
     case BFD_QNT_CORE_FPREG:
       return elfcore_grok_nto_regs (abfd, note, tid, ".reg2");
+    case BFD_QNT_LINK_MAP:
+      return elfcore_make_note_pseudosection (abfd, BFD_QNT_LINK_MAP_SEC_NAME,
+                                              note);
     default:
       return TRUE;
     }
