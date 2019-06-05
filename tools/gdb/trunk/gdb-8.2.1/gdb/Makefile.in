@@ -646,6 +646,7 @@ ALL_64_TARGET_OBS = \
 	aarch64-fbsd-tdep.o \
 	aarch64-linux-tdep.o \
 	aarch64-newlib-tdep.o \
+	aarch64-nto-tdep.o \
 	aarch64-tdep.o \
 	alpha-bsd-tdep.o \
 	alpha-linux-tdep.o \
@@ -658,6 +659,7 @@ ALL_64_TARGET_OBS = \
 	amd64-fbsd-tdep.o \
 	amd64-linux-tdep.o \
 	amd64-nbsd-tdep.o \
+	amd64-nto-tdep.o \
 	amd64-obsd-tdep.o \
 	amd64-sol2-tdep.o \
 	amd64-tdep.o \
@@ -688,6 +690,7 @@ ALL_TARGET_OBS = \
 	arm-fbsd-tdep.o \
 	arm-linux-tdep.o \
 	arm-nbsd-tdep.o \
+	arm-nto-tdep.o \
 	arm-obsd-tdep.o \
 	arm-symbian-tdep.o \
 	arm-tdep.o \
@@ -779,6 +782,7 @@ ALL_TARGET_OBS = \
 	solib-darwin.o \
 	solib-dsbt.o \
 	solib-frv.o \
+	solib-nto.o \
 	solib-spu.o \
 	solib-svr4.o \
 	sparc-linux-tdep.o \
@@ -1368,6 +1372,7 @@ HFILES_NO_SRCDIR = \
 	solib.h \
 	solib-aix.h \
 	solib-darwin.h \
+	solib-nto.h \
 	solib-spu.h \
 	solib-svr4.h \
 	solib-target.h \
@@ -2343,6 +2348,7 @@ ALLDEPFILES = \
 	sh-tdep.c \
 	sol2-tdep.c \
 	solib-aix.c \
+	solib-nto.c \
 	solib-spu.c \
 	solib-svr4.c \
 	sparc-linux-nat.c \

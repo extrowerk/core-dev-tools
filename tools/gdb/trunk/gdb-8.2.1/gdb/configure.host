@@ -85,6 +85,7 @@ case "${host}" in
 
 aarch64*-*-linux*)	gdb_host=linux ;;
 aarch64*-*-freebsd*)	gdb_host=fbsd ;;
+aarch64-*-nto*)	gdb_host=nto ;;
 
 alpha*-*-linux*)	gdb_host=alpha-linux ;;
 alpha*-*-netbsd* | alpha*-*-knetbsd*-gnu)
@@ -95,6 +96,7 @@ arm*-*-freebsd*)	gdb_host=fbsd ;;
 arm*-*-linux*)		gdb_host=linux ;;
 arm*-*-netbsdelf* | arm*-*-knetbsd*-gnu)
 			gdb_host=nbsdelf ;;
+arm*-*-nto*)	gdb_host=nto ;;
 arm*-*-openbsd*)	gdb_host=nbsdelf ;;
 
 hppa*-*-linux*)		gdb_host=linux ;;
@@ -180,6 +182,7 @@ x86_64-*-freebsd* | x86_64-*-kfreebsd*-gnu)
 			gdb_host=fbsd64 ;;
 x86_64-*-netbsd* | x86_64-*-knetbsd*-gnu)
 			gdb_host=nbsd64 ;;
+x86_64-*-nto*)	gdb_host=nto ;;
 x86_64-*-openbsd*)	gdb_host=obsd64 ;;
 x86_64-*-mingw*)        gdb_host=mingw64
 			gdb_host_obs=mingw-hdep.o

@@ -443,8 +443,8 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
   if (hdr->sh_size > bfd_get_file_size (abfd))
     {
       /* xgettext:c-format */
-      _bfd_error_handler (_("%pB: error: attribute section '%pA' too big: %#llx"),
-			  abfd, hdr->bfd_section, (long long) hdr->sh_size);
+      _bfd_error_handler (_("%pB: error: attribute section '%pA' too big: %"PRIx64 ),
+			  abfd, hdr->bfd_section, (int64_t) hdr->sh_size);
       bfd_set_error (bfd_error_invalid_operation);
       return;
     }

@@ -48,6 +48,10 @@
 #include "filestuff.h"
 #include "source.h"
 
+#ifdef __QNXTARGET__
+#include "solib-nto.h"
+#endif
+
 /* Architecture-specific operations.  */
 
 /* Per-architecture data key.  */
@@ -552,6 +556,17 @@ solib_map_sections (struct so_list *so)
     error (_("Shared library file name is too long."));
   strcpy (so->so_name, bfd_get_filename (so->abfd));
 
+#ifdef __QNXTARGET__
+  /* validate the internal versioning to make sure that host and target are
+     using the very same library */
+
+  if (nto_so_validate (so)) {
+	  gdb_bfd_unref (so->abfd);
+	  so->abfd = NULL;
+	  return 0;
+  }
+#endif /* __QNXTARGET__ */
+
   if (build_section_table (so->abfd, &so->sections, &so->sections_end))
     {
       error (_("Can't find the file sections in `%s': %s"),
@@ -1035,6 +1050,22 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
   int nr_libs;
   struct gdbarch *gdbarch = target_gdbarch ();
   struct ui_out *uiout = current_uiout;
+#ifdef __QNXTARGET__
+  int verbose = 0;
+
+  if (pattern)
+    {
+      /* Check if there are options */
+      if (strstr(pattern, "-v") == pattern) {
+	verbose = 1;
+	pattern = pattern + strlen ("-v");
+	while (*pattern == ' ' || *pattern == '\t')
+	  pattern++;
+	if (*pattern == '\0')
+	  pattern = NULL;
+      }
+    }
+#endif
 
   if (pattern)
     {
@@ -1075,6 +1106,10 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
 
     ALL_SO_LIBS (so)
       {
+#ifdef __QNXTARGET__
+      char buff[SO_NAME_MAX_PATH_SIZE * 2 + 100];
+#endif
+
 	if (! so->so_name[0])
 	  continue;
 	if (pattern && ! re_exec (so->so_name))
@@ -1102,8 +1137,20 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
 	  }
 	else
 	  uiout->field_string ("syms-read", so->symbols_loaded ? "Yes" : "No");
+#ifdef __QNXTARGET__
+      if (verbose)
+	{
+	  snprintf (buff, sizeof (buff), "%s (%s)", so->so_name,
+		    so->so_original_name);
+	  uiout->field_string ("name", buff);
+	}
+      else
+   		uiout->field_string ("name", so->so_name);
+#else
+  	uiout->field_string ("name", so->so_name);
+#endif /* __QNXTARGET__ */
 
-	uiout->field_string ("name", so->so_name);
+
 
 	uiout->text ("\n");
       }

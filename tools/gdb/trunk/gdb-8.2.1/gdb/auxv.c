@@ -296,7 +296,7 @@ target_auxv_parse (gdb_byte **readptr,
 
 
 /* Per-inferior data key for auxv.  */
-static const struct inferior_data *auxv_inferior_data;
+const struct inferior_data *auxv_inferior_data;
 
 /*  Auxiliary Vector information structure.  This is used by GDB
     for caching purposes for each inferior.  This helps reduce the
@@ -509,6 +509,12 @@ default_print_auxv_entry (struct gdbarch *gdbarch, struct ui_file *file,
 	   AUXV_FORMAT_HEX);
       TAG (AT_SUN_AUXFLAGS,
 	   _("AF_SUN_ flags passed from the kernel"), AUXV_FORMAT_HEX);
+      TAG (AT_FREE_STACK, _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (AT_INTP_DEVICE, _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (AT_INTP_INODE, _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (AT_EXEFILE, _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (AT_LIBPATH, _("QNX Extension"), AUXV_FORMAT_HEX);
+      TAG (AT_DATA, _("QNX Extension"), AUXV_FORMAT_HEX);
     }
 
   fprint_auxv_entry (file, name, description, format, type, val);

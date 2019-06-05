@@ -1440,6 +1440,7 @@ dwarf2_frame_cfa (struct frame_info *this_frame)
 
   while (get_frame_type (this_frame) == INLINE_FRAME)
     this_frame = get_prev_frame (this_frame);
+
   if (get_frame_unwind_stop_reason (this_frame) == UNWIND_UNAVAILABLE)
     throw_error (NOT_AVAILABLE_ERROR,
                 _("can't compute CFA for this frame: "
