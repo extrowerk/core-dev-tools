@@ -77,10 +77,12 @@ function hook_preconfigure {
 			win32-*)
 				basedir=/c/${qnx_target}/host/win32/${cpu}/usr
 				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
+				configure_opts="${configure_opts} --disable-libstdcxx"
 				;;
 			win64-*)
 				basedir=/c/${qnx_target}/host/win64/${cpu}/usr
 				qnxtarget=/c/${qnx_target}/target/${qnx_os_dir}
+				configure_opts="${configure_opts} --disable-libstdcxx"
 				export LDFLAGS="${LDFLAGS} -static"
 				;;
 			nto-*)
@@ -88,11 +90,13 @@ function hook_preconfigure {
 				basedir=/usr/${qnx_target}/host/${qnx_os_dir}/${cpu}/usr
 				qnxtarget=/usr/${qnx_target}/target/${qnx_os_dir}
 				configure_opts="${configure_opts} --disable-plugin"
+				configure_opts="${configure_opts} --disable-libstdcxx"
 				;;
 			darwin-*)
 				basedir=/Developer/SDKs/${qnx_target}/host/darwin/${cpu}/usr
 				qnxtarget=/Developer/SDKs/${qnx_target}/target/${qnx_os_dir}
 				configure_opts="${configure_opts} --disable-plugin"
+				configure_opts="${configure_opts} --disable-libstdcxx"
 				;;
 			linux-*)
 				basedir=/opt/${qnx_target}/host/linux/${cpu}/usr
@@ -208,7 +212,7 @@ function hook_premake {
 }
 
 function hook_postmake {
-	if [ ${TARGET_SYSNAME} = nto ]; then
+	if [ ${TARGET_SYSNAME} = nto ] && [ ${SYSNAME} = linux ]; then
 		if which elfnote >/dev/null; then
 			elfnote -L -S $STACKSIZE gcc/cc1
 			elfnote -L -S $STACKSIZE gcc/cc1plus
@@ -216,15 +220,17 @@ function hook_postmake {
 			ldrel -L -S $STACKSIZE gcc/cc1
 			ldrel -L -S $STACKSIZE gcc/cc1plus
 		fi
-		echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
-		${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
-		# If we are mips weaken the be variant
-		case ${nto_target} in
-		ntomips)
-			echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
-			${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a
-			;;
-		esac
+		if [ -f "${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a"x ]; then
+			echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a"
+			${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/libstdc++-v3/libsupc++/.libs/libcxa.a
+			# If we are mips weaken the be variant
+			case ${nto_target} in
+			ntomips)
+				echo "${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a"
+				${nto_target}-objcopy${binutils_version} --weaken ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libsupc++.a ${target}/pic/be/libstdc++-v3/libsupc++/.libs/libcxa.a
+				;;
+			esac
+		fi
 	fi
 }
 
