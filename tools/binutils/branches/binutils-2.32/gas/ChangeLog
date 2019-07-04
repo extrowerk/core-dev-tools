@@ -1,3 +1,79 @@
+2019-05-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2019-05-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	PR24559
+	* config/tc-arm.c (move_or_literal_pool): Set size_req to 0 for MOVW
+	replacement.
+	* testsuite/gas/arm/load-pseudo.s: New test input.
+	* testsuite/gas/arm/m0-load-pseudo.d: New test.
+	* testsuite/gas/arm/m23-load-pseudo.d: New test.
+	* testsuite/gas/arm/m33-load-pseudo.d: New test.
+
+2019-04-16  Sudakshina Das  <sudi.das@arm.com>
+
+	Backport from mainline
+	2019-04-11  Sudakshina Das  <sudi.das@arm.com>
+
+	* config/tc-aarch64.c (process_omitted_operand): Add case for
+	AARCH64_OPND_Rt_SP.
+	(parse_operands): Likewise.
+	* testsuite/gas/aarch64/armv8_5-a-memtag.d: Update tests.
+	* testsuite/gas/aarch64/armv8_5-a-memtag.s: Likewise.
+	* testsuite/gas/aarch64/illegal-memtag.l: Likewise.
+	* testsuite/gas/aarch64/illegal-memtag.s: Likewise.
+
+2019-04-16  Sudakshina Das  <sudi.das@arm.com>
+
+	Backport from mainline
+	2019-04-11  Sudakshina Das  <sudi.das@arm.com>
+
+	* testsuite/gas/aarch64/armv8_5-a-memtag.d: New tests for ldgm and stgm.
+	* testsuite/gas/aarch64/armv8_5-a-memtag.s: Likewise.
+	* testsuite/gas/aarch64/illegal-memtag.l: Likewise.
+	* testsuite/gas/aarch64/illegal-memtag.s: Likewise.
+
+2019-03-12  Andreas Krebbel  <krebbel@linux.ibm.com>
+
+	Backport from mainline
+	2019-03-12  Andreas Krebbel  <krebbel@linux.ibm.com>
+
+	* testsuite/gas/s390/zarch-arch13.s: Adjust testcase to optable changes.
+	* testsuite/gas/s390/zarch-arch13.d: Likewise.
+
+2019-02-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/24165
+	* config/tc-i386.h (MAX_MEM_FOR_RS_ALIGN_CODE): Set to
+	(alignment ? ((1 << alignment) - 1) : 1)
+	(i386_tc_frag_data): Add max_bytes.
+	(TC_FRAG_INIT): Track max_chars in max_bytes.
+	(HANDLE_ALIGN): Replace MAX_MEM_FOR_RS_ALIGN_CODE with
+	fragP->tc_frag_data.max_bytes.
+
+2019-02-07  Tamar Christina  <tamar.christina@arm.com>
+
+	* config/tc-arm.c (insns): Redefine THUMB_VARIANT and ARM_VARIANT for
+	hlt to armv1.
+	* testsuite/gas/arm/armv8a-automatic-hlt.d: Update TAGs
+	* testsuite/gas/arm/hlt.d: New test.
+	* testsuite/gas/arm/hlt.s: New test.
+
+2019-02-07  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/tc-visium.c (md_assemble) <mode_cad>: Align instruction on
+	64-bit boundaries for the GR6.
+	* testsuite/gas/visium/allinsn_gr6.s: Tweak.
+	* testsuite/gas/visium/allinsn_gr6.d: Likewise.
+	* testsuite/gas/visium/bra-1.d: New test.
+	* testsuite/gas/visium/bra-1.s: Likewise.
+	* testsuite/gas/visium/visium.exp: Run bra-1 test.
+
+2019-02-02  Nick Clifton  <nickc@redhat.com>
+
+	* configure: Regenerate.
+
 2019-02-02  Nick Clifton  <nickc@redhat.com>
 
 	2.32 Release

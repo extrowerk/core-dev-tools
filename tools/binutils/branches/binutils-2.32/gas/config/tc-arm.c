@@ -8082,6 +8082,11 @@ move_or_literal_pool (int i, enum lit_type t, bfd_boolean mode_3)
 		      inst.instruction |= (imm & 0x0800) << 15;
 		      inst.instruction |= (imm & 0x0700) << 4;
 		      inst.instruction |= (imm & 0x00ff);
+		      /*  In case this replacement is being done on Armv8-M
+			  Baseline we need to make sure to disable the
+			  instruction size check, as otherwise GAS will reject
+			  the use of this T32 instruction.  */
+		      inst.size_req = 0;
 		      return TRUE;
 		    }
 		}
@@ -20187,11 +20192,22 @@ static const struct asm_opcode insns[] =
 #define THUMB_VARIANT & arm_ext_v8
 
  tCE("sevl",	320f005, _sevl,    0, (),		noargs,	t_hint),
- TUE("hlt",	1000070, ba80,     1, (oIffffb),	bkpt,	t_hlt),
  TCE("ldaexd",	1b00e9f, e8d000ff, 3, (RRnpc, oRRnpc, RRnpcb),
 							ldrexd, t_ldrexd),
  TCE("stlexd",	1a00e90, e8c000f0, 4, (RRnpc, RRnpc, oRRnpc, RRnpcb),
 							strexd, t_strexd),
+
+/* Defined in V8 but is in undefined encoding space for earlier
+   architectures.  However earlier architectures are required to treat
+   this instuction as a semihosting trap as well.  Hence while not explicitly
+   defined as such, it is in fact correct to define the instruction for all
+   architectures.  */
+#undef  THUMB_VARIANT
+#define THUMB_VARIANT  & arm_ext_v1
+#undef  ARM_VARIANT
+#define ARM_VARIANT  & arm_ext_v1
+ TUE("hlt",	1000070, ba80,     1, (oIffffb),	bkpt,	t_hlt),
+
  /* ARMv8 T32 only.  */
 #undef  ARM_VARIANT
 #define ARM_VARIANT  NULL
