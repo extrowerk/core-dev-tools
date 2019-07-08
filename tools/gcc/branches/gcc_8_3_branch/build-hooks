@@ -14,7 +14,6 @@ host_target=${PWD##*/}
 
 cpu_string=$(echo ${nto_target} | sed 's/nto//')
 case ${cpu_string} in
-	# todo: add armv8_2
 	armeabi*)
 		targetarch=arm
 		nto_target=ntoarm
@@ -127,7 +126,7 @@ function hook_preconfigure {
 
 # Set TARGET CPU specific flags
 	case ${cpu_string} in
-		x86_64)
+		x86*)
 			configure_opts="${configure_opts} --with-tune=generic"
 			;;
 		armeabi)
