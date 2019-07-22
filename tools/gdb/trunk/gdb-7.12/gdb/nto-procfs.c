@@ -1333,6 +1333,12 @@ procfs_stop (struct target_ops *self, ptid_t ptid)
 }
 
 static void
+procfs_interrupt (struct target_ops *self, ptid_t ptid)
+{
+  devctl (ctl_fd, DCMD_PROC_STOP, NULL, 0, 0);
+}
+
+static void
 procfs_kill_inferior (struct target_ops *ops)
 {
   target_mourn_inferior ();
@@ -1505,6 +1511,7 @@ init_procfs_targets (void)
   t->to_update_thread_list = procfs_update_thread_list;
   t->to_pid_to_str = nto_pid_to_str;
   t->to_stop = procfs_stop;
+  t->to_interrupt = procfs_interrupt;
   t->to_have_continuable_watchpoint = 1;
   t->to_extra_thread_info = nto_extra_thread_info;
   t->to_pid_to_exec_file = procfs_pid_to_exec_file;
