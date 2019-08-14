@@ -1,0 +1,7 @@
+. ${srcdir}/emulparams/elf32ppc.sh
+OUTPUT_FORMAT="elf32-powerpcle"
+MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
+TEXT_START_ADDR=0x48040000
+TEXT_START_SYMBOLS='_btext = .;'
+
+EXTRA_EM_FILE=nto
