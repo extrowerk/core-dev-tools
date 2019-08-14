@@ -1,12 +1,12 @@
 /*
- * $QNXtpLicenseC:  
+ * $QNXtpLicenseC:
  * Copyright 2005,2007,2019 QNX Software Systems. All Rights Reserved.
  *
- * This source code may contain confidential information of QNX Software 
- * Systems (QSS) and its licensors.  Any use, reproduction, modification, 
- * disclosure, distribution or transfer of this software, or any software 
- * that includes or is based upon any of this code, is prohibited unless 
- * expressly authorized by QSS by written agreement.  For more information 
+ * This source code may contain confidential information of QNX Software
+ * Systems (QSS) and its licensors.  Any use, reproduction, modification,
+ * disclosure, distribution or transfer of this software, or any software
+ * that includes or is based upon any of this code, is prohibited unless
+ * expressly authorized by QSS by written agreement.  For more information
  * (including whether this source code file has been published) please
  * email licensing@qnx.com. $
 */
@@ -72,24 +72,13 @@
 
 #ifndef __MINGW32__
 #include <termios.h>
+#else
+#define SIGKILL 9
 #endif
 
 #include "source.h"
 
 #ifdef __QNXNTO__
-#if 0
-#include <sys/elf_notes.h>
-#warning FIXME
-#if __PTR_BITS__ == 32
-#define Elf32_Phdr Elf32_External_Phdr
-#elif __PTR_BITS__ == 64
-#define Elf64_Phdr Elf64_External_Phdr
-#else
-#error __PTR_BITS__ not setup correctly
-#endif
-#define __ELF_H_INCLUDED /* Needed for our link.h to avoid including elf.h.  */
-#include <sys/link.h>
-#endif
 
 #include <sys/debug.h>
 typedef debug_thread_t nto_procfs_status;
@@ -101,15 +90,10 @@ typedef siginfo_t nto_siginfo_t;
 
 #include "solib.h"
 
-
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
 
-//#ifdef __MINGW32__
-//#define	ENOTCONN	57		/* Socket is not connected */
-//#endif
-#
 #ifndef EOK
 #define EOK 0
 #endif
@@ -118,9 +102,9 @@ typedef siginfo_t nto_siginfo_t;
 #define O_BINARY 0
 #endif
 
-#define QNX_READ_MODE	0x0
-#define QNX_WRITE_MODE	0x301
-#define QNX_WRITE_PERMS	0x1ff
+#define QNX_READ_MODE  0x0
+#define QNX_WRITE_MODE  0x301
+#define QNX_WRITE_PERMS  0x1ff
 
 /* The following define does a cast to const gdb_byte * type.  */
 
@@ -188,7 +172,7 @@ public:
   void close () override;
 
   bool can_attach () override {
-	  return true;
+    return true;
   }
   void attach ( const char*, int ) override;
   void post_attach( int ) override;
@@ -208,10 +192,10 @@ public:
   int remove_watchpoint (CORE_ADDR, int, enum target_hw_bp_type, struct expression *) override;
   int insert_watchpoint (CORE_ADDR, int, enum target_hw_bp_type, struct expression *) override;
   bool stopped_by_watchpoint () override {
-	  return nto_stopped_by_watchpoint();
+    return nto_stopped_by_watchpoint();
   }
   bool have_continuable_watchpoint () override {
-	  return true;
+    return true;
   }
 #if 0
   void terminal_init () override;
@@ -221,10 +205,10 @@ public:
 #endif
   void kill () override;
   void load (const char *args, int from_tty ) override {
-	  return generic_load (args, from_tty);
+    return generic_load (args, from_tty);
   }
   bool can_create_inferior () override {
-	  return true;
+    return true;
   }
   int insert_fork_catchpoint (int) override;
   int remove_fork_catchpoint (int) override;
@@ -239,13 +223,13 @@ public:
   bool thread_alive (ptid_t ptid) override;
   void update_thread_list () override;
   const char *pid_to_str (ptid_t ptid) override {
-	  return nto_pid_to_str (ptid);
+    return nto_pid_to_str (ptid);
   }
   const char *extra_thread_info (thread_info *ti ) override {
-	  return nto_extra_thread_info( ti );
+    return nto_extra_thread_info( ti );
   }
   const char *thread_name (thread_info *ti ) override {
-	  return nto_thread_name( NULL, ti );
+    return nto_thread_name( NULL, ti );
   }
   bool has_all_memory () override;
   bool has_memory () override;
@@ -267,11 +251,11 @@ public:
   }
   int verify_memory (const gdb_byte *data, CORE_ADDR memaddr, ULONGEST size) override;
   enum target_xfer_status xfer_partial (enum target_object object,
-  						  const char *annex,
-  						  gdb_byte *readbuf,
-  						  const gdb_byte *writebuf,
-  						  ULONGEST offset, ULONGEST len,
-  						  ULONGEST *xfered_len) override;
+                const char *annex,
+                gdb_byte *readbuf,
+                const gdb_byte *writebuf,
+                ULONGEST offset, ULONGEST len,
+                ULONGEST *xfered_len) override;
 };
 
 struct nto_remote_inferior_data
@@ -364,8 +348,8 @@ struct pdebug_session *current_session = &only_session;
 static int upload_sets_exec = 1;
 
 /* These define the version of the protocol implemented here.  */
-#define HOST_QNX_PROTOVER_MAJOR	0
-#define HOST_QNX_PROTOVER_MINOR	7
+#define HOST_QNX_PROTOVER_MAJOR  0
+#define HOST_QNX_PROTOVER_MINOR  7
 
 /* HOST_QNX_PROTOVER 0.8 - 64 bit capable structures.  */
 
@@ -374,8 +358,8 @@ static int upload_sets_exec = 1;
 #define MAX_TRAN_TRIES 3
 #define MAX_RECV_TRIES 3
 
-#define FRAME_CHAR	0x7e
-#define ESC_CHAR	0x7d
+#define FRAME_CHAR  0x7e
+#define ESC_CHAR  0x7d
 
 static char nak_packet[] =
   { FRAME_CHAR, SET_CHANNEL_NAK, 0, FRAME_CHAR };
@@ -464,7 +448,7 @@ static int
 supports64bit(void)
 {
   return (current_session->target_proto_major > 0
-	  || current_session->target_proto_minor >= 7);
+    || current_session->target_proto_minor >= 7);
 }
 
 /* Send a packet to the remote machine.  Also sets channelwr and informs
@@ -484,8 +468,8 @@ putpkt (const DScomm_t *const tran, const unsigned len)
   *p++ = FRAME_CHAR;
 
   nto_trace (1) ("putpkt() - cmd %d, subcmd %d, mid %d\n",
-			 tran->pkt.hdr.cmd, tran->pkt.hdr.subcmd,
-			 tran->pkt.hdr.mid);
+       tran->pkt.hdr.cmd, tran->pkt.hdr.subcmd,
+       tran->pkt.hdr.mid);
 
   if (remote_debug)
     printf_unfiltered ("Sending packet (len %d): ", len);
@@ -495,19 +479,19 @@ putpkt (const DScomm_t *const tran, const unsigned len)
       unsigned char c = tran->buf[i];
 
       if (remote_debug)
-	printf_unfiltered ("%2.2x", c);
+  printf_unfiltered ("%2.2x", c);
       csum += c;
 
       switch (c)
-	{
-	case FRAME_CHAR:
-	case ESC_CHAR:
-	  if (remote_debug)
-	    printf_unfiltered ("[escape]");
-	  *p++ = ESC_CHAR;
-	  c ^= 0x20;
-	  break;
-	}
+  {
+  case FRAME_CHAR:
+  case ESC_CHAR:
+    if (remote_debug)
+      printf_unfiltered ("[escape]");
+    *p++ = ESC_CHAR;
+    c ^= 0x20;
+    break;
+  }
       *p++ = c;
     }
 
@@ -535,14 +519,14 @@ putpkt (const DScomm_t *const tran, const unsigned len)
   if (current_session->channelwr != tran->pkt.hdr.channel)
     {
       switch (tran->pkt.hdr.channel)
-	{
-	case SET_CHANNEL_TEXT:
-	  SEND_CH_TEXT;
-	  break;
-	case SET_CHANNEL_DEBUG:
-	  SEND_CH_DEBUG;
-	  break;
-	}
+  {
+  case SET_CHANNEL_TEXT:
+    SEND_CH_TEXT;
+    break;
+  case SET_CHANNEL_DEBUG:
+    SEND_CH_DEBUG;
+    break;
+  }
       current_session->channelwr = tran->pkt.hdr.channel;
     }
 
@@ -570,16 +554,16 @@ sig_io (int signal)
       int read_count = read (STDIN_FILENO, buff, 1);
 
       if (read_count < 0)
-	{
-	  fprintf_unfiltered (gdb_stderr, _("Error reading stdin: %d(%s)\n"),
-			      errno, safe_strerror (errno));
-	  return;
-	}
+  {
+    fprintf_unfiltered (gdb_stderr, _("Error reading stdin: %d(%s)\n"),
+            errno, safe_strerror (errno));
+    return;
+  }
       if (read_count == 0)
-	{
-	  fprintf_unfiltered (gdb_stderr, _("EOF\n"));
-	  return;
-	}
+  {
+    fprintf_unfiltered (gdb_stderr, _("EOF\n"));
+    return;
+  }
       fprintf_unfiltered (gdb_stderr, _("'%c'"), buff[0]);
     }
 }
@@ -598,18 +582,18 @@ readchar (int timeout)
   sa.sa_handler = sig_io;
 
   if (sigaction(SIGIO, &sa, NULL) < 0) {
-	  fprintf(stderr,"[ERROR]: sigaction error\n");
-	  exit(1);
+    fprintf(stderr,"[ERROR]: sigaction error\n");
+    exit(1);
   }
 
   if (fcntl(0, F_SETOWN, getpid()) < 0) {
-	  fprintf(stderr,"[ERROR]: fcntl F_SETOWN error\n");
-	  exit(1);
+    fprintf(stderr,"[ERROR]: fcntl F_SETOWN error\n");
+    exit(1);
   }
 
   if (fcntl(0, F_SETFL, O_NONBLOCK|O_ASYNC) < 0) {
-	  fprintf(stderr,"[ERROR]: fcntl error for O_NONBLOCK|O_ASYNC\n");
-	  exit(1);
+    fprintf(stderr,"[ERROR]: fcntl error for O_NONBLOCK|O_ASYNC\n");
+    exit(1);
   }
 #endif
   ch = serial_readchar (current_session->desc, timeout);
@@ -651,34 +635,34 @@ read_frame (unsigned char *const buf, const size_t bufsz)
       c = readchar (current_session->timeout);
 
       switch (c)
-	{
-	case SERIAL_TIMEOUT:
-	  puts_filtered ("Timeout in mid-packet, retrying\n");
-	  return -1;
-	case ESC_CHAR:
-	  modifier = 0x20;
-	  continue;
-	case FRAME_CHAR:
-	  if (bp == buf)
-	    continue;		/* Ignore multiple start frames.  */
-	  if (csum != 0xff)	/* Checksum error.  */
-	    return -1;
-	  return bp - buf - 1;
-	default:
-	  c ^= modifier;
-	  if (remote_debug)
-	    printf_filtered ("%2.2x", c);
-	  csum += c;
-	  *bp++ = c;
-	  break;
-	}
+  {
+  case SERIAL_TIMEOUT:
+    puts_filtered ("Timeout in mid-packet, retrying\n");
+    return -1;
+  case ESC_CHAR:
+    modifier = 0x20;
+    continue;
+  case FRAME_CHAR:
+    if (bp == buf)
+      continue;    /* Ignore multiple start frames.  */
+    if (csum != 0xff)  /* Checksum error.  */
+      return -1;
+    return bp - buf - 1;
+  default:
+    c ^= modifier;
+    if (remote_debug)
+      printf_filtered ("%2.2x", c);
+    csum += c;
+    *bp++ = c;
+    break;
+  }
       modifier = 0;
     }
   return 1;
 }
 
 /* Read a packet from the remote machine, with error checking,
-   and store it in recv.buf.  
+   and store it in recv.buf.
    If FOREVER, wait forever rather than timing out; this is used
    while the target is executing user code.  */
 static int
@@ -711,79 +695,79 @@ getpkt (DScomm_t *const recv, const int forever)
          After that, we expect characters to arrive at a brisk pace.  They
          should show up within nto_timeout intervals.  */
       do
-	{
-	  c = readchar (timeout);
+  {
+    c = readchar (timeout);
 
-	  if (c == SERIAL_TIMEOUT)
-	    {
-	      /* Watchdog went off.  Kill the target.  */
-	      if (forever && watchdog > 0)
-		{
-		  target_mourn_inferior ( inferior_ptid );
-		  error ("Watchdog has expired.  Target detached.");
-		}
-	      puts_filtered ("Timed out.\n");
-	      return -1;
-	    }
-	}
+    if (c == SERIAL_TIMEOUT)
+      {
+        /* Watchdog went off.  Kill the target.  */
+        if (forever && watchdog > 0)
+    {
+      target_mourn_inferior ( inferior_ptid );
+      error ("Watchdog has expired.  Target detached.");
+    }
+        puts_filtered ("Timed out.\n");
+        return -1;
+      }
+  }
       while (c != FRAME_CHAR);
 
       /* We've found the start of a packet, now collect the data.  */
       len = read_frame (recv->buf, sizeof recv->buf);
 
       if (remote_debug)
-	printf_filtered ("\n");
+  printf_filtered ("\n");
 
       if (len >= sizeof (struct DShdr))
-	{
-	  if (recv->pkt.hdr.channel)	/* If hdr.channel is not 0, then hdr.channel is supported.  */
-	    current_session->channelrd = recv->pkt.hdr.channel;
+  {
+    if (recv->pkt.hdr.channel)  /* If hdr.channel is not 0, then hdr.channel is supported.  */
+      current_session->channelrd = recv->pkt.hdr.channel;
 
-	  if (remote_debug)
-	    {
-	      printf_unfiltered ("getpkt() - len %d, channelrd %d,", len,
-				 current_session->channelrd);
-	      switch (current_session->channelrd)
-		{
-		case SET_CHANNEL_DEBUG:
-		  printf_unfiltered (" cmd = %d, subcmd = %d, mid = %d\n",
-				     recv->pkt.hdr.cmd, recv->pkt.hdr.subcmd,
-				     recv->pkt.hdr.mid);
-		  break;
-		case SET_CHANNEL_TEXT:
-		  printf_unfiltered (" text message\n");
-		  break;
-		case SET_CHANNEL_RESET:
-		  printf_unfiltered (" set_channel_reset\n");
-		  break;
-		default:
-		  printf_unfiltered (" unknown channel!\n");
-		  break;
-		}
-	    }
-	  return len;
-	}
+    if (remote_debug)
+      {
+        printf_unfiltered ("getpkt() - len %d, channelrd %d,", len,
+         current_session->channelrd);
+        switch (current_session->channelrd)
+    {
+    case SET_CHANNEL_DEBUG:
+      printf_unfiltered (" cmd = %d, subcmd = %d, mid = %d\n",
+             recv->pkt.hdr.cmd, recv->pkt.hdr.subcmd,
+             recv->pkt.hdr.mid);
+      break;
+    case SET_CHANNEL_TEXT:
+      printf_unfiltered (" text message\n");
+      break;
+    case SET_CHANNEL_RESET:
+      printf_unfiltered (" set_channel_reset\n");
+      break;
+    default:
+      printf_unfiltered (" unknown channel!\n");
+      break;
+    }
+      }
+    return len;
+  }
       if (len >= 1)
-	{
-	  /* Packet too small to be part of the debug protocol,
-	     must be a transport level command.  */
-	  if (recv->buf[0] == SET_CHANNEL_NAK)
-	    {
-	      /* Our last transmission didn't make it - send it again.  */
-	      current_session->channelrd = SET_CHANNEL_NAK;
-	      return -1;
-	    }
-	  if (recv->buf[0] <= SET_CHANNEL_TEXT)
-	    current_session->channelrd = recv->buf[0];
+  {
+    /* Packet too small to be part of the debug protocol,
+       must be a transport level command.  */
+    if (recv->buf[0] == SET_CHANNEL_NAK)
+      {
+        /* Our last transmission didn't make it - send it again.  */
+        current_session->channelrd = SET_CHANNEL_NAK;
+        return -1;
+      }
+    if (recv->buf[0] <= SET_CHANNEL_TEXT)
+      current_session->channelrd = recv->buf[0];
 
-	  if (remote_debug)
-	    {
-	      printf_unfiltered ("set channelrd to %d\n",
-				 current_session->channelrd);
-	    }
-	  --tries;		/* Doesn't count as a retry.  */
-	  continue;
-	}
+    if (remote_debug)
+      {
+        printf_unfiltered ("set channelrd to %d\n",
+         current_session->channelrd);
+      }
+    --tries;    /* Doesn't count as a retry.  */
+    continue;
+  }
       SEND_NAK;
     }
 
@@ -800,17 +784,17 @@ nto_send_init (DScomm_t *const tran, unsigned cmd, const unsigned subcmd, const 
   gdb_assert (tran != NULL);
 
   nto_trace (2) ("    nto_send_init(cmd %d, subcmd %d)\n", cmd,
-			 subcmd);
+       subcmd);
 
   if (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG)
     cmd |= DSHDR_MSG_BIG_ENDIAN;
 
   memset (tran, 0, sizeof (DScomm_t));
 
-  tran->pkt.hdr.cmd = cmd;	/* TShdr.cmd.  */
-  tran->pkt.hdr.subcmd = subcmd;	/* TShdr.console.  */
-  tran->pkt.hdr.mid = ((chan == SET_CHANNEL_DEBUG) ? mid++ : 0);	/* TShdr.spare1.  */
-  tran->pkt.hdr.channel = chan;	/* TShdr.channel.  */
+  tran->pkt.hdr.cmd = cmd;  /* TShdr.cmd.  */
+  tran->pkt.hdr.subcmd = subcmd;  /* TShdr.console.  */
+  tran->pkt.hdr.mid = ((chan == SET_CHANNEL_DEBUG) ? mid++ : 0);  /* TShdr.spare1.  */
+  tran->pkt.hdr.channel = chan;  /* TShdr.channel.  */
 }
 
 
@@ -864,7 +848,7 @@ nto_incoming_text (TSMsg_text_t *const text, const int len)
 
 
 /* Send env. string. Send multipart if env string too long and
-   our protocol version allows multipart env string. 
+   our protocol version allows multipart env string.
 
    Returns > 0 if successful, 0 on error.  */
 
@@ -880,30 +864,30 @@ nto_send_env (const char *env)
   if (current_session->target_proto_major > 0
       || current_session->target_proto_minor >= 2)
     {
-	while (len > DS_DATA_MAX_SIZE)
-	  {
-	    nto_send_init (&tran, DStMsg_env, DSMSG_ENV_SETENV_MORE,
-			   SET_CHANNEL_DEBUG);
-	    memcpy (tran.pkt.env.data, env + totlen,
-		    DS_DATA_MAX_SIZE);
-	    if (!nto_send_recv (&tran, &recv, offsetof (DStMsg_env_t, data) +
-			   DS_DATA_MAX_SIZE, 1))
-	      {
-		/* An error occured.  */
-		return 0;
-	      }
-	    len -= DS_DATA_MAX_SIZE;
-	    totlen += DS_DATA_MAX_SIZE;
-	  }
+  while (len > DS_DATA_MAX_SIZE)
+    {
+      nto_send_init (&tran, DStMsg_env, DSMSG_ENV_SETENV_MORE,
+         SET_CHANNEL_DEBUG);
+      memcpy (tran.pkt.env.data, env + totlen,
+        DS_DATA_MAX_SIZE);
+      if (!nto_send_recv (&tran, &recv, offsetof (DStMsg_env_t, data) +
+         DS_DATA_MAX_SIZE, 1))
+        {
+    /* An error occured.  */
+    return 0;
+        }
+      len -= DS_DATA_MAX_SIZE;
+      totlen += DS_DATA_MAX_SIZE;
+    }
     }
   else if (len > DS_DATA_MAX_SIZE)
     {
       /* Not supported by this protocol version.  */
       printf_unfiltered
-	("** Skipping env var \"%.40s .....\" <cont>\n", env);
+  ("** Skipping env var \"%.40s .....\" <cont>\n", env);
       printf_unfiltered
-	("** Protovers under 0.2 do not handle env vars longer than %d\n", 
-	  DS_DATA_MAX_SIZE - 1);
+  ("** Protovers under 0.2 do not handle env vars longer than %d\n",
+    DS_DATA_MAX_SIZE - 1);
       return 0;
     }
   nto_send_init (&tran, DStMsg_env, DSMSG_ENV_SETENV, SET_CHANNEL_DEBUG);
@@ -940,7 +924,7 @@ nto_send_arg (const char *arg)
 
 static unsigned
 nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
-	       const unsigned len, const int report_errors)
+         const unsigned len, const int report_errors)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int rlen;
@@ -955,35 +939,35 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
   for (tries = 0;; tries++)
     {
       if (tries >= MAX_TRAN_TRIES)
-	{
-	  unsigned char err = DSrMsg_err;
+  {
+    unsigned char err = DSrMsg_err;
 
-	  printf_unfiltered ("Remote exhausted %d retries.\n", tries);
-	  if (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG)
-	    err |= DSHDR_MSG_BIG_ENDIAN;
-	  recv->pkt.hdr.cmd = err;
-	  recv->pkt.err.err = EIO;
-	  recv->pkt.err.err = EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err,
-						      4, byte_order);
-	  rlen = sizeof (recv->pkt.err);
-	  break;
-	}
+    printf_unfiltered ("Remote exhausted %d retries.\n", tries);
+    if (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG)
+      err |= DSHDR_MSG_BIG_ENDIAN;
+    recv->pkt.hdr.cmd = err;
+    recv->pkt.err.err = EIO;
+    recv->pkt.err.err = EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err,
+                  4, byte_order);
+    rlen = sizeof (recv->pkt.err);
+    break;
+  }
       putpkt (tran, len);
       for (;;)
-	{
-	  rlen = getpkt (recv, 0);
-	  if ((current_session->channelrd != SET_CHANNEL_TEXT)
-	      || (rlen == -1))
-	    break;
-	  nto_incoming_text (&recv->text, rlen);
-	}
-      if (rlen == -1)		/* Getpkt returns -1 if MsgNAK received.  */
-	{
-	  printf_unfiltered ("MsgNak received - resending\n");
-	  continue;
-	}
+  {
+    rlen = getpkt (recv, 0);
+    if ((current_session->channelrd != SET_CHANNEL_TEXT)
+        || (rlen == -1))
+      break;
+    nto_incoming_text (&recv->text, rlen);
+  }
+      if (rlen == -1)    /* Getpkt returns -1 if MsgNAK received.  */
+  {
+    printf_unfiltered ("MsgNak received - resending\n");
+    continue;
+  }
       if ((rlen >= 0) && (recv->pkt.hdr.mid == tran->pkt.hdr.mid))
-	break;
+  break;
 
       nto_trace (1) ("mid mismatch!\n");
 
@@ -995,68 +979,68 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
     {
     case SET_CHANNEL_DEBUG:
       if (((recv->pkt.hdr.cmd & DSHDR_MSG_BIG_ENDIAN) != 0))
-	{
-	  char buff[sizeof(tran->buf)];
+  {
+    char buff[sizeof(tran->buf)];
 
-	  sprintf (buff, "set endian big");
-	  if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_BIG)
-	    execute_command (buff, 0);
-	}
+    sprintf (buff, "set endian big");
+    if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_BIG)
+      execute_command (buff, 0);
+  }
       else
-	{
-	  char buff[sizeof(tran->buf)];
+  {
+    char buff[sizeof(tran->buf)];
 
-	  sprintf (buff, "set endian little");
-	  if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_LITTLE)
-	    execute_command (buff, 0);
-	}
+    sprintf (buff, "set endian little");
+    if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_LITTLE)
+      execute_command (buff, 0);
+  }
       recv->pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
       if (recv->pkt.hdr.cmd == DSrMsg_err)
-	{
-	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err, 4,
-							byte_order));
-	  if (report_errors)
-	    {
-	      switch (errno)
-		{
-		case PDEBUG_ENOERR:
-		  break;
-		case PDEBUG_ENOPTY:
-		  perror_with_name ("Remote (no ptys available)");
-		  break;
-		case PDEBUG_ETHREAD:
-		  perror_with_name ("Remote (thread start error)");
-		  break;
-		case PDEBUG_ECONINV:
-		  perror_with_name ("Remote (invalid console number)");
-		  break;
-		case PDEBUG_ESPAWN:
-		  perror_with_name ("Remote (spawn error)");
-		  break;
-		case PDEBUG_EPROCFS:
-		  perror_with_name ("Remote (procfs [/proc] error)");
-		  break;
-		case PDEBUG_EPROCSTOP:
-		  perror_with_name ("Remote (devctl PROC_STOP error)");
-		  break;
-		case PDEBUG_EQPSINFO:
-		  perror_with_name ("Remote (psinfo error)");
-		  break;
-		case PDEBUG_EQMEMMODEL:
-		  perror_with_name
-		    ("Remote (invalid memory model [not flat] )");
-		  break;
-		case PDEBUG_EQPROXY:
-		  perror_with_name ("Remote (proxy error)");
-		  break;
-		case PDEBUG_EQDBG:
-		  perror_with_name ("Remote (__nto_debug_* error)");
-		  break;
-		default:
-		  perror_with_name ("Remote");
-		}
-	    }
-	}
+  {
+    errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err, 4,
+              byte_order));
+    if (report_errors)
+      {
+        switch (errno)
+    {
+    case PDEBUG_ENOERR:
+      break;
+    case PDEBUG_ENOPTY:
+      perror_with_name ("Remote (no ptys available)");
+      break;
+    case PDEBUG_ETHREAD:
+      perror_with_name ("Remote (thread start error)");
+      break;
+    case PDEBUG_ECONINV:
+      perror_with_name ("Remote (invalid console number)");
+      break;
+    case PDEBUG_ESPAWN:
+      perror_with_name ("Remote (spawn error)");
+      break;
+    case PDEBUG_EPROCFS:
+      perror_with_name ("Remote (procfs [/proc] error)");
+      break;
+    case PDEBUG_EPROCSTOP:
+      perror_with_name ("Remote (devctl PROC_STOP error)");
+      break;
+    case PDEBUG_EQPSINFO:
+      perror_with_name ("Remote (psinfo error)");
+      break;
+    case PDEBUG_EQMEMMODEL:
+      perror_with_name
+        ("Remote (invalid memory model [not flat] )");
+      break;
+    case PDEBUG_EQPROXY:
+      perror_with_name ("Remote (proxy error)");
+      break;
+    case PDEBUG_EQDBG:
+      perror_with_name ("Remote (__nto_debug_* error)");
+      break;
+    default:
+      perror_with_name ("Remote");
+    }
+      }
+  }
       break;
     case SET_CHANNEL_TEXT:
     case SET_CHANNEL_RESET:
@@ -1072,12 +1056,12 @@ set_thread (const int th)
   DScomm_t tran, recv;
 
   nto_trace (0) ("set_thread(th %d pid %d, prev tid %ld)\n", th,
-	 inferior_ptid.pid(), inferior_ptid.lwp() );
+   inferior_ptid.pid(), inferior_ptid.lwp() );
 
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_SET, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = inferior_ptid.pid();
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER ((gdb_byte*)&tran.pkt.select.pid, 4,
-						byte_order);
+            byte_order);
   tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&th, 4, byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 1);
 
@@ -1091,7 +1075,7 @@ set_thread (const int th)
 }
 
 
-/* Return nonzero if the thread TH is still alive on the remote system.  
+/* Return nonzero if the thread TH is still alive on the remote system.
    RECV will contain returned_tid. NOTE: Make sure this stays like that
    since we will use this side effect in other functions to determine
    first thread alive (for example, after attach).  */
@@ -1103,25 +1087,25 @@ pdebug_target::thread_alive (ptid_t th)
   DScomm_t tran, recv;
 
   nto_trace (0) ("pdebug_thread_alive -- pid %d, tid %ld \n",
-		 th.pid(), th.lwp());
+     th.pid(), th.lwp());
 
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = th.pid();
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid, 4,
-						byte_order);
+            byte_order);
   tran.pkt.select.tid = th.lwp();
   tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid, 4,
-						byte_order);
+            byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
-      /* Data is tidinfo. 
-	Note: tid returned might not be the same as requested.
-	If it is not, then requested thread is dead.  */
+      /* Data is tidinfo.
+  Note: tid returned might not be the same as requested.
+  If it is not, then requested thread is dead.  */
       uintptr_t ptidinfoaddr = (uintptr_t) &recv.pkt.okdata.data;
       struct tidinfo *ptidinfo = (struct tidinfo *) ptidinfoaddr;
       int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
-						 byte_order);
+             byte_order);
       alive = (th.lwp() == returned_tid) && ptidinfo->state;
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
@@ -1129,10 +1113,10 @@ pdebug_target::thread_alive (ptid_t th)
       /* This is the old behaviour. It doesn't really tell us
       what is the status of the thread, but rather answers question:
       "Does the thread exist?". Note that a thread might have already
-      exited but has not been joined yet; we will show it here as 
+      exited but has not been joined yet; we will show it here as
       alive an well. Not completely correct.  */
       int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4,
-						 byte_order);
+             byte_order);
       alive = (th.lwp() == returned_tid);
     }
 
@@ -1152,35 +1136,35 @@ nto_get_thread_alive (ptid_t th)
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = th.pid();
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid, 4,
-						byte_order);
+            byte_order);
   tran.pkt.select.tid = th.lwp();
   tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid, 4,
-						byte_order);
+            byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 0);
 
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
-      /* Data is tidinfo. 
-	Note: tid returned might not be the same as requested.
-	If it is not, then requested thread is dead.  */
+      /* Data is tidinfo.
+  Note: tid returned might not be the same as requested.
+  If it is not, then requested thread is dead.  */
       const struct tidinfo *const ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
       returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
-					     byte_order);
+               byte_order);
 
       if (!ptidinfo->state)
-	{
-	  return nto_get_thread_alive( ptid_t( th.pid(), returned_tid+1, 1 ) );
-	}
+  {
+    return nto_get_thread_alive( ptid_t( th.pid(), returned_tid+1, 1 ) );
+  }
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
       /* This is the old behaviour. It doesn't really tell us
       what is the status of the thread, but rather answers question:
       "Does the thread exist?". Note that a thread might have already
-      exited but has not been joined yet; we will show it here as 
+      exited but has not been joined yet; we will show it here as
       alive and well. Not completely correct.  */
       returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status,
-					     4, byte_order);
+               4, byte_order);
     }
   else
     return minus_one_ptid;
@@ -1224,7 +1208,7 @@ pdebug_target::close ( )
   inferior_ptid = null_ptid;
   discard_all_inferiors ();
 
-  /* todo do we need this too? */
+  /* todo align with current TLS layout */
   trace_reset_local_state ();
 
   delete this;
@@ -1245,7 +1229,7 @@ nto_read_procfsinfo (nto_procfs_info *pinfo)
   nto_send_init (&tran, DStMsg_procfsinfo, 0, SET_CHANNEL_DEBUG);
   tran.pkt.procfsinfo.pid = inferior_ptid.pid();
   tran.pkt.procfsinfo.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.procfsinfo.pid,
-						    4, byte_order);
+                4, byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.procfsinfo), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
@@ -1274,7 +1258,7 @@ nto_read_procfsstatus (nto_procfs_status *pstatus)
   nto_send_init (&tran, DStMsg_procfsstatus, 0, SET_CHANNEL_DEBUG);
   tran.pkt.procfsstatus.pid = inferior_ptid.pid();
   tran.pkt.procfsstatus.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.procfsstatus.pid,
-						    4, byte_order);
+                4, byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.procfsstatus), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
@@ -1289,7 +1273,7 @@ nto_read_procfsstatus (nto_procfs_status *pstatus)
 }
 
 
-/* This is a 'hack' to reset internal state maintained by gdb. It is 
+/* This is a 'hack' to reset internal state maintained by gdb. It is
    unclear why it doesn't do it automatically, but the same hack can be
    seen in linux, so I guess it is o.k. to use it here too.  */
 extern void nullify_last_target_wait_ptid (void);
@@ -1318,21 +1302,21 @@ nto_start_remote ( )
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.connect), 0);
 
       if (recv.pkt.hdr.cmd != DSrMsg_err)
-	break;
+  break;
       if (orig_target_endian == (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG))
-	break;
+  break;
       /* Send packet again, with opposite endianness.  */
     }
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       error ("Connection failed: %ld.",
-	     (long) EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
+       (long) EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
     }
   /* NYI: need to size transmit/receive buffers to allowed size in connect response.  */
 
   printf_unfiltered ("Remote target is %s-endian\n",
-		     (gdbarch_byte_order (target_gdbarch ()) ==
-		      BFD_ENDIAN_BIG) ? "big" : "little");
+         (gdbarch_byte_order (target_gdbarch ()) ==
+          BFD_ENDIAN_BIG) ? "big" : "little");
 
   /* Try to query pdebug for their version of the protocol.  */
   nto_send_init (&tran, DStMsg_protover, 0, SET_CHANNEL_DEBUG);
@@ -1341,7 +1325,7 @@ nto_start_remote ( )
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.protover), 0);
   if ((recv.pkt.hdr.cmd == DSrMsg_err)
       && (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order)
-	  == EINVAL))	/* Old pdebug protocol version 0.0.  */
+    == EINVAL))  /* Old pdebug protocol version 0.0.  */
     {
       current_session->target_proto_major = 0;
       current_session->target_proto_minor = 0;
@@ -1349,24 +1333,24 @@ nto_start_remote ( )
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
       current_session->target_proto_major =
-	EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4, byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4, byte_order);
       current_session->target_proto_minor =
-	EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4, byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4, byte_order);
       current_session->target_proto_major =
-	(current_session->target_proto_major >> 8) & DSMSG_PROTOVER_MAJOR;
+  (current_session->target_proto_major >> 8) & DSMSG_PROTOVER_MAJOR;
       current_session->target_proto_minor =
-	current_session->target_proto_minor & DSMSG_PROTOVER_MINOR;
+  current_session->target_proto_minor & DSMSG_PROTOVER_MINOR;
     }
   else
     {
       error ("Connection failed (Protocol Version Query): %ld.",
-	     (long) EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
+       (long) EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
     }
 
   nto_trace (0) ("Pdebug protover %d.%d, GDB protover %d.%d\n",
-			 current_session->target_proto_major,
-			 current_session->target_proto_minor,
-			 HOST_QNX_PROTOVER_MAJOR, HOST_QNX_PROTOVER_MINOR);
+       current_session->target_proto_major,
+       current_session->target_proto_minor,
+       HOST_QNX_PROTOVER_MAJOR, HOST_QNX_PROTOVER_MINOR);
 
   /* If we had an inferior running previously, gdb will have some internal
      states which we need to clear to start fresh.  */
@@ -1422,7 +1406,7 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
   void (*ofunc) (int);
 
   nto_trace (0) ("pdebug_open(name '%s', from_tty %d)\n", name,
-			 from_tty);
+       from_tty);
 
   nto_open_interrupted = 0;
   if (name == 0)
@@ -1435,8 +1419,8 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
   if ( ( current_session->desc != NULL ) && !have_inferiors ())
     {
       if (from_tty
-	  && !query (_("Already connected to a remote target.  Disconnect? ")))
-	error (_("Still connected."));
+    && !query (_("Already connected to a remote target.  Disconnect? ")))
+  error (_("Still connected."));
     }
 
   target_preopen (from_tty);
@@ -1481,10 +1465,10 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
   if (baud_rate != -1)
     {
       if (serial_setbaudrate (current_session->desc, baud_rate))
-	{
-	  serial_close (current_session->desc);
-	  perror_with_name (name);
-	}
+  {
+    serial_close (current_session->desc);
+    perror_with_name (name);
+  }
     }
 
   serial_raw (current_session->desc);
@@ -1504,7 +1488,7 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
    *       especially if the pdebug_target holds more than just the function descriptions
    */
   pdebug_target *target=new pdebug_target();
-  push_target (target);	/* Switch to using remote target now.  */
+  push_target (target);  /* Switch to using remote target now.  */
 
   nto_add_commands ();
   nto_trace (3) ("pdebug_open() - push_target\n");
@@ -1535,7 +1519,7 @@ nto_attach_only (const int pid, DScomm_t *const recv)
   nto_send_init (&tran, DStMsg_attach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.attach.pid = pid;
   tran.pkt.attach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.attach.pid, 4,
-						byte_order);
+            byte_order);
   nto_send_recv (&tran, recv, sizeof (tran.pkt.attach), 0);
 
   if (recv->pkt.hdr.cmd != DSrMsg_okdata)
@@ -1569,12 +1553,12 @@ pdebug_target::attach (const char *args, int from_tty)
     nto_semi_init ();
 
   nto_trace (0) ("pdebug_attach(args '%s', from_tty %d)\n",
-			 args ? args : "(null)", from_tty);
+       args ? args : "(null)", from_tty);
 
   if (!args)
     error_no_arg ("process-id to attach");
 
-  ptid = ptid_t (atoi (args),0,0);
+  ptid = ptid_t (atoi (args),1,0);
 
   if (symfile_objfile != NULL) {
     exec_file_attach (symfile_objfile->original_name, from_tty);
@@ -1590,11 +1574,11 @@ pdebug_target::attach (const char *args, int from_tty)
     nto_send_recv (&tran, recv, sizeof (tran.pkt.pidlist), 0);
     if (only_session.recv.pkt.hdr.cmd == DSrMsg_okdata) {
       exec_file_attach (pidlist->name, from_tty);
-	}
+  }
   }
 
   if (from_tty) {
-    printf_unfiltered ("Attaching to %s\n", target_pid_to_str (ptid));
+    printf_unfiltered ("Attaching to %s\n", nto_pid_to_str (ptid));
     gdb_flush (gdb_stdout);
   }
 
@@ -1606,22 +1590,22 @@ pdebug_target::attach (const char *args, int from_tty)
   /* Hack this in here, since we will bypass the notify.  */
   if (supports64bit()) {
       current_session->cputype =
-	EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cputype, 2,
-				byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cputype, 2,
+        byte_order);
       current_session->cpuid =
-	EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cpuid, 4,
-				byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cpuid, 4,
+        byte_order);
     }
     else {
       current_session->cputype =
-	EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cputype, 2,
-				byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cputype, 2,
+        byte_order);
       current_session->cpuid =
-	EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cpuid, 4,
-				byte_order);
+  EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cpuid, 4,
+        byte_order);
     }
 #ifdef QNX_SET_PROCESSOR_TYPE
-  QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips.  */
+  QNX_SET_PROCESSOR_TYPE (current_session->cpuid);  /* For mips.  */
 #endif
   /* Get thread info as well.  */
   ptid = nto_get_thread_alive (ptid);
@@ -1644,16 +1628,16 @@ pdebug_target::attach (const char *args, int from_tty)
 
  /* NYI: add symbol information for process.  */
   /* Turn the PIDLOAD into a STOPPED notification so that when gdb
-     calls nto_wait, we won't cycle around.  */
-  /* todo bweb why are we setting up the recv just to throw it away? Creepypasta? */
+     calls nto_wait, we won't cycle around.
+     recv refers to a global structure here! */
   recv->pkt.hdr.cmd = DShMsg_notify;
   recv->pkt.hdr.subcmd = DSMSG_NOTIFY_STOPPED;
   recv->pkt.notify._32.pid = ptid.pid();
   recv->pkt.notify._32.tid = ptid.lwp();
   recv->pkt.notify._32.pid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.pid, 4,
-						     byte_order);
+                 byte_order);
   recv->pkt.notify._32.tid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.tid, 4,
-						     byte_order);
+                 byte_order);
 
   inf_data = nto_inferior_data (inf);
   inf_data->has_execution = 1;
@@ -1666,10 +1650,8 @@ void
 pdebug_target::post_attach (int pid)
 {
   nto_trace (0) ("%s pid:%d\n", __func__, pid);
-#ifdef SOLIB_CREATE_INFERIOR_HOOK
   if (exec_bfd)
-    SOLIB_CREATE_INFERIOR_HOOK (pid);
-#endif
+    solib_create_inferior_hook(0);
 }
 
 /* This takes a program previously attached to and detaches it.  After
@@ -1691,25 +1673,24 @@ pdebug_target::detach (inferior *inf, int from_tty)
     {
       char *exec_file = get_exec_file (0);
       printf_unfiltered ("Detaching from program: %s %d\n", exec_file==NULL?"":exec_file,
-			 inferior_ptid.pid());
+       inf->pid);
       gdb_flush (gdb_stdout);
     }
 
+  /* todo make sure that procnto knows about detachment */
 #if 0
-  /* todo: bweb not certain why detach would need a certain signal */
   if (args)
     {
       int sig = nto_gdb_signal_to_target (target_gdbarch (),
-					  (enum gdb_signal)atoi (args));
+            (enum gdb_signal)atoi (args));
 
       nto_send_init (&tran, DStMsg_kill, 0, SET_CHANNEL_DEBUG);
       tran.pkt.kill.signo = EXTRACT_SIGNED_INTEGER (&sig, 4, byte_order);
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.kill), 1);
     }
 #endif
-
   nto_send_init (&tran, DStMsg_detach, 0, SET_CHANNEL_DEBUG);
-  tran.pkt.detach.pid = inferior_ptid.pid();
+  tran.pkt.detach.pid = inf->pid;
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid, 4, byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.detach), 1);
   mourn_inferior ( );
@@ -1747,7 +1728,7 @@ pdebug_target::disconnect ( const char *args, int from_tty)
 /* Tell the remote machine to resume.  */
 void
 pdebug_target::resume (ptid_t ptid, int step,
-	    enum gdb_signal sig)
+      enum gdb_signal sig)
 {
   DScomm_t tran, *const recv = &current_session->recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
@@ -1756,8 +1737,8 @@ pdebug_target::resume (ptid_t ptid, int step,
   unsigned sizeof_pkt;
 
   nto_trace (0) ("pdebug_resume(pid %d, tid %ld, step %d, sig %d)\n",
-		 ptid.pid(), ptid.lwp(),
-		 step, nto_gdb_signal_to_target (target_gdbarch (), sig));
+     ptid.pid(), ptid.lwp(),
+     step, nto_gdb_signal_to_target (target_gdbarch (), sig));
 
   if (inferior_ptid == null_ptid)
     return;
@@ -1772,23 +1753,23 @@ pdebug_target::resume (ptid_t ptid, int step,
       ptid_t ptid_alive = nto_get_thread_alive (ptid_t (ptid.pid(), inferior_ptid.lwp(), 0 ) );
 
       /* If returned thread is minus_one_ptid, then requested thread is
-	 dead and there are no alive threads with tid > ptid.lwp().
-	 Try with first alive with tid >= 1.  */
+   dead and there are no alive threads with tid > ptid.lwp().
+   Try with first alive with tid >= 1.  */
       if (ptid_alive == minus_one_ptid)
-	{
-	  nto_trace (0) ("Thread %ld does not exist. Trying with tid >= 1\n",
-			 ptid.lwp());
-	  ptid_alive = nto_get_thread_alive (ptid_t ( ptid.pid(), 0, 1));
-	  nto_trace (1) ("First next tid found is: %ld\n", 
-			 ptid_alive.lwp());
-	}
+  {
+    nto_trace (0) ("Thread %ld does not exist. Trying with tid >= 1\n",
+       ptid.lwp());
+    ptid_alive = nto_get_thread_alive (ptid_t ( ptid.pid(), 1, 0));
+    nto_trace (1) ("First next tid found is: %ld\n",
+       ptid_alive.lwp());
+  }
       if (ptid_alive != minus_one_ptid)
-	{
-	  if (!set_thread (ptid_alive.lwp()))
-	    {
-	      nto_trace (0) ("Failed to set thread: %ld\n", ptid_alive.lwp());
-	    }
-	}
+  {
+    if (!set_thread (ptid_alive.lwp()))
+      {
+        nto_trace (0) ("Failed to set thread: %ld\n", ptid_alive.lwp());
+      }
+  }
     }
 
   /* The HandleSig stuff is part of the new protover 0.1, but has not
@@ -1805,28 +1786,28 @@ pdebug_target::resume (ptid_t ptid, int step,
   for (signo = 0; signo < QNXNTO_NSIG; signo++)
     {
       if (signal_stop_state (nto_gdb_signal_from_target (
-			     target_gdbarch (), signo)) == 0
-	  && signal_print_state (nto_gdb_signal_from_target (
-				 target_gdbarch (), signo)) == 0
-	  && signal_pass_state (nto_gdb_signal_from_target (
-				target_gdbarch (), signo)) == 1)
-	{
-	  tran.pkt.handlesig.signals[signo] = 0;
-	}
+           target_gdbarch (), signo)) == 0
+    && signal_print_state (nto_gdb_signal_from_target (
+         target_gdbarch (), signo)) == 0
+    && signal_pass_state (nto_gdb_signal_from_target (
+        target_gdbarch (), signo)) == 1)
+  {
+    tran.pkt.handlesig.signals[signo] = 0;
+  }
       else
-	{
-	  tran.pkt.handlesig.signals[signo] = 1;
-	}
+  {
+    tran.pkt.handlesig.signals[signo] = 1;
+  }
     }
   nto_send_recv (&tran, recv, sizeof (tran.pkt.handlesig), 0);
   if (recv->pkt.hdr.cmd == DSrMsg_err)
     if (sig != GDB_SIGNAL_0)
       {
-	nto_send_init (&tran, DStMsg_kill, 0, SET_CHANNEL_DEBUG);
-	tran.pkt.kill.signo = nto_gdb_signal_to_target (target_gdbarch (), sig);
-	tran.pkt.kill.signo =
-	  EXTRACT_SIGNED_INTEGER (&tran.pkt.kill.signo, 4, byte_order);
-	nto_send_recv (&tran, recv, sizeof (tran.pkt.kill), 1);
+  nto_send_init (&tran, DStMsg_kill, 0, SET_CHANNEL_DEBUG);
+  tran.pkt.kill.signo = nto_gdb_signal_to_target (target_gdbarch (), sig);
+  tran.pkt.kill.signo =
+    EXTRACT_SIGNED_INTEGER (&tran.pkt.kill.signo, 4, byte_order);
+  nto_send_recv (&tran, recv, sizeof (tran.pkt.kill), 1);
       }
 
 #if 0
@@ -1835,27 +1816,27 @@ pdebug_target::resume (ptid_t ptid, int step,
     {
       /* Do not interfere with gdb logic. */
       nto_send_init (&tran, DStMsg_run, DSMSG_RUN,
-		     SET_CHANNEL_DEBUG);
+         SET_CHANNEL_DEBUG);
     }
   else
 #endif
     {
       nto_send_init (&tran, DStMsg_run, (step || runone) ? DSMSG_RUN_COUNT
-							 : DSMSG_RUN,
-		     SET_CHANNEL_DEBUG);
+               : DSMSG_RUN,
+         SET_CHANNEL_DEBUG);
     }
   if (supports64bit())
     {
       tran.pkt.run.step.count = 1;
       tran.pkt.run.step.count =
-	EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run.step.count, 4, byte_order);
+  EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run.step.count, 4, byte_order);
       sizeof_pkt = sizeof (tran.pkt.run);
     }
   else
     {
       tran.pkt.run32.step.count = 1;
       tran.pkt.run32.step.count =
-	EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run32.step.count, 4, byte_order);
+  EXTRACT_UNSIGNED_INTEGER (&tran.pkt.run32.step.count, 4, byte_order);
       sizeof_pkt = sizeof (tran.pkt.run32);
     }
   nto_send_recv (&tran, recv, sizeof_pkt, 1);
@@ -1869,9 +1850,9 @@ static void (*ofunc_alrm) (int);
 /* Yucky but necessary globals used to track state in nto_wait() as a
    result of things done in nto_interrupt(), nto_interrupt_twice(),
    and nto_interrupt_retry().  */
-static sig_atomic_t SignalCount = 0;	/* Used to track ctl-c retransmits.  */
-static sig_atomic_t InterruptedTwice = 0;	/* Set in nto_interrupt_twice().  */
-static sig_atomic_t WaitingForStopResponse = 0;	/* Set in nto_interrupt(), cleared in nto_wait().  */
+static sig_atomic_t SignalCount = 0;  /* Used to track ctl-c retransmits.  */
+static sig_atomic_t InterruptedTwice = 0;  /* Set in nto_interrupt_twice().  */
+static sig_atomic_t WaitingForStopResponse = 0;  /* Set in nto_interrupt(), cleared in nto_wait().  */
 
 #define QNX_TIMER_TIMEOUT 5
 #define QNX_CTL_C_RETRIES 3
@@ -1880,10 +1861,10 @@ static void
 nto_interrupt_retry (int signo)
 {
   SignalCount++;
-  if (SignalCount >= QNX_CTL_C_RETRIES)	/* Retry QNX_CTL_C_RETRIES times after original transmission.  */
+  if (SignalCount >= QNX_CTL_C_RETRIES)  /* Retry QNX_CTL_C_RETRIES times after original transmission.  */
     {
       printf_unfiltered
-	("CTL-C transmit - 3 retries exhausted.  Ending debug session.\n");
+  ("CTL-C transmit - 3 retries exhausted.  Ending debug session.\n");
       WaitingForStopResponse = 0;
       SignalCount = 0;
       target_mourn_inferior (inferior_ptid);
@@ -1975,7 +1956,7 @@ pdebug_target::wait (ptid_t ptid, struct target_waitstatus *status, int i)
   ptid_t returned_ptid = inferior_ptid;
 
   nto_trace (0) ("pdebug_wait pid %d, inferior pid %d tid %ld\n",
-		 ptid.pid(), inferior_ptid.pid(), ptid.lwp());
+     ptid.pid(), inferior_ptid.pid(), ptid.lwp());
 
   status->kind = TARGET_WAITKIND_STOPPED;
   status->value.sig = GDB_SIGNAL_0;
@@ -2001,95 +1982,95 @@ pdebug_target::wait (ptid_t ptid, struct target_waitstatus *status, int i)
       ofunc_alrm = (void (*)(int)) signal (SIGALRM, nto_interrupt_retry);
 #endif
       for (;;)
-	{
-	  len = getpkt (recv, 1);
-	  if (len < 0)		/* Error - probably received MSG_NAK.  */
-	    {
-	      if (WaitingForStopResponse)
-		{
-		  /* We do not want to get SIGALRM while calling it's handler
-		     the timer is reset in the handler.  */
-		  alarm (0);
+  {
+    len = getpkt (recv, 1);
+    if (len < 0)    /* Error - probably received MSG_NAK.  */
+      {
+        if (WaitingForStopResponse)
+    {
+      /* We do not want to get SIGALRM while calling it's handler
+         the timer is reset in the handler.  */
+      alarm (0);
 #ifndef __MINGW32__
-		  nto_interrupt_retry (SIGALRM);
+      nto_interrupt_retry (SIGALRM);
 #else
-		  nto_interrupt_retry (0);
+      nto_interrupt_retry (0);
 #endif
-		  continue;
-		}
-	      else
-		{
-		  /* Turn off the alarm, and reset the signals, and return.  */
-		  alarm (0);
-		  signal (SIGINT, ofunc);
+      continue;
+    }
+        else
+    {
+      /* Turn off the alarm, and reset the signals, and return.  */
+      alarm (0);
+      signal (SIGINT, ofunc);
 #ifndef __MINGW32__
-		  signal (SIGALRM, ofunc_alrm);
+      signal (SIGALRM, ofunc_alrm);
 #endif
-		  return null_ptid;
-		}
-	    }
-	  if (current_session->channelrd == SET_CHANNEL_TEXT)
-	    nto_incoming_text (&recv->text, len);
-	  else			/* DEBUG CHANNEL.  */
-	    {
-	      recv->pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
-	      /* If we have sent the DStMsg_stop due to a ^C, we expect
-	         to get the response, so check and clear the flag
-	         also turn off the alarm - no need to retry,
-	         we did not lose the packet.  */
-	      if ((WaitingForStopResponse) && (recv->pkt.hdr.cmd == DSrMsg_ok))
-		{
-		  WaitingForStopResponse = 0;
-		  status->value.sig = GDB_SIGNAL_INT;
-		  alarm (0);
-		  if (!waiting_for_notify)
-		    break;
-		}
-	      /* Else we get the Notify we are waiting for.  */
-	      else if (recv->pkt.hdr.cmd == DShMsg_notify)
-		{
-		  DScomm_t tran;
+      return null_ptid;
+    }
+      }
+    if (current_session->channelrd == SET_CHANNEL_TEXT)
+      nto_incoming_text (&recv->text, len);
+    else      /* DEBUG CHANNEL.  */
+      {
+        recv->pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
+        /* If we have sent the DStMsg_stop due to a ^C, we expect
+           to get the response, so check and clear the flag
+           also turn off the alarm - no need to retry,
+           we did not lose the packet.  */
+        if ((WaitingForStopResponse) && (recv->pkt.hdr.cmd == DSrMsg_ok))
+    {
+      WaitingForStopResponse = 0;
+      status->value.sig = GDB_SIGNAL_INT;
+      alarm (0);
+      if (!waiting_for_notify)
+        break;
+    }
+        /* Else we get the Notify we are waiting for.  */
+        else if (recv->pkt.hdr.cmd == DShMsg_notify)
+    {
+      DScomm_t tran;
 
-		  waiting_for_notify = 0;
-		  /* Send an OK packet to acknowledge the notify.  */
-		  nto_send_init (&tran, DSrMsg_ok, recv->pkt.hdr.mid,
-				 SET_CHANNEL_DEBUG);
-		  tran.pkt.hdr.mid = recv->pkt.hdr.mid;
-		  putpkt (&tran, sizeof (tran.pkt.ok));
-		  /* Handle old pdebug protocol behavior, where out of order msgs get dropped
-		     version 0.0 does this, so we must resend after a notify.  */
-		  if ((current_session->target_proto_major == 0)
-		      && (current_session->target_proto_minor == 0))
-		    {
-		      if (WaitingForStopResponse)
-			{
-			  alarm (0);
+      waiting_for_notify = 0;
+      /* Send an OK packet to acknowledge the notify.  */
+      nto_send_init (&tran, DSrMsg_ok, recv->pkt.hdr.mid,
+         SET_CHANNEL_DEBUG);
+      tran.pkt.hdr.mid = recv->pkt.hdr.mid;
+      putpkt (&tran, sizeof (tran.pkt.ok));
+      /* Handle old pdebug protocol behavior, where out of order msgs get dropped
+         version 0.0 does this, so we must resend after a notify.  */
+      if ((current_session->target_proto_major == 0)
+          && (current_session->target_proto_minor == 0))
+        {
+          if (WaitingForStopResponse)
+      {
+        alarm (0);
 
-			  /* Change the command to something other than notify
-			     so we don't loop in here again - leave the rest of
-			     the packet alone for nto_parse_notify() below!!!  */
-			  recv->pkt.hdr.cmd = DSrMsg_ok;
-			  nto_interrupt (SIGINT);
-			}
-		    }
-		  returned_ptid = nto_parse_notify (recv, status);
+        /* Change the command to something other than notify
+           so we don't loop in here again - leave the rest of
+           the packet alone for nto_parse_notify() below!!!  */
+        recv->pkt.hdr.cmd = DSrMsg_ok;
+        nto_interrupt (SIGINT);
+      }
+        }
+      returned_ptid = nto_parse_notify (recv, status);
 
-		  if (!WaitingForStopResponse)
-		    break;
-		}
-	    }
-	}
+      if (!WaitingForStopResponse)
+        break;
+    }
+      }
+  }
       gdb_flush (gdb_stdtarg);
       gdb_flush (gdb_stdout);
       alarm (0);
 
-      /* Hitting Ctl-C sends a stop request, a second ctl-c means quit, 
+      /* Hitting Ctl-C sends a stop request, a second ctl-c means quit,
          so query here, after handling the results of the first ctl-c
          We know we were interrupted twice because the yucky global flag
          'InterruptedTwice' is set in the handler, and cleared in
          interrupt_query().  */
       if (InterruptedTwice)
-	interrupt_query ();
+  interrupt_query ();
 
       signal (SIGINT, ofunc);
 #ifndef __MINGW32__
@@ -2097,7 +2078,7 @@ pdebug_target::wait (ptid_t ptid, struct target_waitstatus *status, int i)
 #endif
     }
 
-  recv->pkt.hdr.cmd = DSrMsg_ok;	/* To make us wait the next time.  */
+  recv->pkt.hdr.cmd = DSrMsg_ok;  /* To make us wait the next time.  */
   return returned_ptid;
 }
 
@@ -2119,7 +2100,7 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
   gdb_assert (inf_data != NULL);
 
   nto_trace (0) ("nto_parse_notify(status) - subcmd %d\n",
-			 recv->pkt.hdr.subcmd);
+       recv->pkt.hdr.subcmd);
 
   pid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.pid, 4, byte_order);
   tid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.tid, 4, byte_order);
@@ -2133,46 +2114,46 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
          faulted flag so we can tell if the status value is a signo or an
          exit value.  See dsmsgs.h, protoverminor bumped to 3. GP Oct 31 2002.  */
       if (current_session->target_proto_major > 0
-	  || current_session->target_proto_minor >= 3)
-	{
-	  const int32_t *const pstatus = (supports64bit()) ? &recv->pkt.notify._64.un.pidunload_v3.status
-				       : &recv->pkt.notify._32.un.pidunload_v3.status;
+    || current_session->target_proto_minor >= 3)
+  {
+    const int32_t *const pstatus = (supports64bit()) ? &recv->pkt.notify._64.un.pidunload_v3.status
+               : &recv->pkt.notify._32.un.pidunload_v3.status;
 
-	  const int faulted = (supports64bit()) ? recv->pkt.notify._64.un.pidunload_v3.faulted
-						: recv->pkt.notify._32.un.pidunload_v3.faulted;
-	  if (faulted)
-	    {
-	      status->value.integer =
-		nto_gdb_signal_from_target
-		  (target_gdbarch (), EXTRACT_SIGNED_INTEGER
-				    (pstatus, 4, byte_order));
-	      if (status->value.integer)
-		status->kind = TARGET_WAITKIND_SIGNALLED;	/* Abnormal death.  */
-	      else
-		status->kind = TARGET_WAITKIND_EXITED;	/* Normal death.  */
-	    }
-	  else
-	    {
-	      status->value.integer =
-		EXTRACT_SIGNED_INTEGER (pstatus, 4, byte_order);
-	      status->kind = TARGET_WAITKIND_EXITED;	/* Normal death, possibly with exit value.  */
-	    }
-	}
+    const int faulted = (supports64bit()) ? recv->pkt.notify._64.un.pidunload_v3.faulted
+            : recv->pkt.notify._32.un.pidunload_v3.faulted;
+    if (faulted)
+      {
+        status->value.integer =
+    nto_gdb_signal_from_target
+      (target_gdbarch (), EXTRACT_SIGNED_INTEGER
+            (pstatus, 4, byte_order));
+        if (status->value.integer)
+    status->kind = TARGET_WAITKIND_SIGNALLED;  /* Abnormal death.  */
+        else
+    status->kind = TARGET_WAITKIND_EXITED;  /* Normal death.  */
+      }
+    else
+      {
+        status->value.integer =
+    EXTRACT_SIGNED_INTEGER (pstatus, 4, byte_order);
+        status->kind = TARGET_WAITKIND_EXITED;  /* Normal death, possibly with exit value.  */
+      }
+  }
       else
-	{
-	  /* Only supported on 32-bit pdebugs, old ones. */
-	  status->value.integer =
-	    nto_gdb_signal_from_target (target_gdbarch (),
-					EXTRACT_SIGNED_INTEGER
-					  (&recv->pkt.notify._32.un.pidunload.status,
-					   4, byte_order));
-	  if (status->value.integer)
-	    status->kind = TARGET_WAITKIND_SIGNALLED;	/* Abnormal death.  */
-	  else
-	    status->kind = TARGET_WAITKIND_EXITED;	/* Normal death.  */
-	  /* Current inferior is gone, switch to something else */
+  {
+    /* Only supported on 32-bit pdebugs, old ones. */
+    status->value.integer =
+      nto_gdb_signal_from_target (target_gdbarch (),
+          EXTRACT_SIGNED_INTEGER
+            (&recv->pkt.notify._32.un.pidunload.status,
+             4, byte_order));
+    if (status->value.integer)
+      status->kind = TARGET_WAITKIND_SIGNALLED;  /* Abnormal death.  */
+    else
+      status->kind = TARGET_WAITKIND_EXITED;  /* Normal death.  */
+    /* Current inferior is gone, switch to something else */
 
-	}
+  }
       inf_data->has_execution = 0;
       inf_data->has_stack = 0;
       inf_data->has_registers = 0;
@@ -2180,32 +2161,32 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       break;
     case DSMSG_NOTIFY_BRK:
       if (supports64bit())
-	{
-	  inf_data->stopped_flags =
-	    EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.flags, 4,
-				      byte_order);
-	  stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.ip,
-						 8, byte_order);
-	}
+  {
+    inf_data->stopped_flags =
+      EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.flags, 4,
+              byte_order);
+    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.ip,
+             8, byte_order);
+  }
       else
-	{
-	  inf_data->stopped_flags =
-	    EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.flags, 4,
-				      byte_order);
-	  stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.ip,
-						 4, byte_order);
-	}
+  {
+    inf_data->stopped_flags =
+      EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.flags, 4,
+              byte_order);
+    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.ip,
+             4, byte_order);
+  }
       inf_data->stopped_pc = stopped_pc;
       /* NOTE: We do not have New thread notification. This will cause
-	 gdb to think that breakpoint stop is really a new thread event if
-	 it happens to be in a thread unknown prior to this stop.
-	 We add new threads here to be transparent to the rest 
-	 of the gdb.  */
+   gdb to think that breakpoint stop is really a new thread event if
+   it happens to be in a thread unknown prior to this stop.
+   We add new threads here to be transparent to the rest
+   of the gdb.  */
       if (current_session->target_proto_major == 0 &&
-	  current_session->target_proto_minor < 4)
-	{
-	  update_thread_list ( );
-	}
+    current_session->target_proto_minor < 4)
+  {
+    update_thread_list ( );
+  }
       /* fallthrough */
     case DSMSG_NOTIFY_STEP:
       /* NYI: could update the CPU's IP register here.  */
@@ -2215,43 +2196,43 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
     case DSMSG_NOTIFY_SIGEV:
       status->kind = TARGET_WAITKIND_STOPPED;
       if (supports64bit())
-	{
-	  status->value.sig =
-	    nto_gdb_signal_from_target (target_gdbarch (),
-					EXTRACT_SIGNED_INTEGER
-					  (&recv->pkt.notify._64.un.sigev.signo,
-					   4, byte_order));
-	}
+  {
+    status->value.sig =
+      nto_gdb_signal_from_target (target_gdbarch (),
+          EXTRACT_SIGNED_INTEGER
+            (&recv->pkt.notify._64.un.sigev.signo,
+             4, byte_order));
+  }
       else
-	{
-	  status->value.sig =
-	    nto_gdb_signal_from_target (target_gdbarch (),
-					EXTRACT_SIGNED_INTEGER
-					  (&recv->pkt.notify._32.un.sigev.signo,
-					   4, byte_order));
-	}
+  {
+    status->value.sig =
+      nto_gdb_signal_from_target (target_gdbarch (),
+          EXTRACT_SIGNED_INTEGER
+            (&recv->pkt.notify._32.un.sigev.signo,
+             4, byte_order));
+  }
       break;
     case DSMSG_NOTIFY_PIDLOAD:
       if (supports64bit())
-	{
-	  current_session->cputype =
-	    EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cputype, 2,
-				    byte_order);
-	  current_session->cpuid =
-	    EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cpuid, 4,
-				    byte_order);
-	}
+  {
+    current_session->cputype =
+      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cputype, 2,
+            byte_order);
+    current_session->cpuid =
+      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cpuid, 4,
+            byte_order);
+  }
       else
-	{
-	  current_session->cputype =
-	    EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cputype, 2,
-				    byte_order);
-	  current_session->cpuid =
-	    EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cpuid, 4,
-				    byte_order);
-	}
+  {
+    current_session->cputype =
+      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cputype, 2,
+            byte_order);
+    current_session->cpuid =
+      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cpuid, 4,
+            byte_order);
+  }
 #ifdef QNX_SET_PROCESSOR_TYPE
-      QNX_SET_PROCESSOR_TYPE (current_session->cpuid);	/* For mips.  */
+      QNX_SET_PROCESSOR_TYPE (current_session->cpuid);  /* For mips.  */
 #endif
       inf_data->has_execution = 1;
       inf_data->has_stack = 1;
@@ -2261,81 +2242,80 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       break;
     case DSMSG_NOTIFY_TIDLOAD:
       {
-	struct nto_thread_info *priv;
+        struct nto_thread_info *priv;
 
-	status->kind = nto_stop_on_thread_events
-			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
-	status->value.sig = GDB_SIGNAL_0;
-	if (supports64bit())
-	  {
-	    tid = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.thread_event.tid,
-					    4, byte_order);
-	  }
-	else
-	  {
-	    tid = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.thread_event.tid,
-					    4, byte_order);
-	  }
-	nto_trace (0) ("New thread event: tid %d\n", tid);
+        status->kind = nto_stop_on_thread_events
+            ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+        status->value.sig = GDB_SIGNAL_0;
+        if (supports64bit())
+          {
+            tid = EXTRACT_UNSIGNED_INTEGER (
+                &recv->pkt.notify._64.un.thread_event.tid, 4, byte_order);
+          }
+        else
+          {
+            tid = EXTRACT_UNSIGNED_INTEGER (
+                &recv->pkt.notify._32.un.thread_event.tid, 4, byte_order);
+          }
+        nto_trace (0) ("New thread event: tid %d\n", tid);
 
-	priv = new struct nto_thread_info();
-	priv->tid = tid;
-//    priv->starting_ip = stopped_pc;
-	add_thread_with_info (ptid_t (pid, 0, tid), priv);
-	if (status->kind == TARGET_WAITKIND_SPURIOUS)
-	  tid = inferior_ptid.lwp();
+        priv = new struct nto_thread_info();
+        priv->tid = tid;
+        add_thread_with_info (ptid_t (pid, tid, 0), priv);
+        if (status->kind == TARGET_WAITKIND_SPURIOUS)
+            tid = inferior_ptid.lwp();
       }
       break;
     case DSMSG_NOTIFY_TIDUNLOAD:
       {
-	struct thread_info *ti;
-	ptid_t cur = ptid_t (pid, 0, tid);
-	const int32_t *const ptid = (supports64bit()) ? &recv->pkt.notify._64.un.thread_event.tid
-						: &recv->pkt.notify._32.un.thread_event.tid;
-	const int tid_exited = EXTRACT_SIGNED_INTEGER (ptid, 4, byte_order);
+  struct thread_info *ti;
+  ptid_t cur = ptid_t (pid, tid, 0);
+  const int32_t *const ptid = (supports64bit()) ? &recv->pkt.notify._64.un.thread_event.tid
+            : &recv->pkt.notify._32.un.thread_event.tid;
+  const int tid_exited = EXTRACT_SIGNED_INTEGER (ptid, 4, byte_order);
 
-	nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
-		       tid);
+  nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
+           tid);
 
-	status->kind = nto_stop_on_thread_events
-			 ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
-	status->value.sig = GDB_SIGNAL_0;
-	/* Must determine an alive thread for this to work. */
-	if (inferior_ptid != cur )
-	  {
-	    switch_to_thread (cur);
-	  }
+  status->kind = nto_stop_on_thread_events
+       ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+  status->value.sig = GDB_SIGNAL_0;
+  /* Must determine an alive thread for this to work. */
+  if (inferior_ptid != cur )
+    {
+      switch_to_thread (cur);
+    }
       }
       break;
 #ifdef _DEBUG_WHAT_VFORK
     case DSMSG_NOTIFY_FORK:
       {
-	int32_t child_pid = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.pid
-					      : recv->pkt.notify._32.un.fork_event.pid;
-	uint32_t vfork = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.vfork
-					    : recv->pkt.notify._32.un.fork_event.vfork;
+  int32_t child_pid = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.pid
+                : recv->pkt.notify._32.un.fork_event.pid;
+  uint32_t vfork = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.vfork
+              : recv->pkt.notify._32.un.fork_event.vfork;
 
-	nto_trace (0) ("DSMSG_NOTIFY_FORK %d\n", pid);
-	inf_data->child_pid
-	  = EXTRACT_SIGNED_INTEGER (&child_pid, 4, byte_order);
-		nto_trace (0) ("inf data child pid: %d\n", inf_data->child_pid);
-	status->value.related_pid = ptid_t (inf_data->child_pid, 0, 1);
-	inf_data->vfork
-	  = EXTRACT_SIGNED_INTEGER (&vfork, 4, byte_order) & _DEBUG_WHAT_VFORK;
-	status->kind = inf_data->vfork ? TARGET_WAITKIND_VFORKED
-				       : TARGET_WAITKIND_FORKED;
-	nto_trace (0) ("child_pid=%d\n", status->value.related_pid.pid());
+  nto_trace (0) ("DSMSG_NOTIFY_FORK %d\n", pid);
+  inf_data->child_pid
+    = EXTRACT_SIGNED_INTEGER (&child_pid, 4, byte_order);
+    nto_trace (0) ("inf data child pid: %d\n", inf_data->child_pid);
+  status->value.related_pid = ptid_t (inf_data->child_pid, 1, 0);
+  inf_data->vfork
+    = EXTRACT_SIGNED_INTEGER (&vfork, 4, byte_order) & _DEBUG_WHAT_VFORK;
+  status->kind = inf_data->vfork ? TARGET_WAITKIND_VFORKED
+               : TARGET_WAITKIND_FORKED;
+  nto_trace (0) ("child_pid=%d\n", status->value.related_pid.pid());
       }
       break;
     case DSMSG_NOTIFY_EXEC:
       /* Notification format: pidload. */
       nto_trace (0) ("DSMSG_NOTIFY_EXEC %d, %s\n", pid,
-		     supports64bit()?recv->pkt.notify._64.un.pidload.name:
-				     recv->pkt.notify._32.un.pidload.name);
+         supports64bit()?recv->pkt.notify._64.un.pidload.name:
+             recv->pkt.notify._32.un.pidload.name);
       status->kind = TARGET_WAITKIND_EXECD;
       status->value.execd_pathname = xstrdup (
-	  supports64bit()?recv->pkt.notify._64.un.pidload.name:
-			  recv->pkt.notify._32.un.pidload.name);
+    supports64bit()?recv->pkt.notify._64.un.pidload.name:
+        recv->pkt.notify._32.un.pidload.name);
       break;
 #endif
     case DSMSG_NOTIFY_DLLLOAD:
@@ -2351,8 +2331,8 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       break;
     }
   nto_trace (0) ("nto_parse_notify: pid=%d, tid=%d ip=0x%s\n",
-		 pid, tid, paddress (target_gdbarch (), stopped_pc));
-  return ptid_t (pid, 0, tid);
+     pid, tid, paddress (target_gdbarch (), stopped_pc));
+  return ptid_t (pid, tid, 0);
 }
 
 static unsigned nto_get_cpuflags (void)
@@ -2370,12 +2350,12 @@ static unsigned nto_get_cpuflags (void)
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.cpuinfo), 1);
 
       if (recv.pkt.hdr.cmd != DSrMsg_err)
-	{
-	  struct dscpuinfo foo;
-	  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-	  memcpy (&foo, recv.pkt.okdata.data, sizeof (struct dscpuinfo));
-	  cpuflags = EXTRACT_SIGNED_INTEGER (&foo.cpuflags, 4, byte_order);
-	}
+  {
+    struct dscpuinfo foo;
+    const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+    memcpy (&foo, recv.pkt.okdata.data, sizeof (struct dscpuinfo));
+    cpuflags = EXTRACT_SIGNED_INTEGER (&foo.cpuflags, 4, byte_order);
+  }
     }
   return cpuflags;
 }
@@ -2398,7 +2378,7 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
   /* Ugly hack to keep i386-nto-tdep.c cleaner. */
   if (gdbarch_bfd_arch_info (target_gdbarch ()) != NULL
       && strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386")
-	 == 0
+   == 0
       && regset == NTO_REG_FLOAT && len > 512
       && current_session->target_proto_major == 0
       && current_session->target_proto_minor < 5)
@@ -2411,9 +2391,9 @@ fetch_regs (struct regcache *regcache, int regset, int supply)
     }
 
   nto_send_init (&tran, DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
-  tran.pkt.regrd.offset = 0;	/* Always get whole set.  */
+  tran.pkt.regrd.offset = 0;  /* Always get whole set.  */
   tran.pkt.regrd.size = EXTRACT_SIGNED_INTEGER (&len, 2,
-						byte_order);
+            byte_order);
 
   rlen = nto_send_recv (&tran, &recv, sizeof (tran.pkt.regrd), 0);
 
@@ -2434,7 +2414,7 @@ pdebug_target::fetch_registers (struct regcache *regcache, int regno)
   int regset;
 
   nto_trace (0) ("pdebug_fetch_registers(regcache %p ,regno %d)\n",
-		 regcache, regno);
+     regcache, regno);
 
   if (inferior_ptid == null_ptid)
     {
@@ -2446,11 +2426,11 @@ pdebug_target::fetch_registers (struct regcache *regcache, int regno)
     return;
 
   if (regno == -1)
-    {				/* Get all regsets.  */
+    {        /* Get all regsets.  */
       for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
-	{
-	  fetch_regs (regcache, regset, 1);
-	}
+  {
+    fetch_regs (regcache, regset, 1);
+  }
     }
   else
     {
@@ -2490,16 +2470,16 @@ pdebug_target::store_registers (struct regcache *regcache, int regno)
   for (regset = NTO_REG_GENERAL; regset < NTO_REG_END; regset++)
     {
       if (regno_regset != NTO_REG_END && regno_regset != regset)
-	continue;
+  continue;
 
       len = nto_register_area (regset, nto_get_cpuflags ());
       if (len < 1)
-	continue;
+  continue;
 
       nto_send_init (&tran, DStMsg_regwr, regset, SET_CHANNEL_DEBUG);
       tran.pkt.regwr.offset = 0;
       if (nto_regset_fill (regcache, regset, tran.pkt.regwr.data, len) == -1)
-	continue;
+  continue;
 
       nto_send_recv (&tran, &recv, offsetof (DStMsg_regwr_t, data) + len, 1);
     }
@@ -2525,20 +2505,20 @@ pdebug_target::store_registers (struct regcache *regcache, int regno)
    Returns number of bytes transferred, or 0 for error.  */
 static enum target_xfer_status
 nto_write_bytes (CORE_ADDR memaddr, const gdb_byte *myaddr, int len,
-		 ULONGEST *const xfered_len)
+     ULONGEST *const xfered_len)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   long long addr;
   DScomm_t tran, recv;
 
   nto_trace (0) ("nto_write_bytes(to %s, from %p, len %d)\n",
-		 paddress (target_gdbarch (), memaddr), myaddr, len);
+     paddress (target_gdbarch (), memaddr), myaddr, len);
 
   /* NYI: need to handle requests bigger than largest allowed packet.  */
   nto_send_init (&tran, DStMsg_memwr, 0, SET_CHANNEL_DEBUG);
   addr = memaddr;
   tran.pkt.memwr.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8,
-						  byte_order);
+              byte_order);
   memcpy (tran.pkt.memwr.data, myaddr, len);
   nto_send_recv (&tran, &recv, offsetof (DStMsg_memwr_t, data) + len, 0);
 
@@ -2549,7 +2529,7 @@ nto_write_bytes (CORE_ADDR memaddr, const gdb_byte *myaddr, int len,
       break;
     case DSrMsg_okstatus:
       *xfered_len = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4,
-					    byte_order);
+              byte_order);
       break;
     default:
       return TARGET_XFER_E_IO;
@@ -2570,7 +2550,7 @@ nto_write_bytes (CORE_ADDR memaddr, const gdb_byte *myaddr, int len,
    Returns number of bytes transferred, or 0 for error.  */
 static enum target_xfer_status
 nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
-		ULONGEST *const xfered_len)
+    ULONGEST *const xfered_len)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int rcv_len, tot_len, ask_len;
@@ -2579,7 +2559,7 @@ nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
   if (remote_debug)
     {
       printf_unfiltered ("nto_read_bytes(from %s, to %p, len %d)\n",
-			 paddress (target_gdbarch (), memaddr), myaddr, len);
+       paddress (target_gdbarch (), memaddr), myaddr, len);
     }
 
   tot_len = rcv_len = ask_len = 0;
@@ -2591,22 +2571,22 @@ nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
       nto_send_init (&tran, DStMsg_memrd, 0, SET_CHANNEL_DEBUG);
       addr = memaddr + tot_len;
       tran.pkt.memrd.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8,
-						      byte_order);
+                  byte_order);
       ask_len =
-	((len - tot_len) >
-	 DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (len - tot_len);
+  ((len - tot_len) >
+   DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (len - tot_len);
       tran.pkt.memrd.size = EXTRACT_SIGNED_INTEGER (&ask_len, 2,
-						    byte_order);
+                byte_order);
       rcv_len = nto_send_recv (&tran, &recv, sizeof (tran.pkt.memrd), 0) - sizeof (recv.pkt.hdr);
       if (rcv_len <= 0)
-	break;
+  break;
       if (recv.pkt.hdr.cmd == DSrMsg_okdata)
-	{
-	  memcpy (myaddr + tot_len, recv.pkt.okdata.data, rcv_len);
-	  tot_len += rcv_len;
-	}
+  {
+    memcpy (myaddr + tot_len, recv.pkt.okdata.data, rcv_len);
+    tot_len += rcv_len;
+  }
       else
-	break;
+  break;
     }
   while (tot_len != len);
 
@@ -2617,9 +2597,9 @@ nto_read_bytes (CORE_ADDR memaddr, gdb_byte *myaddr, int len,
 
 enum target_xfer_status
 pdebug_target::xfer_partial (enum target_object object,
-		  const char *annex, gdb_byte *readbuf,
-		  const gdb_byte *writebuf, const ULONGEST offset,
-		  const ULONGEST len, ULONGEST *const xfered_len)
+      const char *annex, gdb_byte *readbuf,
+      const gdb_byte *writebuf, const ULONGEST offset,
+      const ULONGEST len, ULONGEST *const xfered_len)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   const unsigned arch_len
@@ -2633,12 +2613,12 @@ pdebug_target::xfer_partial (enum target_object object,
   if (object == TARGET_OBJECT_MEMORY)
     {
       if (readbuf != NULL)
-	return nto_read_bytes (offset, readbuf, len, xfered_len);
+  return nto_read_bytes (offset, readbuf, len, xfered_len);
       else if (writebuf != NULL)
-	return nto_write_bytes (offset, writebuf, len, xfered_len);
+  return nto_write_bytes (offset, writebuf, len, xfered_len);
     }
   else if (object == TARGET_OBJECT_AUXV
-	   && readbuf)
+     && readbuf)
     {
       /* For 32-bit architecture, size of auxv_t is 8 bytes.  */
       const unsigned int sizeof_auxv_t = (arch_len == 32)? 8 : 16;
@@ -2654,127 +2634,127 @@ pdebug_target::xfer_partial (enum target_object object,
          pdebug-s don't support reading procfs_info.  */
 
       if (nto_read_procfsinfo (&procfs_info))
-	{
-	  struct inferior *const inf = current_inferior ();
-	  struct nto_inferior_data *inf_data;
-	  struct nto_remote_inferior_data *inf_rdata;
-	  CORE_ADDR initial_stack;
+  {
+    struct inferior *const inf = current_inferior ();
+    struct nto_inferior_data *inf_data;
+    struct nto_remote_inferior_data *inf_rdata;
+    CORE_ADDR initial_stack;
 
-	  inf_rdata = nto_remote_inferior_data (inf);
+    inf_rdata = nto_remote_inferior_data (inf);
 
-	  if (inf_rdata->auxv == NULL)
-	    {
-	      const CORE_ADDR initial_stack
-		= EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
-					  arch_len / 8, byte_order);
+    if (inf_rdata->auxv == NULL)
+      {
+        const CORE_ADDR initial_stack
+    = EXTRACT_SIGNED_INTEGER (&procfs_info.initial_stack,
+            arch_len / 8, byte_order);
 
-	      inf_rdata->auxv = (gdb_byte *)xcalloc (1, sizeof_tempbuf);
-	      tempread = nto_read_auxv_from_initial_stack (initial_stack,
-							   inf_rdata->auxv,
-							   sizeof_tempbuf,
-							   sizeof_auxv_t);
-	    }
-	  else
-	    {
-	      tempread = sizeof_tempbuf;
-	    }
-	  tempbuf = inf_rdata->auxv;
-	}
+        inf_rdata->auxv = (gdb_byte *)xcalloc (1, sizeof_tempbuf);
+        tempread = nto_read_auxv_from_initial_stack (initial_stack,
+                 inf_rdata->auxv,
+                 sizeof_tempbuf,
+                 sizeof_auxv_t);
+      }
+    else
+      {
+        tempread = sizeof_tempbuf;
+      }
+    tempbuf = inf_rdata->auxv;
+  }
       else if (exec_bfd && exec_bfd->tdata.elf_obj_data != NULL
-	       && exec_bfd->tdata.elf_obj_data->phdr != NULL)
-	{
-	  /* Fallback for older pdebug-s. They do not support
-	     procfsinfo transfer, so we have to read auxv from
-	     executable file.  */
-	  uint64_t phdr = 0;
-	  unsigned int phnum = 0;
-	  gdb_byte *buff = readbuf;
+         && exec_bfd->tdata.elf_obj_data->phdr != NULL)
+  {
+    /* Fallback for older pdebug-s. They do not support
+       procfsinfo transfer, so we have to read auxv from
+       executable file.  */
+    uint64_t phdr = 0;
+    unsigned int phnum = 0;
+    gdb_byte *buff = readbuf;
 
-	  /* Simply copy what we have in exec_bfd to the readbuf.  */
-	  while (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type != PT_NULL)
-	    {
-	      if (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type == PT_PHDR)
-		phdr = exec_bfd->tdata.elf_obj_data->phdr[phnum].p_vaddr;
-	      phnum++;
-	    }
+    /* Simply copy what we have in exec_bfd to the readbuf.  */
+    while (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type != PT_NULL)
+      {
+        if (exec_bfd->tdata.elf_obj_data->phdr[phnum].p_type == PT_PHDR)
+    phdr = exec_bfd->tdata.elf_obj_data->phdr[phnum].p_vaddr;
+        phnum++;
+      }
 
-	  /* Create artificial auxv, with AT_PHDR, AT_PHENT and AT_PHNUM
-	     elements.  */
-	  *(int*)buff = AT_PHNUM;
-	  *(int*)buff = extract_signed_integer (buff, sizeof (int),
-						byte_order);
-	  buff += arch_len / 8; /* Includes 4 byte padding for auxv64_t */
-	  if (arch_len == 32)
-	    *(unsigned *)buff = EXTRACT_SIGNED_INTEGER (&phnum,
-							sizeof (phnum),
-							byte_order);
-	  else
-	    *(uint64_t *)buff = EXTRACT_SIGNED_INTEGER (&phnum,
-							sizeof (phnum),
-							byte_order);
+    /* Create artificial auxv, with AT_PHDR, AT_PHENT and AT_PHNUM
+       elements.  */
+    *(int*)buff = AT_PHNUM;
+    *(int*)buff = extract_signed_integer (buff, sizeof (int),
+            byte_order);
+    buff += arch_len / 8; /* Includes 4 byte padding for auxv64_t */
+    if (arch_len == 32)
+      *(unsigned *)buff = EXTRACT_SIGNED_INTEGER (&phnum,
+              sizeof (phnum),
+              byte_order);
+    else
+      *(uint64_t *)buff = EXTRACT_SIGNED_INTEGER (&phnum,
+              sizeof (phnum),
+              byte_order);
 
-	  buff += arch_len / 8;
-	  *(int*)buff = AT_PHENT;
-	  *(int*)buff = extract_signed_integer (buff, sizeof (int),
-						byte_order);
-	  buff += arch_len / 8;
-	  if (arch_len == 32)
-	    {
-	      *(int*)buff = 0x20; /* sizeof(Elf32_Phdr) */
-	      *(int*)buff = extract_signed_integer (buff, sizeof (int),
-						    byte_order);
-	    }
-	  else
-	    {
-	      *(uint64_t*)buff = 56; /* sizeof(Elf64_Phdr) */
-	      *(uint64_t*)buff = extract_signed_integer (buff,
-							 sizeof (uint64_t),
-							 byte_order);
-	    }
-	  buff += arch_len / 8;
+    buff += arch_len / 8;
+    *(int*)buff = AT_PHENT;
+    *(int*)buff = extract_signed_integer (buff, sizeof (int),
+            byte_order);
+    buff += arch_len / 8;
+    if (arch_len == 32)
+      {
+        *(int*)buff = 0x20; /* sizeof(Elf32_Phdr) */
+        *(int*)buff = extract_signed_integer (buff, sizeof (int),
+                byte_order);
+      }
+    else
+      {
+        *(uint64_t*)buff = 56; /* sizeof(Elf64_Phdr) */
+        *(uint64_t*)buff = extract_signed_integer (buff,
+               sizeof (uint64_t),
+               byte_order);
+      }
+    buff += arch_len / 8;
 
-	  *(int*)buff = AT_PHDR;
-	  *(int*)buff = extract_signed_integer (buff, sizeof (int),
-						byte_order);
-	  buff += arch_len / 8;
-	  if (arch_len == 32)
-	    {
-	      *(int*)buff = phdr;
-	      *(int*)buff = extract_signed_integer (buff, sizeof (int),
-						byte_order);
-	    }
-	  else
-	    {
-	      *(uint64_t*)buff = phdr;
-	      *(uint64_t*)buff = extract_signed_integer (buff,
-							 sizeof (uint64_t),
-							 byte_order);
-	    }
-	  buff += arch_len / 8;
-	  tempread = (int)(buff - readbuf);
-	}
+    *(int*)buff = AT_PHDR;
+    *(int*)buff = extract_signed_integer (buff, sizeof (int),
+            byte_order);
+    buff += arch_len / 8;
+    if (arch_len == 32)
+      {
+        *(int*)buff = phdr;
+        *(int*)buff = extract_signed_integer (buff, sizeof (int),
+            byte_order);
+      }
+    else
+      {
+        *(uint64_t*)buff = phdr;
+        *(uint64_t*)buff = extract_signed_integer (buff,
+               sizeof (uint64_t),
+               byte_order);
+      }
+    buff += arch_len / 8;
+    tempread = (int)(buff - readbuf);
+  }
       tempread = (tempread<len?tempread:len) - offset;
       memcpy (readbuf, tempbuf + offset, tempread);
       *xfered_len = tempread;
       return tempread? TARGET_XFER_OK : TARGET_XFER_EOF;
     }  /* TARGET_OBJECT_AUXV */
   else if (object == TARGET_OBJECT_SIGNAL_INFO
-	   && readbuf)
+     && readbuf)
     {
       nto_procfs_status status;
       nto_siginfo_t siginfo;
       LONGEST mylen = len;
 
       if ((offset + mylen) > sizeof (nto_siginfo_t))
-	{
-	  if (offset < sizeof (nto_siginfo_t))
-	    mylen = sizeof (nto_siginfo_t) - offset;
-	  else
-	    return TARGET_XFER_EOF;
-	}
+  {
+    if (offset < sizeof (nto_siginfo_t))
+      mylen = sizeof (nto_siginfo_t) - offset;
+    else
+      return TARGET_XFER_EOF;
+  }
 
       if (!nto_read_procfsstatus (&status))
-	return TARGET_XFER_E_IO;
+  return TARGET_XFER_E_IO;
 
       // does byte order translation
       nto_get_siginfo_from_procfs_status (&status, &siginfo);
@@ -2783,7 +2763,7 @@ pdebug_target::xfer_partial (enum target_object object,
       return len? TARGET_XFER_OK : TARGET_XFER_EOF;
     }
   return this->beneath()->xfer_partial (object, annex, readbuf,
-					  writebuf, offset, len, xfered_len);
+            writebuf, offset, len, xfered_len);
 }
 
 void
@@ -2807,15 +2787,15 @@ nto_kill_1 ( )
   if (inferior_ptid != null_ptid)
     {
       nto_send_init (&tran, DStMsg_kill, DSMSG_KILL_PID, SET_CHANNEL_DEBUG);
-      tran.pkt.kill.signo = 9;	/* SIGKILL  */
+      tran.pkt.kill.signo = SIGKILL;
       tran.pkt.kill.signo = EXTRACT_SIGNED_INTEGER (&tran.pkt.kill.signo,
-						    4, byte_order);
+                4, byte_order);
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.kill), 0);
 #if 0
       nto_send_init (&tran, DStMsg_detach, 0, SET_CHANNEL_DEBUG);
       tran.pkt.detach.pid = inferior_ptid.pid();
       tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid,
-						    4, byte_order);
+                4, byte_order);
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.detach), 1);
 #endif
     }
@@ -2826,11 +2806,6 @@ nto_kill_1 ( )
 void
 pdebug_target::kill ( )
 {
-#if 0
-	/* todo bweb why? */
-  const char *cmd = "continue";
-  int steps = 5;
-#endif
   struct target_waitstatus wstatus;
   ptid_t ptid;
 
@@ -2874,7 +2849,7 @@ pdebug_target::mourn_inferior ( )
   nto_send_init (&tran, DStMsg_detach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.detach.pid = inferior_ptid.pid();
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid,
-						4, byte_order);
+            4, byte_order);
   /* do not do error handling - if it fails it fails, we're done so or so.. */
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.detach), 0);
 
@@ -2956,8 +2931,8 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
     nto_semi_init ();
 
   nto_trace (0) ("pdebug_create_inferior(exec_file '%s', args '%s', environ)\n",
-			 exec_file ? exec_file : "(null)",
-			 args.empty() ? "\"\"":args.c_str() );
+       exec_file ? exec_file : "(null)",
+       args.empty() ? "\"\"":args.c_str() );
 
   nto_send_init (&tran, DStMsg_env, DSMSG_ENV_CLEARENV, SET_CHANNEL_DEBUG);
   nto_send_recv (&tran, &recv, sizeof (DStMsg_env_t), 1);
@@ -2965,9 +2940,9 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
   if (!current_session->inherit_env)
     {
       for (envc = 0; *env; env++, envc++)
-	errors += !nto_send_env (*env);
+  errors += !nto_send_env (*env);
       if (errors)
-	warning ("Error(s) occured while sending environment variables.\n");
+  warning ("Error(s) occured while sending environment variables.\n");
     }
 
   if (inf_rdata->remote_cwd != NULL)
@@ -2975,7 +2950,7 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
       nto_send_init (&tran, DStMsg_cwd, DSMSG_CWD_SET, SET_CHANNEL_DEBUG);
       strcpy ((char *)tran.pkt.cwd.path, inf_rdata->remote_cwd);
       nto_send_recv (&tran, &recv, offsetof (DStMsg_cwd_t, path)
-		+ strlen ((const char *)tran.pkt.cwd.path) + 1, 1);
+    + strlen ((const char *)tran.pkt.cwd.path) + 1, 1);
     }
 
   nto_send_init (&tran, DStMsg_env, DSMSG_ENV_CLEARARGV, SET_CHANNEL_DEBUG);
@@ -2989,25 +2964,25 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
   if (in[0])
     {
       if ((fd = open (in, O_RDONLY)) == -1)
-	perror (in);
+  perror (in);
       else
-	nto_fd_raw (fd);
+  nto_fd_raw (fd);
     }
 
   if (out[0])
     {
       if ((fd = open (out, O_WRONLY)) == -1)
-	perror (out);
+  perror (out);
       else
-	nto_fd_raw (fd);
+  nto_fd_raw (fd);
     }
 
   if (err[0])
     {
       if ((fd = open (err, O_WRONLY)) == -1)
-	perror (err);
+  perror (err);
       else
-	nto_fd_raw (fd);
+  nto_fd_raw (fd);
     }
 
   in = "@0";
@@ -3019,13 +2994,13 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
       errors = !nto_send_arg (exec_file);
       /* Send it twice - first as cmd, second as argv[0]. */
       if (!errors)
-	errors = !nto_send_arg (exec_file);
+  errors = !nto_send_arg (exec_file);
 
       if (errors)
-	{
-	  error ("Failed to send executable file name.\n");
-	  goto freeargs;
-	}
+  {
+    error ("Failed to send executable file name.\n");
+    goto freeargs;
+  }
     }
   else if (*start_argv == NULL)
     {
@@ -3038,17 +3013,17 @@ pdebug_target::create_inferior (const char *exec_file, const std::string &args, 
       /* Send arguments (starting from index 1, argv[0] has already been
          sent above. */
       if (symfile_objfile != NULL)
-	exec_file_attach (symfile_objfile->original_name, 0);
+  exec_file_attach (symfile_objfile->original_name, 0);
 
       exec_file = *start_argv;
 
       errors = !nto_send_arg (*start_argv);
 
       if (errors)
-	{
-	  error ("Failed to send argument.\n");
-	  goto freeargs;
-	}
+  {
+    error ("Failed to send argument.\n");
+    goto freeargs;
+  }
     }
 
   errors = 0;
@@ -3071,7 +3046,7 @@ freeargs:
   /* NYI: msg too big for buffer.  */
   if (current_session->inherit_env)
     nto_send_init (&tran, DStMsg_load, DSMSG_LOAD_DEBUG | DSMSG_LOAD_INHERIT_ENV,
-		   SET_CHANNEL_DEBUG);
+       SET_CHANNEL_DEBUG);
   else
     nto_send_init (&tran, DStMsg_load, DSMSG_LOAD_DEBUG, SET_CHANNEL_DEBUG);
 
@@ -3082,22 +3057,22 @@ freeargs:
 
   strcpy (p, exec_file);
   p += strlen (p);
-  *p++ = '\0';			/* load_file */
+  *p++ = '\0';      /* load_file */
 
   strcpy (p, in);
   p += strlen (p);
-  *p++ = '\0';			/* stdin */
+  *p++ = '\0';      /* stdin */
 
   strcpy (p, out);
   p += strlen (p);
-  *p++ = '\0';			/* stdout */
+  *p++ = '\0';      /* stdout */
 
   strcpy (p, err);
   p += strlen (p);
-  *p++ = '\0';			/* stderr */
+  *p++ = '\0';      /* stderr */
 
   nto_send_recv (&tran, &recv, offsetof (DStMsg_load_t, cmdline) + p - tran.pkt.load.cmdline + 1,
-	    1);
+      1);
   /* Comes back as an DSrMsg_okdata, but it's really a DShMsg_notify. */
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
@@ -3110,11 +3085,8 @@ freeargs:
       inf->attach_flag = 1;
     }
 
-  /* NYI: add the symbol info somewhere?  */
-#ifdef SOLIB_CREATE_INFERIOR_HOOK
   if (exec_bfd)
-    SOLIB_CREATE_INFERIOR_HOOK (pid);
-#endif
+    solib_create_inferior_hook (from_tty);
 }
 
 static int
@@ -3124,7 +3096,7 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   DScomm_t tran, recv;
   size_t sizeof_pkt;
 
-  nto_trace (0) ("nto_insert_breakpoint(addr %s, contents_cache %p) pid:%d\n", 
+  nto_trace (0) ("nto_insert_breakpoint(addr %s, contents_cache %p) pid:%d\n",
                  paddress (target_gdbarch (), addr), contents_cache, inferior_ptid.pid());
 
   nto_send_init (&tran, DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
@@ -3139,7 +3111,7 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
     {
       tran.pkt.brk32.size = nto_breakpoint_size (addr);
       tran.pkt.brk32.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 4,
-						      byte_order);
+                  byte_order);
       sizeof_pkt = sizeof (tran.pkt.brk32);
     }
   nto_send_recv (&tran, &recv, sizeof_pkt, 0);
@@ -3154,7 +3126,7 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   current_target.to_insert_breakpoint.  */
 int
 pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
-			  struct bp_target_info *bp_tg_inf)
+        struct bp_target_info *bp_tg_inf)
 {
   if (bp_tg_inf == 0)
     {
@@ -3165,17 +3137,17 @@ pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!set_thread ( nto_get_thread_alive ( ptid_t( inferior_ptid.pid(), 0, 0 ) ).lwp() ) )
+  if (!set_thread ( nto_get_thread_alive ( ptid_t( inferior_ptid.pid(), 1, 0 ) ).lwp() ) )
     {
       nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n",
-		     inferior_ptid.pid(), inferior_ptid.lwp());
+         inferior_ptid.pid(), inferior_ptid.lwp());
       return 0;
     }
 
   bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
 
   return nto_insert_breakpoint ( bp_tg_inf->placed_address,
-								bp_tg_inf->shadow_contents);
+                bp_tg_inf->shadow_contents);
 }
 
 
@@ -3185,33 +3157,30 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   DScomm_t tran, recv;
 
-  nto_trace (0)	("nto_remove_breakpoint(addr %s, contents_cache %p) (pid %d)\n",
+  nto_trace (0)  ("nto_remove_breakpoint(addr %s, contents_cache %p) (pid %d)\n",
                  paddress (target_gdbarch (), addr), contents_cache, inferior_ptid.pid());
 
-  /* TODO: while the explanation is correct, the code is just plain wrong..
-   *       change code above too..
-   * Must select appropriate inferior.  Due to our pdebug protocol,
+  /* Must select appropriate inferior.  Due to our pdebug protocol,
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
-     We need to swithc pdebug internal current prp pointer.   */
-  if (!set_thread ( nto_get_thread_alive ( ptid_t (inferior_ptid.pid(),0,0)).lwp() ) )
+     We need to switch pdebug internal current prp pointer.   */
+  if (!set_thread ( nto_get_thread_alive ( ptid_t (inferior_ptid.pid(),1,0)).lwp() ) )
     {
       nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
       return 0;
     }
 
-  /* This got changed to send DSMSG_BRK_EXEC with a size of -1
-     nto_send_init(DStMsg_brk, DSMSG_BRK_REMOVE, SET_CHANNEL_DEBUG).  */
   nto_send_init (&tran, DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
   if (supports64bit())
     {
-      tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8, byte_order);
+      tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr,
+          sizeof(tran.pkt.brk.addr), byte_order);
       tran.pkt.brk.size = -1;
     }
   else
     {
-      tran.pkt.brk32.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 4,
-						      byte_order);
+      tran.pkt.brk32.addr = EXTRACT_UNSIGNED_INTEGER (&addr,
+          sizeof(tran.pkt.brk32.addr), byte_order);
       tran.pkt.brk32.size = -1;
     }
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.brk), 0);
@@ -3224,8 +3193,8 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
 
 int
 pdebug_target::remove_breakpoint (struct gdbarch *gdbarch,
-			  struct bp_target_info *bp_tg_inf,
-			  enum remove_bp_reason reason)
+        struct bp_target_info *bp_tg_inf,
+        enum remove_bp_reason reason)
 {
   nto_trace (0) ("%s ( bp_tg_inf=%p )\n", __func__, bp_tg_inf);
 
@@ -3235,12 +3204,12 @@ pdebug_target::remove_breakpoint (struct gdbarch *gdbarch,
     }
 
   return nto_remove_breakpoint ( bp_tg_inf->placed_address,
-				bp_tg_inf->shadow_contents);
+        bp_tg_inf->shadow_contents);
 }
 
 int
 pdebug_target::remove_hw_breakpoint (struct gdbarch *gdbarch,
-			  struct bp_target_info *bp_tg_inf)
+        struct bp_target_info *bp_tg_inf)
 {
   nto_trace (0) ("%s ( bp_tg_inf=%p )\n", __func__, bp_tg_inf);
 
@@ -3250,7 +3219,7 @@ pdebug_target::remove_hw_breakpoint (struct gdbarch *gdbarch,
     }
 
   return nto_remove_breakpoint (bp_tg_inf->placed_address,
-				bp_tg_inf->shadow_contents);
+        bp_tg_inf->shadow_contents);
 }
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -3263,7 +3232,7 @@ char
 
   while (buf[i]) {
     if (buf[i] == '\\') {
-    	retv[i]='/';
+      retv[i]='/';
     }
     else {
       retv[i]=buf[i];
@@ -3342,7 +3311,7 @@ upload_command (const char *args, int fromtty)
   if (nto_fileopen (to, QNX_WRITE_MODE, QNX_WRITE_PERMS) == -1)
     {
       printf_unfiltered ("Remote was unable to open '%s': %s\n", to,
-			 strerror (errno));
+       strerror (errno));
       close (fd);
       filename_opened.release();
       xfree (from);
@@ -3352,11 +3321,11 @@ upload_command (const char *args, int fromtty)
   while ((len = read (fd, buf, sizeof buf)) > 0)
     {
       if (nto_filewrite (buf, len) == -1)
-	{
-	  printf_unfiltered ("Remote was unable to complete write: %s\n",
-			     strerror (errno));
-	  goto exit;
-	}
+  {
+    printf_unfiltered ("Remote was unable to complete write: %s\n",
+           strerror (errno));
+    goto exit;
+  }
     }
   if (len == -1)
     {
@@ -3370,7 +3339,7 @@ upload_command (const char *args, int fromtty)
       xfree (inf_rdata->remote_exe);
       inf_rdata->remote_exe = xstrdup (to);
       if (only_session.remote_exe == NULL)
-	only_session.remote_exe = xstrdup (to);
+        only_session.remote_exe = xstrdup (to);
     }
 
 exit:
@@ -3422,7 +3391,8 @@ download_command (const char *args, int fromtty)
   to = argv[1] ? argv[1] : from;
 #endif
 
-  if ((fd = open (to, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666)) == -1)
+  if ((fd = open (to, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH )) == -1)
     {
       printf_unfiltered ("Unable to open '%s': %s\n", to, strerror (errno));
       goto cleanup;
@@ -3431,7 +3401,7 @@ download_command (const char *args, int fromtty)
   if (nto_fileopen (from, QNX_READ_MODE, 0) == -1)
     {
       printf_unfiltered ("Remote was unable to open '%s': %s\n", from,
-			 strerror (errno));
+       strerror (errno));
       close (fd);
       goto cleanup;
     }
@@ -3439,11 +3409,11 @@ download_command (const char *args, int fromtty)
   while ((len = nto_fileread (buf, sizeof buf)) > 0)
     {
       if (write (fd, buf, len) == -1)
-	{
-	  printf_unfiltered ("Local write failed: %s\n", strerror (errno));
-	  close (fd);
-	  goto cleanup;
-	}
+  {
+    printf_unfiltered ("Local write failed: %s\n", strerror (errno));
+    close (fd);
+    goto cleanup;
+  }
     }
 
   if (len == -1)
@@ -3462,10 +3432,10 @@ nto_add_commands (void)
 
   c =
     add_com ("upload", class_obscure, upload_command,
-	     "Send a file to the target (upload {local} [{remote}])");
+       "Send a file to the target (upload {local} [{remote}])");
   set_cmd_completer (c, filename_completer);
   add_com ("download", class_obscure, download_command,
-	   "Get a file from the target (download {remote} [{local}])");
+     "Get a file from the target (download {remote} [{local}])");
 }
 
 static void
@@ -3488,7 +3458,7 @@ nto_fileopen (char *fname, int mode, int perms)
   if (nto_remote_fd != -1)
     {
       printf_unfiltered
-	("Remote file currently open, it must be closed before you can open another.\n");
+  ("Remote file currently open, it must be closed before you can open another.\n");
       errno = EAGAIN;
       return -1;
     }
@@ -3496,15 +3466,15 @@ nto_fileopen (char *fname, int mode, int perms)
   nto_send_init (&tran, DStMsg_fileopen, 0, SET_CHANNEL_DEBUG);
   strcpy (tran.pkt.fileopen.pathname, fname);
   tran.pkt.fileopen.mode = EXTRACT_SIGNED_INTEGER (&mode, 4,
-						   byte_order);
+               byte_order);
   tran.pkt.fileopen.perms = EXTRACT_SIGNED_INTEGER (&perms, 4,
-						    byte_order);
+                byte_order);
   nto_send_recv (&tran, &recv, sizeof tran.pkt.fileopen, 0);
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err,
-						    4, byte_order));
+                4, byte_order));
       return -1;
     }
   return nto_remote_fd = 0;
@@ -3543,7 +3513,7 @@ nto_fileread (char *buf, int size)
 
   nto_send_init (&tran, DStMsg_filerd, 0, SET_CHANNEL_DEBUG);
   tran.pkt.filerd.size = EXTRACT_SIGNED_INTEGER (&size, 2,
-						 byte_order);
+             byte_order);
   len = nto_send_recv (&tran, &recv, sizeof tran.pkt.filerd, 0);
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
@@ -3566,16 +3536,16 @@ nto_filewrite (char *buf, int size)
   for (siz = size; siz > 0; siz -= len, buf += len)
     {
       len =
-	siz < sizeof tran.pkt.filewr.data ? siz : sizeof tran.pkt.filewr.data;
+  siz < sizeof tran.pkt.filewr.data ? siz : sizeof tran.pkt.filewr.data;
       nto_send_init (&tran, DStMsg_filewr, 0, SET_CHANNEL_DEBUG);
       memcpy (tran.pkt.filewr.data, buf, len);
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.filewr.hdr) + len, 0);
 
       if (recv.pkt.hdr.cmd == DSrMsg_err)
-	{
-	  errno = errnoconvert (recv.pkt.err.err);
-	  return size - siz;
-	}
+  {
+    errno = errnoconvert (recv.pkt.err.err);
+    return size - siz;
+  }
     }
   return size;
 }
@@ -3590,9 +3560,11 @@ pdebug_target::can_run ( )
 
 int
 pdebug_target::can_use_hw_breakpoint (enum bptype type, int cnt,
-			   int othertype)
+         int othertype)
 {
-	/* todo bweb ask Kernel */
+  /* todo Unfortunately the Kernel has no interface to ask if HW breakpoints
+   * are supported so the user has to try - usually they should be successful
+   * though */
   return 1;
 }
 
@@ -3717,7 +3689,7 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
   parent_pid = parent_inf->pid;
 
   nto_trace (0) ("Child pid: %d %cforked\n", child_pid,
-		 nto_inferior_data (parent_inf)->vfork ? 'v' : ' ');
+     nto_inferior_data (parent_inf)->vfork ? 'v' : ' ');
 
   if (follow_child)
     {
@@ -3730,22 +3702,22 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
 
       /* To appease testsuite and be inline with linux. */
       if (info_verbose || nto_internal_debugging)
-	{
-	  if (nto_inferior_data (parent_inf)->vfork)
-	    fprintf_filtered (gdb_stdlog,
-			      _("Attaching after process %d "
-				"vfork to child process %d.\n"),
-			      parent_pid, child_pid);
-	  else
-	    fprintf_filtered (gdb_stdlog,
-			      _("Attaching after process %d "
-				"fork to child process %d.\n"),
-			      parent_pid, child_pid);
+  {
+    if (nto_inferior_data (parent_inf)->vfork)
+      fprintf_filtered (gdb_stdlog,
+            _("Attaching after process %d "
+        "vfork to child process %d.\n"),
+            parent_pid, child_pid);
+    else
+      fprintf_filtered (gdb_stdlog,
+            _("Attaching after process %d "
+        "fork to child process %d.\n"),
+            parent_pid, child_pid);
 
-	}
+  }
 
       if (!nto_attach_only (child_pid, &recv))
-	return 1;
+  return 1;
 
       child_inf = add_inferior (child_pid);
       child_inf->attach_flag = parent_inf->attach_flag;
@@ -3753,7 +3725,7 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
       child_inf->gdbarch = parent_inf->gdbarch;
       copy_inferior_target_desc_info (child_inf, parent_inf);
       if (parent_inf->args != NULL)
-	child_inf->args = xstrdup (parent_inf->args);
+  child_inf->args = xstrdup (parent_inf->args);
 
       /* Always clone pspace so that inferiors don't get their
        * associated file names messed up. */
@@ -3766,40 +3738,40 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
       clone_program_space (child_inf->pspace, parent_inf->pspace);
 
       if (nto_inferior_data (parent_inf)->vfork)
-	{
-	  child_inf->vfork_parent = parent_inf;
-	  child_inf->pending_detach = 0;
-	  parent_inf->vfork_child = child_inf;
-	  parent_inf->pending_detach = detach_fork;
-	  parent_inf->waiting_for_vfork_done = 1;
-	  /* Wait for child event EXEC or PIDUNLOAD */
-	  parent_inf->pspace->breakpoints_not_allowed = 1;
+  {
+    child_inf->vfork_parent = parent_inf;
+    child_inf->pending_detach = 0;
+    parent_inf->vfork_child = child_inf;
+    parent_inf->pending_detach = detach_fork;
+    parent_inf->waiting_for_vfork_done = 1;
+    /* Wait for child event EXEC or PIDUNLOAD */
+    parent_inf->pspace->breakpoints_not_allowed = 1;
 
-	  inferior_ptid = ptid_t (child_pid, 0, 1);
-	  add_thread (inferior_ptid);
-	}
+    inferior_ptid = ptid_t (child_pid, 1, 0);
+    add_thread (inferior_ptid);
+  }
       else
-	{
-	  if (detach_fork)
-	    {
-	      target_detach (NULL, 0);
-	      inferior_ptid = ptid_t (child_pid, 0, 1);
-	      add_thread (inferior_ptid);
-	    }
-	  else
-	    {
-	      inferior_ptid = ptid_t (child_pid, 0, 1);
-	      add_thread (inferior_ptid);
+  {
+    if (detach_fork)
+      {
+        target_detach (NULL, 0);
+        inferior_ptid = ptid_t (child_pid, 1, 0);
+        add_thread (inferior_ptid);
+      }
+    else
+      {
+        inferior_ptid = ptid_t (child_pid, 1, 0);
+        add_thread (inferior_ptid);
 
-	      child_inf->aspace = new_address_space ();
-	      child_inf->pspace = new program_space (child_inf->aspace);
-	      child_inf->removable = 1;
-	      child_inf->symfile_flags = SYMFILE_NO_READ;
-	      set_current_program_space (child_inf->pspace);
-	      clone_program_space (child_inf->pspace, parent_inf->pspace);
-	      solib_create_inferior_hook (0);
-	    }
-	}
+        child_inf->aspace = new_address_space ();
+        child_inf->pspace = new program_space (child_inf->aspace);
+        child_inf->removable = 1;
+        child_inf->symfile_flags = SYMFILE_NO_READ;
+        set_current_program_space (child_inf->pspace);
+        clone_program_space (child_inf->pspace, parent_inf->pspace);
+        solib_create_inferior_hook (0);
+      }
+  }
 
       inf_data = nto_inferior_data (child_inf);
       inf_data->has_execution = 1;
@@ -3811,72 +3783,72 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
       c_inf_rdata = nto_remote_inferior_data (child_inf);
 
       if (p_inf_rdata->remote_exe != NULL)
-	c_inf_rdata->remote_exe = xstrdup (p_inf_rdata->remote_exe);
+  c_inf_rdata->remote_exe = xstrdup (p_inf_rdata->remote_exe);
       if (p_inf_rdata->remote_cwd != NULL)
-	c_inf_rdata->remote_cwd = xstrdup (p_inf_rdata->remote_cwd);
+  c_inf_rdata->remote_cwd = xstrdup (p_inf_rdata->remote_cwd);
     }
   else /* !follow_child */
     {
       struct nto_inferior_data *inf_data;
 
       if (!detach_fork)
-	{
-	  struct inferior *child_inf;
-	  const ptid_t old_inferior_ptid = inferior_ptid;
-	  struct program_space *const old_program_space
-	    = current_program_space;
-	  DScomm_t recv;
+  {
+    struct inferior *child_inf;
+    const ptid_t old_inferior_ptid = inferior_ptid;
+    struct program_space *const old_program_space
+      = current_program_space;
+    DScomm_t recv;
 
-	  nto_trace (0)("%s: parent, attach child\n", __func__);
-	  if (nto_inferior_data (parent_inf)->vfork)
-	    {
-	      nto_trace (0)("Can not attach to vforked child and not follow it\n");
-	      return 0;
-	    }
+    nto_trace (0)("%s: parent, attach child\n", __func__);
+    if (nto_inferior_data (parent_inf)->vfork)
+      {
+        nto_trace (0)("Can not attach to vforked child and not follow it\n");
+        return 0;
+      }
 
-	  if (!nto_attach_only (child_pid, &recv))
-	    {
-	      error (_("Could not attach to %d\n"), child_pid);
-	      return 0;
-	    }
+    if (!nto_attach_only (child_pid, &recv))
+      {
+        error (_("Could not attach to %d\n"), child_pid);
+        return 0;
+      }
 
-	  child_inf = add_inferior (child_pid);
+    child_inf = add_inferior (child_pid);
 
-	  child_inf->attach_flag = parent_inf->attach_flag;
-	  copy_terminal_info (child_inf, parent_inf);
+    child_inf->attach_flag = parent_inf->attach_flag;
+    copy_terminal_info (child_inf, parent_inf);
 
-	  inferior_ptid = nto_get_thread_alive ( ptid_t(child_pid,0,0));
-	  add_thread (inferior_ptid);
+    inferior_ptid = nto_get_thread_alive ( ptid_t(child_pid,0,0));
+    add_thread (inferior_ptid);
 
-	  child_inf->aspace = new_address_space ();
-	  child_inf->pspace = new program_space (child_inf->aspace);
-	  child_inf->removable = 1;
-	  set_current_program_space (child_inf->pspace);
-	  clone_program_space (child_inf->pspace, parent_inf->pspace);
+    child_inf->aspace = new_address_space ();
+    child_inf->pspace = new program_space (child_inf->aspace);
+    child_inf->removable = 1;
+    set_current_program_space (child_inf->pspace);
+    clone_program_space (child_inf->pspace, parent_inf->pspace);
 
-	  solib_create_inferior_hook (0);
+    solib_create_inferior_hook (0);
 
-	  inf_data = nto_inferior_data (child_inf);
-	  inf_data->has_execution = 1;
-	  inf_data->has_stack = 1;
-	  inf_data->has_registers = 1;
-	  inf_data->has_memory = 1;
+    inf_data = nto_inferior_data (child_inf);
+    inf_data->has_execution = 1;
+    inf_data->has_stack = 1;
+    inf_data->has_registers = 1;
+    inf_data->has_memory = 1;
 
-	  /* Restore */
-	  set_current_program_space (old_program_space);
-	  inferior_ptid = old_inferior_ptid;
-	  set_thread (inferior_ptid.lwp());
-	} else {
-	  /* To appease testsuite and be inline with linux. */
-	  if (info_verbose || nto_internal_debugging)
-	    {
-	      target_terminal::ours ();
-	      fprintf_filtered (gdb_stdlog,
-				"Detaching after fork from "
-				"child process %d.\n",
-				child_pid);
-	    }
-	}
+    /* Restore */
+    set_current_program_space (old_program_space);
+    inferior_ptid = old_inferior_ptid;
+    set_thread (inferior_ptid.lwp());
+  } else {
+    /* To appease testsuite and be inline with linux. */
+    if (info_verbose || nto_internal_debugging)
+      {
+        target_terminal::ours ();
+        fprintf_filtered (gdb_stdlog,
+        "Detaching after fork from "
+        "child process %d.\n",
+        child_pid);
+      }
+  }
     }
 
   return 0;
@@ -3884,9 +3856,9 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
 
 int
 pdebug_target::verify_memory (const gdb_byte *data,
-		   CORE_ADDR memaddr, ULONGEST size)
+       CORE_ADDR memaddr, ULONGEST size)
 {
-  // TODO: This should be more optimal, similar to remote.c 
+  // TODO: This should be more optimal, similar to remote.c
   // implementation and pass address, size and crc32 to pdebug
   // so it can perform crc32 there and save network traffic
   gdb_byte *const buf = (gdb_byte *)xmalloc (size);
@@ -3948,7 +3920,6 @@ pdebug_target::terminal_info (const char *arg, int c)
 
 #endif
 
-
 static void
 update_threadnames (void)
 {
@@ -3976,7 +3947,7 @@ update_threadnames (void)
       errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
       if (errno != EINVAL)  {
         warning ("Warning: could not retrieve tidnames (%d - %s)\n", errno, strerror(errno) );
-	  }
+    }
       return;
     }
 
@@ -3996,8 +3967,8 @@ update_threadnames (void)
       namelen = strlen(buf);
 
       nto_trace (0) ("Thread %d name: %s\n", tid, buf);
-      ptid = ptid_t (cur_pid, 0, tid);
-      ti = find_thread_ptid (ptid);
+      ptid = ptid_t (cur_pid, tid, 0);
+      ti = nto_find_thread (ptid);
       if(ti) {
         ((struct nto_thread_info *)ti->priv.get())->setName(buf);
       }
@@ -4058,7 +4029,7 @@ pdebug_target::update_thread_list ( )
       struct thread_info *new_thread;
       ptid_t ptid;
       tip->tid =  EXTRACT_UNSIGNED_INTEGER (&tip->tid, 2,
-					    byte_order);
+              byte_order);
       ptid = ptid_t(cur_pid, tip->tid, 0);
 
       if (tip->tid < 0) {
@@ -4067,16 +4038,23 @@ pdebug_target::update_thread_list ( )
       }
 
       /* check if we know this thread already */
-      new_thread = find_thread_ptid (ptid);
+      new_thread = nto_find_thread (ptid);
 
       /* it's a new, non-dead thread */
       if(!new_thread && tip->state != 0) {
+        /* todo: this should only happen when a new thread is created
+         * after initial attach  */
+        warning("Explicitly adding thread %s!", nto_pid_to_str(ptid) );
         new_thread = add_thread (ptid);
         new_thread->priv.reset(new nto_thread_info());
       }
 
       /* update thread info */
       if ( new_thread ) {
+        /* create thread info if the thread was found and announced by GDB */
+        if( new_thread->priv.get() == NULL ) {
+          new_thread->priv.reset(new nto_thread_info());
+        }
         ((struct nto_thread_info *)new_thread->priv.get())->fill(tip);
       }
       total_tids++;
@@ -4130,11 +4108,11 @@ nto_pidlist (const char *args, int from_tty)
 
   /* Send a DSMSG_PIDLIST_SPECIFIC_TID to see if it is supported.  */
   nto_send_init (&tran, DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC_TID,
-		 SET_CHANNEL_DEBUG);
+     SET_CHANNEL_DEBUG);
   tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4,
-						 byte_order);
+             byte_order);
   tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER (&start_tid, 4,
-						 byte_order);
+             byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.pidlist), 0);
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
@@ -4146,47 +4124,47 @@ nto_pidlist (const char *args, int from_tty)
     {
       nto_send_init (&tran, DStMsg_pidlist, subcmd, SET_CHANNEL_DEBUG);
       tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4,
-						     byte_order);
+                 byte_order);
       tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER (&start_tid, 4,
-						     byte_order);
+                 byte_order);
       nto_send_recv (&tran, &recv, sizeof (tran.pkt.pidlist), 0);
       if (recv.pkt.hdr.cmd == DSrMsg_err)
-	{
-	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER
-				  (&recv.pkt.err.err, 4,
-				   byte_order));
-	  return;
-	}
+  {
+    errno = errnoconvert (EXTRACT_SIGNED_INTEGER
+          (&recv.pkt.err.err, 4,
+           byte_order));
+    return;
+  }
       if (recv.pkt.hdr.cmd != DSrMsg_okdata)
-	{
-	  errno = EOK;
-	  return;
-	}
+  {
+    errno = EOK;
+    return;
+  }
 
       for (tip =
-	   (struct tidinfo *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
-	   tip->tid != 0; tip++)
-	{
-	  if ((args != NULL && strcasestr(pidlist->name, args) != NULL)
-	      || args == NULL)
-	    printf_filtered ("%s - %ld/%ld\n", pidlist->name,
-			     (long) EXTRACT_SIGNED_INTEGER (&pidlist->pid,
-							    4, byte_order),
-			     (long) EXTRACT_SIGNED_INTEGER (&tip->tid, 2,
-							    byte_order));
-	  total_tid++;
-	}
+     (struct tidinfo *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
+     tip->tid != 0; tip++)
+  {
+    if ((args != NULL && strcasestr(pidlist->name, args) != NULL)
+        || args == NULL)
+      printf_filtered ("%s - %ld/%ld\n", pidlist->name,
+           (long) EXTRACT_SIGNED_INTEGER (&pidlist->pid,
+                  4, byte_order),
+           (long) EXTRACT_SIGNED_INTEGER (&tip->tid, 2,
+                  byte_order));
+    total_tid++;
+  }
       pid = EXTRACT_SIGNED_INTEGER (&pidlist->pid, 4, byte_order);
       if (specific_tid_supported)
-	{
-	  if (total_tid < EXTRACT_SIGNED_INTEGER
-			    (&pidlist->num_tids, 4, byte_order))
-	    {
-	      subcmd = DSMSG_PIDLIST_SPECIFIC_TID;
-	      start_tid = total_tid + 1;
-	      continue;
-	    }
-	}
+  {
+    if (total_tid < EXTRACT_SIGNED_INTEGER
+          (&pidlist->num_tids, 4, byte_order))
+      {
+        subcmd = DSMSG_PIDLIST_SPECIFIC_TID;
+        start_tid = total_tid + 1;
+        continue;
+      }
+  }
       start_tid = 1;
       total_tid = 0;
       subcmd = DSMSG_PIDLIST_NEXT;
@@ -4205,7 +4183,7 @@ nto_mapinfo (unsigned addr, int first, int elfonly)
   char subcmd;
 
   if (core_bfd != NULL)
-    {				/* Have to implement corefile mapinfo.  */
+    {        /* Have to implement corefile mapinfo.  */
       errno = EOK;
       return NULL;
     }
@@ -4221,7 +4199,7 @@ nto_mapinfo (unsigned addr, int first, int elfonly)
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
       errno = errnoconvert (EXTRACT_SIGNED_INTEGER
-			      (&recv.pkt.err.err, 4, byte_order));
+            (&recv.pkt.err.err, 4, byte_order));
       return NULL;
     }
   if (recv.pkt.hdr.cmd != DSrMsg_okdata)
@@ -4236,26 +4214,26 @@ nto_mapinfo (unsigned addr, int first, int elfonly)
   dmap.dev = EXTRACT_SIGNED_INTEGER (&map.dev, 4, byte_order);
 
   dmap.text.addr = EXTRACT_UNSIGNED_INTEGER (&map.text.addr, 4,
-					     byte_order);
+               byte_order);
   dmap.text.size = EXTRACT_SIGNED_INTEGER (&map.text.size, 4,
-					   byte_order);
+             byte_order);
   dmap.text.flags = EXTRACT_SIGNED_INTEGER (&map.text.flags, 4,
-					    byte_order);
+              byte_order);
   dmap.text.debug_vaddr =
     EXTRACT_UNSIGNED_INTEGER (&map.text.debug_vaddr, 4,
-			      byte_order);
+            byte_order);
   dmap.text.offset = EXTRACT_UNSIGNED_INTEGER (&map.text.offset, 8,
-					       byte_order);
+                 byte_order);
   dmap.data.addr = EXTRACT_UNSIGNED_INTEGER (&map.data.addr, 4,
-					     byte_order);
+               byte_order);
   dmap.data.size = EXTRACT_SIGNED_INTEGER (&map.data.size, 4,
-					   byte_order);
+             byte_order);
   dmap.data.flags = EXTRACT_SIGNED_INTEGER (&map.data.flags, 4,
-					    byte_order);
+              byte_order);
   dmap.data.debug_vaddr =
     EXTRACT_UNSIGNED_INTEGER (&map.data.debug_vaddr, 4, byte_order);
   dmap.data.offset = EXTRACT_UNSIGNED_INTEGER (&map.data.offset, 8,
-					       byte_order);
+                 byte_order);
 
   strcpy (dmap.name, map.name);
 
@@ -4273,18 +4251,18 @@ nto_meminfo (const char *args, int from_tty)
       first = 0;
       printf_filtered ("%s\n", dmp->name);
       printf_filtered ("\ttext=%08x bytes @ 0x%08x\n", dmp->text.size,
-		       dmp->text.addr);
+           dmp->text.addr);
       printf_filtered ("\t\tflags=%08x\n", dmp->text.flags);
       printf_filtered ("\t\tdebug=%08x\n", dmp->text.debug_vaddr);
       printf_filtered ("\t\toffset=%016llx\n", dmp->text.offset);
       if (dmp->data.size)
-	{
-	  printf_filtered ("\tdata=%08x bytes @ 0x%08x\n", dmp->data.size,
-			   dmp->data.addr);
-	  printf_filtered ("\t\tflags=%08x\n", dmp->data.flags);
-	  printf_filtered ("\t\tdebug=%08x\n", dmp->data.debug_vaddr);
-	  printf_filtered ("\t\toffset=%016llx\n", dmp->data.offset);
-	}
+  {
+    printf_filtered ("\tdata=%08x bytes @ 0x%08x\n", dmp->data.size,
+         dmp->data.addr);
+    printf_filtered ("\t\tflags=%08x\n", dmp->data.flags);
+    printf_filtered ("\t\tdebug=%08x\n", dmp->data.debug_vaddr);
+    printf_filtered ("\t\toffset=%016llx\n", dmp->data.offset);
+  }
       printf_filtered ("\tdev=0x%x\n", dmp->dev);
       printf_filtered ("\tino=0x%llx\n", dmp->ino);
     }
@@ -4296,15 +4274,15 @@ nto_meminfo (const char *args, int from_tty)
  */
 int
 pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
-			  struct bp_target_info *bp_tg_inf)
+        struct bp_target_info *bp_tg_inf)
 {
   DScomm_t tran, recv;
   size_t sizeof_pkt;
   const enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
 
   nto_trace (0) ("pdebug_insert_hw_breakpoint(addr %s) pid:%d\n",
-		 paddress (gdbarch, bp_tg_inf->reqstd_address),
-		 inferior_ptid.pid());
+     paddress (gdbarch, bp_tg_inf->reqstd_address),
+     inferior_ptid.pid());
 
   /* if target info is unset, something really bad is going on! */
   if ( bp_tg_inf == NULL ) {
@@ -4316,7 +4294,7 @@ pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
   if (!set_thread (
-		  nto_get_thread_alive (ptid_t(inferior_ptid.pid(),0,0)).lwp() ) ) {
+      nto_get_thread_alive (ptid_t(inferior_ptid.pid(),0,0)).lwp() ) ) {
     nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
     return 1;
   }
@@ -4325,22 +4303,20 @@ pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
   bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
 
   nto_send_init (&tran, DStMsg_brk, DSMSG_BRK_EXEC | DSMSG_BRK_HW,
-		 SET_CHANNEL_DEBUG);
+     SET_CHANNEL_DEBUG);
 
   if (supports64bit())
     {
       tran.pkt.brk.size = 0;
-      tran.pkt.brk.addr
-	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, sizeof(uint64_t),
-				  byte_order);
+      tran.pkt.brk.addr = EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address,
+          sizeof(tran.pkt.brk.addr), byte_order);
       sizeof_pkt = sizeof (tran.pkt.brk);
     }
   else
     {
       tran.pkt.brk32.size = 0;
-      tran.pkt.brk32.addr
-	= EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address, sizeof(uint32_t),
-				  byte_order);
+      tran.pkt.brk32.addr = EXTRACT_SIGNED_INTEGER (&bp_tg_inf->placed_address,
+          sizeof(tran.pkt.brk32.addr), byte_order);
       sizeof_pkt = sizeof (tran.pkt.brk32);
     }
 
@@ -4362,17 +4338,17 @@ nto_hw_watchpoint (CORE_ADDR addr, int len, enum target_hw_bp_type type)
   unsigned subcmd;
 
   nto_trace (0) ("nto_hw_watchpoint(addr %s, len %x, type %x)\n",
-		 paddress (target_gdbarch (), addr), len, type);
+     paddress (target_gdbarch (), addr), len, type);
 
   switch (type)
     {
-    case 1:			/* Read.  */
+    case 1:      /* Read.  */
       subcmd = DSMSG_BRK_RD;
       break;
-    case 2:			/* Read/Write.  */
+    case 2:      /* Read/Write.  */
       subcmd = DSMSG_BRK_WR;
       break;
-    default:			/* Modify.  */
+    default:      /* Modify.  */
       subcmd = DSMSG_BRK_MODIFY;
     }
   subcmd |= DSMSG_BRK_HW;
@@ -4380,15 +4356,17 @@ nto_hw_watchpoint (CORE_ADDR addr, int len, enum target_hw_bp_type type)
   nto_send_init (&tran, DStMsg_brk, subcmd, SET_CHANNEL_DEBUG);
   if (supports64bit())
     {
-      tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8,
-						    byte_order);
-      tran.pkt.brk.size = EXTRACT_SIGNED_INTEGER (&len, 4, byte_order);
+      tran.pkt.brk.addr = EXTRACT_UNSIGNED_INTEGER (&addr,
+          sizeof(tran.pkt.brk.addr), byte_order);
+      tran.pkt.brk.size = EXTRACT_SIGNED_INTEGER (&len,
+          sizeof(tran.pkt.brk.size), byte_order);
     }
   else
     {
-      tran.pkt.brk32.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 4,
-						      byte_order);
-      tran.pkt.brk32.size = EXTRACT_SIGNED_INTEGER (&len, 4, byte_order);
+      tran.pkt.brk32.addr = EXTRACT_UNSIGNED_INTEGER (&addr,
+          sizeof(tran.pkt.brk32.addr), byte_order);
+      tran.pkt.brk32.size = EXTRACT_SIGNED_INTEGER (&len,
+          sizeof(tran.pkt.brk32.size), byte_order);
     }
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.brk), 0);
   return recv.pkt.hdr.cmd == DSrMsg_err ? -1 : 0;
@@ -4396,60 +4374,17 @@ nto_hw_watchpoint (CORE_ADDR addr, int len, enum target_hw_bp_type type)
 
 int
 pdebug_target::remove_watchpoint (CORE_ADDR addr, int len,
-			  enum target_hw_bp_type type, struct expression *exp)
+        enum target_hw_bp_type type, struct expression *exp)
 {
   return nto_hw_watchpoint (addr, -1, type);
 }
 
 int
 pdebug_target::insert_watchpoint (CORE_ADDR addr, int len,
-			  enum target_hw_bp_type type, struct expression *exp)
+        enum target_hw_bp_type type, struct expression *exp)
 {
   return nto_hw_watchpoint (addr, len, type);
 }
-
-#if 0
-static struct tidinfo *
-nto_thread_info (int pid, short tid)
-{
-  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  struct dspidlist *pidlist = (void *) recv.pkt.okdata.data;
-  struct tidinfo *tip;
-
-  nto_send_init (&tran, DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC_TID,
-		 SET_CHANNEL_DEBUG);
-  tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER (&tid, 2,
-						 byte_order);
-  tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4,
-						 byte_order);
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.pidlist), 0);
-
-  if (recv.pkt.hdr.cmd == DSrMsg_err)
-    {
-      nto_send_init (&tran, DStMsg_pidlist, DSMSG_PIDLIST_SPECIFIC,
-		     SET_CHANNEL_DEBUG);
-      tran.pkt.pidlist.pid = EXTRACT_SIGNED_INTEGER (&pid, 4,
-						     byte_order);
-      nto_send_recv (&tran, &recv, sizeof (tran.pkt.pidlist), 0);
-      if (recv.pkt.hdr.cmd == DSrMsg_err)
-	{
-	  errno = errnoconvert (recv.pkt.err.err);
-	  return NULL;
-	}
-    }
-
-  /* Tidinfo structures are 4-byte aligned and start after name.  */
-  for (tip = (void *) &pidlist->name[(strlen (pidlist->name) + 1 + 3) & ~3];
-       tip->tid != 0; tip++)
-    {
-      if (tid == EXTRACT_SIGNED_INTEGER (&tip->tid, 2, byte_order))
-	return tip;
-    }
-
-  return NULL;
-}
-#endif
-
 
 static void
 nto_remote_inferior_data_cleanup (struct inferior *const inf, void *const dat)
@@ -4478,7 +4413,7 @@ nto_remote_inferior_data (struct inferior *const inf)
   gdb_assert (inf != NULL);
 
   inf_data = (struct nto_remote_inferior_data *)inferior_data (inf,
-	       nto_remote_inferior_data_reg);
+         nto_remote_inferior_data_reg);
   if (inf_data == NULL)
     {
       inf_data = XCNEW (struct nto_remote_inferior_data);
@@ -4490,7 +4425,7 @@ nto_remote_inferior_data (struct inferior *const inf)
 
 static void
 set_nto_exe (const char *args, int from_tty,
-	     struct cmd_list_element *c)
+       struct cmd_list_element *c)
 {
   struct inferior *const inf = current_inferior ();
   struct nto_remote_inferior_data *const inf_rdat
@@ -4539,63 +4474,63 @@ void
 _initialize_nto (void)
 {
 
-	/*
-	 * struct cmd_list_element *cmd;
-	 * const char *cmd_name;
-	 * remote_g_packet_data_handle = gdbarch_data_register_pre_init (remote_g_packet_data_init);
-	 * remote_pspace_data = register_program_space_data_with_cleanup (NULL, remote_pspace_data_cleanup);
-	 * gdb::observers::new_objfile.attach (remote_new_objfile);
-	 */
+  /*
+   * struct cmd_list_element *cmd;
+   * const char *cmd_name;
+   * remote_g_packet_data_handle = gdbarch_data_register_pre_init (remote_g_packet_data_init);
+   * remote_pspace_data = register_program_space_data_with_cleanup (NULL, remote_pspace_data_cleanup);
+   * gdb::observers::new_objfile.attach (remote_new_objfile);
+   */
 
-	/* happens implicitly when defining the pdebug_target
-	 * init_nto_ops ();
-	 */
+  /* happens implicitly when defining the pdebug_target
+   * init_nto_ops ();
+   */
 
   add_target ( pdebug_target_info, pdebug_target::pdebug_open);
 
   nto_remote_inferior_data_reg
     = register_inferior_data_with_cleanup (NULL, nto_remote_inferior_data_cleanup);
 
-  add_setshow_zinteger_cmd ("nto-timeout", no_class, 
-			    &only_session.timeout, _("\
+  add_setshow_zinteger_cmd ("nto-timeout", no_class,
+          &only_session.timeout, _("\
 Set timeout value for communication with the remote."), _("\
 Show timeout value for communication with the remote."), _("\
 The remote will timeout after nto-timeout seconds."),
-			    NULL, NULL, &setlist, &showlist);
+          NULL, NULL, &setlist, &showlist);
 
-  add_setshow_boolean_cmd ("nto-inherit-env", no_class, 
-			   &only_session.inherit_env, _("\
+  add_setshow_boolean_cmd ("nto-inherit-env", no_class,
+         &only_session.inherit_env, _("\
 Set if the inferior should inherit environment from pdebug or gdb."), _("\
 Show nto-inherit-env value."), _("\
 If nto-inherit-env is off, the process spawned on the remote \
 will have its environment set by gdb.  Otherwise, it will inherit its \
-environment from pdebug."), NULL, NULL, 
-			  &setlist, &showlist);
+environment from pdebug."), NULL, NULL,
+        &setlist, &showlist);
 
   add_setshow_string_cmd ("nto-cwd", class_support, &only_session.remote_cwd,
-			  _("\
+        _("\
 Set the working directory for the remote process."), _("\
 Show current working directory for the remote process."), _("\
 Working directory for the remote process. This directory must be \
-specified before remote process is run."), 
-			  &set_nto_cwd, &show_nto_cwd, &setlist, &showlist);
+specified before remote process is run."),
+        &set_nto_cwd, &show_nto_cwd, &setlist, &showlist);
 
-  add_setshow_string_cmd ("nto-executable", class_files, 
-			  &only_session.remote_exe, _("\
+  add_setshow_string_cmd ("nto-executable", class_files,
+        &only_session.remote_exe, _("\
 Set the binary to be executed on the remote QNX Neutrino target."), _("\
 Show currently set binary to be executed on the remote QNX Neutrino target."),
-			_("\
+      _("\
 Binary to be executed on the remote QNX Neutrino target when "\
-"'run' command is used."), 
-			  &set_nto_exe, &show_nto_exe, &setlist, &showlist);
+"'run' command is used."),
+        &set_nto_exe, &show_nto_exe, &setlist, &showlist);
 
   add_setshow_boolean_cmd ("upload-sets-exec", class_files,
-			   &upload_sets_exec, _("\
+         &upload_sets_exec, _("\
 Set the flag for upload to set nto-executable."), _("\
 Show nto-executable flag."), _("\
 If set, upload will set nto-executable. Otherwise, nto-executable \
 will not change."),
-			   NULL, NULL, &setlist, &showlist);
+         NULL, NULL, &setlist, &showlist);
 
   add_info ("pidlist", nto_pidlist, _("List processes on the target.  Optional argument will filter out process names not containing (case insensitive) argument string."));
   add_info ("meminfo", nto_meminfo, "memory information");

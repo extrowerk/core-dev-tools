@@ -425,6 +425,8 @@ _bfd_elf_obj_attrs_arg_type (bfd *abfd, int vendor, unsigned int tag)
     default:
       abort ();
     }
+  /* unreachable */
+  return 0;
 }
 
 /* Parse an object attributes section.  */
@@ -444,7 +446,7 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
     {
       /* xgettext:c-format */
       _bfd_error_handler (_("%pB: error: attribute section '%pA' too big: %"PRIx64 ),
-			  abfd, hdr->bfd_section, (int64_t) hdr->sh_size);
+			  abfd, hdr->bfd_section, (uint64_t) hdr->sh_size);
       bfd_set_error (bfd_error_invalid_operation);
       return;
     }

@@ -40,8 +40,11 @@
 
 // #include "auxv.h"
 
-#define QNX_NOTE_NAME	"QNX"
+#define QNX_NOTE_NAME  "QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"
+
+/* taken from $QNX_TARGET/usr/include/sys/siginfo.h */
+#define SI_NOINFO 127
 
 #ifdef __QNXNTO__
 #include <sys/debug.h>
@@ -54,16 +57,16 @@ typedef union nto_siginfo_t {
   __siginfo32_t _32;
   __siginfo64_t _64;
 } nto_siginfo_t;
-#define nto_si_pid	si_pid
-#define nto_si_uid	si_uid
-#define nto_si_value	si_value
-#define nto_si_utime	si_utime
-#define nto_si_status	si_status
-#define nto_si_stime	si_stime
-#define nto_si_fltno	si_fltno
-#define nto_si_fltip	si_fltip
-#define nto_si_addr	si_addr
-#define nto_si_bdslot	si_bdslot
+#define nto_si_pid  si_pid
+#define nto_si_uid  si_uid
+#define nto_si_value  si_value
+#define nto_si_utime  si_utime
+#define nto_si_status  si_status
+#define nto_si_stime  si_stime
+#define nto_si_fltno  si_fltno
+#define nto_si_fltip  si_fltip
+#define nto_si_addr  si_addr
+#define nto_si_bdslot  si_bdslot
 #else
 #include "nto-share/debug.h"
 #endif
@@ -94,33 +97,33 @@ struct auxv_buf
  */
 static LONGEST
 nto_core_xfer_siginfo (struct gdbarch *gdbarch, gdb_byte *readbuf,
-			 ULONGEST offset, ULONGEST len) {
-	struct thread_info *ti;
-	gdb_assert( readbuf );
-	nto_trace(0)( "nto_core_xfer_siginfo()" );
+       ULONGEST offset, ULONGEST len) {
+  struct thread_info *ti;
+  gdb_assert( readbuf );
+  nto_trace(0)( "nto_core_xfer_siginfo()" );
 
-	ti = find_thread_ptid (inferior_ptid);
-	if (!ti) {
-		warning ("Thread with gdb id %ld not found.\n", inferior_ptid.lwp());
-		return TARGET_XFER_EOF;
-	}
+  ti = find_thread_ptid (inferior_ptid);
+  if (!ti) {
+    warning ("Thread with gdb id %ld not found.\n", inferior_ptid.lwp());
+    return TARGET_XFER_EOF;
+  }
 
-	if (!ti->priv) {
-		warning (_("Thread with gdb id %ld does not have thread private data - siginfo not available\n"),
-		   inferior_ptid.lwp());
-		return TARGET_XFER_EOF;
-	}
+  if (!ti->priv) {
+    warning (_("Thread with gdb id %ld does not have thread private data - siginfo not available\n"),
+       inferior_ptid.lwp());
+    return TARGET_XFER_EOF;
+  }
 
-	if ((offset + len) > sizeof (nto_siginfo_t)) {
-		if (offset <= sizeof (nto_siginfo_t))
-			len = sizeof (nto_siginfo_t) - offset;
-		else
-			len = 0;
-	}
+  if ((offset + len) > sizeof (nto_siginfo_t)) {
+    if (offset <= sizeof (nto_siginfo_t))
+      len = sizeof (nto_siginfo_t) - offset;
+    else
+      len = 0;
+  }
 
-	struct nto_thread_info *priv=(struct nto_thread_info *)ti->priv.get();
-	memcpy (readbuf, (char *)priv->siginfo + offset, len);
-	return len ? TARGET_XFER_OK : TARGET_XFER_EOF;
+  struct nto_thread_info *priv=(struct nto_thread_info *)ti->priv.get();
+  memcpy (readbuf, (char *)priv->siginfo + offset, len);
+  return len ? TARGET_XFER_OK : TARGET_XFER_EOF;
 }
 
 static void *
@@ -150,11 +153,11 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
     return nto_gdbarch_data->siginfo_type;
 
   int_type = arch_integer_type (gdbarch, gdbarch_int_bit (gdbarch),
-			 	0, "int");
+         0, "int");
   uint_type = arch_integer_type (gdbarch, gdbarch_int_bit (gdbarch),
-				 1, "unsigned int");
+         1, "unsigned int");
   long_type = arch_integer_type (gdbarch, gdbarch_long_bit (gdbarch),
-				 0, "long");
+         0, "long");
   void_ptr_type = lookup_pointer_type (builtin_type (gdbarch)->builtin_void);
 
   /* union sigval */
@@ -162,23 +165,23 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   TYPE_NAME (sigval_type) = xstrdup ("union sigval");
   append_composite_type_field (sigval_type, "sival_int", int_type);
   append_composite_type_field_aligned (sigval_type, "sival_ptr",
-				       void_ptr_type, TYPE_LENGTH (long_type));
+               void_ptr_type, TYPE_LENGTH (long_type));
 
   /* pid_t */
   pid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-			TYPE_LENGTH (int_type), "pid_t");
+      TYPE_LENGTH (int_type), "pid_t");
   TYPE_TARGET_TYPE (pid_type) = int_type;
   TYPE_TARGET_STUB (pid_type) = 1;
 
   /* uid_t */
   uid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-			TYPE_LENGTH (uint_type), "uid_t");
+      TYPE_LENGTH (uint_type), "uid_t");
   TYPE_TARGET_TYPE (uid_type) = int_type;
   TYPE_TARGET_STUB (uid_type) = 1;
 
   /* clock_t */
   clock_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-			  TYPE_LENGTH (uint_type), "clock_t");
+        TYPE_LENGTH (uint_type), "clock_t");
   TYPE_TARGET_TYPE (clock_type) = uint_type;
   TYPE_TARGET_STUB (clock_type) = 1;
 
@@ -187,7 +190,7 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
 
   /* __pad */
   append_composite_type_field (sidata_type, "__pad",
-			       init_vector_type (int_type, 7));
+             init_vector_type (int_type, 7));
 
   /* __data.__proc */
   siproc_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
@@ -208,23 +211,23 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   append_composite_type_field (type, "__status", int_type);
   append_composite_type_field (type, "__stime", clock_type);
   append_composite_type_field_aligned (sipdata_type, "__chld", type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
   append_composite_type_field_aligned (siproc_type, "__pdata", sipdata_type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
   append_composite_type_field_aligned (sidata_type, "__proc", siproc_type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
 
   /* __data.__fault */
   type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
   append_composite_type_field (type, "__fltno", int_type);
   append_composite_type_field_aligned (type, "__fltip", void_ptr_type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
   append_composite_type_field_aligned (type, "__addr", void_ptr_type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
   append_composite_type_field_aligned (type, "__bdslot", int_type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
   append_composite_type_field_aligned (sidata_type, "__fault", type,
-				       TYPE_LENGTH (long_type));
+               TYPE_LENGTH (long_type));
 
   /* struct siginfo */
   siginfo_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
@@ -233,8 +236,8 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   append_composite_type_field (siginfo_type, "si_code", int_type);
   append_composite_type_field (siginfo_type, "si_errno", int_type);
   append_composite_type_field_aligned (siginfo_type,
-				       "__data", sidata_type,
-				       TYPE_LENGTH (long_type));
+               "__data", sidata_type,
+               TYPE_LENGTH (long_type));
 
   nto_gdbarch_data->siginfo_type = siginfo_type;
 
@@ -297,15 +300,15 @@ nto_build_arch_path (void)
   if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name, "i386") == 0)
     {
       if (IS_64BIT())
-	arch = "x86_64";
+  arch = "x86_64";
       else
-	arch = "x86";
+  arch = "x86";
       endian = "";
     }
   else if (strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "rs6000") == 0
-	   || strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
-		   "powerpc") == 0)
+       "rs6000") == 0
+     || strcmp (gdbarch_bfd_arch_info (target_gdbarch ())->arch_name,
+       "powerpc") == 0)
     {
       arch = "ppc";
       endian = "be";
@@ -314,7 +317,7 @@ nto_build_arch_path (void)
     {
       arch = gdbarch_bfd_arch_info (target_gdbarch ())->arch_name;
       endian = gdbarch_byte_order (target_gdbarch ())
-	       == BFD_ENDIAN_BIG ? "be" : "le";
+         == BFD_ENDIAN_BIG ? "be" : "le";
     }
 
   if (nto_variant_directory_suffix)
@@ -324,7 +327,7 @@ nto_build_arch_path (void)
      so we can reuse arch_path below.  */
   arch_path = (char *)
     malloc (strlen (nto_root) + strlen (arch) + strlen (endian)
-	    + strlen (variant_suffix) +	2);
+      + strlen (variant_suffix) +  2);
   sprintf (arch_path, "%s/%s%s%s", nto_root, arch, endian, variant_suffix);
   return arch_path;
 }
@@ -339,7 +342,7 @@ nto_build_arch_path (void)
  */
 int
 nto_find_and_open_solib (const char *solib, unsigned o_flags,
-			 gdb::unique_xmalloc_ptr<char> *temp_pathname)
+       gdb::unique_xmalloc_ptr<char> *temp_pathname)
 {
   char *buf, *arch_path;
   const char *endian;
@@ -361,19 +364,19 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
 
   base = lbasename (solib);
   ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_RETURN_REALPATH, base, o_flags,
-	       temp_pathname);
+         temp_pathname);
 
   if (ret < 0 && base != solib)
     {
       xsnprintf (arch_path, arch_len, "/%s", solib);
       ret = open (arch_path, o_flags, 0);
       if (temp_pathname)
-	{
-	  if (ret >= 0)
-	    *temp_pathname = gdb_realpath (arch_path);
-	  else
-	    temp_pathname->reset (NULL);
-	}
+  {
+    if (ret >= 0)
+      *temp_pathname = gdb_realpath (arch_path);
+    else
+      temp_pathname->reset (NULL);
+  }
     }
   if( ret >= 0 ) {
     nto_trace(0)("Located %s\n", solib );
@@ -386,8 +389,8 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
  * descriptions.
  */
 char **
-nto_parse_redirection (char *pargv[], const char **pin, const char **pout, 
-		       const char **perr)
+nto_parse_redirection (char *pargv[], const char **pin, const char **pout,
+           const char **perr)
 {
   char **argv;
   const char *in, *out, *err;
@@ -407,32 +410,32 @@ nto_parse_redirection (char *pargv[], const char **pin, const char **pout,
     {
       p = pargv[n];
       if (*p == '>')
-	{
-	  p++;
-	  if (*p)
-	    out = p;
-	  else
-	    out = pargv[++n];
-	}
+  {
+    p++;
+    if (*p)
+      out = p;
+    else
+      out = pargv[++n];
+  }
       else if (*p == '<')
-	{
-	  p++;
-	  if (*p)
-	    in = p;
-	  else
-	    in = pargv[++n];
-	}
+  {
+    p++;
+    if (*p)
+      in = p;
+    else
+      in = pargv[++n];
+  }
       else if (*p++ == '2' && *p++ == '>')
-	{
-	  if (*p == '&' && *(p + 1) == '1')
-	    err = out;
-	  else if (*p)
-	    err = p;
-	  else
-	    err = pargv[++n];
-	}
+  {
+    if (*p == '&' && *(p + 1) == '1')
+      err = out;
+    else if (*p)
+      err = p;
+    else
+      err = pargv[++n];
+  }
       else
-	argv[i++] = pargv[n];
+  argv[i++] = pargv[n];
     }
   *pin = in;
   *pout = out;
@@ -460,10 +463,10 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo32.r_state_offset = 12;
       lmo32.r_state_size = 4;
       lmo32.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
-				    show up twice.  */
+            show up twice.  */
       /* Link map.  */
-      lmo32.link_map_size = 32;	/* The actual size is 552 bytes, but
-				   this is all we need.  */
+      lmo32.link_map_size = 32;  /* The actual size is 552 bytes, but
+           this is all we need.  */
       lmo32.l_addr_offset = 0;
       lmo32.l_name_offset = 4;
       lmo32.l_ld_offset = 8;
@@ -483,7 +486,7 @@ nto_generic_svr4_fetch_link_map_offsets (void)
       lmo64.r_state_offset = 24;
       lmo64.r_state_size = 4;
       lmo64.r_ldsomap_offset = -1; /* Our ldd is in libc, we do not want it to
-				    show up twice.  */
+            show up twice.  */
       /* Link map.  */
       lmo64.link_map_size = 64;
       lmo64.l_addr_offset = 0;
@@ -536,9 +539,6 @@ nto_truncate_ptr (CORE_ADDR addr)
     return addr & (((CORE_ADDR) 1 << gdbarch_ptr_bit (target_gdbarch ())) - 1);
 }
 
-/*
- * todo I've seen this fail!
- */
 static Elf_Internal_Phdr *
 find_load_phdr (bfd *abfd)
 {
@@ -551,16 +551,16 @@ find_load_phdr (bfd *abfd)
   phdr = elf_tdata (abfd)->phdr;
   for (i = 0; i < elf_elfheader (abfd)->e_phnum; i++, phdr++)
     {
-      if (phdr->p_type == PT_LOAD )
-	return phdr;
+      if ( phdr->p_flags & PT_LOAD )
+  return phdr;
     }
   return NULL;
 }
 
 static Elf_Internal_Phdr *
 find_load_phdr_2 (bfd *abfd, unsigned int p_filesz,
-		  unsigned int p_memsz, unsigned int p_flags,
-		  unsigned int p_align)
+      unsigned int p_memsz, unsigned int p_flags,
+      unsigned int p_align)
 {
   Elf_Internal_Phdr *phdr;
   unsigned int i;
@@ -572,9 +572,9 @@ find_load_phdr_2 (bfd *abfd, unsigned int p_filesz,
   for (i = 0; i < elf_elfheader (abfd)->e_phnum; i++, phdr++)
     {
       if (phdr->p_type == PT_LOAD && phdr->p_flags == p_flags
-	  && phdr->p_memsz == p_memsz && phdr->p_filesz == p_filesz
-	  && phdr->p_align == p_align)
-	return phdr;
+    && phdr->p_memsz == p_memsz && phdr->p_filesz == p_filesz
+    && phdr->p_align == p_align)
+  return phdr;
     }
   return NULL;
 }
@@ -589,11 +589,11 @@ nto_relocate_section_addresses (struct so_list *so, struct target_section *sec)
   unsigned vaddr = phdr ? phdr->p_vaddr : 0;
 
   sec->addr = nto_truncate_ptr (sec->addr
-			        + lm_addr_check (so, sec->the_bfd_section->owner)
-				- vaddr);
+              + lm_addr_check (so, sec->the_bfd_section->owner)
+        - vaddr);
   sec->endaddr = nto_truncate_ptr (sec->endaddr
-				   + lm_addr_check (so, sec->the_bfd_section->owner)
-				   - vaddr);
+           + lm_addr_check (so, sec->the_bfd_section->owner)
+           - vaddr);
   if (so->addr_low == 0)
     so->addr_low = lm_addr_check (so, sec->the_bfd_section->owner);
   if (so->addr_high < sec->endaddr)
@@ -621,12 +621,12 @@ nto_in_dynsym_resolve_code (CORE_ADDR pc)
   if (inf_data->bind_func_p != 0)
     {
       const size_t bind_func_sz = inf_data->bind_func_sz ?
-				  inf_data->bind_func_sz : 80;
+          inf_data->bind_func_sz : 80;
       if (inf_data->bind_func_addr != 0)
-	in_resolv = (pc >= inf_data->bind_func_addr
-		     && pc < (inf_data->bind_func_addr + bind_func_sz));
+  in_resolv = (pc >= inf_data->bind_func_addr
+         && pc < (inf_data->bind_func_addr + bind_func_sz));
       if (!in_resolv && inf_data->resolve_func_addr != 0)
-	in_resolv = (pc == inf_data->resolve_func_addr);
+  in_resolv = (pc == inf_data->resolve_func_addr);
     }
 
   if (in_resolv || in_plt_section (pc))
@@ -636,8 +636,9 @@ nto_in_dynsym_resolve_code (CORE_ADDR pc)
 
 void
 nto_dummy_supply_regset (struct regcache *regcache, const gdb_byte *regs,
-			 size_t len)
+       size_t len)
 {
+  nto_trace(0)("NTO Dummy supply regset called!\n");
   /* Do nothing.  */
 }
 
@@ -665,15 +666,15 @@ nto_sniff_abi_note_section (bfd *abfd, asection *sect, void *obj)
   if (sectname != NULL && strstr (sectname, QNX_INFO_SECT_NAME) != NULL)
     *(enum gdb_osabi *) obj = GDB_OSABI_QNXNTO;
   else if (sectname != NULL && strstr (sectname, "note") != NULL
-	   && sectsize > sizeof_Elf_Nhdr)
+     && sectsize > sizeof_Elf_Nhdr)
     {
       note = XNEWVEC (char, sectsize);
       bfd_get_section_contents (abfd, sect, note, 0, sectsize);
       namelen = (unsigned int) bfd_h_get_32 (abfd, note);
       name = note + sizeof_Elf_Nhdr;
       if (sectsize >= namelen + sizeof_Elf_Nhdr
-	  && namelen == sizeof (QNX_NOTE_NAME)
-	  && 0 == strcmp (name, QNX_NOTE_NAME))
+    && namelen == sizeof (QNX_NOTE_NAME)
+    && 0 == strcmp (name, QNX_NOTE_NAME))
         *(enum gdb_osabi *) obj = GDB_OSABI_QNXNTO;
 
       XDELETEVEC (note);
@@ -690,35 +691,35 @@ nto_elf_osabi_sniffer (bfd *abfd)
   enum gdb_osabi osabi = GDB_OSABI_UNKNOWN;
 
   bfd_map_over_sections (abfd,
-			 nto_sniff_abi_note_section,
-			 &osabi);
+       nto_sniff_abi_note_section,
+       &osabi);
 
   return osabi;
 }
 
 static const char *nto_thread_state_str[] =
 {
-  "DEAD",		/* 0  0x00 */
-  "RUNNING",	/* 1  0x01 */
-  "READY",	/* 2  0x02 */
-  "STOPPED",	/* 3  0x03 */
-  "SEND",		/* 4  0x04 */
-  "RECEIVE",	/* 5  0x05 */
-  "REPLY",	/* 6  0x06 */
-  "STACK",	/* 7  0x07 */
-  "WAITTHREAD",	/* 8  0x08 */
-  "WAITPAGE",	/* 9  0x09 */
-  "SIGSUSPEND",	/* 10 0x0a */
-  "SIGWAITINFO",	/* 11 0x0b */
-  "NANOSLEEP",	/* 12 0x0c */
-  "MUTEX",	/* 13 0x0d */
-  "CONDVAR",	/* 14 0x0e */
-  "JOIN",		/* 15 0x0f */
-  "INTR",		/* 16 0x10 */
-  "SEM",		/* 17 0x11 */
-  "WAITCTX",	/* 18 0x12 */
-  "NET_SEND",	/* 19 0x13 */
-  "NET_REPLY"	/* 20 0x14 */
+  "DEAD",    /* 0  0x00 */
+  "RUNNING",  /* 1  0x01 */
+  "READY",  /* 2  0x02 */
+  "STOPPED",  /* 3  0x03 */
+  "SEND",    /* 4  0x04 */
+  "RECEIVE",  /* 5  0x05 */
+  "REPLY",  /* 6  0x06 */
+  "STACK",  /* 7  0x07 */
+  "WAITTHREAD",  /* 8  0x08 */
+  "WAITPAGE",  /* 9  0x09 */
+  "SIGSUSPEND",  /* 10 0x0a */
+  "SIGWAITINFO",  /* 11 0x0b */
+  "NANOSLEEP",  /* 12 0x0c */
+  "MUTEX",  /* 13 0x0d */
+  "CONDVAR",  /* 14 0x0e */
+  "JOIN",    /* 15 0x0f */
+  "INTR",    /* 16 0x10 */
+  "SEM",    /* 17 0x11 */
+  "WAITCTX",  /* 18 0x12 */
+  "NET_SEND",  /* 19 0x13 */
+  "NET_REPLY"  /* 20 0x14 */
 };
 
 /*
@@ -743,12 +744,12 @@ nto_extra_thread_info ( struct thread_info *ti)
  */
 const char *
 nto_thread_name( gdbarch* arch, struct thread_info *ti ) {
-	  struct nto_thread_info *priv;
-	  if ( ( ti != NULL ) && ( ti->priv.get() != NULL) ) {
-	    priv=(struct nto_thread_info *)ti->priv.get();
-	    return (const char *)priv->name;
-	  }
-	  return "";
+    struct nto_thread_info *priv;
+    if ( ( ti != NULL ) && ( ti->priv.get() != NULL) ) {
+      priv=(struct nto_thread_info *)ti->priv.get();
+      return (const char *)priv->name;
+    }
+    return "";
 }
 
 /*
@@ -762,38 +763,38 @@ nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
 
   nto_trace(0)("nto_ldqnx2_skip_solib_resolver()\n");
   warning("nto_ldqnx2_skip_solib_resolver called!\n");
-  // TODO: Proper cleanup of inf. data 
+  // TODO: Proper cleanup of inf. data
   if (inf_data->bind_func_p == 0)
     {
       /* On Neutrino with libc 6.5.0 and later, lazy binding is performed
        * by a function called */
       struct objfile *objfile;
       const struct bound_minimal_symbol resolver
-	  //	= lookup_minimal_symbol_and_objfile ("__resolve_func");
-	= lookup_bound_minimal_symbol ("__resolve_func");
+      //  = lookup_minimal_symbol_and_objfile ("__resolve_func");
+          = lookup_bound_minimal_symbol ("__resolve_func");
 
       if (resolver.minsym && resolver.objfile)
-	{
-	  const struct bound_minimal_symbol bind_f
-	    = lookup_minimal_symbol ("__bind_func", NULL, resolver.objfile);
+        {
+          const struct bound_minimal_symbol bind_f
+              = lookup_minimal_symbol ("__bind_func", NULL, resolver.objfile);
 
-	  if (bind_f.minsym)
-	    {
-	      inf_data->bind_func_p = 1;
-	      inf_data->bind_func_addr = BMSYMBOL_VALUE_ADDRESS (bind_f);
-	      inf_data->bind_func_sz = MSYMBOL_SIZE (bind_f.minsym);
-	      inf_data->resolve_func_addr = BMSYMBOL_VALUE_ADDRESS (resolver);
-	    }
-	}
+          if (bind_f.minsym)
+            {
+              inf_data->bind_func_p = 1;
+              inf_data->bind_func_addr = BMSYMBOL_VALUE_ADDRESS (bind_f);
+              inf_data->bind_func_sz = MSYMBOL_SIZE (bind_f.minsym);
+              inf_data->resolve_func_addr = BMSYMBOL_VALUE_ADDRESS (resolver);
+            }
+        }
     }
 
   if (inf_data->bind_func_p)
     {
       if (inf_data->resolve_func_addr == pc)
-	return frame_unwind_caller_pc (get_current_frame ());
+        return frame_unwind_caller_pc (get_current_frame ());
     }
 
-  return 0;
+    return 0;
 }
 
 /*
@@ -802,12 +803,13 @@ nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
 void
 nto_initialize_signals (void)
 {
-	int sig;
-	for ( sig = GDB_SIGNAL_SELECT; sig <= GDB_SIGNAL_PROCNTO_MAX; sig++ ) {
-		signal_stop_update  (sig, 0);
-		signal_print_update (sig, 0);
-		signal_pass_update  (sig, 1);
-	}
+  int sig;
+  for ( sig = GDB_SIGNAL_SELECT; sig <= GDB_SIGNAL_PROCNTO_MAX; sig++ )
+    {
+      signal_stop_update  (sig, 0);
+      signal_print_update (sig, 0);
+      signal_pass_update  (sig, 1);
+    }
 }
 
 static void
@@ -817,8 +819,7 @@ show_nto_debug (struct ui_file *file, int from_tty,
   fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
 }
 
-/* todo do tid and flags really need to be stored in a private struct? */
-static int 
+static int
 nto_print_tidinfo_callback (struct thread_info *tp, void *data)
 {
   char star = ' ';
@@ -830,17 +831,16 @@ nto_print_tidinfo_callback (struct thread_info *tp, void *data)
   if (tp)
     {
       if ( tp->ptid == inferior_ptid )
-	star = '*';
+        star = '*';
 
       if (tp->priv.get())
-	{
-      priv=(struct nto_thread_info *)tp->priv.get();
-	  tid =   priv->tid;
-	  state = priv->state;
-	  flags = priv->flags;
-	}
-      else
-	tid = tp->ptid.lwp();
+        {
+          priv=(struct nto_thread_info *)tp->priv.get();
+          state = priv->state;
+          flags = priv->flags;
+        }
+
+      tid = tp->ptid.lwp();
 
       printf_filtered ("%c%d\t%d\t%d\n", star, tid, state, flags);
     }
@@ -853,11 +853,11 @@ nto_info_tidinfo_command (const char *args, int from_tty)
 {
   char *execfile = get_exec_file (0);
   nto_trace (0) ("%s (args=%s, from_tty=%d)\n", __func__,
-		  args ? args : "(null)", from_tty);
+      args ? args : "(null)", from_tty);
 
   target_update_thread_list ();
   printf_filtered("Threads for pid %d (%s)\nTid:\tState:\tFlags:\n",
-		  inferior_ptid.pid (), execfile ? execfile : "");
+      inferior_ptid.pid (), execfile ? execfile : "");
 
   iterate_over_threads (nto_print_tidinfo_callback, NULL);
 }
@@ -877,7 +877,7 @@ nto_pid_to_str (ptid_t ptid)
 
   ti = find_thread_ptid (ptid);
   if( ti ) {
-	  priv=(struct nto_thread_info *)ti->priv.get ();
+    priv=(struct nto_thread_info *)ti->priv.get ();
   }
   if (priv && priv->name && ( strlen(priv->name) > 0 ) ) {
     int n;
@@ -887,63 +887,21 @@ nto_pid_to_str (ptid_t ptid)
       snprintf (&thread_name [ARRAY_SIZE (thread_name) - 4], 4, "%s", "...");
     }
     snprintf (thread_id, ARRAY_SIZE (thread_id), " tid %ld name \"%s\"",
-    		  tid, thread_name);
+          tid, thread_name);
     }
   else if (tid > 0)
     snprintf (thread_id, ARRAY_SIZE (thread_id), " tid %ld", tid);
   else
     thread_id[0] = '\0';
 
-  snprintf (buf, sizeof(buf), "pid %ld%s", pid, thread_id);
+  snprintf (buf, sizeof(buf), "pid %ld%s (%ld)", pid, thread_id, ptid.tid());
 
   return buf;
 }
 
 const char *nto_core_pid_to_str (struct gdbarch *gdbarch, ptid_t ptid)
 {
-	return nto_pid_to_str (ptid);
-}
-
-int
-qnx_filename_cmp (const char *s1, const char *s2, size_t n)
-{
-  gdb_assert (s1 != NULL);
-  gdb_assert (s2 != NULL);
-  gdb_assert (n >= 0);
-
-  nto_trace (3) ("%s(%s,%s)\n", __func__, s1, s2);
-
-  if (0 == strncmp (s1, s2, n))
-    return 0;
-
-  for (; n > 0; --n)
-    {
-
-#ifdef HAVE_DOS_BASED_FILE_SYSTEM
-      int c1 = TOLOWER (*s1);
-      int c2 = TOLOWER (*s2);
-#else
-      int c1 = *s1;
-      int c2 = *s2;
-#endif
-
-      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
-
-      if (c1 == '\\')
-        c1 = '/';
-      if (c2 == '\\')
-        c2 = '/';
-
-      if (c1 != c2)
-        return (c1 - c2);
-
-      if (c1 == '\0')
-        return 0;
-
-      s1++;
-      s2++;
-    }
-  return 0;
+  return nto_pid_to_str (ptid);
 }
 
 void
@@ -960,138 +918,137 @@ nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
   nto_trace(1)("nto_get_siginfo_from_procfs_status()\n");
 
   memset (dst64, 0, IS_64BIT() ? sizeof (__siginfo64_t)
-			       : sizeof (__siginfo32_t));
+             : sizeof (__siginfo32_t));
 
   if (IS_64BIT ())
     {
       dst64->si_signo = extract_signed_integer ((gdb_byte *)&src64->si_signo,
-						sizeof (src64->si_signo),
-						byte_order);
+            sizeof (src64->si_signo),
+            byte_order);
       dst64->si_code = extract_signed_integer ((gdb_byte *)&src64->si_code,
-					       sizeof (src64->si_code),
-					       byte_order);
-      if (dst64->si_code == 127) // SI_NOINFO
-	return;
+                 sizeof (src64->si_code),
+                 byte_order);
+      if (dst64->si_code == SI_NOINFO)
+        return;
 
       dst64->si_errno = extract_signed_integer ((gdb_byte *)&src64->si_errno,
-						sizeof (src64->si_errno),
-						byte_order);
+            sizeof (src64->si_errno),
+            byte_order);
 
       if (dst64->si_code <= 0) // SI_FROMUSER
-	{
-	  dst64->nto_si_pid
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
-				      sizeof (src64->nto_si_pid), byte_order);
-	  dst64->nto_si_uid
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_uid,
-				      sizeof (src64->nto_si_uid), byte_order);
-	  dst64->nto_si_value.sival_ptr
-	    = extract_typed_address ((gdb_byte *)&src64->nto_si_value, ptr_t);
-	}
+  {
+    dst64->nto_si_pid
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
+              sizeof (src64->nto_si_pid), byte_order);
+    dst64->nto_si_uid
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_uid,
+              sizeof (src64->nto_si_uid), byte_order);
+    dst64->nto_si_value.sival_ptr
+      = extract_typed_address ((gdb_byte *)&src64->nto_si_value, ptr_t);
+  }
       else if (dst64->si_signo
-	       == gdbarch_gdb_signal_to_target (target_gdbarch (),
-						GDB_SIGNAL_CHLD))
-	{
-	  dst64->nto_si_pid
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
-				      sizeof (src64->nto_si_pid), byte_order);
-	  dst64->nto_si_utime
-	    = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_utime,
-					sizeof (src64->nto_si_utime),
-					byte_order);
-	  dst64->nto_si_status
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_status,
-				      sizeof (src64->nto_si_status), \
-				      byte_order);
-	  dst64->nto_si_stime
-	    = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_stime,
-					sizeof (src64->nto_si_stime),
-					byte_order);
-	}
+         == gdbarch_gdb_signal_to_target (target_gdbarch (),
+            GDB_SIGNAL_CHLD))
+  {
+    dst64->nto_si_pid
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
+              sizeof (src64->nto_si_pid), byte_order);
+    dst64->nto_si_utime
+      = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_utime,
+          sizeof (src64->nto_si_utime),
+          byte_order);
+    dst64->nto_si_status
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_status,
+              sizeof (src64->nto_si_status), \
+              byte_order);
+    dst64->nto_si_stime
+      = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_stime,
+          sizeof (src64->nto_si_stime),
+          byte_order);
+  }
       else
-	{
-	  dst64->nto_si_fltno
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_fltno,
-				      sizeof (src64->nto_si_fltno),
-				      byte_order);
-	  dst64->nto_si_fltip
-	    = extract_typed_address ((gdb_byte *)&src64->nto_si_fltip, ptr_t);
-	  dst64->nto_si_addr
-	    = extract_typed_address ((gdb_byte *)&src64->nto_si_addr, ptr_t);
-	  dst64->nto_si_bdslot
-	    = extract_signed_integer ((gdb_byte *)&src64->nto_si_bdslot,
-				      sizeof (src64->nto_si_bdslot),
-				      byte_order);
-	}
+  {
+    dst64->nto_si_fltno
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_fltno,
+              sizeof (src64->nto_si_fltno),
+              byte_order);
+    dst64->nto_si_fltip
+      = extract_typed_address ((gdb_byte *)&src64->nto_si_fltip, ptr_t);
+    dst64->nto_si_addr
+      = extract_typed_address ((gdb_byte *)&src64->nto_si_addr, ptr_t);
+    dst64->nto_si_bdslot
+      = extract_signed_integer ((gdb_byte *)&src64->nto_si_bdslot,
+              sizeof (src64->nto_si_bdslot),
+              byte_order);
+  }
     }
   else
     {
       dst32->si_signo = extract_signed_integer ((gdb_byte *)&src32->si_signo,
-						sizeof (src32->si_signo),
-						byte_order);
+            sizeof (src32->si_signo),
+            byte_order);
       dst32->si_code = extract_signed_integer ((gdb_byte *)&src32->si_code,
-					       sizeof (src32->si_code),
-					       byte_order);
+                 sizeof (src32->si_code),
+                 byte_order);
       if (dst32->si_code == 127) // SI_NOINFO
-	return;
+  return;
 
       dst32->si_errno = extract_signed_integer ((gdb_byte *)&src32->si_errno,
-						sizeof (src32->si_errno),
-						byte_order);
+            sizeof (src32->si_errno),
+            byte_order);
 
       if (dst32->si_code <= 0) // SI_FROMUSER
-	{
-	  dst32->nto_si_pid
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
-				      sizeof (src32->nto_si_pid), byte_order);
-	  dst32->nto_si_uid
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_uid,
-				      sizeof (src32->nto_si_uid), byte_order);
-	  dst32->nto_si_value.sival_ptr
-	    = extract_typed_address ((gdb_byte *)&src32->nto_si_value, ptr_t);
-	}
+  {
+    dst32->nto_si_pid
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
+              sizeof (src32->nto_si_pid), byte_order);
+    dst32->nto_si_uid
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_uid,
+              sizeof (src32->nto_si_uid), byte_order);
+    dst32->nto_si_value.sival_ptr
+      = extract_typed_address ((gdb_byte *)&src32->nto_si_value, ptr_t);
+  }
       else if (dst32->si_signo
-	       == gdbarch_gdb_signal_to_target (target_gdbarch (),
-						GDB_SIGNAL_CHLD))
-	{
-	  dst32->nto_si_pid
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
-				      sizeof (src32->nto_si_pid), byte_order);
-	  dst32->nto_si_utime
-	    = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_utime,
-					sizeof (src32->nto_si_utime),
-					byte_order);
-	  dst32->nto_si_status
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_status,
-				      sizeof (src32->nto_si_status),
-				      byte_order);
-	  dst32->nto_si_stime
-	    = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_stime,
-					sizeof (src32->nto_si_stime),
-					byte_order);
-	}
+         == gdbarch_gdb_signal_to_target (target_gdbarch (),
+            GDB_SIGNAL_CHLD))
+  {
+    dst32->nto_si_pid
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
+              sizeof (src32->nto_si_pid), byte_order);
+    dst32->nto_si_utime
+      = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_utime,
+          sizeof (src32->nto_si_utime),
+          byte_order);
+    dst32->nto_si_status
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_status,
+              sizeof (src32->nto_si_status),
+              byte_order);
+    dst32->nto_si_stime
+      = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_stime,
+          sizeof (src32->nto_si_stime),
+          byte_order);
+  }
       else
-	{
-	  dst32->nto_si_fltno
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_fltno,
-				      sizeof (src32->nto_si_fltno),
-				      byte_order);
-	  dst32->nto_si_fltip
-	    = extract_typed_address ((gdb_byte *)&src32->nto_si_fltip, ptr_t);
-	  dst32->nto_si_addr
-	    = extract_typed_address ((gdb_byte *)&src32->nto_si_addr, ptr_t);
-	  dst32->nto_si_bdslot
-	    = extract_signed_integer ((gdb_byte *)&src32->nto_si_bdslot,
-				      sizeof (src32->nto_si_bdslot),
-				      byte_order);
-	}
+  {
+    dst32->nto_si_fltno
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_fltno,
+              sizeof (src32->nto_si_fltno),
+              byte_order);
+    dst32->nto_si_fltip
+      = extract_typed_address ((gdb_byte *)&src32->nto_si_fltip, ptr_t);
+    dst32->nto_si_addr
+      = extract_typed_address ((gdb_byte *)&src32->nto_si_addr, ptr_t);
+    dst32->nto_si_bdslot
+      = extract_signed_integer ((gdb_byte *)&src32->nto_si_bdslot,
+              sizeof (src32->nto_si_bdslot),
+              byte_order);
+  }
     }
 }
 
 /* When opening a core, we do not want to set inferior hooks.  */
 static struct target_so_ops backup_so_ops;
 
-/* Read AUXV from initial_stack.  */
 LONGEST
 nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
                                   LONGEST len, size_t sizeof_auxv_t)
@@ -1145,9 +1102,9 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
          == 0)
     {
       if (extract_unsigned_integer (targ64, ptr_size, byte_order) == 0)
-	anint = 1; /* Keep looping until non-null entry is found.  */
+  anint = 1; /* Keep looping until non-null entry is found.  */
       else if (anint)
-	break;
+  break;
       data_ofs += ptr_size;
     }
   initial_stack += data_ofs;
@@ -1157,16 +1114,16 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
   while (len_read <= len-sizeof_auxv_t)
     {
       if (target_read_memory (initial_stack + len_read, buff, sizeof_auxv_t)
-	  == 0)
+          == 0)
         {
-	  /* Both 32 and 64 bit structures have int as the first field.  */
+          /* Both 32 and 64 bit structures have int as the first field.  */
           const ULONGEST a_type
-	    = extract_unsigned_integer (buff, sizeof (targ32), byte_order);
+              = extract_unsigned_integer (buff, sizeof (targ32), byte_order);
 
           if (a_type == AT_NULL)
-	    break;
-	  buff += sizeof_auxv_t;
-	  len_read += sizeof_auxv_t;
+            break;
+          buff += sizeof_auxv_t;
+          len_read += sizeof_auxv_t;
         }
       else
         break;
@@ -1177,10 +1134,10 @@ nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack, gdb_byte *readbuf,
 bool
 nto_stopped_by_watchpoint ( )
 {
-  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are 
+  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are
      stopped due to a SIGTRAP.  This assumes gdb works in 'all-stop' mode;
-     future gdb versions will likely run in 'non-stop' mode in which case 
-     we will have to store/examine statuses per thread in question.  
+     future gdb versions will likely run in 'non-stop' mode in which case
+     we will have to store/examine statuses per thread in question.
      Until then, this will work fine.  */
 
   struct inferior *inf = current_inferior ();
@@ -1191,9 +1148,9 @@ nto_stopped_by_watchpoint ( )
   inf_data = nto_inferior_data (inf);
 
   return inf_data->stopped_flags
-	 & (_DEBUG_FLAG_TRACE_RD
-	    | _DEBUG_FLAG_TRACE_WR
-	    | _DEBUG_FLAG_TRACE_MODIFY);
+   & (_DEBUG_FLAG_TRACE_RD
+      | _DEBUG_FLAG_TRACE_WR
+      | _DEBUG_FLAG_TRACE_MODIFY);
 }
 
 static void
@@ -1220,6 +1177,7 @@ nto_solib_added_listener (struct so_list *solib)
   unsigned int sizeof_p_filesz;
   unsigned int sizeof_p_memsz;
   unsigned int sizeof_p_align;
+  nto_trace (1) ("nto_solib_added_listener()\n");
 
   switch (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word)
     {
@@ -1261,7 +1219,7 @@ nto_solib_added_listener (struct so_list *solib)
   mem_phdr_addr =
       solib->addr_low
       + extract_typed_address (offs_buf,
-			       builtin_type (target_gdbarch ())->builtin_data_ptr);
+             builtin_type (target_gdbarch ())->builtin_data_ptr);
 
   while (1)
     {
@@ -1275,42 +1233,42 @@ nto_solib_added_listener (struct so_list *solib)
       Elf_Internal_Phdr *file_phdr;
 
       if (target_read_memory (mem_phdr_addr, phdr_buf, sizeof_Elf_Phdr))
-	{
-	  nto_trace (0) ("Could not read phdr at 0x%lx\n", mem_phdr_addr);
-	  return;
-	}
+        {
+          nto_trace (0) ("Could not read phdr at 0x%lx\n", mem_phdr_addr);
+          return;
+        }
 
       p_type = extract_unsigned_integer (&phdr_buf[offsetof_p_type],
-					 sizeof_p_type, byte_order);
+           sizeof_p_type, byte_order);
       if (p_type == PT_LOAD)
-	{
-	  p_filesz = extract_unsigned_integer (&phdr_buf[offsetof_p_filesz],
-					       sizeof_p_filesz, byte_order);
-	  p_memsz = extract_unsigned_integer (&phdr_buf[offsetof_p_memsz],
-					      sizeof_p_memsz, byte_order);
-	  p_flags = extract_unsigned_integer (&phdr_buf[offsetof_p_flags],
-					      sizeof_p_flags, byte_order);
-	  p_align = extract_unsigned_integer (&phdr_buf[offsetof_p_align],
-					      sizeof_p_align, byte_order);
+        {
+          p_filesz = extract_unsigned_integer (&phdr_buf[offsetof_p_filesz],
+                sizeof_p_filesz, byte_order);
+          p_memsz = extract_unsigned_integer (&phdr_buf[offsetof_p_memsz],
+                sizeof_p_memsz, byte_order);
+          p_flags = extract_unsigned_integer (&phdr_buf[offsetof_p_flags],
+                sizeof_p_flags, byte_order);
+          p_align = extract_unsigned_integer (&phdr_buf[offsetof_p_align],
+                sizeof_p_align, byte_order);
 
-	  if (solib->symbols_loaded)
-	    {
-	      file_phdr = find_load_phdr_2 (solib->abfd,
-					    p_filesz, p_memsz, p_flags, p_align);
-	      if (file_phdr == NULL)
-		{
-		  /* This warning is being parsed by the IDE, the
-		   * format should not change without consultations with
-		   * IDE team.  */
-		  warning ("Host file %s does not match target file %s.",
-			   solib->so_name, solib->so_original_name);
-		  break;
-		}
-	    }
-	}
+          if (solib->symbols_loaded)
+            {
+              file_phdr = find_load_phdr_2 (solib->abfd,
+                  p_filesz, p_memsz, p_flags, p_align);
+              if (file_phdr == NULL)
+                {
+                  /* This warning is being parsed by the IDE, the
+                   * format should not change without consultations with
+                   * IDE team.  */
+                  warning ("Host file %s does not match target file %s.",
+                      solib->so_name, solib->so_original_name);
+                  break;
+                }
+            }
+        }
 
       if (p_type == PT_NULL)
-	break;
+        break;
 
       mem_phdr_addr += sizeof_Elf_Phdr;
     }
@@ -1351,7 +1309,7 @@ nto_inferior_data (struct inferior *const inferior)
   if (inf_data == NULL)
     {
       set_inferior_data (inf, nto_inferior_data_reg,
-			 (inf_data = nto_new_inferior_data ()));
+       (inf_data = nto_new_inferior_data ()));
     }
 
   return inf_data;
@@ -1444,7 +1402,7 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
     case GDB_SIGNAL_VTALRM:
       return 28;  /* virtual timer expired */
     case GDB_SIGNAL_PROF:
-      return 29;  /* profileing timer expired */
+      return 29;  /* profiling timer expired */
     case GDB_SIGNAL_XCPU:
       return 30;  /* exceded cpu limit */
     case GDB_SIGNAL_XFSZ:
@@ -1456,17 +1414,17 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
     case GDB_SIGNAL_REALTIME_33:
       return 33;
     case GDB_SIGNAL_REALTIME_34:
-	  return 34;
+    return 34;
     case GDB_SIGNAL_REALTIME_35:
-	  return 35;
+    return 35;
     case GDB_SIGNAL_REALTIME_36:
-	  return 36;
+    return 36;
     case GDB_SIGNAL_REALTIME_37:
-	  return 37;
+    return 37;
     case GDB_SIGNAL_REALTIME_38:
-	  return 38;
+    return 38;
     case GDB_SIGNAL_REALTIME_39:
-	  return 39;
+    return 39;
     case GDB_SIGNAL_REALTIME_40:
       return 40;
     /* POSIX RT-signals ->  */
@@ -1522,7 +1480,7 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
     default:
       /* only print with debug level >1 as GDB tries out all known signals
        * on start which messes up any verbose debug session */
-   	  nto_trace (1) ("GDB signal %i is out of rage for NTO (<64)!\n", signal );
+      nto_trace (1) ("GDB signal %i is out of rage for NTO (<64)!\n", signal );
       return 0;
     }
 }
@@ -1538,11 +1496,35 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
     {
       int tgtsig = nto_gdb_signal_to_target (gdbarch, (enum gdb_signal)i);
       if (tgtsig == nto_signal)
-	return (enum gdb_signal)i;
+        return (enum gdb_signal)i;
     }
   /* Give debug message as GDB_SIGNAL_UNKNOWN (143) can be confusing */
   nto_trace (0) ("Unknown NTO signal %i, stay within [1..64]\n", nto_signal );
   return GDB_SIGNAL_UNKNOWN;
+}
+
+/*
+ * helper to find a thread by lwp
+ */
+struct thread_info *
+nto_find_thread (ptid_t ptid)
+{
+  struct thread_info *tp;
+  struct thread_info *res=NULL;
+
+  for (tp = thread_list; tp; tp = tp->next)
+    {
+      if ( tp->ptid.pid() == ptid.pid() )
+        {
+          nto_trace(0)("%s: Found %s\n", nto_pid_to_str(ptid), nto_pid_to_str(tp->ptid));
+          if ( tp->ptid.lwp() == ptid.lwp() )
+            {
+              res=tp;
+              break;
+            }
+        }
+    }
+  return res;
 }
 
 /*
@@ -1556,82 +1538,82 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
  */
 static void
 nto_new_thread_listener( thread_info *ti ) {
-	/* no assert as this will also be triggered on remote and
-	 * self-hosted environments */
-	if (!core_bfd) return;
+  /* no assert as this will also be triggered on remote and
+   * self-hosted environments */
+  if (!core_bfd) return;
 
-	char sectname[64]; /* todo allocate this dynamically */
-	ptid_t *ptid;
-	struct nto_thread_info *priv;
-	enum bfd_endian byte_order;
-//	iterate_over_regset_sections_cb *cb;
-	unsigned int sectsize;
-	nto_procfs_status ps;
+  char sectname[64]; /* todo allocate this dynamically */
+  ptid_t *ptid;
+  struct nto_thread_info *priv;
+  enum bfd_endian byte_order;
+//  iterate_over_regset_sections_cb *cb;
+  unsigned int sectsize;
+  nto_procfs_status ps;
 
-	nto_trace(1)( "nto_new_thread_listener for gdb_tid_%d - %d:%ld\n",
-			ti->global_num, ti->ptid.pid(), ti->ptid.lwp() );
-	byte_order = gdbarch_byte_order (target_gdbarch ());
+  nto_trace(1)( "nto_new_thread_listener for gdb_tid_%d - %d:%ld\n",
+      ti->global_num, ti->ptid.pid(), ti->ptid.lwp() );
+  byte_order = gdbarch_byte_order (target_gdbarch ());
 
-	/* fetch the proper segment from the core and use the QNX thread number
-	 * not the GDB internal number */
-	xsnprintf( sectname, 63, ".qnx_core_status/%ld", ti->ptid.lwp() );
-	asection *tsect=bfd_get_section_by_name( core_bfd, sectname );
+  /* fetch the proper segment from the core and use the QNX thread number
+   * not the GDB internal number */
+  xsnprintf( sectname, 63, ".qnx_core_status/%ld", ti->ptid.lwp() );
+  asection *tsect=bfd_get_section_by_name( core_bfd, sectname );
 
-	if( !tsect ) {
-		warning("Could not find section %s in core!", sectname );
-		return;
-	}
+  if( !tsect ) {
+    warning("Could not find section %s in core!", sectname );
+    return;
+  }
 
-	sectsize = bfd_section_size ( core_bfd, tsect);
-	if( IS_64BIT() ){
-	  if (sectsize > sizeof (ps._64) ) sectsize = sizeof (ps._64);
-	}
-	else {
-	  if (sectsize > sizeof (ps._32) ) sectsize =  sizeof (ps._32);
-	}
+  sectsize = bfd_section_size ( core_bfd, tsect);
+  if( IS_64BIT() ){
+    if (sectsize > sizeof (ps._64) ) sectsize = sizeof (ps._64);
+  }
+  else {
+    if (sectsize > sizeof (ps._32) ) sectsize =  sizeof (ps._32);
+  }
 
-	if (bfd_seek ( core_bfd, tsect->filepos, SEEK_SET) != 0) {
-	  warning ( "Cannot read %s from core!", sectname);
-	  return;
-	}
+  if (bfd_seek ( core_bfd, tsect->filepos, SEEK_SET) != 0) {
+    warning ( "Cannot read %s from core!", sectname);
+    return;
+  }
 
-	if( bfd_bread ((gdb_byte *)&ps, sectsize, core_bfd ) != sectsize ) {
-	  warning ( "could not read %d bytes from section %s!", sectsize, sectname);
-	  return;
-	}
+  if( bfd_bread ((gdb_byte *)&ps, sectsize, core_bfd ) != sectsize ) {
+    warning ( "could not read %d bytes from section %s!", sectsize, sectname);
+    return;
+  }
 
-	/* we always create a new one as this should never be called on an
-	 * already existing thread but even if, the reset() frees any
-	 * existing information */
-	priv=new nto_thread_info();
-	ti->priv.reset(priv);
+  /* we always create a new one as this should never be called on an
+   * already existing thread but even if, the reset() frees any
+   * existing information */
+  priv=new nto_thread_info();
+  ti->priv.reset(priv);
 
-	if (IS_64BIT ()) {
-	  priv->tid = extract_unsigned_integer ((gdb_byte *)&ps._64.tid,
-				  sizeof (ps._64.tid), byte_order);
-	  priv->state = extract_unsigned_integer ((gdb_byte *)&ps._64.state,
-					sizeof (ps._64.state), byte_order);
-	  priv->flags = extract_unsigned_integer ((gdb_byte *)&ps._64.flags,
-					sizeof (ps._64.flags), byte_order);
-	  priv->siginfo = malloc (sizeof (ps._64.info64));
-	}
-	else {
-	  priv->tid = extract_unsigned_integer ((gdb_byte *)&ps._32.tid,
-				  sizeof (ps._32.tid), byte_order);
-	  priv->state = extract_unsigned_integer ((gdb_byte *)&ps._32.state,
-					sizeof (ps._32.state), byte_order);
-	  priv->flags = extract_unsigned_integer ((gdb_byte *)&ps._32.flags,
-					sizeof (ps._32.flags), byte_order);
-	  priv->siginfo = malloc (sizeof (ps._32.info));
-	}
+  if (IS_64BIT ()) {
+    priv->tid = extract_unsigned_integer ((gdb_byte *)&ps._64.tid,
+          sizeof (ps._64.tid), byte_order);
+    priv->state = extract_unsigned_integer ((gdb_byte *)&ps._64.state,
+          sizeof (ps._64.state), byte_order);
+    priv->flags = extract_unsigned_integer ((gdb_byte *)&ps._64.flags,
+          sizeof (ps._64.flags), byte_order);
+    priv->siginfo = malloc (sizeof (ps._64.info64));
+  }
+  else {
+    priv->tid = extract_unsigned_integer ((gdb_byte *)&ps._32.tid,
+          sizeof (ps._32.tid), byte_order);
+    priv->state = extract_unsigned_integer ((gdb_byte *)&ps._32.state,
+          sizeof (ps._32.state), byte_order);
+    priv->flags = extract_unsigned_integer ((gdb_byte *)&ps._32.flags,
+          sizeof (ps._32.flags), byte_order);
+    priv->siginfo = malloc (sizeof (ps._32.info));
+  }
 
-	if (priv->siginfo == NULL) {
-		warning ("Out of memory.\n");
-		return;
-	}
+  if (priv->siginfo == NULL) {
+    warning ("Out of memory.\n");
+    return;
+  }
 
-	/* fill siginfo as well.. */
-	nto_get_siginfo_from_procfs_status (&ps, priv->siginfo);
+  /* fill siginfo as well.. */
+  nto_get_siginfo_from_procfs_status (&ps, priv->siginfo);
 }
 
 /* Taken from auxv.c */
@@ -1652,7 +1634,7 @@ struct auxv_info
  * .qnx_core_info section we need to supply this information manually after
  * the inferior is created.
  *
- * TODO: this should be emulated in BFD!
+ * TODO: this /should/ be emulated in BFD!
  *
  * What happens is that auxv_inferior_data() is called to fill the auxv buffer
  * for each identified thread. That one calls the
@@ -1665,59 +1647,59 @@ struct auxv_info
  */
 static void
 nto_inferior_appeared_listener( inferior *inf ) {
-	/* no assert as this will also be triggered on remote and self-hosted
-	 * environments */
-	if( !core_bfd ) return;
-	nto_trace(0)("nto_inferior_created_listener()\n" );
+  /* no assert as this will also be triggered on remote and self-hosted
+   * environments */
+  if( !core_bfd ) return;
+  nto_trace(0)("nto_inferior_created_listener()\n" );
 
-	enum bfd_endian byte_order=gdbarch_byte_order (target_gdbarch ());
-	struct auxv_info *info = new auxv_info;
-	nto_procfs_info pinfo;
-	int len;
+  enum bfd_endian byte_order=gdbarch_byte_order (target_gdbarch ());
+  struct auxv_info *info = new auxv_info;
+  nto_procfs_info pinfo;
+  int len;
 
-	/* buffer can hold 20 auxv_t entries - taken from nto-procfs.c */
-	const size_t sizeof_tempbuf = 20 * ( IS_64BIT()? 16 : 8 );
-	gdb_byte tempbuf[sizeof_tempbuf];
-	const char *sectname=".qnx_core_info";
-	unsigned int sectsize;
-	CORE_ADDR initial_stack;
+  /* buffer can hold 20 auxv_t entries - taken from nto-procfs.c */
+  const size_t sizeof_tempbuf = 20 * ( IS_64BIT()? 16 : 8 );
+  gdb_byte tempbuf[sizeof_tempbuf];
+  const char *sectname=".qnx_core_info";
+  unsigned int sectsize;
+  CORE_ADDR initial_stack;
 
-	/* fetch the proper segment from the core */
-	asection *tsect=bfd_get_section_by_name( core_bfd, sectname );
+  /* fetch the proper segment from the core */
+  asection *tsect=bfd_get_section_by_name( core_bfd, sectname );
 
-	if( !tsect ) {
-		warning("Could not find section %s in core!", sectname );
-		return;
-	}
+  if( !tsect ) {
+    warning("Could not find section %s in core!", sectname );
+    return;
+  }
 
-	sectsize = bfd_section_size ( core_bfd, tsect);
+  sectsize = bfd_section_size ( core_bfd, tsect);
 
-	if (sectsize > sizeof (pinfo))
-		sectsize = sizeof (pinfo);
+  if (sectsize > sizeof (pinfo))
+    sectsize = sizeof (pinfo);
 
-	if (bfd_seek (core_bfd, tsect->filepos, SEEK_SET) != 0) {
-		warning ("Could not jump to procinfo in %s!", sectname );
-		return;
-	}
+  if (bfd_seek (core_bfd, tsect->filepos, SEEK_SET) != 0) {
+    warning ("Could not jump to procinfo in %s!", sectname );
+    return;
+  }
 
-	len = bfd_bread ((gdb_byte *)&pinfo, sectsize, core_bfd);
-	if (len != sectsize) {
-		warning ("Could not read procinfo from %s!", sectname );
-		return;
-	}
+  len = bfd_bread ((gdb_byte *)&pinfo, sectsize, core_bfd);
+  if (len != sectsize) {
+    warning ("Could not read procinfo from %s!", sectname );
+    return;
+  }
 
-	initial_stack = extract_unsigned_integer ((gdb_byte *)&pinfo.initial_stack,
-			sizeof (pinfo.initial_stack), byte_order);
+  initial_stack = extract_unsigned_integer ((gdb_byte *)&pinfo.initial_stack,
+      sizeof (pinfo.initial_stack), byte_order);
 
-	nto_trace(0)("Initial stack at 0x%lx\n",initial_stack);
+  nto_trace(0)("Initial stack at 0x%lx\n",initial_stack);
 
-	len = nto_read_auxv_from_initial_stack
-		(initial_stack, tempbuf, sizeof_tempbuf, IS_64BIT()? 16 : 8);
-	gdb::byte_vector databuf(len);
-	memcpy( databuf.data(), tempbuf, len );
-	info->data=databuf;
+  len = nto_read_auxv_from_initial_stack
+    (initial_stack, tempbuf, sizeof_tempbuf, IS_64BIT()? 16 : 8);
+  gdb::byte_vector databuf(len);
+  memcpy( databuf.data(), tempbuf, len );
+  info->data=databuf;
 
-	set_inferior_data (inf, auxv_inferior_data, info);
+  set_inferior_data (inf, auxv_inferior_data, info);
 }
 
 /*
@@ -1726,8 +1708,8 @@ nto_inferior_appeared_listener( inferior *inf ) {
 void
 nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
-  /* all threads are found and inferior is announced now get the AUXV */
-	  gdb::observers::inferior_appeared.attach (nto_inferior_appeared_listener);
+  /* all threads are found and inferior is announced, now get the AUXV */
+  gdb::observers::inferior_appeared.attach (nto_inferior_appeared_listener);
 
   /* corelow found a new thread, add extra thread info */
   gdb::observers::new_thread.attach(nto_new_thread_listener);
@@ -1752,7 +1734,7 @@ _initialize_nto_tdep (void)
   /* this not needed on self hosted platforms */
 #ifndef __QNXNTO__
   if( getenv("QNX_TARGET") == NULL ) {
-	  error("QNX environment is not set!");
+    error("QNX environment is not set!");
   }
 #endif
 
@@ -1760,28 +1742,27 @@ _initialize_nto_tdep (void)
     = register_inferior_data_with_cleanup (NULL, nto_inferior_data_cleanup);
 
   add_setshow_zinteger_cmd ("nto-debug", class_maintenance,
-			    &nto_internal_debugging, _("\
+          &nto_internal_debugging, _("\
 Set QNX NTO internal debugging."), _("\
 Show QNX NTO internal debugging."), _("\
 When non-zero, nto specific debug info is\n\
 displayed. Different information is displayed\n\
 for different positive values."),
-			    NULL,
-			    &show_nto_debug, /* FIXME: i18n: QNX NTO internal
-				     debugging is %s.  */
-			    &setdebuglist, &showdebuglist);
+          NULL,
+          &show_nto_debug,
+          &setdebuglist, &showdebuglist);
 
   add_setshow_zinteger_cmd ("nto-stop-on-thread-events", class_support,
-			    &nto_stop_on_thread_events, _("\
+          &nto_stop_on_thread_events, _("\
 Stop on thread events ."), _("\
 Show stop on thread events setting."), _("\
 When set to 1, stop on thread created and thread destroyed events.\n"),
-			    NULL,
-			    NULL,
-			    &setlist, &showlist);
+          NULL,
+          NULL,
+          &setlist, &showlist);
 
   add_info ("tidinfo", nto_info_tidinfo_command,
-		  "List threads for current process." );
+      "List threads for current process." );
 
   gdb::observers::solib_loaded.attach (nto_solib_added_listener);
 

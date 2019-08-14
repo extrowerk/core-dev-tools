@@ -164,11 +164,14 @@ svr4_same_1 (const char *gdb_so_name, const char *inferior_so_name)
     return 1;
 
   /* On QNX it's even worse as libc.so.x is an alias for ldqnx.so */
+#ifdef __QNX_LEGACY__
+  /* This only makes sense for versions < 7.1.0 */
+  nto_trace(0)("svr4_same_1(): gdb: %s, inf: %s\n", gdb_so_name, inferior_so_name );
   if ( ( strcmp (gdb_so_name, "/usr/lib/ldqnx.so.2") == 0       /* 32-Bit ld */
       || strcmp (gdb_so_name, "/usr/lib/ldqnx-64.so.2") == 0 )  /* 64-Bit ld */
-      && ( strcmp (inferior_so_name, "libc.so.4") == 0          /* QNX7 */
-	  || strcmp (inferior_so_name, "libc.so.3") == 0) )         /* QNX6 */
+      && ( strcmp (inferior_so_name, "libc.so.4") == 0 ) )      /* QNX7 */
     return 1;
+#endif
 
   return 0;
 }
@@ -1364,30 +1367,31 @@ svr4_read_so_list (CORE_ADDR lm, CORE_ADDR prev_lm,
       target_read_string (li->l_name, &buffer, SO_NAME_MAX_PATH_SIZE - 1,
 			  &errcode);
 
-/* TODO: is this needed? */
-#ifdef __QNXTARGET__
-      {
-      gdb::unique_xmalloc_ptr<char> pathbuff;
-      int err;
-      nto_trace(0)("Looking for libc..\n");
-      target_read_string (li->l_path, &pathbuff, PATH_MAX - 1, &err);
-      if (err == 0 && strlen( pathbuff.get() ) > 0 ) {
-        if (errcode != 0) {
-          if ( svr4_same_1 (pathbuff.get(), "libc.so.4") ) {
-            buffer.reset(xstrdup ("libc.so.4"));
-          }
-          else if (svr4_same_1 (pathbuff.get(), "libc.so.3")) {
-            buffer.reset(xstrdup ("libc.so.3"));
-          }
-          else {
-            buffer.reset(xstrdup (lbasename (pathbuff.get())));
-          }
-            errcode = 0;
-          }
-          strncpy (newobj->so_original_name, pathbuff.get(), SO_NAME_MAX_PATH_SIZE - 1);
+#ifdef __QNX_LEGACY__
+      /* This only makes sense on versions < 7.1.0 */
+      if (errcode !=0 )
+        {
+          gdb::unique_xmalloc_ptr<char> pathbuff;
+          int err;
+          target_read_string (li->l_path, &pathbuff, PATH_MAX - 1, &err);
+          if (err == 0 && strlen( pathbuff.get() ) > 0 )
+            {
+              if (errcode != 0)
+                {
+                  if (svr4_same_1 (pathbuff.get(), "libc.so.4"))
+                      buffer.reset(xstrdup ("libc.so.4"));
+                  else
+                      buffer.reset(xstrdup (lbasename (pathbuff.get())));
+                  errcode = 0;
+                }
+                strncpy (newobj->so_original_name, pathbuff.get(),
+                    SO_NAME_MAX_PATH_SIZE - 1);
+            }
+          nto_trace(0)("svr4_read_so_list(): Found %s @ %s\n", buffer.get(),
+              pathbuff.get() );
         }
-        nto_trace(0)("Found %s/%s\n", pathbuff.get(), buffer.get() );
-      }
+      else
+          nto_trace(0)("svr4_read_so_list(): Got %s\n", buffer.get());
 #endif /* __QNXTARGET__ */
 
 	if (errcode != 0)
@@ -2369,21 +2373,23 @@ enable_break (struct svr4_info *info, int from_tty)
 	}
       END_CATCH
 
-#ifdef __QNXTARGET__
+#ifdef __QNX_LEGACY__
+      /* This only makes sense on versions < 7.1.0 */
       if (tmp_bfd == NULL)
 	{
+      nto_trace(0)("Manually assigning libc.so.4 to %s!\n", interp_name );
 	  /* Internal knowledge: */
 	  if (strcmp (interp_name, "/usr/lib/ldqnx.so.2") == 0 ||
 	      strcmp (interp_name, "/usr/lib/ldqnx-64.so.2") == 0)
 	    {
 	      /* We "know" it's libc.so.4 */
-	      tmp_bfd = solib_bfd_open ("libc.so.4");
-	      if (tmp_bfd != NULL)
-		{
-		  /* Change interp name. */
-		  xfree (interp_name);
-		  interp_name = xstrdup ("libc.so.4");
-		}
+          tmp_bfd = solib_bfd_open ("libc.so.4");
+          if (tmp_bfd != NULL)
+		    {
+		      /* Change interp name. */
+              xfree (interp_name);
+              interp_name = xstrdup ("libc.so.4");
+            }
 	    }
 	}
 #endif

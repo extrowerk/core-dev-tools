@@ -26,6 +26,7 @@
 #include "osabi.h"
 #include "regset.h"
 #include "gdbthread.h"
+
 /* for struct tidinfo */
 #include "nto-share/dsmsgs.h"
 
@@ -150,21 +151,22 @@ typedef struct _debug_regs
 
 struct nto_thread_info : public private_thread_info
 {
-	  short tid;
-	  unsigned char state;
-	  unsigned char flags;
-	  void *siginfo; // cached from core file read
-	  char name[_NTO_THREAD_NAME_MAX];
+	short tid;
+	unsigned char state;
+	unsigned char flags;
+	void *siginfo; // cached from core file read
+	char name[_NTO_THREAD_NAME_MAX];
 
 public:
-	  void fill( struct tidinfo *data ) {
-		  tid=data->tid;
-		  state=data->state;
-		  flags=data->flags;
-	  }
-	  void setName( const char *tname ) {
-		  strcpy( name, tname );
-	  }
+	void fill( struct tidinfo *data ) {
+		tid=data->tid;
+		state=data->state;
+		flags=data->flags;
+	}
+	void setName( const char *tname ) {
+		/* strlcpy() is not available by default on Ubuntu 16.04 */
+		snprintf( name, _NTO_THREAD_NAME_MAX, "%s", tname );
+	}
 };
 
 /* Per-inferior data, common for both procfs and remote.  */
@@ -173,7 +175,7 @@ struct nto_inferior_data
   /* Is program loaded? */
   int has_memory;
 
-  /* Does target has stack available? */
+  /* Does target have stack available? */
   int has_stack;
 
   /* Is it being executed? */
@@ -242,6 +244,8 @@ int nto_in_dynsym_resolve_code (CORE_ADDR pc);
 const char *nto_extra_thread_info ( struct thread_info * );
 
 const char *nto_thread_name( gdbarch *arch, struct thread_info *ti );
+
+struct thread_info *nto_find_thread (ptid_t ptid);
 
 struct link_map_offsets* nto_generic_svr4_fetch_link_map_offsets (void);
 

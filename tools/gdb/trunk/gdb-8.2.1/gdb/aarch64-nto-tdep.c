@@ -47,7 +47,7 @@
 
 static void
 aarch64_nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs,
-			   size_t len)
+         size_t len)
 {
   int regno;
 
@@ -57,23 +57,23 @@ aarch64_nto_supply_gregset (struct regcache *regcache, const gdb_byte *gregs,
 
 static void
 aarch64_nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs,
-			    size_t len)
+          size_t len)
 {
   int regno;
 
   for (regno = AARCH64_V0_REGNUM; regno <= AARCH64_V31_REGNUM; regno++)
     regcache->raw_supply (regno, fpregs + AARCH64_FPREGSZ
-					   * (regno - AARCH64_V0_REGNUM));
+             * (regno - AARCH64_V0_REGNUM));
 
   regcache->raw_supply (AARCH64_FPSR_REGNUM,
-		       fpregs + AARCH64_FPREGSZ * 32);
+           fpregs + AARCH64_FPREGSZ * 32);
   regcache->raw_supply (AARCH64_FPCR_REGNUM,
-		       fpregs + AARCH64_FPREGSZ * 32 + AARCH64_FPSRSZ);
+           fpregs + AARCH64_FPREGSZ * 32 + AARCH64_FPSRSZ);
 }
 
 static void
 aarch64_nto_supply_regset (struct regcache *regcache, int regset,
-			  const gdb_byte *data, size_t len)
+        const gdb_byte *data, size_t len)
 {
   switch (regset)
     {
@@ -95,19 +95,19 @@ aarch64_nto_regset_id (int regno)
     return NTO_REG_END;
   else if (regno < AARCH64_V0_REGNUM)
     return NTO_REG_GENERAL;
-  else if (regno < AARCH64_V0_REGNUM + 32 + 2) /* fpregs=32, fpsr/fpcr =2 */
+  else if (regno <= AARCH64_FPCR_REGNUM )
     return NTO_REG_FLOAT;
 
-  return -1;			/* Error.  */
+  return -1;
 }
 
 static int
 aarch64_nto_register_area (int regset, unsigned cpuflags)
 {
   if (regset == NTO_REG_GENERAL)
-    return AARCH64_GREGSZ * AARCH64_V0_REGNUM;
+      return AARCH64_GREGSZ * AARCH64_V0_REGNUM;
   else if (regset == NTO_REG_FLOAT)
-    return sizeof (AARCH64_FPU_REGISTERS);
+      return sizeof (AARCH64_FPU_REGISTERS);
   else
       warning(_("Only general and floatpoint registers supported on aarch64 for now\n"));
   return -1;
@@ -115,15 +115,15 @@ aarch64_nto_register_area (int regset, unsigned cpuflags)
 
 static int
 aarch64_nto_regset_fill (const struct regcache *const regcache,
-			const int regset, gdb_byte *const data,
-			size_t len)
+      const int regset, gdb_byte *const data,
+      size_t len)
 {
   if (regset == NTO_REG_GENERAL)
     {
       int regno;
 
       for (regno = 0; regno <= AARCH64_CPSR_REGNUM; regno++)
-	regcache->raw_collect (regno, data + AARCH64_GREGSZ * regno);
+          regcache->raw_collect (regno, data + AARCH64_GREGSZ * regno);
       return 0;
     }
   else if (regset == NTO_REG_FLOAT)
@@ -131,18 +131,81 @@ aarch64_nto_regset_fill (const struct regcache *const regcache,
       int regno;
 
       for (regno = AARCH64_V0_REGNUM; regno <= AARCH64_V31_REGNUM; regno++)
-	regcache->raw_collect (regno,
-		data + (regno - AARCH64_V0_REGNUM) * AARCH64_FPREGSZ);
+          regcache->raw_collect (regno,
+              data + (regno - AARCH64_V0_REGNUM) * AARCH64_FPREGSZ);
       regcache->raw_collect (AARCH64_FPSR_REGNUM,
-							data + 32 * AARCH64_FPREGSZ);
+          data + 32 * AARCH64_FPREGSZ);
       regcache->raw_collect (AARCH64_FPCR_REGNUM,
-							data + 32 * AARCH64_FPREGSZ + AARCH64_FPSRSZ);
+          data + 32 * AARCH64_FPREGSZ + AARCH64_FPSRSZ);
       return 0;
     }
-  return -1; // Error
+  return -1;
+}
+
+/* Implement the "init" method of struct tramp_frame.  */
+/* todo: these are the BSD offsets, make sure these are correct */
+#define AARCH64_SIGFRAME_UCONTEXT_OFFSET  80
+#define AARCH64_UCONTEXT_MCONTEXT_OFFSET  16
+#define AARCH64_MCONTEXT_FPREGS_OFFSET    272
+#define AARCH64_MCONTEXT_FLAGS_OFFSET     800
+
+static void
+aarch64_nto_sigframe_init (const struct tramp_frame *self,
+           struct frame_info *this_frame,
+           struct trad_frame_cache *this_cache,
+           CORE_ADDR func)
+{
+  struct gdbarch *gdbarch = get_frame_arch (this_frame);
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+
+  CORE_ADDR sp = get_frame_register_unsigned (this_frame, AARCH64_SP_REGNUM);
+  CORE_ADDR mcontext_addr = get_frame_register_unsigned (this_frame, AARCH64_PC_REGNUM );
+  gdb_byte buf[4];
+  int i;
+
+  nto_trace(0)("Initializing sigframe at %lx\n", func);
+
+  /* fill in the gregs */
+  for (i = 0; i < AARCH64_X_REGS_NUM; i++)
+    {
+      trad_frame_set_reg_addr (this_cache, AARCH64_X0_REGNUM+i,
+          mcontext_addr + i * AARCH64_GREGSZ);
+    }
+
+  /* fill in status registers */
+  trad_frame_set_reg_addr (this_cache, AARCH64_SP_REGNUM,
+     mcontext_addr + AARCH64_SP_REGNUM * AARCH64_GREGSZ);
+  trad_frame_set_reg_addr (this_cache, AARCH64_PC_REGNUM,
+     mcontext_addr + AARCH64_PC_REGNUM * AARCH64_GREGSZ);
+  trad_frame_set_reg_addr (this_cache, AARCH64_CPSR_REGNUM,
+     mcontext_addr + AARCH64_CPSR_REGNUM * AARCH64_GREGSZ);
+
+  /* fill in FP Registers */
+  if (target_read_memory (mcontext_addr + AARCH64_MCONTEXT_FLAGS_OFFSET, buf,
+        4) == 0
+        && (extract_unsigned_integer (buf, 4, byte_order) & AARCH64_FPVALID ) )
+    {
+      for (i = 0; i < AARCH64_V_REGS_NUM; i++)
+        {
+          trad_frame_set_reg_addr (this_cache, AARCH64_V0_REGNUM + i,
+               mcontext_addr
+               + AARCH64_MCONTEXT_FPREGS_OFFSET
+               + i * AARCH64_FPREGSZ);
+        }
+      trad_frame_set_reg_addr (this_cache, AARCH64_FPSR_REGNUM,
+             mcontext_addr + AARCH64_MCONTEXT_FPREGS_OFFSET
+             + 32 * AARCH64_FPREGSZ);
+      trad_frame_set_reg_addr (this_cache, AARCH64_FPCR_REGNUM,
+             mcontext_addr + AARCH64_MCONTEXT_FPREGS_OFFSET
+             + 32 * AARCH64_FPREGSZ + 4);
+    }
+
+  /* add frame to the list */
+  trad_frame_set_id (this_cache, frame_id_build (sp, func));
 }
 
 #if 0
+/* todo this is never called */
 /* Assuming THIS_FRAME is a QNX Neutrino sigtramp routine, return the
    address of the associated sigcontext structure.  */
 static CORE_ADDR
@@ -161,79 +224,13 @@ aarch64_nto_sigcontext_addr (struct frame_info *this_frame)
 #endif
 
 
-/* Implement the "init" method of struct tramp_frame.  */
-/* todo: bweb: this is probably very, very wrong! */
-#define AARCH64_SIGFRAME_UCONTEXT_OFFSET	80
-#define AARCH64_UCONTEXT_MCONTEXT_OFFSET	16
-#define	AARCH64_MCONTEXT_FPREGS_OFFSET		272
-#define	AARCH64_MCONTEXT_FLAGS_OFFSET		800
-
-static void
-aarch64_nto_sigframe_init (const struct tramp_frame *self,
-			     struct frame_info *this_frame,
-			     struct trad_frame_cache *this_cache,
-			     CORE_ADDR func)
-{
-  struct gdbarch *gdbarch = get_frame_arch (this_frame);
-  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-
-  /* todo: these addresses hardly make any sense.. */
-  CORE_ADDR sp = get_frame_register_unsigned (this_frame, AARCH64_SP_REGNUM);
-  CORE_ADDR mcontext_addr = get_frame_register_unsigned (this_frame, AARCH64_PC_REGNUM );
-  gdb_byte buf[4];
-  int i;
-
-  nto_trace(0)("Initializing sigframe at %lx\n", func);
-
-  /* write register offsets */
-  for (i = 0; i < 30; i++)
-    {
-      trad_frame_set_reg_addr (this_cache,
-          AARCH64_X0_REGNUM + i,
-          mcontext_addr + i * AARCH64_GREGSZ);
-    }
-
-  trad_frame_set_reg_addr (this_cache, AARCH64_LR_REGNUM,
-			   mcontext_addr + 30 * AARCH64_GREGSZ);
-  trad_frame_set_reg_addr (this_cache, AARCH64_SP_REGNUM,
-			   mcontext_addr + 31 * AARCH64_GREGSZ);
-  trad_frame_set_reg_addr (this_cache, AARCH64_PC_REGNUM,
-			   mcontext_addr + 32 * AARCH64_GREGSZ);
-  trad_frame_set_reg_addr (this_cache, AARCH64_CPSR_REGNUM,
-			   mcontext_addr + 33 * AARCH64_GREGSZ);
-
-  /* fill in Registers */
-  if (target_read_memory (mcontext_addr + AARCH64_MCONTEXT_FLAGS_OFFSET, buf,
-			  4) == 0
-      && (extract_unsigned_integer (buf, 4, byte_order)
-	  & AARCH64_FPVALID))
-    {
-      for (i = 0; i < 32; i++)
-	{
-	  trad_frame_set_reg_addr (this_cache, AARCH64_V0_REGNUM + i,
-				   mcontext_addr
-				   + AARCH64_MCONTEXT_FPREGS_OFFSET
-				   + i * AARCH64_FPREGSZ);
-	}
-      trad_frame_set_reg_addr (this_cache, AARCH64_FPSR_REGNUM,
-			       mcontext_addr + AARCH64_MCONTEXT_FPREGS_OFFSET
-			       + 32 * AARCH64_FPREGSZ);
-      trad_frame_set_reg_addr (this_cache, AARCH64_FPCR_REGNUM,
-			       mcontext_addr + AARCH64_MCONTEXT_FPREGS_OFFSET
-			       + 32 * AARCH64_FPREGSZ + 4);
-    }
-
-  /* add frame to the list */
-  trad_frame_set_id (this_cache, frame_id_build (sp, func));
-}
-
 #ifdef __NTO_SIGTRAMP_VALIDATE__
 /* Return whether THIS_FRAME corresponds to a QNX Neutrino sigtramp
    routine.  */
 static int
 aarch64_nto_sigframe_validate (const struct tramp_frame *self,
-		   struct frame_info *this_frame,
-		   CORE_ADDR *pc)
+       struct frame_info *this_frame,
+       CORE_ADDR *pc)
 {
   const char *name;
   find_pc_partial_function (*pc, &name, NULL, NULL);
@@ -245,7 +242,7 @@ aarch64_nto_sigframe_validate (const struct tramp_frame *self,
 
 static const struct tramp_frame aarch64_nto_sigframe =
 {
-  /* The trampoline's type, some a signal trampolines, some are normal
+  /* The trampoline's type, some are signal trampolines, some are normal
      call-frame trampolines (aka thunks).  */
   SIGTRAMP_FRAME,
   /* The trampoline's entire instruction sequence.  It consists of a
@@ -266,19 +263,17 @@ static const struct tramp_frame aarch64_nto_sigframe =
     {0xf9400260,-1},       /* ldr     x0, [x19, SIGSTACK_SIGNO]   */
     {0xd63f0060,-1},       /* blr     x3 */
     {0xaa1303e0,-1},       /* mov     x0, x19 */
-#if 0
     {0x14000000,14000000}, /* b       SignalReturn */
-#endif
     {TRAMP_SENTINEL_INSN, -1}
   },
   /* Initialize a trad-frame cache corresponding to the tramp-frame.
      FUNC is the address of the instruction TRAMP[0] in memory.  */
   aarch64_nto_sigframe_init,
+#ifdef __NTO_SIGTRAMP_VALIDATE__
   /* Return non-zero if the tramp-frame is valid for the PC requested.
      Adjust the PC to point to the address to check the instruction
      sequence against if required.  If this is NULL, then the tramp-frame
      is valid for any PC.  */
-#ifdef __NTO_SIGTRAMP_VALIDATE__
   aarch64_nto_sigframe_validate
 #endif
 };
@@ -326,9 +321,9 @@ const struct regset aarch64_nto_fpregset =
 
 static void
 aarch64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
-					  iterate_over_regset_sections_cb *cb,
-					  void *cb_data,
-					  const struct regcache *regcache)
+            iterate_over_regset_sections_cb *cb,
+            void *cb_data,
+            const struct regcache *regcache)
 {
   cb (".reg", sizeof (AARCH64_CPU_REGISTERS), sizeof (AARCH64_CPU_REGISTERS), &aarch64_nto_gregset,
       NULL, cb_data);
@@ -349,7 +344,7 @@ init_aarch64_nto_ops (void)
   aarch64_nto_ops.register_area = aarch64_nto_register_area;
   aarch64_nto_ops.regset_fill = aarch64_nto_regset_fill;
   aarch64_nto_ops.fetch_link_map_offsets =
-    nto_generic_svr4_fetch_link_map_offsets;
+      nto_generic_svr4_fetch_link_map_offsets;
   aarch64_nto_ops.breakpoint_size = aarch64_nto_breakpoint_size;
 }
 
@@ -401,12 +396,11 @@ aarch64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
     (gdbarch, aarch64_nto_iterate_over_regset_sections);
 }
 
-
 extern initialize_file_ftype _initialize_aarch64_nto_tdep;
 
 void
 _initialize_aarch64_nto_tdep (void)
 {
   gdbarch_register_osabi (bfd_arch_aarch64, 0,
-			  GDB_OSABI_QNXNTO, aarch64_nto_init_abi);
+        GDB_OSABI_QNXNTO, aarch64_nto_init_abi);
 }

@@ -70,6 +70,10 @@ case ${gdb_host} in
 	NATDEPFILES='fork-child.o fork-inferior.o inf-ptrace.o'
 	HAVE_NATIVE_GCORE_HOST=1
 	;;
+    nto)
+	NATDEPFILES="nto-procfs.o"
+	NAT_FILE='config/nm-nto.h'
+	;;
     obsd*)
 	NATDEPFILES='fork-child.o fork-inferior.o inf-ptrace.o'
 	;;
@@ -387,15 +391,6 @@ case ${gdb_host} in
 		LOADLIBES='-lkvm'
 		;;
 
-	esac
-	;;
-    nto)
-	case ${gdb_host_cpu} in
-	    i386)
-		# Host: Intel 386 running QNX.
-		NATDEPFILES='nto-procfs.o'
-		NAT_FILE='config/nm-nto.h'
-		;;
 	esac
 	;;
     obsd)
