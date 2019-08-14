@@ -77,7 +77,7 @@ x86_64nto_gregset_reg_offset[] =
 
 #define X86_64NTO_NUM_GREGS  20
 
-/* TODO: Sigtramp stuff... */
+/* TODO: Sigtramp stuff... see aarch64-nto-tdep.c */
 
 /* Given a GDB register number REGNUM, return the offset into
    Neutrino's register structure or -1 if the register is unknown.  */
@@ -94,7 +94,7 @@ nto_reg_offset (int regnum)
 static void
 amd64_nto_supply_fpregset (const struct regset *regset,
                        struct regcache *regcache,
-		       int regnum, const void *fpregs, size_t len)
+           int regnum, const void *fpregs, size_t len)
 {
   if (len > I387_SIZEOF_FXSAVE)
     amd64_supply_xsave (regcache, regnum, fpregs);
@@ -104,8 +104,8 @@ amd64_nto_supply_fpregset (const struct regset *regset,
 
 static void
 amd64_nto_collect_fpregset (const struct regset *regset,
-			const struct regcache *regcache,
-			int regnum, void *fpregs, size_t len)
+      const struct regcache *regcache,
+      int regnum, void *fpregs, size_t len)
 {
   if (len > I387_SIZEOF_FXSAVE)
     amd64_collect_xsave (regcache, regnum, fpregs, 0);
@@ -120,9 +120,9 @@ static const struct regset amd64_nto_fpregset =
 
 static void
 amd64_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
-					  iterate_over_regset_sections_cb *cb,
-					  void *cb_data,
-					  const struct regcache *regcache)
+            iterate_over_regset_sections_cb *cb,
+            void *cb_data,
+            const struct regcache *regcache)
 {
   const struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
@@ -168,25 +168,25 @@ x86_64nto_regset_id (int regno)
   else if (regno < AMD64_NUM_REGS)
     return NTO_REG_FLOAT;
 
-  return -1;			/* Error.  */
+  return -1;      /* Error.  */
 }
 
 static int
 x86_64nto_register_area (int regset, unsigned cpuflags)
 {
   if (regset == NTO_REG_GENERAL)
-	return X86_64NTO_NUM_GREGS * AMD64_GREGSZ;
+  return X86_64NTO_NUM_GREGS * AMD64_GREGSZ;
   else if (regset == NTO_REG_FLOAT)
     {
       if (cpuflags & X86_64_CPU_XSAVE)
-	{
-	  /* At most DS_DATA_MAX_SIZE: */
-	  return 1024;
-	}
+  {
+    /* At most DS_DATA_MAX_SIZE: */
+    return 1024;
+  }
       else if (cpuflags & X86_64_CPU_FXSR)
-	  return 512;
+    return 512;
       else
-	  return 108;
+    return 108;
     }
   else
     {
@@ -197,19 +197,19 @@ x86_64nto_register_area (int regset, unsigned cpuflags)
 
 static int
 x86_64nto_regset_fill (const struct regcache *const regcache,
-		       const int regset, gdb_byte *const data,
-		       size_t len)
+           const int regset, gdb_byte *const data,
+           size_t len)
 {
   if (regset == NTO_REG_GENERAL)
     {
       int regno;
 
       for (regno = 0; regno < AMD64_ST0_REGNUM; regno++)
-	{
-	  const int offset = nto_reg_offset (regno);
-	  if (offset != -1)
-	    regcache->raw_collect (regno, data + offset);
-	}
+  {
+    const int offset = nto_reg_offset (regno);
+    if (offset != -1)
+      regcache->raw_collect (regno, data + offset);
+  }
       return 0;
     }
   else if (regset == NTO_REG_FLOAT)
@@ -272,8 +272,8 @@ amd64nto_read_description(unsigned cpuflags)
 
 static const struct target_desc *
 amd64nto_core_read_description (struct gdbarch *gdbarch,
-				  struct target_ops *target,
-				  bfd *abfd)
+          struct target_ops *target,
+          bfd *abfd)
 {
   /* We could pull xcr0 from the corefile, but just keep things
      consistent with amd64nto_read_description() */
@@ -343,7 +343,7 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->sc_num_regs = ARRAY_SIZE (i386nto_gregset_reg_offset);
 
   /* Setjmp()'s return PC saved in EDX (5).  */
-  tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
+  tdep->jb_pc_offset = 20;  /* 5x32 bit ints in.  */
 
 #endif
 
@@ -378,7 +378,7 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_iterate_over_regset_sections
     (gdbarch, amd64_nto_iterate_over_regset_sections);
   set_gdbarch_core_read_description (gdbarch,
-				     amd64nto_core_read_description);
+             amd64nto_core_read_description);
 }
 
 
@@ -388,5 +388,5 @@ void
 _initialize_x86_64nto_tdep (void)
 {
   gdbarch_register_osabi (bfd_arch_i386, bfd_mach_x86_64,
-			  GDB_OSABI_QNXNTO, amd64_nto_init_abi);
+        GDB_OSABI_QNXNTO, amd64_nto_init_abi);
 }

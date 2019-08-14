@@ -47,19 +47,19 @@
 /* From <x86/context.h>.  */
 static int i386nto_gregset_reg_offset[] =
 {
-  7 * 4,			/* %eax */
-  6 * 4,			/* %ecx */
-  5 * 4,			/* %edx */
-  4 * 4,			/* %ebx */
-  11 * 4,			/* %esp */
-  2 * 4,			/* %epb */
-  1 * 4,			/* %esi */
-  0 * 4,			/* %edi */
-  8 * 4,			/* %eip */
-  10 * 4,			/* %eflags */
-  9 * 4,			/* %cs */
-  12 * 4,			/* %ss */
-  -1				/* filler */
+  7 * 4,      /* %eax */
+  6 * 4,      /* %ecx */
+  5 * 4,      /* %edx */
+  4 * 4,      /* %ebx */
+  11 * 4,      /* %esp */
+  2 * 4,      /* %epb */
+  1 * 4,      /* %esi */
+  0 * 4,      /* %edi */
+  8 * 4,      /* %eip */
+  10 * 4,      /* %eflags */
+  9 * 4,      /* %cs */
+  12 * 4,      /* %ss */
+  -1        /* filler */
 };
 
 /* Given a GDB register number REGNUM, return the offset into
@@ -77,7 +77,7 @@ nto_reg_offset (int regnum)
 static void
 i386_nto_supply_fpregset (const struct regset *regset,
                        struct regcache *regcache,
-		       int regnum, const void *fpregs, size_t len)
+           int regnum, const void *fpregs, size_t len)
 {
   if (len > I387_SIZEOF_FXSAVE)
     i387_supply_xsave (regcache, regnum, fpregs);
@@ -89,8 +89,8 @@ i386_nto_supply_fpregset (const struct regset *regset,
 
 static void
 i386_nto_collect_fpregset (const struct regset *regset,
-			const struct regcache *regcache,
-			int regnum, void *fpregs, size_t len)
+      const struct regcache *regcache,
+      int regnum, void *fpregs, size_t len)
 {
   if (len > I387_SIZEOF_FXSAVE)
     i387_collect_xsave (regcache, regnum, fpregs, 0);
@@ -108,22 +108,22 @@ static const struct regset i386_nto_fpregset =
 
 static void
 i386nto_supply_gregset (struct regcache *regcache, const gdb_byte *gpregs,
-			size_t len)
+      size_t len)
 {
   i386_supply_gregset (&i386_gregset, regcache, -1,
-			      gpregs, NUM_GPREGS * 4);
+            gpregs, NUM_GPREGS * 4);
 }
 
 static void
 i386nto_supply_fpregset (struct regcache *regcache, const gdb_byte *fpregs,
-			 size_t len)
+       size_t len)
 {
   i386_nto_fpregset.supply_regset (&i386_nto_fpregset, regcache, -1, fpregs, len);
 }
 
 static void
 i386nto_supply_regset (struct regcache *regcache, int regset,
-		       const gdb_byte *data, size_t len)
+           const gdb_byte *data, size_t len)
 {
   switch (regset)
     {
@@ -151,14 +151,14 @@ i386nto_regset_id (int regno)
     return NTO_REG_FLOAT;
   }
 
-  return -1;			/* Error.  */
+  return -1;      /* Error.  */
 }
 
 static void
 i386_nto_iterate_over_regset_sections (struct gdbarch *gdbarch,
-				   iterate_over_regset_sections_cb *cb,
-				   void *cb_data,
-				   const struct regcache *regcache)
+           iterate_over_regset_sections_cb *cb,
+           void *cb_data,
+           const struct regcache *regcache)
 {
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
@@ -170,18 +170,18 @@ static int
 i386nto_register_area (int regset, unsigned cpuflags)
 {
   if (regset == NTO_REG_GENERAL)
-	return NUM_GPREGS * 4;
+  return NUM_GPREGS * 4;
   else if (regset == NTO_REG_FLOAT)
     {
       if (cpuflags & X86_CPU_XSAVE)
-	{
-	  /* At most DS_DATA_MAX_SIZE: */
-	  return 1024;
-	}
+  {
+    /* At most DS_DATA_MAX_SIZE: */
+    return 1024;
+  }
       else if (cpuflags & X86_CPU_FXSR)
-	  return 512;
+    return 512;
       else
-	  return 108;
+    return 108;
     }
   else
     {
@@ -192,27 +192,27 @@ i386nto_register_area (int regset, unsigned cpuflags)
 
 static int
 i386nto_regset_fill (const struct regcache *regcache, int regset,
-		     gdb_byte *data, size_t len)
+         gdb_byte *data, size_t len)
 {
   if (regset == NTO_REG_GENERAL)
     {
       int regno;
 
       for (regno = 0; regno < NUM_GPREGS; regno++)
-	{
-	  int offset = nto_reg_offset (regno);
-	  if (offset != -1)
-	    regcache->raw_collect (regno, data + offset);
-	}
+  {
+    int offset = nto_reg_offset (regno);
+    if (offset != -1)
+      regcache->raw_collect (regno, data + offset);
+  }
     }
   else if (regset == NTO_REG_FLOAT)
     {
       if (len > I387_SIZEOF_FXSAVE)
-	i387_collect_xsave (regcache, -1, data, 0);
+  i387_collect_xsave (regcache, -1, data, 0);
       else if (len == I387_SIZEOF_FXSAVE)
-	i387_collect_fxsave (regcache, -1, data);
+  i387_collect_fxsave (regcache, -1, data);
       else
-	i387_collect_fsave (regcache, -1, data);
+  i387_collect_fsave (regcache, -1, data);
     }
   else
     return -1;
@@ -269,8 +269,8 @@ i386nto_read_description(unsigned cpuflags)
 
 static const struct target_desc *
 i386nto_core_read_description (struct gdbarch *gdbarch,
-				  struct target_ops *target,
-				  bfd *abfd)
+          struct target_ops *target,
+          bfd *abfd)
 {
   /* We could pull xcr0 from the corefile, but just keep things
      consistent with i386nto_read_description() */
@@ -322,7 +322,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   tdep->sc_num_regs = ARRAY_SIZE (i386nto_gregset_reg_offset);
 
   /* Setjmp()'s return PC saved in EDX (5).  */
-  tdep->jb_pc_offset = 20;	/* 5x32 bit ints in.  */
+  tdep->jb_pc_offset = 20;  /* 5x32 bit ints in.  */
 
   tdep->sizeof_gregset = NUM_GPREGS * 4;
 
@@ -360,7 +360,7 @@ i386nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_iterate_over_regset_sections
     (gdbarch, i386_nto_iterate_over_regset_sections);
   set_gdbarch_core_read_description (gdbarch,
-				     i386nto_core_read_description);
+             i386nto_core_read_description);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
@@ -371,7 +371,7 @@ _initialize_i386nto_tdep (void)
 {
   init_i386nto_ops ();
   gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_QNXNTO,
-			  i386nto_init_abi);
+        i386nto_init_abi);
   gdbarch_register_osabi_sniffer (bfd_arch_i386, bfd_target_elf_flavour,
-				  nto_elf_osabi_sniffer);
+          nto_elf_osabi_sniffer);
 }

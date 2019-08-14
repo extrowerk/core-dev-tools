@@ -36,15 +36,16 @@ esac
 
 #
 # Get sdp version
-# Assume ntox86-gcc is always available
+# Assume ntox86_64-gcc is always available
 #
-qnx_sdp_version=$(ntox86-gcc -dumpmachine)
+qnx_sdp_version=$(ntox86_64-gcc -dumpmachine 2> /dev/null)
 qnx_sdp_version=${qnx_sdp_version##*-}
-SIFS=${IFS}
-IFS=.
-set -- ${qnx_sdp_version}
-IFS=${SIFS}
-qnx_install_version=$1$2$3
+if [ "${qnx_sdp_version}" == "" ]; then
+	echo "WARNING: cannot get current SDP version, using qnx7.1.0!"
+	qnx_sdp_version="qnx7.1.0"
+fi
+
+qnx_install_version=$(echo ${qnx_sdp_version} | sed 's/\.//g' )
 echo "qnx_install_version=${qnx_install_version}"
 
 # Setup host_cpu and platform
@@ -129,8 +130,8 @@ case ${target_os_cpu_variant} in
     target_platform="pc"
     ;;
   ntoarm*|ntoppc*|ntosh*|ntomips*)
-    echo "${target_os_cpu_variant} is obsolete!"
-    exit
+  	echo "${target_os_cpu_variant} is obsolete!"
+  	exit
     ;;
   *)
     echo "Don't have special settings for target_os_cpu_variant=${target_os_cpu_variant}"
@@ -198,13 +199,20 @@ function hook_preconfigure {
     win64*)
       with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
       LDFLAGS="${LDFLAGS} -static"
+      ## opcodes/aarch64-asm.c:1325:52: error: ‘qualifier’ may be used
+      ## uninitialized in this function
+      # configure_opts="${configure_opts} --enable-werror"
       ;;
     nto*)
       # For now, do not build python support.
       with_python_opt="--with-python=no"
+      ## BFD redefines min/max on x86_64
+      # configure_opts="${configure_opts} --enable-werror"
       ;;
     darwin*)
       with_python_opt="--with-python=${srcdir}/python-config-cross.sh"
+      ## disabled due to: void* sbrk(int)' is deprecated
+      # configure_opts="${configure_opts} --enable-werror"
       ;;
     linux*)
       # rpath must be reserved so it can be changed with chrpath
@@ -217,7 +225,6 @@ function hook_preconfigure {
         # it will use it.
         with_python_opt=
       fi
-      # put here until we use GCC8 on mingw too..
       configure_opts="${configure_opts} --enable-werror"
       ;;
     *)
@@ -287,7 +294,7 @@ function hook_preconfigure {
   # get things from the wrong place - we'd prefer not to have to say
   # anything at all and let the qcc/gcc get the system headers on their
   # own, but the only thing we can do is point it at a safe place.
-  configure_opts="${configure_opts} --oldincludedir=${PWD}/.."
+  configure_opts="${configure_opts} --oldincludedir=${PWD}"
   configure_opts="${configure_opts} --enable-gdbmi"
 
   # Does not work since GDB uses -1 as undefined address while addresses are
