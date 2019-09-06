@@ -1,1 +1,1 @@
-CRTSTUFF_T_CFLAGS = -fno-omit-frame-pointer -fpic -DCRTSTUFFS_O
+CRTSTUFF_T_CFLAGS = -fno-omit-frame-pointer $(PICFLAG) -DCRTSTUFFS_O
