@@ -316,6 +316,11 @@ add_thread_with_info (ptid_t ptid, private_thread_info *priv)
 {
   struct thread_info *result = add_thread_silent (ptid);
 
+#if defined(__QNXTARGET__)
+  /* Do not NULL the private data that was just set in the add_thread_silent
+     observer */
+  if( priv != NULL )
+#endif
   result->priv.reset (priv);
 
   if (print_thread_events)

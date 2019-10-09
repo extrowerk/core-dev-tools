@@ -74,7 +74,7 @@ typedef union nto_siginfo_t {
 int nto_internal_debugging;
 int nto_stop_on_thread_events;
 
-static char default_nto_target[] = "";
+static char default_nto_target[] = "nto";
 
 static const struct inferior_data *nto_inferior_data_reg;
 
@@ -99,31 +99,34 @@ static LONGEST
 nto_core_xfer_siginfo (struct gdbarch *gdbarch, gdb_byte *readbuf,
        ULONGEST offset, ULONGEST len) {
   struct thread_info *ti;
+  unsigned maxlen;
+
   gdb_assert( readbuf );
-  nto_trace(0)( "nto_core_xfer_siginfo()" );
+  maxlen=nto_get_siginfo_type(gdbarch)->length;
 
-  ti = find_thread_ptid (inferior_ptid);
+  ti = nto_find_thread (inferior_ptid);
   if (!ti) {
-    warning ("Thread with gdb id %ld not found.\n", inferior_ptid.lwp());
+    warning ("Thread with tid %ld not found.\n", inferior_ptid.lwp());
     return TARGET_XFER_EOF;
   }
 
-  if (!ti->priv) {
-    warning (_("Thread with gdb id %ld does not have thread private data - siginfo not available\n"),
-       inferior_ptid.lwp());
+  if (ti->priv.get() == NULL) {
+    warning (_("%s (%lx) does not have thread private data - siginfo not available\n"),
+       nto_pid_to_str(inferior_ptid), (long)ti);
     return TARGET_XFER_EOF;
   }
 
-  if ((offset + len) > sizeof (nto_siginfo_t)) {
-    if (offset <= sizeof (nto_siginfo_t))
-      len = sizeof (nto_siginfo_t) - offset;
-    else
+  if ((offset + len) > maxlen ) {
+    if (offset <= maxlen )
+      len = maxlen - offset;
+    else {
       len = 0;
+    }
   }
 
   struct nto_thread_info *priv=(struct nto_thread_info *)ti->priv.get();
   memcpy (readbuf, (char *)priv->siginfo + offset, len);
-  return len ? TARGET_XFER_OK : TARGET_XFER_EOF;
+  return len ? len : TARGET_XFER_E_IO;
 }
 
 static void *
@@ -142,11 +145,12 @@ struct type *
 nto_get_siginfo_type (struct gdbarch *gdbarch)
 {
   struct nto_gdbarch_data *nto_gdbarch_data;
-  struct type *int_type, *uint_type, *long_type, *void_ptr_type;
+  struct type *int_type, *uint_type, *void_ptr_type;
   struct type *uid_type, *pid_type;
   struct type *sigval_type, *clock_type;
   struct type *siginfo_type, *sidata_type;
   struct type *siproc_type, *sipdata_type, *type;
+  int longalign = gdbarch_long_bit (gdbarch)/8;
 
   nto_gdbarch_data = get_nto_gdbarch_data (gdbarch);
   if (nto_gdbarch_data->siginfo_type != NULL)
@@ -156,8 +160,6 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
          0, "int");
   uint_type = arch_integer_type (gdbarch, gdbarch_int_bit (gdbarch),
          1, "unsigned int");
-  long_type = arch_integer_type (gdbarch, gdbarch_long_bit (gdbarch),
-         0, "long");
   void_ptr_type = lookup_pointer_type (builtin_type (gdbarch)->builtin_void);
 
   /* union sigval */
@@ -165,23 +167,23 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   TYPE_NAME (sigval_type) = xstrdup ("union sigval");
   append_composite_type_field (sigval_type, "sival_int", int_type);
   append_composite_type_field_aligned (sigval_type, "sival_ptr",
-               void_ptr_type, TYPE_LENGTH (long_type));
+      void_ptr_type, longalign );
 
   /* pid_t */
   pid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-      TYPE_LENGTH (int_type), "pid_t");
+      gdbarch_int_bit (gdbarch), "pid_t");
   TYPE_TARGET_TYPE (pid_type) = int_type;
   TYPE_TARGET_STUB (pid_type) = 1;
 
   /* uid_t */
   uid_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-      TYPE_LENGTH (uint_type), "uid_t");
+      gdbarch_int_bit (gdbarch), "uid_t");
   TYPE_TARGET_TYPE (uid_type) = int_type;
   TYPE_TARGET_STUB (uid_type) = 1;
 
   /* clock_t */
   clock_type = arch_type (gdbarch, TYPE_CODE_TYPEDEF,
-        TYPE_LENGTH (uint_type), "clock_t");
+      gdbarch_int_bit (gdbarch), "clock_t");
   TYPE_TARGET_TYPE (clock_type) = uint_type;
   TYPE_TARGET_STUB (clock_type) = 1;
 
@@ -190,7 +192,7 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
 
   /* __pad */
   append_composite_type_field (sidata_type, "__pad",
-             init_vector_type (int_type, 7));
+      init_vector_type (int_type, 7));
 
   /* __data.__proc */
   siproc_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
@@ -211,23 +213,23 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   append_composite_type_field (type, "__status", int_type);
   append_composite_type_field (type, "__stime", clock_type);
   append_composite_type_field_aligned (sipdata_type, "__chld", type,
-               TYPE_LENGTH (long_type));
+      longalign);
   append_composite_type_field_aligned (siproc_type, "__pdata", sipdata_type,
-               TYPE_LENGTH (long_type));
+      longalign);
   append_composite_type_field_aligned (sidata_type, "__proc", siproc_type,
-               TYPE_LENGTH (long_type));
+      longalign);
 
   /* __data.__fault */
   type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
   append_composite_type_field (type, "__fltno", int_type);
   append_composite_type_field_aligned (type, "__fltip", void_ptr_type,
-               TYPE_LENGTH (long_type));
+      longalign);
   append_composite_type_field_aligned (type, "__addr", void_ptr_type,
-               TYPE_LENGTH (long_type));
+      longalign);
   append_composite_type_field_aligned (type, "__bdslot", int_type,
-               TYPE_LENGTH (long_type));
+      longalign);
   append_composite_type_field_aligned (sidata_type, "__fault", type,
-               TYPE_LENGTH (long_type));
+      longalign);
 
   /* struct siginfo */
   siginfo_type = arch_composite_type (gdbarch, NULL, TYPE_CODE_STRUCT);
@@ -236,8 +238,7 @@ nto_get_siginfo_type (struct gdbarch *gdbarch)
   append_composite_type_field (siginfo_type, "si_code", int_type);
   append_composite_type_field (siginfo_type, "si_errno", int_type);
   append_composite_type_field_aligned (siginfo_type,
-               "__data", sidata_type,
-               TYPE_LENGTH (long_type));
+      "__data", sidata_type, longalign);
 
   nto_gdbarch_data->siginfo_type = siginfo_type;
 
@@ -727,7 +728,7 @@ static const char *nto_thread_state_str[] =
  * This is not a getter for the nto_thread_info extension!
  */
 const char *
-nto_extra_thread_info ( struct thread_info *ti)
+nto_extra_thread_info ( struct thread_info *ti )
 {
   struct nto_thread_info *priv;
   if ( ( ti != NULL ) && ( ti->priv.get() != NULL) ) {
@@ -875,7 +876,7 @@ nto_pid_to_str (ptid_t ptid)
   pid = ptid.pid ();
   tid = ptid.lwp();
 
-  ti = find_thread_ptid (ptid);
+  ti = nto_find_thread (ptid);
   if( ti ) {
     priv=(struct nto_thread_info *)ti->priv.get ();
   }
@@ -894,7 +895,7 @@ nto_pid_to_str (ptid_t ptid)
   else
     thread_id[0] = '\0';
 
-  snprintf (buf, sizeof(buf), "pid %ld%s (%ld)", pid, thread_id, ptid.tid());
+  snprintf (buf, sizeof(buf), "pid %ld%s", pid, thread_id);
 
   return buf;
 }
@@ -911,8 +912,8 @@ nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
   __siginfo32_t *dst32 = (__siginfo32_t *)siginfo;
   __siginfo64_t *dst64 = (__siginfo64_t *)siginfo;
   const nto_procfs_status *status = (const nto_procfs_status *)ps;
-  const __siginfo32_t *src32 = &status->_32.info;
-  const __siginfo64_t *src64 = &status->_64.info64;
+  const __siginfo32_t *src32 = &(status->_32.info);
+  const __siginfo64_t *src64 = &(status->_64.info64);
   struct type *ptr_t = builtin_type (target_gdbarch ())->builtin_data_ptr;
 
   nto_trace(1)("nto_get_siginfo_from_procfs_status()\n");
@@ -922,127 +923,102 @@ nto_get_siginfo_from_procfs_status (const void *const ps, void *siginfo)
 
   if (IS_64BIT ())
     {
-      dst64->si_signo = extract_signed_integer ((gdb_byte *)&src64->si_signo,
-            sizeof (src64->si_signo),
-            byte_order);
-      dst64->si_code = extract_signed_integer ((gdb_byte *)&src64->si_code,
-                 sizeof (src64->si_code),
-                 byte_order);
+      dst64->si_signo = extract_signed_integer((gdb_byte *) &src64->si_signo,
+          sizeof(src64->si_signo), byte_order);
+      dst64->si_code = extract_signed_integer((gdb_byte *) &src64->si_code,
+          sizeof(src64->si_code), byte_order);
       if (dst64->si_code == SI_NOINFO)
         return;
 
-      dst64->si_errno = extract_signed_integer ((gdb_byte *)&src64->si_errno,
-            sizeof (src64->si_errno),
-            byte_order);
+      dst64->si_errno = extract_signed_integer((gdb_byte *) &src64->si_errno,
+          sizeof(src64->si_errno), byte_order);
 
       if (dst64->si_code <= 0) // SI_FROMUSER
-  {
-    dst64->nto_si_pid
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
-              sizeof (src64->nto_si_pid), byte_order);
-    dst64->nto_si_uid
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_uid,
-              sizeof (src64->nto_si_uid), byte_order);
-    dst64->nto_si_value.sival_ptr
-      = extract_typed_address ((gdb_byte *)&src64->nto_si_value, ptr_t);
-  }
+        {
+          dst64->nto_si_pid = extract_signed_integer((gdb_byte *) &src64->nto_si_pid,
+              sizeof(src64->nto_si_pid), byte_order);
+          dst64->nto_si_uid = extract_signed_integer((gdb_byte *) &src64->nto_si_uid,
+              sizeof(src64->nto_si_uid), byte_order);
+          dst64->nto_si_value.sival_ptr = extract_typed_address(
+              (gdb_byte *) &src64->nto_si_value, ptr_t);
+        }
       else if (dst64->si_signo
-         == gdbarch_gdb_signal_to_target (target_gdbarch (),
-            GDB_SIGNAL_CHLD))
-  {
-    dst64->nto_si_pid
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_pid,
-              sizeof (src64->nto_si_pid), byte_order);
-    dst64->nto_si_utime
-      = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_utime,
-          sizeof (src64->nto_si_utime),
-          byte_order);
-    dst64->nto_si_status
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_status,
-              sizeof (src64->nto_si_status), \
+          == gdbarch_gdb_signal_to_target(target_gdbarch(), GDB_SIGNAL_CHLD))
+        {
+          /* child termination */
+          dst64->nto_si_pid = extract_signed_integer((gdb_byte *) &src64->nto_si_pid,
+              sizeof(src64->nto_si_pid), byte_order);
+          dst64->nto_si_utime = extract_unsigned_integer(
+              (gdb_byte *) &src64->nto_si_utime, sizeof(src64->nto_si_utime),
               byte_order);
-    dst64->nto_si_stime
-      = extract_unsigned_integer ((gdb_byte *)&src64->nto_si_stime,
-          sizeof (src64->nto_si_stime),
-          byte_order);
-  }
+          dst64->nto_si_status = extract_signed_integer(
+              (gdb_byte *) &src64->nto_si_status, sizeof(src64->nto_si_status),
+              byte_order);
+          dst64->nto_si_stime = extract_unsigned_integer(
+              (gdb_byte *) &src64->nto_si_stime, sizeof(src64->nto_si_stime),
+              byte_order);
+        }
       else
-  {
-    dst64->nto_si_fltno
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_fltno,
-              sizeof (src64->nto_si_fltno),
+        {
+          dst64->nto_si_fltno = extract_signed_integer((gdb_byte *) &src64->nto_si_fltno,
+              sizeof(src64->nto_si_fltno), byte_order);
+          dst64->nto_si_fltip = extract_typed_address((gdb_byte *) &src64->nto_si_fltip,
+              ptr_t);
+          dst64->nto_si_addr = extract_typed_address((gdb_byte *) &src64->nto_si_addr,
+              ptr_t);
+          dst64->nto_si_bdslot = extract_signed_integer(
+              (gdb_byte *) &src64->nto_si_bdslot, sizeof(src64->nto_si_bdslot),
               byte_order);
-    dst64->nto_si_fltip
-      = extract_typed_address ((gdb_byte *)&src64->nto_si_fltip, ptr_t);
-    dst64->nto_si_addr
-      = extract_typed_address ((gdb_byte *)&src64->nto_si_addr, ptr_t);
-    dst64->nto_si_bdslot
-      = extract_signed_integer ((gdb_byte *)&src64->nto_si_bdslot,
-              sizeof (src64->nto_si_bdslot),
-              byte_order);
-  }
+        }
     }
-  else
+  else /* 32 Bit */
     {
-      dst32->si_signo = extract_signed_integer ((gdb_byte *)&src32->si_signo,
-            sizeof (src32->si_signo),
-            byte_order);
-      dst32->si_code = extract_signed_integer ((gdb_byte *)&src32->si_code,
-                 sizeof (src32->si_code),
-                 byte_order);
-      if (dst32->si_code == 127) // SI_NOINFO
-  return;
+      dst32->si_signo = extract_signed_integer((gdb_byte *) &src32->si_signo,
+          sizeof(src32->si_signo), byte_order);
+      dst32->si_code = extract_signed_integer((gdb_byte *) &src32->si_code,
+          sizeof(src32->si_code), byte_order);
+      if (dst32->si_code == SI_NOINFO)
+        return;
 
-      dst32->si_errno = extract_signed_integer ((gdb_byte *)&src32->si_errno,
-            sizeof (src32->si_errno),
-            byte_order);
+      dst32->si_errno = extract_signed_integer((gdb_byte *) &src32->si_errno,
+          sizeof(src32->si_errno), byte_order);
 
       if (dst32->si_code <= 0) // SI_FROMUSER
-  {
-    dst32->nto_si_pid
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
-              sizeof (src32->nto_si_pid), byte_order);
-    dst32->nto_si_uid
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_uid,
-              sizeof (src32->nto_si_uid), byte_order);
-    dst32->nto_si_value.sival_ptr
-      = extract_typed_address ((gdb_byte *)&src32->nto_si_value, ptr_t);
-  }
-      else if (dst32->si_signo
-         == gdbarch_gdb_signal_to_target (target_gdbarch (),
-            GDB_SIGNAL_CHLD))
-  {
-    dst32->nto_si_pid
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_pid,
-              sizeof (src32->nto_si_pid), byte_order);
-    dst32->nto_si_utime
-      = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_utime,
-          sizeof (src32->nto_si_utime),
-          byte_order);
-    dst32->nto_si_status
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_status,
-              sizeof (src32->nto_si_status),
+        {
+          dst32->nto_si_pid = extract_signed_integer((gdb_byte *) &src32->nto_si_pid,
+              sizeof(src32->nto_si_pid), byte_order);
+          dst32->nto_si_uid = extract_signed_integer((gdb_byte *) &src32->nto_si_uid,
+              sizeof(src32->nto_si_uid), byte_order);
+          dst32->nto_si_value.sival_ptr = extract_typed_address(
+              (gdb_byte *) &src32->nto_si_value, ptr_t);
+        }
+      else if (dst32->si_signo ==
+          gdbarch_gdb_signal_to_target(target_gdbarch(), GDB_SIGNAL_CHLD))
+        {
+          dst32->nto_si_pid = extract_signed_integer((gdb_byte *) &src32->nto_si_pid,
+              sizeof(src32->nto_si_pid), byte_order);
+          dst32->nto_si_utime = extract_unsigned_integer(
+              (gdb_byte *) &src32->nto_si_utime, sizeof(src32->nto_si_utime),
               byte_order);
-    dst32->nto_si_stime
-      = extract_unsigned_integer ((gdb_byte *)&src32->nto_si_stime,
-          sizeof (src32->nto_si_stime),
-          byte_order);
-  }
+          dst32->nto_si_status = extract_signed_integer(
+              (gdb_byte *) &src32->nto_si_status, sizeof(src32->nto_si_status),
+              byte_order);
+          dst32->nto_si_stime = extract_unsigned_integer(
+              (gdb_byte *) &src32->nto_si_stime, sizeof(src32->nto_si_stime),
+              byte_order);
+        }
       else
-  {
-    dst32->nto_si_fltno
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_fltno,
-              sizeof (src32->nto_si_fltno),
+        {
+          dst32->nto_si_fltno = extract_signed_integer((gdb_byte *) &src32->nto_si_fltno,
+              sizeof(src32->nto_si_fltno), byte_order);
+          dst32->nto_si_fltip = extract_typed_address((gdb_byte *) &src32->nto_si_fltip,
+              ptr_t);
+          dst32->nto_si_addr = extract_typed_address((gdb_byte *) &src32->nto_si_addr,
+              ptr_t);
+          dst32->nto_si_bdslot = extract_signed_integer(
+              (gdb_byte *) &src32->nto_si_bdslot, sizeof(src32->nto_si_bdslot),
               byte_order);
-    dst32->nto_si_fltip
-      = extract_typed_address ((gdb_byte *)&src32->nto_si_fltip, ptr_t);
-    dst32->nto_si_addr
-      = extract_typed_address ((gdb_byte *)&src32->nto_si_addr, ptr_t);
-    dst32->nto_si_bdslot
-      = extract_signed_integer ((gdb_byte *)&src32->nto_si_bdslot,
-              sizeof (src32->nto_si_bdslot),
-              byte_order);
-  }
+        }
     }
 }
 
@@ -1516,7 +1492,6 @@ nto_find_thread (ptid_t ptid)
     {
       if ( tp->ptid.pid() == ptid.pid() )
         {
-          nto_trace(0)("%s: Found %s\n", nto_pid_to_str(ptid), nto_pid_to_str(tp->ptid));
           if ( tp->ptid.lwp() == ptid.lwp() )
             {
               res=tp;
@@ -1542,20 +1517,17 @@ nto_new_thread_listener( thread_info *ti ) {
    * self-hosted environments */
   if (!core_bfd) return;
 
-  char sectname[64]; /* todo allocate this dynamically */
-  ptid_t *ptid;
-  struct nto_thread_info *priv;
-  enum bfd_endian byte_order;
-//  iterate_over_regset_sections_cb *cb;
-  unsigned int sectsize;
+  char sectname[64];
+  struct nto_thread_info *priv=NULL;
+  enum bfd_endian byte_order=BFD_ENDIAN_LITTLE;
+  unsigned int sectsize=0;
   nto_procfs_status ps;
 
   nto_trace(1)( "nto_new_thread_listener for gdb_tid_%d - %d:%ld\n",
       ti->global_num, ti->ptid.pid(), ti->ptid.lwp() );
   byte_order = gdbarch_byte_order (target_gdbarch ());
 
-  /* fetch the proper segment from the core and use the QNX thread number
-   * not the GDB internal number */
+  /* fetch the proper segment from the core */
   xsnprintf( sectname, 63, ".qnx_core_status/%ld", ti->ptid.lwp() );
   asection *tsect=bfd_get_section_by_name( core_bfd, sectname );
 
@@ -1565,6 +1537,7 @@ nto_new_thread_listener( thread_info *ti ) {
   }
 
   sectsize = bfd_section_size ( core_bfd, tsect);
+
   if( IS_64BIT() ){
     if (sectsize > sizeof (ps._64) ) sectsize = sizeof (ps._64);
   }
@@ -1585,6 +1558,10 @@ nto_new_thread_listener( thread_info *ti ) {
   /* we always create a new one as this should never be called on an
    * already existing thread but even if, the reset() frees any
    * existing information */
+  if( ti->priv.get() != NULL )
+    {
+      warning("Thread %ld already has private info!\n", ti->ptid.lwp());
+    }
   priv=new nto_thread_info();
   ti->priv.reset(priv);
 
