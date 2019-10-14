@@ -111,8 +111,8 @@ nto_core_xfer_siginfo (struct gdbarch *gdbarch, gdb_byte *readbuf,
   }
 
   if (ti->priv.get() == NULL) {
-    warning (_("%s (%lx) does not have thread private data - siginfo not available\n"),
-       nto_pid_to_str(inferior_ptid), (long)ti);
+    warning (_("%s (%p) does not have thread private data - siginfo not available\n"),
+       nto_pid_to_str(inferior_ptid), ti);
     return TARGET_XFER_EOF;
   }
 
