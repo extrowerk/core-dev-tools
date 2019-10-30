@@ -159,7 +159,7 @@ do {                                            \
 
 #undef LINK_GCC_C_SEQUENCE_SPEC
 #define LINK_GCC_C_SEQUENCE_SPEC \
-  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
+  "%{static:--start-group} %G %L %{static:--end-group}%{static:%G}%{!static:-lgcc_eh}"
 
 #if defined(HAVE_LD_EH_FRAME_HDR)
 #  if defined LINK_EH_SPEC

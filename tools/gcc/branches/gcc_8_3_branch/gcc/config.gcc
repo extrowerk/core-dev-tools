@@ -833,7 +833,7 @@ case ${target} in
   ;;
 *-*-qnx*)
   extra_options="${extra_options} nto.opt"
-  tmake_file="${tmake_file} t-nto"
+  tmake_file="${tmake_file} t-slibgcc t-nto"
   extra_gcc_objs="nto-cxx.o"
   case ${target} in
   *-qnx6.[0-9].*)
@@ -850,21 +850,6 @@ case ${target} in
   gas=yes
   gnu_ld=yes
   default_use_cxa_atexit=yes
-  ;;
-*-*-qnx*)
-  extra_options="${extra_options} nto.opt"
-  tmake_file="${tmake_file} t-nto"
-  extra_gcc_objs="nto-cxx.o"
-  case ${target} in
-  *-qnx6.[0-9].*)
-        tm_defines="${tm_defines} DEFAULT_STDLIB_LIBSTDCXX=1"
-        tm_defines="${tm_defines} QNX_ENABLE_RELRO=0"
-        ;;
-  *)
-        tm_defines="${tm_defines} DEFAULT_STDLIB_LIBCXX=1"
-        tm_defines="${tm_defines} QNX_ENABLE_RELRO=1"
-        ;;
-  esac
   ;;
 *-*-rtems*)
   case ${enable_threads} in
