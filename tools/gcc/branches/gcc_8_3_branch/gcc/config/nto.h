@@ -157,10 +157,6 @@ do {                                            \
 #undef GOMP_SELF_SPECS
 #define GOMP_SELF_SPECS ""
 
-#undef LINK_GCC_C_SEQUENCE_SPEC
-#define LINK_GCC_C_SEQUENCE_SPEC \
-  "%{static:--start-group} %G %L %{static:--end-group}%{static:%G}%{!static:-lgcc_eh}"
-
 #if defined(HAVE_LD_EH_FRAME_HDR)
 #  if defined LINK_EH_SPEC
 #    undef LINK_EH_SPEC
@@ -185,5 +181,5 @@ extern void nto_handle_cxx_option (size_t code, const char *arg);
 
 #undef LIB_SPEC
 #define LIB_SPEC \
-  "%{!symbolic: -lc -Bstatic %{shared:-lcS} %{" PIE_SPEC ":-lcS} %{no-pie:-lc}}"
+  "%{!symbolic: -lc %{shared:-lcS} %{" PIE_SPEC ":-lcS} %{no-pie:-lc}}"
 
