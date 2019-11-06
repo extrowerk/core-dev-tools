@@ -1193,7 +1193,11 @@
 #define	AT_SECURE	23		/* Boolean, was exec setuid-like?  */
 #define AT_BASE_PLATFORM 24		/* String identifying real platform,
 					   may differ from AT_PLATFORM.  */
+#ifndef __QNXTARGET__
 #define AT_RANDOM	25		/* Address of 16 random bytes.  */
+#else
+#define AT_RANDOM	43		/* 4 random bytes in NTO.  */
+#endif
 #define AT_HWCAP2	26		/* Extension of AT_HWCAP.  */
 #define AT_EXECFN	31		/* Filename of executable.  */
 /* Pointer to the global system page used for system calls and other
@@ -1225,6 +1229,15 @@
 #define AT_FREEBSD_EHDRFLAGS    24      /* e_flags field from ELF header. */
 #define AT_FREEBSD_HWCAP        25      /* CPU feature flags. */
 #define AT_FREEBSD_HWCAP2       26      /* CPU feature flags 2. */
+
+#if defined __QNXTARGET__
+  #define AT_FREE_STACK       44      /* QNX Extension */
+  #define AT_INTP_DEVICE      45      /* QNX Extension */
+  #define AT_INTP_INODE       46      /* QNX Extension */
+  #define AT_EXEFILE          47      /* QNX Extension */
+  #define AT_LIBPATH          48      /* QNX Extension */
+  #define AT_DATA             49      /* QNX Extension */
+#endif
 
 #define AT_SUN_UID      2000    /* Effective user ID.  */
 #define AT_SUN_RUID     2001    /* Real user ID.  */
