@@ -44,22 +44,21 @@ function hook_preconfigure {
                 esac
                 ;;
         linux)
-		case  $host_target in 
-		nto*) 
-			CPPFLAGS=	
-			execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr/ 
+		case  $host_target in
+		nto*)
+			CPPFLAGS=
+			execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr/
 			sysroot=/usr/${qnx_target}/target/qnx7
 		;;
-		
 		linux*)
 			execdir=/opt/${qnx_target}/host/linux/${cpu}/usr
 			sysroot=/opt/${qnx_target}/target/qnx7
 		;;
-		win32*) 
+		win32*)
 			execdir=/c/${qnx_target}/host/win32/${cpu}/usr
 			sysroot=/c/${qnx_target}/target/qnx7
                 ;;
-		win64*) 
+		win64*)
 			execdir=/c/${qnx_target}/host/win64/${cpu}/usr
 			sysroot=/c/${qnx_target}/target/qnx7
 			export LDFLAGS="${LDFLAGS} -static"
@@ -82,11 +81,22 @@ function hook_preconfigure {
 	case ${target} in
 	*nto-qnx6.[0-9]*)
 		;;
-	*)
+	*qnx*)
+		export CFLAGS="${CFLAGS} -D__QNXTARGET__"
+		export CXXFLAGS="${CXXFLAGS} -D__QNXTARGET__"
 		configure_opts="${configure_opts} --enable-initfini-array"
 		;;
 	esac
 
+	# GDB config options
+	# use proper readline includes
+	configure_opts="${configure_opts} --oldincludedir=${PWD}"
+	configure_opts="${configure_opts} --enable-gdbmi"
+	configure_opts="${configure_opts} --disable-tui"
+	configure_opts="${configure_opts} --disable-sim --without-sim"
+	configure_opts="${configure_opts} --with-expat=no"
+
+	# generic config options
 	configure_opts="${configure_opts} --with-sysroot=${sysroot}/${cpu_target}"
 	configure_opts="${configure_opts} --enable-fix-cortex-a53-843419"
 	configure_opts="${configure_opts} --enable-fix-cortex-a53-835769"
@@ -102,7 +112,7 @@ function hook_preconfigure {
 	case ${target} in
 	*nto-qnx*)
 		configure_opts="${configure_opts} --program-prefix=${target}-" ;;
-        esac
+    esac
 	configure_opts="${configure_opts} --program-suffix=${BINUTILS_SUFFIX}"
 	configure_opts="${configure_opts} --with-bugurl=http://www.qnx.com/support/bugreports"
 	export CC="${make_CC}"
@@ -116,6 +126,11 @@ function hook_premake {
 
 
 function hook_pinfo {
+	if [ -d gdb ]; then
+		cd gdb
+		gen_pinfo -e -ngdb ${target}-gdb usr/bin USE="%1>%C --help" LICE=GPL DESCRIPTION="GNU Debugger 8.2.1" "FINFO=0 0 0775"
+		cd ..
+	fi
 	cd binutils
 	gen_pinfo -e -nsize ${nto_target}-size usr/bin LICE=GPL USE="%1>%C --help" DESCRIPTION="GNU size" "FINFO=0 0 0775"
 	gen_pinfo -e -nobjdump ${nto_target}-objdump usr/bin LICE=GPL USE="%1>%C --help" DESCRIPTION="GNU objdump" "FINFO=0 0 0775"
