@@ -47,6 +47,9 @@ function hook_preconfigure {
 		case  $host_target in
 		nto*)
 			CPPFLAGS=
+			# patch out calls to nl_langinfo() even if langinfo.h is present
+			export am_cv_langinfo_codeset=no
+			export LDFLAGS="${LDFLAGS} -lcatalog"
 			execdir=/usr/${qnx_target}/host/qnx7/${cpu}/usr/
 			sysroot=/usr/${qnx_target}/target/qnx7
 		;;
