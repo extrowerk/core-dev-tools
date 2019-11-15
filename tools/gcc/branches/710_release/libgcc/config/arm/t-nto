@@ -1,4 +1,5 @@
 CRTSTUFF_T_CFLAGS = -fno-omit-frame-pointer $(PICFLAG) -DCRTSTUFFS_O
+SHLIB_LDFLAGS = -Wl,--soname=$(SHLIB_SONAME)
 
 LIB1ASMSRC = arm/lib1funcs.S
 LIB1ASMFUNCS += _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_nto _bb_init_func \

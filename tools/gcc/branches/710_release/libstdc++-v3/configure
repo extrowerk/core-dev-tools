@@ -8705,7 +8705,7 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
     *nto* | *qnx*)
       # QNX uses GNU C++, but need to define -shared option too, otherwise
       # it will coredump.
-      lt_prog_compiler_pic='-fPIC -shared'
+      lt_prog_compiler_pic='-fPIC'
       ;;
 
     sysv4*MP*)
@@ -8832,7 +8832,7 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
     *nto* | *qnx*)
       # QNX uses GNU C++, but need to define -shared option too, otherwise
       # it will coredump.
-      lt_prog_compiler_pic='-fPIC -shared'
+      lt_prog_compiler_pic='-fPIC'
       ;;
 
     osf3* | osf4* | osf5*)
@@ -13590,7 +13590,7 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
     *qnx* | *nto*)
       # QNX uses GNU C++, but need to define -shared option too, otherwise
       # it will coredump.
-      lt_prog_compiler_pic_CXX='-fPIC -shared'
+      lt_prog_compiler_pic_CXX='-fPIC'
       ;;
     *)
       lt_prog_compiler_pic_CXX='-fPIC'
@@ -13740,7 +13740,7 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
       *qnx* | *nto*)
         # QNX uses GNU C++, but need to define -shared option too, otherwise
         # it will coredump.
-        lt_prog_compiler_pic_CXX='-fPIC -shared'
+        lt_prog_compiler_pic_CXX='-fPIC'
         ;;
       osf3* | osf4* | osf5*)
 	case $cc_basename in
