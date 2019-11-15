@@ -361,7 +361,7 @@ aarch64*-*-linux*)
 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp t-crtfm"
 	;;
 aarch64*-*-qnx*)
-	tmake_file="${tmake_file} ${cpu_type}/t-aarch64 ${cpu_type}/t-nto"
+	tmake_file="${tmake_file} ${cpu_type}/t-aarch64 t-slibgcc ${cpu_type}/t-nto"
 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp"
 	md_unwind_header=aarch64/aarch64-unwind.h
 	;;
@@ -447,7 +447,7 @@ arm*-*-uclinux*)		# ARM ucLinux
 	extra_parts="$extra_parts crti.o crtn.o"
 	;;
 arm*-*-qnx*eabi*)
-	tmake_file="${tmake_file} arm/t-arm arm/t-nto"
+	tmake_file="${tmake_file} arm/t-arm t-slibgcc arm/t-nto"
 	tmake_file="${tmake_file} arm/t-bpabi"
 	tm_file="$tm_file arm/bpabi-lib.h"
 	unwind_header=config/arm/unwind-arm.h
@@ -683,11 +683,11 @@ i[34567]86-pc-msdosdjgpp*)
 i[34567]86-*-lynxos*)
 	;;
 i[34567]86-*-nto-qnx*)
-	tmake_file="$tmake_file i386/t-nto i386/t-crtstuff"
+	tmake_file="$tmake_file t-slibgcc i386/t-nto i386/t-crtstuff"
 	md_unwind_header=i386/nto-unwind.h
 	;;
 x86_64-*-nto-qnx*)
-	tmake_file="$tmake_file i386/t-nto i386/t-crtstuff"
+	tmake_file="$tmake_file t-slibgcc i386/t-nto i386/t-crtstuff"
 	;;
 i[34567]86-*-rtems*)
 	tmake_file="$tmake_file i386/t-crtstuff t-softfp-sfdftf i386/32/t-softfp i386/t-softfp t-softfp"
