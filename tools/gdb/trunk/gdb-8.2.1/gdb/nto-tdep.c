@@ -1130,7 +1130,7 @@ nto_stopped_by_watchpoint ( )
 }
 
 static void
-nto_solib_added_listener (struct so_list *solib)
+nto_solib_loaded_listener (struct so_list *solib)
 {
   /* Check if the libraries match.
      We compare all PT_LOAD segments.  */
@@ -1153,7 +1153,7 @@ nto_solib_added_listener (struct so_list *solib)
   unsigned int sizeof_p_filesz;
   unsigned int sizeof_p_memsz;
   unsigned int sizeof_p_align;
-  nto_trace (1) ("nto_solib_added_listener()\n");
+  nto_trace (1) ("nto_solib_loaded_listener()\n");
 
   switch (gdbarch_bfd_arch_info (target_gdbarch ())->bits_per_word)
     {
@@ -1626,8 +1626,10 @@ static void
 nto_inferior_appeared_listener( inferior *inf ) {
   /* no assert as this will also be triggered on remote and self-hosted
    * environments */
-  if( !core_bfd ) return;
-  nto_trace(0)("nto_inferior_created_listener()\n" );
+  if( !core_bfd ) {
+	  return;
+  }
+  nto_trace (0) ("%s ()\n", __func__);
 
   enum bfd_endian byte_order=gdbarch_byte_order (target_gdbarch ());
   struct auxv_info *info = new auxv_info;
@@ -1685,6 +1687,7 @@ nto_inferior_appeared_listener( inferior *inf ) {
 void
 nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
+  nto_trace (0) ("%s ()\n", __func__);
   /* all threads are found and inferior is announced, now get the AUXV */
   gdb::observers::inferior_appeared.attach (nto_inferior_appeared_listener);
 
@@ -1741,7 +1744,7 @@ When set to 1, stop on thread created and thread destroyed events.\n"),
   add_info ("tidinfo", nto_info_tidinfo_command,
       "List threads for current process." );
 
-  gdb::observers::solib_loaded.attach (nto_solib_added_listener);
+  gdb::observers::solib_loaded.attach (nto_solib_loaded_listener);
 
   nto_gdbarch_data_handle =
     gdbarch_data_register_post_init (init_nto_gdbarch_data);

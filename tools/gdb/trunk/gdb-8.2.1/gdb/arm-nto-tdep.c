@@ -595,7 +595,7 @@ static const struct frame_unwind arm_nto_sigtramp_unwind =
 };
 
 
-
+
 #if 0
 static void
 armnto_sigtramp_cache_init (const struct tramp_frame *self,
@@ -829,6 +829,9 @@ armnto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   struct gdbarch_tdep *const tdep = gdbarch_tdep (gdbarch);
   struct nto_target_ops *nto_ops;
+
+  /* do generic initialization */
+  nto_init_abi( info, gdbarch );
 
   /* Deal with our strange signals.  */
   nto_initialize_signals ();
