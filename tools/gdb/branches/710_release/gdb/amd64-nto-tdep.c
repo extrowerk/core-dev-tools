@@ -307,6 +307,8 @@ amd64_nto_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   struct nto_target_ops *nto_ops;
 
   init_x86_64nto_ops ();
+  /* do generic initialization */
+  nto_init_abi( info, gdbarch );
 
   tdep->gregset_reg_offset = x86_64nto_gregset_reg_offset;
   tdep->gregset_num_regs = ARRAY_SIZE (x86_64nto_gregset_reg_offset);
