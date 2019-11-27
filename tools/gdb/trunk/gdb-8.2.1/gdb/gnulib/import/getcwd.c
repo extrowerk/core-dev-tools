@@ -30,7 +30,10 @@
 /* If this host provides the openat function or if we're using the
    gnulib replacement function with a native fdopendir, then enable
    code below to make getcwd more efficient and robust.  */
-#if defined HAVE_OPENAT || (defined GNULIB_OPENAT && defined HAVE_FDOPENDIR)
+/* directory fd handling in QNX differs a lot from what GDB expects, making
+   it easier to disable HAVE_OPENAT than implementing all workarounds */
+#if ((defined HAVE_OPENAT || (defined GNULIB_OPENAT && defined HAVE_FDOPENDIR))\
+     && !defined __QNX__)
 # define HAVE_OPENAT_SUPPORT 1
 #else
 # define HAVE_OPENAT_SUPPORT 0
@@ -99,7 +102,7 @@
 #ifdef GNULIB_defined_closedir
 # undef closedir
 #endif
-
+
 /* Get the name of the current working directory, and put it in SIZE
    bytes of BUF.  Returns NULL if the directory couldn't be determined or
    SIZE was too small.  If successful, returns BUF.  In GNU, if BUF is
