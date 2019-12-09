@@ -2803,13 +2803,13 @@ lookup_symbol_in_variable_table (struct comp_unit *unit,
 }
 
 static bfd_boolean
-find_abstract_instance (struct comp_unit *   unit,
-			bfd_byte *           orig_info_ptr,
-			struct attribute *   attr_ptr,
-			const char **        pname,
-			bfd_boolean *        is_linkage,
-			char **              filename_ptr,
-			int *                linenumber_ptr)
+find_abstract_instance (struct comp_unit *unit,
+			struct attribute *attr_ptr,
+			unsigned int recur_count,
+			const char **pname,
+			bfd_boolean *is_linkage,
+			char **filename_ptr,
+			int *linenumber_ptr)
 {
   bfd *abfd = unit->abfd;
   bfd_byte *info_ptr;
@@ -2819,6 +2819,14 @@ find_abstract_instance (struct comp_unit *   unit,
   bfd_uint64_t die_ref = attr_ptr->u.val;
   struct attribute attr;
   const char *name = NULL;
+
+  if (recur_count == 100)
+    {
+      _bfd_error_handler
+	(_("DWARF error: abstract instance recursion detected"));
+      bfd_set_error (bfd_error_bad_value);
+      return FALSE;
+    }
 
   /* DW_FORM_ref_addr can reference an entry in a different CU. It
      is an offset from the .debug_info section, not the current CU.  */
@@ -2939,15 +2947,6 @@ find_abstract_instance (struct comp_unit *   unit,
 					 info_ptr, info_ptr_end);
 	      if (info_ptr == NULL)
 		break;
-	      /* It doesn't ever make sense for DW_AT_specification to
-		 refer to the same DIE.  Stop simple recursion.  */
-	      if (info_ptr == orig_info_ptr)
-		{
-		  _bfd_error_handler
-		    (_("DWARF error: abstract instance recursion detected"));
-		  bfd_set_error (bfd_error_bad_value);
-		  return FALSE;
-		}
 	      switch (attr.name)
 		{
 		case DW_AT_name:
@@ -2961,7 +2960,7 @@ find_abstract_instance (struct comp_unit *   unit,
 		    }
 		  break;
 		case DW_AT_specification:
-		  if (!find_abstract_instance (unit, info_ptr, &attr,
+		  if (!find_abstract_instance (unit, &attr, recur_count + 1,
 					       &name, is_linkage,
 					       filename_ptr, linenumber_ptr))
 		    return FALSE;
@@ -3175,7 +3174,7 @@ scan_unit_for_symbols (struct comp_unit *unit)
 
 		case DW_AT_abstract_origin:
 		case DW_AT_specification:
-		  if (!find_abstract_instance (unit, info_ptr, &attr,
+		  if (!find_abstract_instance (unit, &attr, 0,
 					       &func->name,
 					       &func->is_linkage,
 					       &func->file,
@@ -4426,7 +4425,16 @@ _bfd_dwarf2_slurp_debug_info (bfd *abfd, bfd *debug_bfd,
       for (total_size = 0;
 	   msec;
 	   msec = find_debug_info (debug_bfd, debug_sections, msec))
-	total_size += msec->size;
+	{
+	  /* Catch PR25070 testcase overflowing size calculation here.  */
+	  if (total_size + msec->size < total_size
+	      || total_size + msec->size < msec->size)
+	    {
+	      bfd_set_error (bfd_error_no_memory);
+	      return FALSE;
+	    }
+	  total_size += msec->size;
+	}
 
       stash->info_ptr_memory = (bfd_byte *) bfd_malloc (total_size);
       if (stash->info_ptr_memory == NULL)
