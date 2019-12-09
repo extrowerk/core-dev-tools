@@ -1,3 +1,16 @@
+2019-10-09  Alan Modra  <amodra@gmail.com>
+
+	PR 25070
+	* dwarf2.c (_bfd_dwarf2_slurp_debug_info): Catch overflow of
+	total_size calculation.
+
+2019-10-08  Alan Modra  <amodra@gmail.com>
+
+	PR 25078
+	* dwarf2.c (find_abstract_instance): Delete orig_info_ptr, add
+	recur_count.  Error on recur_count reaching 100 rather than
+	info_ptr matching orig_info_ptr.  Adjust calls.
+
 2019-06-24  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/24721
