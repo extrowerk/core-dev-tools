@@ -45,7 +45,11 @@ if [ "${qnx_sdp_version}" == "" ]; then
 	qnx_sdp_version="qnx7.1.0"
 fi
 
-qnx_install_version=$(echo ${qnx_sdp_version} | sed 's/\.//g' )
+if [ "${QNX_VERSION}" == "" ]; then
+	qnx_install_version=$(echo ${qnx_sdp_version} | sed 's/\.//g' )
+else
+	qnx_install_version=${QNX_VERSION}
+fi
 echo "qnx_install_version=${qnx_install_version}"
 
 # Setup host_cpu and platform
