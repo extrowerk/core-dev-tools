@@ -144,7 +144,7 @@ static int      nto_filewrite (char *buf, int size);
 
 static const target_info pdebug_target_info = {
   "qnx",
-  N_("Legacy remote serial target in pdebug-specific protocol"),
+  N_("Remote serial target in pdebug-specific protocol"),
   N_("Debug a remote machine using the legacy QNX Debugging Protocol.\n\
   Specify the device it is connected to (e.g. /dev/ser1, <rmt_host>:<port>)\n\
   or `pty' to launch `pdebug' for debugging.")
@@ -1425,10 +1425,6 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
 
   target_preopen (from_tty);
 
-  /* todo: bweb problem, 'this' does not yet exist, check open_1 in remote.c ..
-  unpush_target ((struct target_ops *)this);
-   */
-
   ofunc = signal(SIGINT, nto_open_break);
 
   while (tries < MAX_TRAN_TRIES && !nto_open_interrupted)
@@ -1484,9 +1480,6 @@ pdebug_target::pdebug_open (const char *name, int from_tty)
       puts_filtered ("\n");
     }
 
-  /* todo: should this happen here or earlier even?
-   *       especially if the pdebug_target holds more than just the function descriptions
-   */
   pdebug_target *target=new pdebug_target();
   push_target (target);  /* Switch to using remote target now.  */
 
@@ -2330,9 +2323,11 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       warning ("Unexpected notify type %d", recv->pkt.hdr.subcmd);
       break;
     }
-  nto_trace (0) ("nto_parse_notify: pid=%d, tid=%d ip=0x%s\n",
+  nto_trace (0) ("nto_parse_notify: pid=%d, tid=%d ip=%s\n",
      pid, tid, paddress (target_gdbarch (), stopped_pc));
-  return ptid_t (pid, tid, 0);
+
+  inferior_ptid=ptid_t (pid, tid, 0);
+  return inferior_ptid;
 }
 
 static unsigned nto_get_cpuflags (void)
@@ -3944,17 +3939,19 @@ update_threadnames (void)
     nto_send_init (&tran, DStMsg_tidnames, 0, SET_CHANNEL_DEBUG);
     nto_send_recv (&tran, &recv, sizeof(tran.pkt.tidnames), 0);
     if (recv.pkt.hdr.cmd == DSrMsg_err) {
-      errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, 4, byte_order));
+      errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv.pkt.err.err, sizeof(recv.pkt.err.err), byte_order));
       if (errno != EINVAL)  {
         warning ("Warning: could not retrieve tidnames (%d - %s)\n", errno, strerror(errno) );
     }
       return;
     }
 
-    numtids = EXTRACT_UNSIGNED_INTEGER (&tidnames->numtids, 4, byte_order);
-    numleft = EXTRACT_UNSIGNED_INTEGER (&tidnames->numleft, 4, byte_order);
+    numtids = EXTRACT_UNSIGNED_INTEGER (&tidnames->numtids, sizeof(tidnames->numtids), byte_order);
+    numleft = EXTRACT_UNSIGNED_INTEGER (&tidnames->numleft, sizeof(tidnames->numleft), byte_order);
 
     buf=(char *)tidnames->data;
+    /* skip empty entries */
+    while( *buf == 0 ) buf++;
     for(i = 0 ; i < numtids ; i++) {
       struct thread_info *ti;
       ptid_t ptid;
@@ -4042,9 +4039,6 @@ pdebug_target::update_thread_list ( )
 
       /* it's a new, non-dead thread */
       if(!new_thread && tip->state != 0) {
-        /* todo: this should only happen when a new thread is created
-         * after initial attach  */
-        warning("Explicitly adding thread %s!", nto_pid_to_str(ptid) );
         new_thread = add_thread (ptid);
         new_thread->priv.reset(new nto_thread_info());
       }
@@ -4480,10 +4474,6 @@ _initialize_nto (void)
    * remote_g_packet_data_handle = gdbarch_data_register_pre_init (remote_g_packet_data_init);
    * remote_pspace_data = register_program_space_data_with_cleanup (NULL, remote_pspace_data_cleanup);
    * gdb::observers::new_objfile.attach (remote_new_objfile);
-   */
-
-  /* happens implicitly when defining the pdebug_target
-   * init_nto_ops ();
    */
 
   add_target ( pdebug_target_info, pdebug_target::pdebug_open);
