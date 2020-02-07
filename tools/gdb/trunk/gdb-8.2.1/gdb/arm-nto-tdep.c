@@ -41,15 +41,6 @@
 
 #include "elf-bfd.h"
 
-// todo Uh-oh..
-// see also armnto_read_description
-// #include <features/arm/arm-nto-with-neon.c>
-// #include <features/arm/arm-nto-with-iwmmxt.c>
-
-//#include <features/arm/arm-with-neon.c>
-//#include <features/arm/arm-with-iwmmxt.c>
-//#include <features/arm/arm-with-vfpv3.c>
-
 /* 16 GP regs + spsr */
 #define GP_REGSET_SIZE (17*4)
 #define PS_OFF (16*4)
@@ -279,32 +270,28 @@ armnto_variant_directory_suffix (void)
 #define ARM_CPU_FLAG_NEON      0x0040    /* Neon Media Engine */
 #define ARM_CPU_FLAG_WMMX2      0x0080    /* iWMMX2 coprocessor */
 
-#if 0
-/* todo Does GDB know better? */
+/* we want to see the proper register sets */
 static const struct target_desc *
 armnto_read_description (unsigned cpuflags)
 {
   if (cpuflags & ARM_CPU_FLAG_NEON)
     {
-      if (!tdesc_arm_with_neon)
-        initialize_tdesc_arm_with_neon (/*cpuflags & CPU_FLAG_FPU*/);
+      nto_trace(0)("armnto_read_description(): NEON\n");
       return tdesc_arm_with_neon;
     }
   if (cpuflags & ARM_CPU_FLAG_WMMX2)
     {
-      if (!tdesc_arm_with_iwmmxt)
-        initialize_tdesc_arm_with_iwmmxt (/*cpuflags & CPU_FLAG_FPU*/);
+      nto_trace(0)("armnto_read_description(): WMMX2\n");
       return tdesc_arm_with_iwmmxt;
     }
   if (cpuflags & CPU_FLAG_FPU)
     {
-      if (!tdesc_arm_with_vfpv3)
-        initialize_tdesc_arm_with_vfpv3 ();
+      nto_trace(0)("armnto_read_description(): VFPV3\n");
       return tdesc_arm_with_vfpv3;
     }
+  nto_trace(0)("armnto_read_description(): plain\n");
   return NULL;
 }
-#endif
 
 static int
 armnto_breakpoint_size (const CORE_ADDR addr)
@@ -331,8 +318,7 @@ init_armnto_ops (void)
   arm_nto_ops.register_area = armnto_register_area;
   arm_nto_ops.regset_fill = armnto_regset_fill;
   arm_nto_ops.variant_directory_suffix = armnto_variant_directory_suffix;
-// todo do we really need our own brew here?
-//  arm_nto_ops.read_description = armnto_read_description;
+  arm_nto_ops.read_description = armnto_read_description;
   arm_nto_ops.fetch_link_map_offsets =
     nto_generic_svr4_fetch_link_map_offsets;
   arm_nto_ops.breakpoint_size = armnto_breakpoint_size;
