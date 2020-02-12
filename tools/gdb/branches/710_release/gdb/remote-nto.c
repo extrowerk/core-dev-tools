@@ -131,7 +131,6 @@ typedef union
 
 static void     nto_add_commands (void);
 static unsigned nto_send_recv (const DScomm_t *, DScomm_t *, unsigned, int);
-static void     nto_remove_commands (void);
 static int      nto_insert_breakpoint (CORE_ADDR, gdb_byte *);
 static void     nto_send_init (DScomm_t *, unsigned, unsigned, unsigned);
 static void     nto_interrupt (int signo);
@@ -160,7 +159,7 @@ public:
   {
     to_stratum = process_stratum;
   }
-  /* todo bweb not yet, we have no private data but that may follow..
+  /* todo not yet, we have no private data but that may follow..
   ~pdebug_target () override;
   */
 
@@ -246,7 +245,6 @@ public:
   }
   const struct target_desc *read_description () override;
   bool supports_multi_process () override {
-    /* todo bweb - we wish! */
     return true;
   }
   int verify_memory (const gdb_byte *data, CORE_ADDR memaddr, ULONGEST size) override;
@@ -1050,13 +1048,16 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
 }
 
 static int
-set_thread (const int th)
+nto_set_thread (int th)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   DScomm_t tran, recv;
 
-  nto_trace (0) ("set_thread(th %d pid %d, prev tid %ld)\n", th,
-   inferior_ptid.pid(), inferior_ptid.lwp() );
+  if( th == 0 )
+      th=1;
+
+  nto_trace (0) ("nto_set_thread(th %d pid %d, prev tid %ld)\n", th,
+      inferior_ptid.pid(), inferior_ptid.lwp() );
 
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_SET, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = inferior_ptid.pid();
@@ -1067,10 +1068,10 @@ set_thread (const int th)
 
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      nto_trace (0) ("Thread %d does not exist\n", th);
+      nto_trace (0) ("  thread %d does not exist\n", th);
       return 0;
     }
-
+  inferior_ptid=ptid_t(inferior_ptid.pid(),th,0);
   return 1;
 }
 
@@ -1120,7 +1121,7 @@ pdebug_target::thread_alive (ptid_t th)
       alive = (th.lwp() == returned_tid);
     }
 
-  nto_trace (0) ("Thread %lu is alive = %d\n", th.lwp(), alive);
+  nto_trace (0) ("  thread %lu is %s\n", th.lwp(), alive?"alive":"dead");
   /* In case of a failure, return 0. This will happen when requested
     thread is dead and there is no alive thread with the larger tid.  */
   return alive;
@@ -1153,7 +1154,7 @@ nto_get_thread_alive (ptid_t th)
 
       if (!ptidinfo->state)
   {
-    return nto_get_thread_alive( ptid_t( th.pid(), returned_tid+1, 1 ) );
+    return nto_get_thread_alive( ptid_t( th.pid(), returned_tid+1, 0 ) );
   }
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
@@ -1169,7 +1170,7 @@ nto_get_thread_alive (ptid_t th)
   else
     return minus_one_ptid;
 
- return ptid_t(th.pid(), returned_tid, th.tid());
+ return ptid_t(th.pid(), returned_tid, 0);
 }
 
 /* Clean up connection to a remote debugger.  */
@@ -1195,7 +1196,6 @@ pdebug_target::close ( )
     {
       catch_errors ( nto_close_1 );
       current_session->desc = NULL;
-      nto_remove_commands ();
     }
 
   /* Make sure we leave stdin registered in the event loop.  */
@@ -1211,6 +1211,7 @@ pdebug_target::close ( )
   /* todo align with current TLS layout */
   trace_reset_local_state ();
 
+  unpush_target(this);
   delete this;
 }
 
@@ -1738,31 +1739,9 @@ pdebug_target::resume (ptid_t ptid, int step,
 
   gdb_assert (inferior_ptid.pid() == current_inferior ()->pid);
 
-  /* Select requested thread.  If minus_one_ptid is given, or selecting
-     requested thread fails, select tid 1.  If tid 1 does not exist,
-     first next available will be selected.  */
-  if ( ptid != minus_one_ptid )
+  if (!nto_set_thread ( nto_get_thread_alive ( ptid ).lwp() ) )
     {
-      ptid_t ptid_alive = nto_get_thread_alive (ptid_t (ptid.pid(), inferior_ptid.lwp(), 0 ) );
-
-      /* If returned thread is minus_one_ptid, then requested thread is
-   dead and there are no alive threads with tid > ptid.lwp().
-   Try with first alive with tid >= 1.  */
-      if (ptid_alive == minus_one_ptid)
-  {
-    nto_trace (0) ("Thread %ld does not exist. Trying with tid >= 1\n",
-       ptid.lwp());
-    ptid_alive = nto_get_thread_alive (ptid_t ( ptid.pid(), 1, 0));
-    nto_trace (1) ("First next tid found is: %ld\n",
-       ptid_alive.lwp());
-  }
-      if (ptid_alive != minus_one_ptid)
-  {
-    if (!set_thread (ptid_alive.lwp()))
-      {
-        nto_trace (0) ("Failed to set thread: %ld\n", ptid_alive.lwp());
-      }
-  }
+      error("Process %d has no active threads!", ptid.pid() );
     }
 
   /* The HandleSig stuff is part of the new protover 0.1, but has not
@@ -2083,6 +2062,7 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
   CORE_ADDR stopped_pc = 0;
   struct inferior *inf;
   struct nto_inferior_data *inf_data;
+  DScomm_t frecv;
 
   inf = current_inferior ();
 
@@ -2280,7 +2260,6 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
     }
       }
       break;
-#ifdef _DEBUG_WHAT_VFORK
     case DSMSG_NOTIFY_FORK:
       {
   int32_t child_pid = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.pid
@@ -2288,16 +2267,19 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
   uint32_t vfork = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.vfork
               : recv->pkt.notify._32.un.fork_event.vfork;
 
-  nto_trace (0) ("DSMSG_NOTIFY_FORK %d\n", pid);
+  nto_trace (0) ("DSMSG_NOTIFY_FORK %d -> %d\n", pid, child_pid);
   inf_data->child_pid
     = EXTRACT_SIGNED_INTEGER (&child_pid, 4, byte_order);
-    nto_trace (0) ("inf data child pid: %d\n", inf_data->child_pid);
   status->value.related_pid = ptid_t (inf_data->child_pid, 1, 0);
   inf_data->vfork
     = EXTRACT_SIGNED_INTEGER (&vfork, 4, byte_order) & _DEBUG_WHAT_VFORK;
   status->kind = inf_data->vfork ? TARGET_WAITKIND_VFORKED
                : TARGET_WAITKIND_FORKED;
-  nto_trace (0) ("child_pid=%d\n", status->value.related_pid.pid());
+  nto_trace (0) ("child_pid: %d\n", status->value.related_pid.pid());
+
+  // always attach to the child so it can be handled by follow-child or
+  // no-detach
+  nto_attach_only(inf_data->child_pid, &frecv);
       }
       break;
     case DSMSG_NOTIFY_EXEC:
@@ -2310,7 +2292,6 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
     supports64bit()?recv->pkt.notify._64.un.pidload.name:
         recv->pkt.notify._32.un.pidload.name);
       break;
-#endif
     case DSMSG_NOTIFY_DLLLOAD:
     case DSMSG_NOTIFY_DLLUNLOAD:
       status->kind = TARGET_WAITKIND_SPURIOUS;
@@ -2323,10 +2304,14 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       warning ("Unexpected notify type %d", recv->pkt.hdr.subcmd);
       break;
     }
-  nto_trace (0) ("nto_parse_notify: pid=%d, tid=%d ip=%s\n",
-     pid, tid, paddress (target_gdbarch (), stopped_pc));
+  nto_trace (0) ("  nto_parse_notify end: pid=%d, tid=%d (was %s) ip=%s\n",
+     pid, tid, nto_pid_to_str(inferior_ptid), paddress (target_gdbarch (), stopped_pc));
 
   inferior_ptid=ptid_t (pid, tid, 0);
+  /* if the process changed, the current inferior must be set too */
+  if(( current_inferior()->pid != 0 ) && ( current_inferior()->pid != pid )) {
+      set_current_inferior(find_inferior_ptid(inferior_ptid));
+  }
   return inferior_ptid;
 }
 
@@ -2408,16 +2393,16 @@ pdebug_target::fetch_registers (struct regcache *regcache, int regno)
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int regset;
 
-  nto_trace (0) ("pdebug_fetch_registers(regcache %p ,regno %d)\n",
-     regcache, regno);
+  nto_trace (0) ("pdebug_fetch_registers(regcache %p ,regno %d) for %s\n",
+     regcache, regno, nto_pid_to_str(inferior_ptid));
 
   if (inferior_ptid == null_ptid)
     {
-      nto_trace (0) ("ptid is null_ptid, can not fetch registers\n");
+      nto_trace (0) ("  ptid is null_ptid, can not fetch registers\n");
       return;
     }
 
-  if (!set_thread (inferior_ptid.lwp()))
+  if (!nto_set_thread (inferior_ptid.lwp()))
     return;
 
   if (regno == -1)
@@ -2457,7 +2442,7 @@ pdebug_target::store_registers (struct regcache *regcache, int regno)
   if (inferior_ptid == null_ptid)
     return;
 
-  if (!set_thread (inferior_ptid.lwp()))
+  if (!nto_set_thread (inferior_ptid.lwp()))
     return;
 
   regno_regset = nto_regset_id (regno);
@@ -3112,7 +3097,7 @@ nto_insert_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   nto_send_recv (&tran, &recv, sizeof_pkt, 0);
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      nto_trace (0) ("FAIL\n");
+      nto_trace (0) ("  could not set breakpoint\n");
     }
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
@@ -3132,11 +3117,11 @@ pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!set_thread ( nto_get_thread_alive ( ptid_t( inferior_ptid.pid(), 1, 0 ) ).lwp() ) )
+  if (!nto_set_thread ( nto_get_thread_alive ( ptid_t( inferior_ptid.pid(), 1, 0 ) ).lwp() ) )
     {
-      nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n",
+      nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n",
          inferior_ptid.pid(), inferior_ptid.lwp());
-      return 0;
+      return 1;
     }
 
   bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
@@ -3159,10 +3144,10 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!set_thread ( nto_get_thread_alive ( ptid_t (inferior_ptid.pid(),1,0)).lwp() ) )
+  if (!nto_set_thread ( nto_get_thread_alive ( ptid_t (inferior_ptid.pid(),1,0)).lwp() ) )
     {
-      nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
-      return 0;
+      nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
+      return 1;
     }
 
   nto_send_init (&tran, DStMsg_brk, DSMSG_BRK_EXEC, SET_CHANNEL_DEBUG);
@@ -3179,9 +3164,10 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
       tran.pkt.brk32.size = -1;
     }
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.brk), 0);
+
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
-      nto_trace (0) ("FAIL\n");
+      nto_trace(1)("  errno=%d\n", recv.pkt.err.err);
     }
   return recv.pkt.hdr.cmd == DSrMsg_err;
 }
@@ -3433,15 +3419,6 @@ nto_add_commands (void)
      "Get a file from the target (download {remote} [{local}])");
 }
 
-static void
-nto_remove_commands (void)
-{
-  //extern struct cmd_list_element *cmdlist;
-
-//  delete_cmd ("upload", &cmdlist);
-// FIXME  delete_cmd ("download", &cmdlist);
-}
-
 static int nto_remote_fd = -1;
 
 static int
@@ -3549,7 +3526,6 @@ bool
 pdebug_target::can_run ( )
 {
   nto_trace (0) ("%s ()\n", __func__);
-  /* todo bweb Huh? */
   return false;
 }
 
@@ -3557,9 +3533,7 @@ int
 pdebug_target::can_use_hw_breakpoint (enum bptype type, int cnt,
          int othertype)
 {
-  /* todo Unfortunately the Kernel has no interface to ask if HW breakpoints
-   * are supported so the user has to try - usually they should be successful
-   * though */
+  /* generally NTO does support HW breakpoints */
   return 1;
 }
 
@@ -3665,187 +3639,57 @@ pdebug_target::remove_exec_catchpoint (int pid)
   return 0;
 }
 
-/* GDB makes assumption that after VFORK/FORK we are attached to both.
-   This is not the case on QNX but to make gdb behave, we do attach
-   to both anyway, regardless of the scenario. */
+/*
+ * special handling after a fork happened, depending on the fork control
+ * switches fork-follow-mode and detach-on-fork:
+ *
+ * no special support for vfork() as this has been deprecated and is currently
+ * just a wrapped fork() call. See process.h
+ */
 int
 pdebug_target::follow_fork (int follow_child, int detach_fork)
 {
-  struct thread_info *ti = find_thread_ptid (inferior_ptid);
-  struct inferior *const parent_inf = current_inferior ();
-  int child_pid, parent_pid;
+  ptid_t child_ptid;
+  int    child_pid;
+  struct thread_info *ti=NULL;
+  struct nto_thread_info *priv=NULL;
+  struct nto_inferior_data *inf_data=NULL;
+  struct inferior *child_inf = NULL;
 
-  nto_trace (1) ("%s follow_child: %d\n", __func__, follow_child);
+  nto_trace (0) ("follow_fork(%s, %s)\n",
+      follow_child?"child":"parent", detach_fork?"detach":"stay attached");
 
-  gdb_assert (parent_inf != NULL);
-  gdb_assert (parent_inf->pid == inferior_ptid.pid());
-
-  child_pid = nto_inferior_data (parent_inf)->child_pid;
-  parent_pid = parent_inf->pid;
-
-  nto_trace (0) ("Child pid: %d %cforked\n", child_pid,
-     nto_inferior_data (parent_inf)->vfork ? 'v' : ' ');
-
+  /* determine pid, tid and inferior of the child process */
   if (follow_child)
     {
-      /* Attach to the child process, then detach from the parent. */
-      struct inferior *child_inf;
-      struct nto_inferior_data *inf_data;
-      struct nto_remote_inferior_data *c_inf_rdata, *p_inf_rdata;
-      struct program_space *parent_pspace;
-      DScomm_t recv;
+      child_pid  = inferior_ptid.pid ();
+      child_ptid = inferior_ptid;
+      child_inf  = current_inferior();
+    }
+  else
+    {
+      child_pid  = nto_inferior_data(current_inferior())->child_pid;
+      child_ptid = ptid_t (child_pid, 1, 0);
+      if (!detach_fork)
+	{
+	  child_inf=find_inferior_ptid(child_ptid);
+	  gdb_assert( child_inf != NULL );
+	}
+    }
 
-      /* To appease testsuite and be inline with linux. */
-      if (info_verbose || nto_internal_debugging)
-  {
-    if (nto_inferior_data (parent_inf)->vfork)
-      fprintf_filtered (gdb_stdlog,
-            _("Attaching after process %d "
-        "vfork to child process %d.\n"),
-            parent_pid, child_pid);
-    else
-      fprintf_filtered (gdb_stdlog,
-            _("Attaching after process %d "
-        "fork to child process %d.\n"),
-            parent_pid, child_pid);
-
-  }
-
-      if (!nto_attach_only (child_pid, &recv))
-  return 1;
-
-      child_inf = add_inferior (child_pid);
-      child_inf->attach_flag = parent_inf->attach_flag;
-      copy_terminal_info (child_inf, parent_inf);
-      child_inf->gdbarch = parent_inf->gdbarch;
-      copy_inferior_target_desc_info (child_inf, parent_inf);
-      if (parent_inf->args != NULL)
-  child_inf->args = xstrdup (parent_inf->args);
-
-      /* Always clone pspace so that inferiors don't get their
-       * associated file names messed up. */
-      child_inf->aspace = new_address_space ();
-      child_inf->pspace = new program_space (child_inf->aspace);
-      child_inf->removable = 1;
-      child_inf->symfile_flags = SYMFILE_NO_READ;
-      /* Following the child. */
-      set_current_program_space (child_inf->pspace);
-      clone_program_space (child_inf->pspace, parent_inf->pspace);
-
-      if (nto_inferior_data (parent_inf)->vfork)
-  {
-    child_inf->vfork_parent = parent_inf;
-    child_inf->pending_detach = 0;
-    parent_inf->vfork_child = child_inf;
-    parent_inf->pending_detach = detach_fork;
-    parent_inf->waiting_for_vfork_done = 1;
-    /* Wait for child event EXEC or PIDUNLOAD */
-    parent_inf->pspace->breakpoints_not_allowed = 1;
-
-    inferior_ptid = ptid_t (child_pid, 1, 0);
-    add_thread (inferior_ptid);
-  }
-      else
-  {
-    if (detach_fork)
-      {
-        target_detach (NULL, 0);
-        inferior_ptid = ptid_t (child_pid, 1, 0);
-        add_thread (inferior_ptid);
-      }
-    else
-      {
-        inferior_ptid = ptid_t (child_pid, 1, 0);
-        add_thread (inferior_ptid);
-
-        child_inf->aspace = new_address_space ();
-        child_inf->pspace = new program_space (child_inf->aspace);
-        child_inf->removable = 1;
-        child_inf->symfile_flags = SYMFILE_NO_READ;
-        set_current_program_space (child_inf->pspace);
-        clone_program_space (child_inf->pspace, parent_inf->pspace);
-        solib_create_inferior_hook (0);
-      }
-  }
-
+  // initialize child inferior if followed or not detached
+  if (child_inf != NULL)
+    {
       inf_data = nto_inferior_data (child_inf);
+      child_inf->removable=1;
+      child_inf->attach_flag=0;
       inf_data->has_execution = 1;
       inf_data->has_stack = 1;
       inf_data->has_registers = 1;
       inf_data->has_memory = 1;
-
-      p_inf_rdata = nto_remote_inferior_data (parent_inf);
-      c_inf_rdata = nto_remote_inferior_data (child_inf);
-
-      if (p_inf_rdata->remote_exe != NULL)
-  c_inf_rdata->remote_exe = xstrdup (p_inf_rdata->remote_exe);
-      if (p_inf_rdata->remote_cwd != NULL)
-  c_inf_rdata->remote_cwd = xstrdup (p_inf_rdata->remote_cwd);
+      add_thread_silent(child_ptid);
+      update_thread_list();
     }
-  else /* !follow_child */
-    {
-      struct nto_inferior_data *inf_data;
-
-      if (!detach_fork)
-  {
-    struct inferior *child_inf;
-    const ptid_t old_inferior_ptid = inferior_ptid;
-    struct program_space *const old_program_space
-      = current_program_space;
-    DScomm_t recv;
-
-    nto_trace (0)("%s: parent, attach child\n", __func__);
-    if (nto_inferior_data (parent_inf)->vfork)
-      {
-        nto_trace (0)("Can not attach to vforked child and not follow it\n");
-        return 0;
-      }
-
-    if (!nto_attach_only (child_pid, &recv))
-      {
-        error (_("Could not attach to %d\n"), child_pid);
-        return 0;
-      }
-
-    child_inf = add_inferior (child_pid);
-
-    child_inf->attach_flag = parent_inf->attach_flag;
-    copy_terminal_info (child_inf, parent_inf);
-
-    inferior_ptid = nto_get_thread_alive ( ptid_t(child_pid,0,0));
-    add_thread (inferior_ptid);
-
-    child_inf->aspace = new_address_space ();
-    child_inf->pspace = new program_space (child_inf->aspace);
-    child_inf->removable = 1;
-    set_current_program_space (child_inf->pspace);
-    clone_program_space (child_inf->pspace, parent_inf->pspace);
-
-    solib_create_inferior_hook (0);
-
-    inf_data = nto_inferior_data (child_inf);
-    inf_data->has_execution = 1;
-    inf_data->has_stack = 1;
-    inf_data->has_registers = 1;
-    inf_data->has_memory = 1;
-
-    /* Restore */
-    set_current_program_space (old_program_space);
-    inferior_ptid = old_inferior_ptid;
-    set_thread (inferior_ptid.lwp());
-  } else {
-    /* To appease testsuite and be inline with linux. */
-    if (info_verbose || nto_internal_debugging)
-      {
-        target_terminal::ours ();
-        fprintf_filtered (gdb_stdlog,
-        "Detaching after fork from "
-        "child process %d.\n",
-        child_pid);
-      }
-  }
-    }
-
   return 0;
 }
 
@@ -4083,7 +3927,6 @@ char *strcasestr(const char *const haystack, const char *const needle)
 }
 #endif /* HAVE_RAW_DECL_STRCASESTR */
 
-/* todo bweb print thread names too! */
 void
 nto_pidlist (const char *args, int from_tty)
 {
@@ -4287,9 +4130,9 @@ pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!set_thread (
+  if (!nto_set_thread (
       nto_get_thread_alive (ptid_t(inferior_ptid.pid(),0,0)).lwp() ) ) {
-    nto_trace (0) ("Could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
+    nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
     return 1;
   }
 
