@@ -754,7 +754,8 @@ nto_thread_name( gdbarch* arch, struct thread_info *ti ) {
 }
 
 /*
- * todo is this ever called?
+ * do not try to resolve dynamic symbols when stepping on static library
+ * functions.
  */
 static CORE_ADDR
 nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
@@ -763,7 +764,6 @@ nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
     = nto_inferior_data (current_inferior ());
 
   nto_trace(0)("nto_ldqnx2_skip_solib_resolver()\n");
-  warning("nto_ldqnx2_skip_solib_resolver called!\n");
   // TODO: Proper cleanup of inf. data
   if (inf_data->bind_func_p == 0)
     {
