@@ -922,7 +922,7 @@ nto_send_arg (const char *arg)
 
 static unsigned
 nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
-         const unsigned len, const int report_errors)
+	       const unsigned len, const int report_errors)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int rlen;
@@ -937,35 +937,35 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
   for (tries = 0;; tries++)
     {
       if (tries >= MAX_TRAN_TRIES)
-  {
-    unsigned char err = DSrMsg_err;
+	{
+	  unsigned char err = DSrMsg_err;
 
-    printf_unfiltered ("Remote exhausted %d retries.\n", tries);
-    if (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG)
-      err |= DSHDR_MSG_BIG_ENDIAN;
-    recv->pkt.hdr.cmd = err;
-    recv->pkt.err.err = EIO;
-    recv->pkt.err.err = EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err,
-                  4, byte_order);
-    rlen = sizeof (recv->pkt.err);
-    break;
-  }
+	  printf_unfiltered ("Remote exhausted %d retries.\n", tries);
+	  if (gdbarch_byte_order (target_gdbarch ()) == BFD_ENDIAN_BIG)
+	    err |= DSHDR_MSG_BIG_ENDIAN;
+	  recv->pkt.hdr.cmd = err;
+	  recv->pkt.err.err = EIO;
+	  recv->pkt.err.err = EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err,
+						      4, byte_order);
+	  rlen = sizeof (recv->pkt.err);
+	  break;
+	}
       putpkt (tran, len);
       for (;;)
-  {
-    rlen = getpkt (recv, 0);
-    if ((current_session->channelrd != SET_CHANNEL_TEXT)
-        || (rlen == -1))
-      break;
-    nto_incoming_text (&recv->text, rlen);
-  }
+	{
+	  rlen = getpkt (recv, 0);
+	  if ((current_session->channelrd != SET_CHANNEL_TEXT)
+	      || (rlen == -1))
+	    break;
+	  nto_incoming_text (&recv->text, rlen);
+	}
       if (rlen == -1)    /* Getpkt returns -1 if MsgNAK received.  */
-  {
-    printf_unfiltered ("MsgNak received - resending\n");
-    continue;
-  }
+	{
+	  printf_unfiltered ("MsgNak received - resending\n");
+	  continue;
+	}
       if ((rlen >= 0) && (recv->pkt.hdr.mid == tran->pkt.hdr.mid))
-  break;
+	break;
 
       nto_trace (1) ("mid mismatch!\n");
 
@@ -974,76 +974,82 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
      now we switch on the channel (/type of message) and then deal
      with it.  */
   switch (current_session->channelrd)
-    {
+  {
     case SET_CHANNEL_DEBUG:
       if (((recv->pkt.hdr.cmd & DSHDR_MSG_BIG_ENDIAN) != 0))
-  {
-    char buff[sizeof(tran->buf)];
+	{
+	  char buff[sizeof(tran->buf)];
 
-    sprintf (buff, "set endian big");
-    if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_BIG)
-      execute_command (buff, 0);
-  }
+	  sprintf (buff, "set endian big");
+	  if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_BIG)
+	    execute_command (buff, 0);
+	}
       else
-  {
-    char buff[sizeof(tran->buf)];
+	{
+	  char buff[sizeof(tran->buf)];
 
-    sprintf (buff, "set endian little");
-    if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_LITTLE)
-      execute_command (buff, 0);
-  }
+	  sprintf (buff, "set endian little");
+	  if (gdbarch_byte_order (target_gdbarch ()) != BFD_ENDIAN_LITTLE)
+	    execute_command (buff, 0);
+	}
       recv->pkt.hdr.cmd &= ~DSHDR_MSG_BIG_ENDIAN;
       if (recv->pkt.hdr.cmd == DSrMsg_err)
-  {
-    errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err, 4,
-              byte_order));
-    if (report_errors)
-      {
-        switch (errno)
-    {
-    case PDEBUG_ENOERR:
-      break;
-    case PDEBUG_ENOPTY:
-      perror_with_name ("Remote (no ptys available)");
-      break;
-    case PDEBUG_ETHREAD:
-      perror_with_name ("Remote (thread start error)");
-      break;
-    case PDEBUG_ECONINV:
-      perror_with_name ("Remote (invalid console number)");
-      break;
-    case PDEBUG_ESPAWN:
-      perror_with_name ("Remote (spawn error)");
-      break;
-    case PDEBUG_EPROCFS:
-      perror_with_name ("Remote (procfs [/proc] error)");
-      break;
-    case PDEBUG_EPROCSTOP:
-      perror_with_name ("Remote (devctl PROC_STOP error)");
-      break;
-    case PDEBUG_EQPSINFO:
-      perror_with_name ("Remote (psinfo error)");
-      break;
-    case PDEBUG_EQMEMMODEL:
-      perror_with_name
-        ("Remote (invalid memory model [not flat] )");
-      break;
-    case PDEBUG_EQPROXY:
-      perror_with_name ("Remote (proxy error)");
-      break;
-    case PDEBUG_EQDBG:
-      perror_with_name ("Remote (__nto_debug_* error)");
-      break;
-    default:
-      perror_with_name ("Remote");
-    }
-      }
-  }
+	{
+	  /* the actual errno */
+	  errno = errnoconvert (EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err, 4,
+							byte_order));
+	  if (report_errors)
+	    {
+	      /* any error reported by pdebug */
+	      switch (EXTRACT_SIGNED_INTEGER(&recv->pkt.hdr.subcmd,
+					     sizeof(uint8_t), byte_order))
+	      {
+		case PDEBUG_ENOERR:
+		  break;
+		case PDEBUG_ENOPTY:
+		  perror_with_name ("Remote (no ptys available)");
+		  break;
+		case PDEBUG_ETHREAD:
+		  perror_with_name ("Remote (thread start error)");
+		  break;
+		case PDEBUG_ECONINV:
+		  perror_with_name ("Remote (invalid console number)");
+		  break;
+		case PDEBUG_ESPAWN:
+		  perror_with_name ("Remote (spawn error)");
+		  break;
+		case PDEBUG_EPROCFS:
+		  perror_with_name ("Remote (procfs [/proc] error)");
+		  break;
+		case PDEBUG_EPROCSTOP:
+		  perror_with_name ("Remote (devctl PROC_STOP error)");
+		  break;
+		case PDEBUG_EQPSINFO:
+		  perror_with_name ("Remote (psinfo error)");
+		  break;
+		case PDEBUG_EQMEMMODEL:
+		  perror_with_name
+		  ("Remote (invalid memory model [not flat] )");
+		  break;
+		case PDEBUG_EQPROXY:
+		  perror_with_name ("Remote (proxy error)");
+		  break;
+		case PDEBUG_EQDBG:
+		  perror_with_name ("Remote (__nto_debug_* error)");
+		  break;
+		default:
+		  if( errno != EOK )
+		    {
+		      perror_with_name ("Remote");
+		    }
+	      }
+	    }
+	}
       break;
     case SET_CHANNEL_TEXT:
     case SET_CHANNEL_RESET:
       break;
-    }
+  }
   return rlen;
 }
 
