@@ -196,13 +196,16 @@ SET (GDB_EXC_BREAKPOINT, 150, "EXC_BREAKPOINT", "Breakpoint")
 
 SET (GDB_SIGNAL_LIBRT, 151, "SIGLIBRT", "librt internal signal")
 
-#ifdef __QNXTARGET__
-SET (GDB_SIGNAL_SELECT, 152, "SIGSELECT", "Data available")
-SET (GDB_SIGNAL_LAST, 153, NULL, "GDB_SIGNAL_LAST")
-#else /* ! __QNXTARGET__ */
+SET (GDB_SIGNAL_SELECT,      152, "SIGSELECT", "Data available")
+SET (GDB_SIGNAL_PHOTON,      153, "SIGPHOTON", "Photon message ")
+SET (GDB_SIGNAL_PROCNTO_59,  154, "PROCNTO59", "NTO reserved")
+SET (GDB_SIGNAL_PROCNTO_60,  155, "PROCNTO60", "NTO reserved")
+SET (GDB_SIGNAL_PROCNTO_61,  156, "PROCNTO61", "NTO reserved")
+SET (GDB_SIGNAL_PROCNTO_62,  157, "PROCNTO62", "NTO reserved")
+SET (GDB_SIGNAL_PROCNTO_63,  158, "PROCNTO63", "NTO reserved")
+SET (GDB_SIGNAL_PROCNTO_MAX, 159, "PROCNTO64", "NTO reserved")
 
 /* If you are adding a new signal, add it just above this comment.  */
 
 /* Last and unused enum value, for sizing arrays, etc.  */
-SET (GDB_SIGNAL_LAST, 152, NULL, "GDB_SIGNAL_LAST")
-#endif /* ! __QNXTARGET__ */
+SET (GDB_SIGNAL_LAST, 160, NULL, "GDB_SIGNAL_LAST")
