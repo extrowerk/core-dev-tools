@@ -316,7 +316,7 @@ nto_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
 }
 
 char **
-nto_parse_redirection (char *pargv[], const char **pin, const char **pout, 
+nto_parse_redirection (char *pargv[], const char **pin, const char **pout,
 		       const char **perr)
 {
   char **argv;
@@ -687,7 +687,7 @@ nto_ldqnx2_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
   struct nto_inferior_data *const inf_data
     = nto_inferior_data (current_inferior ());
 
-  // TODO: Proper cleanup of inf. data 
+  // TODO: Proper cleanup of inf. data
 
   if (inf_data->bind_func_p == 0)
     {
@@ -750,7 +750,7 @@ show_nto_debug (struct ui_file *file, int from_tty,
   fprintf_filtered (file, _("QNX NTO debug level is %d.\n"), nto_internal_debugging);
 }
 
-static int 
+static int
 nto_print_tidinfo_callback (struct thread_info *tp, void *data)
 {
   char star = ' ';
@@ -1035,7 +1035,7 @@ nto_core_add_thread_status_info (int core_pid, int gdb_thread_id,
   enum bfd_endian byte_order;
 
   byte_order = gdbarch_byte_order (target_gdbarch ());
- 
+
   /* See corelow, function add_to_thread_list for details on pid.  */
   ptid = ptid_build (core_pid, 0, gdb_thread_id);
   ti = find_thread_ptid (ptid);
@@ -1247,7 +1247,7 @@ nto_core_read_auxv_from_note (bfd *abfd, asection *sect, void *pauxv_buf)
   if (sectsize > sizeof (info))
     sectsize = sizeof (info);
 
-  if (strncmp (sectname, qnx_core_info, qnx_sectnamelen) != 0) 
+  if (strncmp (sectname, qnx_core_info, qnx_sectnamelen) != 0)
     return;
 
   if (bfd_seek (abfd, sect->filepos, SEEK_SET) != 0)
@@ -1359,7 +1359,7 @@ extern struct target_ops *core_target;
 static void
 init_nto_core_ops (void)
 {
-  gdb_assert (core_target != NULL && core_target->to_shortname != NULL 
+  gdb_assert (core_target != NULL && core_target->to_shortname != NULL
 	      && !!"core_ops must be initialized first!");
   nto_core_ops = *core_target;
   core_target->to_extra_thread_info = nto_extra_thread_info;
@@ -1372,10 +1372,10 @@ init_nto_core_ops (void)
 int
 nto_stopped_by_watchpoint (struct target_ops *const ops)
 {
-  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are 
+  /* NOTE: nto_stopped_by_watchpoint will be called ONLY while we are
      stopped due to a SIGTRAP.  This assumes gdb works in 'all-stop' mode;
-     future gdb versions will likely run in 'non-stop' mode in which case 
-     we will have to store/examine statuses per thread in question.  
+     future gdb versions will likely run in 'non-stop' mode in which case
+     we will have to store/examine statuses per thread in question.
      Until then, this will work fine.  */
 
   struct inferior *inf = current_inferior ();
@@ -1566,11 +1566,18 @@ nto_gdbarch_init (struct obstack *obstack)
   return ops;
 }
 
+/*
+ * translates a GDB signal code into an NTO signal.
+ * Signal mappings differ from OS to OS and sometimes even between
+ * architectures, so GDB has it's own signal list that needs
+ * to be translated to the actual target and back.
+ */
 int
 nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
 {
   switch (signal)
     {
+    /* signals that can be sent with slay */
     case GDB_SIGNAL_0:
       return 0;
     case GDB_SIGNAL_HUP:
@@ -1636,9 +1643,79 @@ nto_gdb_signal_to_target (struct gdbarch *gdbarch, enum gdb_signal signal)
       return 30;  /* exceded cpu limit */
     case GDB_SIGNAL_XFSZ:
       return 31;  /* exceded file size limit */
+    /* NTO does not define signals between 32 and 40 *
+     * filled up with non-posix RT signals           */
+    case GDB_SIGNAL_REALTIME_32:
+      return 32;
+    case GDB_SIGNAL_REALTIME_33:
+      return 33;
+    case GDB_SIGNAL_REALTIME_34:
+      return 34;
+    case GDB_SIGNAL_REALTIME_35:
+      return 35;
+    case GDB_SIGNAL_REALTIME_36:
+      return 36;
+    case GDB_SIGNAL_REALTIME_37:
+      return 37;
+    case GDB_SIGNAL_REALTIME_38:
+      return 38;
+    case GDB_SIGNAL_REALTIME_39:
+      return 39;
+    case GDB_SIGNAL_REALTIME_40:
+      return 40;
+    /* POSIX RT-signals ->  */
+    case GDB_SIGNAL_REALTIME_41:
+      return 41;
+    case GDB_SIGNAL_REALTIME_42:
+      return 42;
+    case GDB_SIGNAL_REALTIME_43:
+      return 43;
+    case GDB_SIGNAL_REALTIME_44:
+      return 44;
+    case GDB_SIGNAL_REALTIME_45:
+      return 45;
+    case GDB_SIGNAL_REALTIME_46:
+      return 46;
+    case GDB_SIGNAL_REALTIME_47:
+      return 47;
+    case GDB_SIGNAL_REALTIME_48:
+      return 48;
+    case GDB_SIGNAL_REALTIME_49:
+      return 49;
+    case GDB_SIGNAL_REALTIME_50:
+      return 50;
+    case GDB_SIGNAL_REALTIME_51:
+      return 51;
+    case GDB_SIGNAL_REALTIME_52:
+      return 52;
+    case GDB_SIGNAL_REALTIME_53:
+      return 53;
+    case GDB_SIGNAL_REALTIME_54:
+      return 54;
+    case GDB_SIGNAL_REALTIME_55:
+      return 55;
+    case GDB_SIGNAL_REALTIME_56:
+      return 56;
+    /* Special purpose signals ->  */
     case GDB_SIGNAL_SELECT:
       return 57;
+    case GDB_SIGNAL_PHOTON:
+      return 58;
+    case GDB_SIGNAL_PROCNTO_59:
+      return 59;
+    case GDB_SIGNAL_PROCNTO_60:
+      return 60;
+    case GDB_SIGNAL_PROCNTO_61:
+      return 61;
+    case GDB_SIGNAL_PROCNTO_62:
+      return 62;
+    case GDB_SIGNAL_PROCNTO_63:
+      return 63;
+    case GDB_SIGNAL_PROCNTO_MAX:
+      return 64;
+    /* Unknown signal with debug message as #143 is not always helpful */
     default:
+      nto_trace (0) ("Cannot translate GDB signal %i!\n", signal );
       return 0;
     }
 }
@@ -1653,6 +1730,8 @@ nto_gdb_signal_from_target (struct gdbarch *gdbarch, int nto_signal)
       if (tgtsig == nto_signal)
 	return (enum gdb_signal)i;
     }
+  /* Give debug message as GDB_SIGNAL_UNKNOWN (143) can be confusing */
+  nto_trace (1) ("Unknown NTO signal %i!\n", nto_signal );
   return GDB_SIGNAL_UNKNOWN;
 }
 
