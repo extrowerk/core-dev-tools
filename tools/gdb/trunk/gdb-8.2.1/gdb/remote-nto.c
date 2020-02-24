@@ -141,6 +141,22 @@ static void     nto_fileclose (int);
 static int      nto_fileread (char *buf, int size);
 static int      nto_filewrite (char *buf, int size);
 
+/* names of the expected Kernel notifications for readable trace output */
+static const char* const _DSMSGS[12] {
+  "DSMSG_NOTIFY_PIDLOAD",    /* 0 */
+  "DSMSG_NOTIFY_TIDLOAD",    /* 1 */
+  "DSMSG_NOTIFY_DLLLOAD",    /* 2 */
+  "DSMSG_NOTIFY_PIDUNLOAD",  /* 3 */
+  "DSMSG_NOTIFY_TIDUNLOAD",  /* 4 */
+  "DSMSG_NOTIFY_DLLUNLOAD",  /* 5 */
+  "DSMSG_NOTIFY_BRK",        /* 6 */
+  "DSMSG_NOTIFY_STEP",       /* 7 */
+  "DSMSG_NOTIFY_SIGEV",      /* 8 */
+  "DSMSG_NOTIFY_STOPPED",    /* 9 */
+  "DSMSG_NOTIFY_FORK",       /* 10 */
+  "DSMSG_NOTIFY_EXEC"        /* 11 */
+};
+
 static const target_info pdebug_target_info = {
   "qnx",
   N_("Remote serial target in pdebug-specific protocol"),
@@ -1677,18 +1693,6 @@ pdebug_target::detach (inferior *inf, int from_tty)
       gdb_flush (gdb_stdout);
     }
 
-  /* todo make sure that procnto knows about detachment */
-#if 0
-  if (args)
-    {
-      int sig = nto_gdb_signal_to_target (target_gdbarch (),
-            (enum gdb_signal)atoi (args));
-
-      nto_send_init (&tran, DStMsg_kill, 0, SET_CHANNEL_DEBUG);
-      tran.pkt.kill.signo = EXTRACT_SIGNED_INTEGER (&sig, 4, byte_order);
-      nto_send_recv (&tran, &recv, sizeof (tran.pkt.kill), 1);
-    }
-#endif
   nto_send_init (&tran, DStMsg_detach, 0, SET_CHANNEL_DEBUG);
   tran.pkt.detach.pid = inf->pid;
   tran.pkt.detach.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.detach.pid, 4, byte_order);
@@ -2061,157 +2065,161 @@ pdebug_target::wait (ptid_t ptid, struct target_waitstatus *status, int i)
 }
 
 static ptid_t
-nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
+nto_parse_notify (const DScomm_t * const recv, struct target_waitstatus *status)
 {
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int pid, tid;
   CORE_ADDR stopped_pc = 0;
   struct inferior *inf;
   struct nto_inferior_data *inf_data;
-  DScomm_t frecv;
 
   inf = current_inferior ();
 
-  gdb_assert (inf != NULL);
+  gdb_assert(inf != NULL);
 
   inf_data = nto_inferior_data (inf);
 
-  gdb_assert (inf_data != NULL);
+  gdb_assert(inf_data != NULL);
 
-  nto_trace (0) ("nto_parse_notify(status) - subcmd %d\n",
-       recv->pkt.hdr.subcmd);
+  nto_trace(0) (
+      "nto_parse_notify(status) - %s\n",
+      recv->pkt.hdr.subcmd <= DSMSG_NOTIFY_EXEC ?
+	  _DSMSGS[recv->pkt.hdr.subcmd] : "DSMSG_UNKNOWN");
 
-  pid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.pid, 4, byte_order);
-  tid = EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.tid, 4, byte_order);
+  pid = EXTRACT_SIGNED_INTEGER(&recv->pkt.notify._32.pid, 4, byte_order);
+  tid = EXTRACT_SIGNED_INTEGER(&recv->pkt.notify._32.tid, 4, byte_order);
   if (tid == 0)
     tid = 1;
 
   switch (recv->pkt.hdr.subcmd)
     {
+    /* process death */
     case DSMSG_NOTIFY_PIDUNLOAD:
       /* Added a new struct pidunload_v3 to the notify.un.  This includes a
-         faulted flag so we can tell if the status value is a signo or an
-         exit value.  See dsmsgs.h, protoverminor bumped to 3. GP Oct 31 2002.  */
+       faulted flag so we can tell if the status value is a signo or an
+       exit value.  See dsmsgs.h, protoverminor bumped to 3. GP Oct 31 2002.  */
       if (current_session->target_proto_major > 0
-    || current_session->target_proto_minor >= 3)
-  {
-    const int32_t *const pstatus = (supports64bit()) ? &recv->pkt.notify._64.un.pidunload_v3.status
-               : &recv->pkt.notify._32.un.pidunload_v3.status;
+	  || current_session->target_proto_minor >= 3)
+	{
+	  const int32_t * const pstatus =
+	      (supports64bit ()) ?
+		  &recv->pkt.notify._64.un.pidunload_v3.status :
+		  &recv->pkt.notify._32.un.pidunload_v3.status;
 
-    const int faulted = (supports64bit()) ? recv->pkt.notify._64.un.pidunload_v3.faulted
-            : recv->pkt.notify._32.un.pidunload_v3.faulted;
-    if (faulted)
-      {
-        status->value.integer =
-    nto_gdb_signal_from_target
-      (target_gdbarch (), EXTRACT_SIGNED_INTEGER
-            (pstatus, 4, byte_order));
-        if (status->value.integer)
-    status->kind = TARGET_WAITKIND_SIGNALLED;  /* Abnormal death.  */
-        else
-    status->kind = TARGET_WAITKIND_EXITED;  /* Normal death.  */
-      }
-    else
-      {
-        status->value.integer =
-    EXTRACT_SIGNED_INTEGER (pstatus, 4, byte_order);
-        status->kind = TARGET_WAITKIND_EXITED;  /* Normal death, possibly with exit value.  */
-      }
-  }
+	  const int faulted =
+	      (supports64bit ()) ?
+		  recv->pkt.notify._64.un.pidunload_v3.faulted :
+		  recv->pkt.notify._32.un.pidunload_v3.faulted;
+	  if (faulted)
+	    {
+	      status->value.integer = nto_gdb_signal_from_target (
+		  target_gdbarch (),
+		  EXTRACT_SIGNED_INTEGER(pstatus, 4, byte_order));
+	      if (status->value.integer)
+		status->kind = TARGET_WAITKIND_SIGNALLED; /* Abnormal death.  */
+	      else
+		status->kind = TARGET_WAITKIND_EXITED; /* Normal death.  */
+	    }
+	  else
+	    {
+	      status->value.integer = EXTRACT_SIGNED_INTEGER(pstatus, 4,
+							     byte_order);
+	      status->kind = TARGET_WAITKIND_EXITED; /* Normal death, possibly with exit value.  */
+	    }
+	}
       else
-  {
-    /* Only supported on 32-bit pdebugs, old ones. */
-    status->value.integer =
-      nto_gdb_signal_from_target (target_gdbarch (),
-          EXTRACT_SIGNED_INTEGER
-            (&recv->pkt.notify._32.un.pidunload.status,
-             4, byte_order));
-    if (status->value.integer)
-      status->kind = TARGET_WAITKIND_SIGNALLED;  /* Abnormal death.  */
-    else
-      status->kind = TARGET_WAITKIND_EXITED;  /* Normal death.  */
-    /* Current inferior is gone, switch to something else */
+	{
+	  /* Only supported on 32-bit pdebugs, old ones. */
+	  status->value.integer = nto_gdb_signal_from_target (
+	      target_gdbarch (),
+	      EXTRACT_SIGNED_INTEGER(&recv->pkt.notify._32.un.pidunload.status,
+				     4, byte_order));
+	  if (status->value.integer)
+	    status->kind = TARGET_WAITKIND_SIGNALLED; /* Abnormal death.  */
+	  else
+	    status->kind = TARGET_WAITKIND_EXITED; /* Normal death.  */
+	  /* Current inferior is gone, switch to something else */
 
-  }
+	}
       inf_data->has_execution = 0;
       inf_data->has_stack = 0;
       inf_data->has_registers = 0;
       inf_data->has_memory = 0;
       break;
+
+    /* stepped on a breakpoint */
     case DSMSG_NOTIFY_BRK:
-      if (supports64bit())
-  {
-    inf_data->stopped_flags =
-      EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.flags, 4,
-              byte_order);
-    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._64.un.brk.ip,
-             8, byte_order);
-  }
+      if (supports64bit ())
+	{
+	  inf_data->stopped_flags = EXTRACT_UNSIGNED_INTEGER(
+	      &recv->pkt.notify._64.un.brk.flags, 4, byte_order);
+	  stopped_pc = EXTRACT_UNSIGNED_INTEGER(&recv->pkt.notify._64.un.brk.ip,
+						8, byte_order);
+	}
       else
-  {
-    inf_data->stopped_flags =
-      EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.flags, 4,
-              byte_order);
-    stopped_pc = EXTRACT_UNSIGNED_INTEGER (&recv->pkt.notify._32.un.brk.ip,
-             4, byte_order);
-  }
+	{
+	  inf_data->stopped_flags = EXTRACT_UNSIGNED_INTEGER(
+	      &recv->pkt.notify._32.un.brk.flags, 4, byte_order);
+	  stopped_pc = EXTRACT_UNSIGNED_INTEGER(&recv->pkt.notify._32.un.brk.ip,
+						4, byte_order);
+	}
       inf_data->stopped_pc = stopped_pc;
       /* NOTE: We do not have New thread notification. This will cause
-   gdb to think that breakpoint stop is really a new thread event if
-   it happens to be in a thread unknown prior to this stop.
-   We add new threads here to be transparent to the rest
-   of the gdb.  */
-      if (current_session->target_proto_major == 0 &&
-    current_session->target_proto_minor < 4)
-  {
-    update_thread_list ( );
-  }
+       gdb to think that breakpoint stop is really a new thread event if
+       it happens to be in a thread unknown prior to this stop.
+       We add new threads here to be transparent to the rest
+       of the gdb.  */
+      if (current_session->target_proto_major == 0
+	  && current_session->target_proto_minor < 4)
+	{
+	  update_thread_list ();
+	}
       /* fallthrough */
+
+    /* took a step */
     case DSMSG_NOTIFY_STEP:
       /* NYI: could update the CPU's IP register here.  */
       status->kind = TARGET_WAITKIND_STOPPED;
       status->value.sig = GDB_SIGNAL_TRAP;
       break;
+
+    /* received a signal */
     case DSMSG_NOTIFY_SIGEV:
       status->kind = TARGET_WAITKIND_STOPPED;
-      if (supports64bit())
-  {
-    status->value.sig =
-      nto_gdb_signal_from_target (target_gdbarch (),
-          EXTRACT_SIGNED_INTEGER
-            (&recv->pkt.notify._64.un.sigev.signo,
-             4, byte_order));
-  }
+      if (supports64bit ())
+	{
+	  status->value.sig = nto_gdb_signal_from_target (
+	      target_gdbarch (),
+	      EXTRACT_SIGNED_INTEGER(&recv->pkt.notify._64.un.sigev.signo, 4,
+				     byte_order));
+	}
       else
-  {
-    status->value.sig =
-      nto_gdb_signal_from_target (target_gdbarch (),
-          EXTRACT_SIGNED_INTEGER
-            (&recv->pkt.notify._32.un.sigev.signo,
-             4, byte_order));
-  }
+	{
+	  status->value.sig = nto_gdb_signal_from_target (
+	      target_gdbarch (),
+	      EXTRACT_SIGNED_INTEGER(&recv->pkt.notify._32.un.sigev.signo, 4,
+				     byte_order));
+	}
       break;
+
+    /* a new process was created */
     case DSMSG_NOTIFY_PIDLOAD:
-      if (supports64bit())
-  {
-    current_session->cputype =
-      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cputype, 2,
-            byte_order);
-    current_session->cpuid =
-      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._64.un.pidload.cpuid, 4,
-            byte_order);
-  }
+      if (supports64bit ())
+	{
+	  current_session->cputype = EXTRACT_SIGNED_INTEGER(
+	      &recv->pkt.notify._64.un.pidload.cputype, 2, byte_order);
+	  current_session->cpuid = EXTRACT_SIGNED_INTEGER(
+	      &recv->pkt.notify._64.un.pidload.cpuid, 4, byte_order);
+	}
       else
-  {
-    current_session->cputype =
-      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cputype, 2,
-            byte_order);
-    current_session->cpuid =
-      EXTRACT_SIGNED_INTEGER (&recv->pkt.notify._32.un.pidload.cpuid, 4,
-            byte_order);
-  }
+	{
+	  current_session->cputype = EXTRACT_SIGNED_INTEGER(
+	      &recv->pkt.notify._32.un.pidload.cputype, 2, byte_order);
+	  current_session->cpuid = EXTRACT_SIGNED_INTEGER(
+	      &recv->pkt.notify._32.un.pidload.cpuid, 4, byte_order);
+	}
 #ifdef QNX_SET_PROCESSOR_TYPE
-      QNX_SET_PROCESSOR_TYPE (current_session->cpuid);  /* For mips.  */
+      QNX_SET_PROCESSOR_TYPE (current_session->cpuid); /* For mips.  */
 #endif
       inf_data->has_execution = 1;
       inf_data->has_stack = 1;
@@ -2219,105 +2227,127 @@ nto_parse_notify (const DScomm_t *const recv, struct target_waitstatus *status)
       inf_data->has_memory = 1;
       status->kind = TARGET_WAITKIND_LOADED;
       break;
+
+    /* a new thread was created */
     case DSMSG_NOTIFY_TIDLOAD:
       {
-        struct nto_thread_info *priv;
+	struct nto_thread_info *priv;
 
-        status->kind = nto_stop_on_thread_events
-            ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
-        status->value.sig = GDB_SIGNAL_0;
-        if (supports64bit())
-          {
-            tid = EXTRACT_UNSIGNED_INTEGER (
-                &recv->pkt.notify._64.un.thread_event.tid, 4, byte_order);
-          }
-        else
-          {
-            tid = EXTRACT_UNSIGNED_INTEGER (
-                &recv->pkt.notify._32.un.thread_event.tid, 4, byte_order);
-          }
-        nto_trace (0) ("New thread event: tid %d\n", tid);
+	status->kind =
+	    nto_stop_on_thread_events ?
+		TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+	status->value.sig = GDB_SIGNAL_0;
+	if (supports64bit ())
+	  {
+	    tid = EXTRACT_UNSIGNED_INTEGER(
+		&recv->pkt.notify._64.un.thread_event.tid, 4, byte_order);
+	  }
+	else
+	  {
+	    tid = EXTRACT_UNSIGNED_INTEGER(
+		&recv->pkt.notify._32.un.thread_event.tid, 4, byte_order);
+	  }
+	nto_trace(0) ("New thread event: tid %d\n", tid);
 
-        priv = new struct nto_thread_info();
-        priv->tid = tid;
-        add_thread_with_info (ptid_t (pid, tid, 0), priv);
-        if (status->kind == TARGET_WAITKIND_SPURIOUS)
-            tid = inferior_ptid.lwp();
+	priv = new struct nto_thread_info ();
+	priv->tid = tid;
+	add_thread_with_info (ptid_t (pid, tid, 0), priv);
+	if (status->kind == TARGET_WAITKIND_SPURIOUS)
+	  tid = inferior_ptid.lwp ();
       }
       break;
+
+    /* thread death */
     case DSMSG_NOTIFY_TIDUNLOAD:
       {
-  struct thread_info *ti;
-  ptid_t cur = ptid_t (pid, tid, 0);
-  const int32_t *const ptid = (supports64bit()) ? &recv->pkt.notify._64.un.thread_event.tid
-            : &recv->pkt.notify._32.un.thread_event.tid;
-  const int tid_exited = EXTRACT_SIGNED_INTEGER (ptid, 4, byte_order);
+	struct thread_info *ti;
+	ptid_t cur = ptid_t (pid, tid, 0);
+	const int32_t * const ptid =
+	    (supports64bit ()) ?
+		&recv->pkt.notify._64.un.thread_event.tid :
+		&recv->pkt.notify._32.un.thread_event.tid;
+	const int tid_exited = EXTRACT_SIGNED_INTEGER(ptid, 4, byte_order);
 
-  nto_trace (0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
-           tid);
+	nto_trace(0) ("Thread destroyed: tid: %d active: %d\n", tid_exited,
+		      tid);
 
-  status->kind = nto_stop_on_thread_events
-       ? TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
-  status->value.sig = GDB_SIGNAL_0;
-  /* Must determine an alive thread for this to work. */
-  if (inferior_ptid != cur )
-    {
-      switch_to_thread (cur);
-    }
+	status->kind =
+	    nto_stop_on_thread_events ?
+		TARGET_WAITKIND_STOPPED : TARGET_WAITKIND_SPURIOUS;
+	status->value.sig = GDB_SIGNAL_0;
+	/* Must determine an alive thread for this to work. */
+	if (inferior_ptid != cur)
+	  {
+	    switch_to_thread (cur);
+	  }
       }
       break;
+
+    /* process forked */
     case DSMSG_NOTIFY_FORK:
       {
-  int32_t child_pid = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.pid
-                : recv->pkt.notify._32.un.fork_event.pid;
-  uint32_t vfork = (supports64bit ()) ? recv->pkt.notify._64.un.fork_event.vfork
-              : recv->pkt.notify._32.un.fork_event.vfork;
+	int32_t child_pid =
+	    (supports64bit ()) ?
+		recv->pkt.notify._64.un.fork_event.pid :
+		recv->pkt.notify._32.un.fork_event.pid;
+	uint32_t vfork =
+	    (supports64bit ()) ?
+		recv->pkt.notify._64.un.fork_event.vfork :
+		recv->pkt.notify._32.un.fork_event.vfork;
 
-  nto_trace (0) ("DSMSG_NOTIFY_FORK %d -> %d\n", pid, child_pid);
-  inf_data->child_pid
-    = EXTRACT_SIGNED_INTEGER (&child_pid, 4, byte_order);
-  status->value.related_pid = ptid_t (inf_data->child_pid, 1, 0);
-  inf_data->vfork
-    = EXTRACT_SIGNED_INTEGER (&vfork, 4, byte_order) & _DEBUG_WHAT_VFORK;
-  status->kind = inf_data->vfork ? TARGET_WAITKIND_VFORKED
-               : TARGET_WAITKIND_FORKED;
-  nto_trace (0) ("child_pid: %d\n", status->value.related_pid.pid());
-
-  // always attach to the child so it can be handled by follow-child or
-  // no-detach
-  nto_attach_only(inf_data->child_pid, &frecv);
+	nto_trace (0) ("fork parent: %d child: %d\n", pid, child_pid);
+	inf_data->child_pid = EXTRACT_SIGNED_INTEGER(&child_pid, 4, byte_order);
+	status->value.related_pid = ptid_t (inf_data->child_pid, 1, 0);
+	inf_data->vfork = EXTRACT_SIGNED_INTEGER(
+	    &vfork, 4, byte_order) & _DEBUG_WHAT_VFORK;
+	status->kind =
+	    inf_data->vfork ? TARGET_WAITKIND_VFORKED : TARGET_WAITKIND_FORKED;
       }
       break;
+
+    /* process called exec() */
     case DSMSG_NOTIFY_EXEC:
       /* Notification format: pidload. */
-      nto_trace (0) ("DSMSG_NOTIFY_EXEC %d, %s\n", pid,
-         supports64bit()?recv->pkt.notify._64.un.pidload.name:
-             recv->pkt.notify._32.un.pidload.name);
+      nto_trace(0)
+      ("DSMSG_NOTIFY_EXEC %d, %s\n",
+       pid,
+       supports64bit () ?
+	   recv->pkt.notify._64.un.pidload.name :
+	   recv->pkt.notify._32.un.pidload.name);
       status->kind = TARGET_WAITKIND_EXECD;
       status->value.execd_pathname = xstrdup (
-    supports64bit()?recv->pkt.notify._64.un.pidload.name:
-        recv->pkt.notify._32.un.pidload.name);
+	  supports64bit () ?
+	      recv->pkt.notify._64.un.pidload.name :
+	      recv->pkt.notify._32.un.pidload.name);
       break;
+
+    /* DLL changes - no explicit action, just continue */
     case DSMSG_NOTIFY_DLLLOAD:
     case DSMSG_NOTIFY_DLLUNLOAD:
       status->kind = TARGET_WAITKIND_SPURIOUS;
       break;
+
+    /* process stopped */
     case DSMSG_NOTIFY_STOPPED:
       status->kind = TARGET_WAITKIND_STOPPED;
       status->value.sig = GDB_SIGNAL_0;
       break;
+
     default:
       warning ("Unexpected notify type %d", recv->pkt.hdr.subcmd);
       break;
     }
-  nto_trace (0) ("  nto_parse_notify end: pid=%d, tid=%d (was %s) ip=%s\n",
-     pid, tid, nto_pid_to_str(inferior_ptid), paddress (target_gdbarch (), stopped_pc));
+  nto_trace(0) ("  nto_parse_notify end: pid=%d, tid=%d (was %s) ip=%s\n", pid,
+		tid, nto_pid_to_str (inferior_ptid),
+		paddress (target_gdbarch (), stopped_pc));
 
-  inferior_ptid=ptid_t (pid, tid, 0);
+  /* set the current context to the inferior that received the signal */
+  inferior_ptid = ptid_t (pid, tid, 0);
   /* if the process changed, the current inferior must be set too */
-  if(( current_inferior()->pid != 0 ) && ( current_inferior()->pid != pid )) {
-      set_current_inferior(find_inferior_ptid(inferior_ptid));
-  }
+  if ((current_inferior ()->pid != 0) && (current_inferior ()->pid != pid))
+    {
+      set_current_inferior (find_inferior_ptid (inferior_ptid));
+    }
   return inferior_ptid;
 }
 
@@ -3661,6 +3691,7 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
   struct nto_thread_info *priv=NULL;
   struct nto_inferior_data *inf_data=NULL;
   struct inferior *child_inf = NULL;
+  DScomm_t recv;
 
   nto_trace (0) ("follow_fork(%s, %s)\n",
       follow_child?"child":"parent", detach_fork?"detach":"stay attached");
@@ -3686,6 +3717,7 @@ pdebug_target::follow_fork (int follow_child, int detach_fork)
   // initialize child inferior if followed or not detached
   if (child_inf != NULL)
     {
+      nto_attach_only(child_pid, &recv);
       inf_data = nto_inferior_data (child_inf);
       child_inf->removable=1;
       child_inf->attach_flag=0;
