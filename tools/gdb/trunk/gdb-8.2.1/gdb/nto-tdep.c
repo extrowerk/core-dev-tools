@@ -38,13 +38,8 @@
 #include "observable.h"
 #include "minsyms.h"
 
-// #include "auxv.h"
-
 #define QNX_NOTE_NAME  "QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"
-
-/* taken from $QNX_TARGET/usr/include/sys/siginfo.h */
-#define SI_NOINFO 127
 
 #ifdef __QNXNTO__
 #include <sys/debug.h>

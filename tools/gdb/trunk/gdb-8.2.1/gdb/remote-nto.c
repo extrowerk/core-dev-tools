@@ -1,6 +1,6 @@
 /*
  * $QNXtpLicenseC:
- * Copyright 2005,2007,2019 QNX Software Systems. All Rights Reserved.
+ * Copyright 2005-2020 QNX Software Systems. All Rights Reserved.
  *
  * This source code may contain confidential information of QNX Software
  * Systems (QSS) and its licensors.  Any use, reproduction, modification,
@@ -1109,16 +1109,13 @@ pdebug_target::thread_alive (ptid_t th)
   int alive = 0;
   DScomm_t tran, recv;
 
-  nto_trace (0) ("pdebug_thread_alive -- pid %d, tid %ld \n",
-     th.pid(), th.lwp());
-
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = th.pid();
-  tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid, 4,
-            byte_order);
+  tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid,
+						sizeof(int32_t), byte_order);
   tran.pkt.select.tid = th.lwp();
-  tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid, 4,
-            byte_order);
+  tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid,
+						sizeof(int32_t), byte_order);
   nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
@@ -1127,8 +1124,8 @@ pdebug_target::thread_alive (ptid_t th)
   If it is not, then requested thread is dead.  */
       uintptr_t ptidinfoaddr = (uintptr_t) &recv.pkt.okdata.data;
       struct tidinfo *ptidinfo = (struct tidinfo *) ptidinfoaddr;
-      int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
-             byte_order);
+      int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid,
+						 sizeof(int16_t), byte_order);
       alive = (th.lwp() == returned_tid) && ptidinfo->state;
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
@@ -1138,12 +1135,13 @@ pdebug_target::thread_alive (ptid_t th)
       "Does the thread exist?". Note that a thread might have already
       exited but has not been joined yet; we will show it here as
       alive an well. Not completely correct.  */
-      int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status, 4,
-             byte_order);
+      int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status,
+						 sizeof(int32_t), byte_order);
       alive = (th.lwp() == returned_tid);
     }
 
-  nto_trace (0) ("  thread %lu is %s\n", th.lwp(), alive?"alive":"dead");
+  nto_trace (0) ("pdebug_thread_alive(%s) is %s\n", nto_pid_to_str(th),
+      alive?"alive":"dead");
   /* In case of a failure, return 0. This will happen when requested
     thread is dead and there is no alive thread with the larger tid.  */
   return alive;
@@ -1156,43 +1154,60 @@ nto_get_thread_alive (ptid_t th)
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
   int returned_tid; /* is lwp internally */
 
+  nto_trace(0) ("nto_get_thread_alive(%s)\n", nto_pid_to_str (th));
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
-  tran.pkt.select.pid = th.pid();
-  tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid, 4,
-            byte_order);
-  tran.pkt.select.tid = th.lwp();
-  tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid, 4,
-            byte_order);
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 0);
+  tran.pkt.select.pid = th.pid ();
+  tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER(&tran.pkt.select.pid,
+					       sizeof(int32_t), byte_order);
+  tran.pkt.select.tid = th.lwp ();
+  tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER(&tran.pkt.select.tid,
+					       sizeof(int32_t), byte_order);
+  nto_send_recv (&tran, &recv, sizeof(tran.pkt.select), 0);
 
   if (recv.pkt.hdr.cmd == DSrMsg_okdata)
     {
       /* Data is tidinfo.
-  Note: tid returned might not be the same as requested.
-  If it is not, then requested thread is dead.  */
-      const struct tidinfo *const ptidinfo = (struct tidinfo *) recv.pkt.okdata.data;
-      returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid, 2,
-               byte_order);
+       Note: tid returned might not be the same as requested.
+       If it is not, then requested thread is dead.  */
+      const struct tidinfo * const ptidinfo =
+	  (struct tidinfo *) recv.pkt.okdata.data;
+      struct thread_info *ti=NULL;
+      returned_tid = EXTRACT_SIGNED_INTEGER(&ptidinfo->tid, sizeof(int16_t),
+					    byte_order);
 
       if (!ptidinfo->state)
-  {
-    return nto_get_thread_alive( ptid_t( th.pid(), returned_tid+1, 0 ) );
-  }
+	{
+	  return nto_get_thread_alive (ptid_t (th.pid (), returned_tid + 1, 0));
+	}
+      /* thread is alive and current thread info is available so try to
+       * update thread info */
+      ti=nto_find_thread(ptid_t(th.pid(),returned_tid,0));
+      /* does GDB know about this thread? */
+      if( ti != NULL )
+	{
+	  if( ti->priv.get() == NULL )
+	    {
+	      nto_trace(0)("  thread %i has not been announced yet\n",
+		  returned_tid);
+	      ti->priv.reset(new nto_thread_info());
+	    }
+	  ((struct nto_thread_info *)ti->priv.get())->fill(ptidinfo);
+	}
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
       /* This is the old behaviour. It doesn't really tell us
-      what is the status of the thread, but rather answers question:
-      "Does the thread exist?". Note that a thread might have already
-      exited but has not been joined yet; we will show it here as
-      alive and well. Not completely correct.  */
-      returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status,
-               4, byte_order);
+       what is the status of the thread, but rather answers question:
+       "Does the thread exist?". Note that a thread might have already
+       exited but has not been joined yet; we will show it here as
+       alive and well. Not completely correct.  */
+      returned_tid = EXTRACT_SIGNED_INTEGER(&recv.pkt.okstatus.status,
+					    sizeof(int32_t), byte_order);
     }
   else
     return minus_one_ptid;
 
- return ptid_t(th.pid(), returned_tid, 0);
+  return ptid_t (th.pid (), returned_tid, 0);
 }
 
 /* Clean up connection to a remote debugger.  */
@@ -1748,6 +1763,8 @@ pdebug_target::resume (ptid_t ptid, int step,
     return;
 
   gdb_assert (inferior_ptid.pid() == current_inferior ()->pid);
+  /* the resume target must be the current process */
+  gdb_assert(inferior_ptid.pid () == ptid.pid ());
 
   if (!nto_set_thread ( nto_get_thread_alive ( ptid ).lwp() ) )
     {
@@ -2164,21 +2181,23 @@ nto_parse_notify (const DScomm_t * const recv, struct target_waitstatus *status)
 						4, byte_order);
 	}
       inf_data->stopped_pc = stopped_pc;
-      /* NOTE: We do not have New thread notification. This will cause
-       gdb to think that breakpoint stop is really a new thread event if
-       it happens to be in a thread unknown prior to this stop.
-       We add new threads here to be transparent to the rest
-       of the gdb.  */
-      if (current_session->target_proto_major == 0
-	  && current_session->target_proto_minor < 4)
-	{
-	  update_thread_list ();
-	}
-      /* fallthrough */
+      status->kind = TARGET_WAITKIND_STOPPED;
+      status->value.sig = GDB_SIGNAL_TRAP;
+      break;
 
     /* took a step */
     case DSMSG_NOTIFY_STEP:
-      /* NYI: could update the CPU's IP register here.  */
+      if (supports64bit ())
+	{
+	  stopped_pc = EXTRACT_UNSIGNED_INTEGER(
+	      &recv->pkt.notify._64.un.step.ip, sizeof(uint64_t), byte_order);
+	}
+      else
+	{
+	  stopped_pc = EXTRACT_UNSIGNED_INTEGER(
+	      &recv->pkt.notify._32.un.step.ip, sizeof(uint32_t), byte_order);
+	}
+      inf_data->stopped_pc = stopped_pc;
       status->kind = TARGET_WAITKIND_STOPPED;
       status->value.sig = GDB_SIGNAL_TRAP;
       break;
@@ -2207,16 +2226,16 @@ nto_parse_notify (const DScomm_t * const recv, struct target_waitstatus *status)
       if (supports64bit ())
 	{
 	  current_session->cputype = EXTRACT_SIGNED_INTEGER(
-	      &recv->pkt.notify._64.un.pidload.cputype, 2, byte_order);
+	      &recv->pkt.notify._64.un.pidload.cputype, sizeof(uint16_t), byte_order);
 	  current_session->cpuid = EXTRACT_SIGNED_INTEGER(
-	      &recv->pkt.notify._64.un.pidload.cpuid, 4, byte_order);
+	      &recv->pkt.notify._64.un.pidload.cpuid, sizeof(uint32_t), byte_order);
 	}
       else
 	{
 	  current_session->cputype = EXTRACT_SIGNED_INTEGER(
-	      &recv->pkt.notify._32.un.pidload.cputype, 2, byte_order);
+	      &recv->pkt.notify._32.un.pidload.cputype, sizeof(uint16_t), byte_order);
 	  current_session->cpuid = EXTRACT_SIGNED_INTEGER(
-	      &recv->pkt.notify._32.un.pidload.cpuid, 4, byte_order);
+	      &recv->pkt.notify._32.un.pidload.cpuid, sizeof(uint32_t), byte_order);
 	}
 #ifdef QNX_SET_PROCESSOR_TYPE
       QNX_SET_PROCESSOR_TYPE (current_session->cpuid); /* For mips.  */
@@ -2232,6 +2251,8 @@ nto_parse_notify (const DScomm_t * const recv, struct target_waitstatus *status)
     case DSMSG_NOTIFY_TIDLOAD:
       {
 	struct nto_thread_info *priv;
+	DScomm_t ttran, trecv;
+	struct tidinfo *ptidinfo;
 
 	status->kind =
 	    nto_stop_on_thread_events ?
@@ -2240,17 +2261,39 @@ nto_parse_notify (const DScomm_t * const recv, struct target_waitstatus *status)
 	if (supports64bit ())
 	  {
 	    tid = EXTRACT_UNSIGNED_INTEGER(
-		&recv->pkt.notify._64.un.thread_event.tid, 4, byte_order);
+		&recv->pkt.notify._64.un.thread_event.tid, sizeof(int32_t),
+		byte_order);
 	  }
 	else
 	  {
 	    tid = EXTRACT_UNSIGNED_INTEGER(
-		&recv->pkt.notify._32.un.thread_event.tid, 4, byte_order);
+		&recv->pkt.notify._32.un.thread_event.tid, sizeof(int32_t),
+		byte_order);
 	  }
 	nto_trace(0) ("New thread event: tid %d\n", tid);
 
 	priv = new struct nto_thread_info ();
-	priv->tid = tid;
+        /* also update full thread info */
+        nto_send_init (&ttran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
+        ttran.pkt.select.pid = pid;
+        ttran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&ttran.pkt.select.pid,
+						       sizeof(int32_t),
+						       byte_order);
+        ttran.pkt.select.tid = tid;
+        ttran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&ttran.pkt.select.tid,
+						       sizeof(int32_t),
+						       byte_order);
+        nto_send_recv (&ttran, &trecv, sizeof (ttran.pkt.select), 0);
+        ptidinfo = (struct tidinfo *) trecv.pkt.okdata.data;
+        if ((trecv.pkt.hdr.cmd == DSrMsg_okdata) && (ptidinfo->tid == tid))
+          {
+            priv->fill(ptidinfo);
+          }
+        else
+          {
+            warning("Could not get threadinfo for pid:%d tid:%d!", pid, tid);
+            priv->tid = tid;
+          }
 	add_thread_with_info (ptid_t (pid, tid, 0), priv);
 	if (status->kind == TARGET_WAITKIND_SPURIOUS)
 	  tid = inferior_ptid.lwp ();
@@ -3832,8 +3875,6 @@ update_threadnames (void)
     numleft = EXTRACT_UNSIGNED_INTEGER (&tidnames->numleft, sizeof(tidnames->numleft), byte_order);
 
     buf=(char *)tidnames->data;
-    /* skip empty entries */
-    while( *buf == 0 ) buf++;
     for(i = 0 ; i < numtids ; i++) {
       struct thread_info *ti;
       ptid_t ptid;
@@ -3841,6 +3882,8 @@ update_threadnames (void)
       int namelen;
       char *tmp;
 
+      /* skip empty entries */
+      while ((*buf<'0') || (*buf>'9')) buf++;
       tid = strtol(buf, &tmp, 10);
       buf = tmp + 1; /* Skip the null terminator.  */
       namelen = strlen(buf);
@@ -3848,9 +3891,10 @@ update_threadnames (void)
       nto_trace (0) ("Thread %d name: %s\n", tid, buf);
       ptid = ptid_t (cur_pid, tid, 0);
       ti = nto_find_thread (ptid);
-      if(ti) {
-        ((struct nto_thread_info *)ti->priv.get())->setName(buf);
-      }
+      if(ti)
+	{
+	  ((struct nto_thread_info *)ti->priv.get())->setName(buf);
+	}
       buf += namelen + 1;
     }
   } while(numleft > 0);
@@ -4129,17 +4173,17 @@ nto_meminfo (const char *args, int from_tty)
            dmp->text.addr);
       printf_filtered ("\t\tflags=%08x\n", dmp->text.flags);
       printf_filtered ("\t\tdebug=%08x\n", dmp->text.debug_vaddr);
-      printf_filtered ("\t\toffset=%016llx\n", dmp->text.offset);
+      printf_filtered ("\t\toffset=%016" PRIx64 "\n", dmp->text.offset);
       if (dmp->data.size)
   {
     printf_filtered ("\tdata=%08x bytes @ 0x%08x\n", dmp->data.size,
          dmp->data.addr);
     printf_filtered ("\t\tflags=%08x\n", dmp->data.flags);
     printf_filtered ("\t\tdebug=%08x\n", dmp->data.debug_vaddr);
-    printf_filtered ("\t\toffset=%016llx\n", dmp->data.offset);
+    printf_filtered ("\t\toffset=%016" PRIx64 "\n", dmp->data.offset);
   }
       printf_filtered ("\tdev=0x%x\n", dmp->dev);
-      printf_filtered ("\tino=0x%llx\n", dmp->ino);
+      printf_filtered ("\tino=0x%" PRIx64 "\n", dmp->ino);
     }
 }
 
