@@ -32,6 +32,8 @@
 
 /* taken from <sys/neutrino.h> */
 #define _NTO_THREAD_NAME_MAX 100
+/* taken from <sys/siginfo.h> */
+#define SI_NOINFO 127
 
 /* Target operations defined for Neutrino targets (<target>-nto-tdep.c).  */
 
@@ -158,7 +160,7 @@ struct nto_thread_info : public private_thread_info
 	char name[_NTO_THREAD_NAME_MAX];
 
 public:
-	void fill( struct tidinfo *data ) {
+	void fill( const struct tidinfo *data ) {
 		tid=data->tid;
 		state=data->state;
 		flags=data->flags;
