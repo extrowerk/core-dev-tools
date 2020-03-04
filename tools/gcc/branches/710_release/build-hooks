@@ -184,7 +184,7 @@ function hook_preconfigure {
 
 function hook_premake {
 	strip_r_switch
-	make_opts="CFLAGS+=-O2"
+	make_opts="CFLAGS+=-O2 CXXFLAGS+=-O2"
 }
 
 function hook_postmake {
