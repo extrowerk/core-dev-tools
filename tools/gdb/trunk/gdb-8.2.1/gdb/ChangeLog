@@ -1,3 +1,13 @@
+2020-03-13  Bjoern Weber  <bweber@qnx.com>
+
+    Cherrypick commit 272044897e178835f596c96740c5a1800ec6f9fb
+
+    2019-08-22  Christian Biesinger  <cbiesinger@google.com>
+
+	* python/lib/gdb/__init__.py (_execute_file): New function.
+	* python/python.c (python_run_simple_file): Call gdb._execute_file
+	on Windows.
+
 2018-12-23  Joel Brobecker  <brobecker@adacore.com>
 
 	* version.in: Set GDB version number to 8.2.1.
