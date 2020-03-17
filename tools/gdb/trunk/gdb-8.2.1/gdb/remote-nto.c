@@ -141,6 +141,7 @@ static void     nto_fileclose (int);
 static int      nto_fileread (char *buf, int size);
 static int      nto_filewrite (char *buf, int size);
 
+static int nto_force_hwbp = 0;
 /* names of the expected Kernel notifications for readable trace output */
 static const char* const _DSMSGS[12] {
   "DSMSG_NOTIFY_PIDLOAD",    /* 0 */
@@ -369,8 +370,8 @@ static int upload_sets_exec = 1;
 
 /* Stuff for dealing with the packets which are part of this protocol.  */
 
-#define MAX_TRAN_TRIES 3
-#define MAX_RECV_TRIES 3
+#define MAX_TRAN_TRIES 2
+#define MAX_RECV_TRIES 2
 
 #define FRAME_CHAR  0x7e
 #define ESC_CHAR  0x7d
@@ -721,6 +722,7 @@ getpkt (DScomm_t *const recv, const int forever)
       error ("Watchdog has expired.  Target detached.");
     }
         puts_filtered ("Timed out.\n");
+        current_session->desc = NULL;
         return -1;
       }
   }
@@ -964,6 +966,8 @@ nto_send_recv (const DScomm_t *const tran, DScomm_t *const recv,
 	  recv->pkt.err.err = EXTRACT_SIGNED_INTEGER (&recv->pkt.err.err,
 						      4, byte_order);
 	  rlen = sizeof (recv->pkt.err);
+	  /* connection is considered dead */
+	  current_session->desc = NULL;
 	  break;
 	}
       putpkt (tran, len);
@@ -3187,6 +3191,21 @@ int
 pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
         struct bp_target_info *bp_tg_inf)
 {
+  if( nto_force_hwbp )
+    {
+      // change breakpoint nature
+      bp_tg_inf->kind=bp_loc_hardware_breakpoint;
+      if (!insert_hw_breakpoint(gdbarch, bp_tg_inf))
+	return 0;
+
+      if (!query (_("Could not force HW breakpoint. Disable nto-force-hwbp?")))
+	return 1;
+
+      // revert breakpoint nature and reset force flag
+      bp_tg_inf->kind=bp_loc_software_breakpoint;
+      nto_force_hwbp = 0;
+    }
+
   if (bp_tg_inf == 0)
     {
       internal_error(__FILE__, __LINE__, _("Target info invalid."));
@@ -3196,7 +3215,7 @@ pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!nto_set_thread ( nto_get_thread_alive ( ptid_t( inferior_ptid.pid(), 1, 0 ) ).lwp() ) )
+  if (!nto_set_thread ( nto_get_thread_alive ( inferior_ptid ).lwp() ) )
     {
       nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n",
          inferior_ptid.pid(), inferior_ptid.lwp());
@@ -3223,7 +3242,7 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
      the following looks convoluted.  But in reality all we are doing is
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
-  if (!nto_set_thread ( nto_get_thread_alive ( ptid_t (inferior_ptid.pid(),1,0)).lwp() ) )
+  if (!nto_set_thread ( nto_get_thread_alive (inferior_ptid).lwp() ) )
     {
       nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
       return 1;
@@ -4113,7 +4132,7 @@ nto_mapinfo (unsigned addr, int first, int elfonly)
     subcmd |= DSMSG_MAPINFO_ELF;
 
   nto_send_init (&tran, DStMsg_mapinfo, subcmd, SET_CHANNEL_DEBUG);
-  mapinfo->addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8/*FIXME*/, byte_order);
+  mapinfo->addr = EXTRACT_UNSIGNED_INTEGER (&addr, sizeof(mapinfo->addr), byte_order);
   nto_send_recv (&tran, &recv, sizeof (*mapinfo), 0);
   if (recv.pkt.hdr.cmd == DSrMsg_err)
     {
@@ -4213,7 +4232,7 @@ pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
      making sure pdebug selects an existing thread in the inferior_ptid.
      We need to switch pdebug internal current prp pointer.   */
   if (!nto_set_thread (
-      nto_get_thread_alive (ptid_t(inferior_ptid.pid(),0,0)).lwp() ) ) {
+      nto_get_thread_alive (inferior_ptid).lwp() ) ) {
     nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
     return 1;
   }
@@ -4438,6 +4457,15 @@ Show currently set binary to be executed on the remote QNX Neutrino target."),
 Binary to be executed on the remote QNX Neutrino target when "\
 "'run' command is used."),
         &set_nto_exe, &show_nto_exe, &setlist, &showlist);
+
+  add_setshow_boolean_cmd ("nto-force-hwbp",  class_breakpoint,
+			   &nto_force_hwbp, _("\
+Set if hardware breakpoints should be forced."), _("\
+Show nto-force-hwbp value."), _("\
+If nto-force-hwbp is on, all breakpoints being set will be forced \
+to become hardware breakpoints. Otherwise the default behaviour \
+is used (see: breakpoint auto-hw)."), NULL, NULL,
+	&setlist, &showlist);
 
   add_setshow_boolean_cmd ("upload-sets-exec", class_files,
          &upload_sets_exec, _("\
