@@ -37,6 +37,7 @@
 #include "common/pathstuff.h"
 #include "observable.h"
 #include "minsyms.h"
+#include <sys/param.h>         /* for MAXPATHLEN */
 
 #define QNX_NOTE_NAME  "QNX"
 #define QNX_INFO_SECT_NAME "QNX_info"
@@ -344,19 +345,26 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
   const char *endian;
   const char *base;
   const char *arch;
-  int arch_len, len, ret;
+  int plen, ret;
 
   /* list of shared library locations
-   * todo: check for graphics extensions to this list
+   * todo: check for graphics/screen extensions to this list
    */
-#define PATH_FMT "%s/lib:%s/usr/lib:%s/lib/dll"
+#define PATH_FMT "%s/lib:%s/usr/lib:%s/lib/dll:%s/lib/dll/pci"
 
   arch_path = nto_build_arch_path ();
-  arch_len=strlen(arch_path)+1;
+  plen = strlen (PATH_FMT) + (4 * strlen (arch_path)) + 1;
 
-  len = strlen (PATH_FMT) + arch_len * 3 + 1;
-  buf = (char *) alloca (len);
-  xsnprintf (buf, len, PATH_FMT, arch_path, arch_path, arch_path );
+  /* make sure that the buffer is large enough to hold the extended PATH_FMT
+   * and at least MAXPATHLEN for an absolute solib path */
+  if (plen < MAXPATHLEN )
+    plen = MAXPATHLEN;
+
+  buf = (char *) alloca (plen);
+
+  xsnprintf (buf, plen, PATH_FMT, arch_path, arch_path, arch_path,
+	     arch_path );
+  free (arch_path);
 
   base = lbasename (solib);
   ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_RETURN_REALPATH, base, o_flags,
@@ -364,19 +372,19 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
 
   if (ret < 0 && base != solib)
     {
-      xsnprintf (arch_path, arch_len, "/%s", solib);
-      ret = open (arch_path, o_flags, 0);
-      if (temp_pathname)
-  {
-    if (ret >= 0)
-      *temp_pathname = gdb_realpath (arch_path);
-    else
-      temp_pathname->reset (NULL);
-  }
+      xsnprintf (buf, MAXPATHLEN, "/%s", solib);
+      ret = open (buf, o_flags, 0);
+      if (ret >= 0)
+	  temp_pathname->reset (gdb_realpath (buf).get ());
+      else
+	  temp_pathname->reset (NULL);
     }
-  if( ret >= 0 ) {
-    nto_trace(0)("Located %s\n", solib );
-  }
+
+  if ( ret >= 0 )
+    {
+      nto_trace(0)("Located %s at %s\n", solib, temp_pathname->get () );
+    }
+
   return ret;
 }
 
