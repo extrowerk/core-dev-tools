@@ -1101,64 +1101,33 @@ nto_set_thread (int th)
   return 1;
 }
 
-
-/* Return nonzero if the thread TH is still alive on the remote system.
-   RECV will contain returned_tid. NOTE: Make sure this stays like that
-   since we will use this side effect in other functions to determine
-   first thread alive (for example, after attach).  */
-bool
-pdebug_target::thread_alive (ptid_t th)
-{
-  const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  int alive = 0;
-  DScomm_t tran, recv;
-
-  nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
-  tran.pkt.select.pid = th.pid();
-  tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.pid,
-						sizeof(int32_t), byte_order);
-  tran.pkt.select.tid = th.lwp();
-  tran.pkt.select.tid = EXTRACT_SIGNED_INTEGER (&tran.pkt.select.tid,
-						sizeof(int32_t), byte_order);
-  nto_send_recv (&tran, &recv, sizeof (tran.pkt.select), 0);
-  if (recv.pkt.hdr.cmd == DSrMsg_okdata)
-    {
-      /* Data is tidinfo.
-  Note: tid returned might not be the same as requested.
-  If it is not, then requested thread is dead.  */
-      uintptr_t ptidinfoaddr = (uintptr_t) &recv.pkt.okdata.data;
-      struct tidinfo *ptidinfo = (struct tidinfo *) ptidinfoaddr;
-      int returned_tid = EXTRACT_SIGNED_INTEGER (&ptidinfo->tid,
-						 sizeof(int16_t), byte_order);
-      alive = (th.lwp() == returned_tid) && ptidinfo->state;
-    }
-  else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
-    {
-      /* This is the old behaviour. It doesn't really tell us
-      what is the status of the thread, but rather answers question:
-      "Does the thread exist?". Note that a thread might have already
-      exited but has not been joined yet; we will show it here as
-      alive an well. Not completely correct.  */
-      int returned_tid = EXTRACT_SIGNED_INTEGER (&recv.pkt.okstatus.status,
-						 sizeof(int32_t), byte_order);
-      alive = (th.lwp() == returned_tid);
-    }
-
-  nto_trace (0) ("pdebug_thread_alive(%s) is %s\n", nto_pid_to_str(th),
-      alive?"alive":"dead");
-  /* In case of a failure, return 0. This will happen when requested
-    thread is dead and there is no alive thread with the larger tid.  */
-  return alive;
-}
-
-static ptid_t
-nto_get_thread_alive (ptid_t th)
+/*
+ * Checks if the given thread is alive,  RECV will contain returned_tid.
+ * NOTE: Make sure this stays like that since we will use this side effect in
+ * other functions to determine first thread alive (for example, after attach).
+ * Returns
+ *  tid - thread id
+ *        this is either the requested thread or a higher number of the next
+ *        active thread
+ *  -1  - the process has no more active threads
+ */
+static int
+nto_thread_alive (ptid_t th)
 {
   DScomm_t tran, recv;
   const enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
-  int returned_tid; /* is lwp internally */
+  int returned_tid;
 
-  nto_trace(0) ("nto_get_thread_alive(%s)\n", nto_pid_to_str (th));
+  nto_trace(1) ("  nto_thread_alive(%s)\n", nto_pid_to_str (th));
+
+  /* this can happen in IDE sessions when the IDE requests data before the
+   * process has fully spawned so it must not be an error. */
+  if (th.pid() == 0)
+    {
+      nto_trace(0)("  No pid to find a thread for!");
+      return 0;
+    }
+
   nto_send_init (&tran, DStMsg_select, DSMSG_SELECT_QUERY, SET_CHANNEL_DEBUG);
   tran.pkt.select.pid = th.pid ();
   tran.pkt.select.pid = EXTRACT_SIGNED_INTEGER(&tran.pkt.select.pid,
@@ -1178,25 +1147,6 @@ nto_get_thread_alive (ptid_t th)
       struct thread_info *ti=NULL;
       returned_tid = EXTRACT_SIGNED_INTEGER(&ptidinfo->tid, sizeof(int16_t),
 					    byte_order);
-
-      if (!ptidinfo->state)
-	{
-	  return nto_get_thread_alive (ptid_t (th.pid (), returned_tid + 1, 0));
-	}
-      /* thread is alive and current thread info is available so try to
-       * update thread info */
-      ti=nto_find_thread(ptid_t(th.pid(),returned_tid,0));
-      /* does GDB know about this thread? */
-      if( ti != NULL )
-	{
-	  if( ti->priv.get() == NULL )
-	    {
-	      nto_trace(0)("  thread %i has not been announced yet\n",
-		  returned_tid);
-	      ti->priv.reset(new nto_thread_info());
-	    }
-	  ((struct nto_thread_info *)ti->priv.get())->fill(ptidinfo);
-	}
     }
   else if (recv.pkt.hdr.cmd == DSrMsg_okstatus)
     {
@@ -1209,9 +1159,70 @@ nto_get_thread_alive (ptid_t th)
 					    sizeof(int32_t), byte_order);
     }
   else
-    return minus_one_ptid;
+    {
+      /* no more threads available */
+      returned_tid = -1;
+    }
 
-  return ptid_t (th.pid (), returned_tid, 0);
+  return returned_tid;
+}
+
+/* Return nonzero if the thread th is still alive on the remote system. */
+bool
+pdebug_target::thread_alive (ptid_t th)
+{
+  int alive;
+  alive = (nto_thread_alive (th) == th.lwp());
+  nto_trace(0) ("pdebug_thread_alive(%s) is %s\n", nto_pid_to_str (th),
+		alive ? "alive" : "dead");
+  return alive;
+}
+
+/*
+ * sets a non-dead thread for the given process/thread.
+ * By default the given thread is checked if it is alive. If not, the process
+ * is scanned for an active thread.
+ * If the given thread is 0, then the currently active thread is checked. This
+ * is done to avoid switching from the current thread and sending following
+ * messages to the wrong thread. returns the tid of the active
+ * thread or 0 if the process has no active threads.
+ */
+static int
+nto_set_thread_alive (ptid_t th)
+{
+  int alive;
+
+  /* check thread id, if this is 0 then a message to the process is about to
+   * be sent so the thread is changed to the current thread id so the context
+   * does not change for the following messages. */
+  if (th.lwp () == 0)
+    th = ptid_t (th.pid (), inferior_ptid.lwp (), 0);
+
+  nto_trace(0) ("nto_set_thread_alive(%s)\n", nto_pid_to_str (th));
+  alive = nto_thread_alive (th);
+
+  if (alive != th.lwp())
+    {
+      /* was the original check already for the whole process? */
+      if (th.lwp() != 1)
+	{
+	  /* try with thread1 */
+	  th = ptid_t (th.pid (), 1, 0);
+	  alive = nto_thread_alive (th);
+	}
+    }
+
+  if (alive > 0)
+    {
+      nto_set_thread (alive);
+    }
+  else
+    {
+      nto_trace (0) ("  no thread alive for %s\n", nto_pid_to_str (th));
+      alive = 0;
+    }
+
+  return alive;
 }
 
 /* Clean up connection to a remote debugger.  */
@@ -1642,8 +1653,6 @@ pdebug_target::attach (const char *args, int from_tty)
 #ifdef QNX_SET_PROCESSOR_TYPE
   QNX_SET_PROCESSOR_TYPE (current_session->cpuid);  /* For mips.  */
 #endif
-  /* Get thread info as well.  */
-  ptid = nto_get_thread_alive (ptid);
 
   inf = current_inferior ();
   inf->attach_flag = 1;
@@ -1770,7 +1779,7 @@ pdebug_target::resume (ptid_t ptid, int step,
   /* the resume target must be the current process */
   gdb_assert(inferior_ptid.pid () == ptid.pid ());
 
-  if (!nto_set_thread ( nto_get_thread_alive ( ptid ).lwp() ) )
+  if (!nto_set_thread_alive (ptid))
     {
       error("Process %d has no active threads!", ptid.pid() );
     }
@@ -3211,14 +3220,9 @@ pdebug_target::insert_breakpoint (struct gdbarch *gdbarch,
       internal_error(__FILE__, __LINE__, _("Target info invalid."));
     }
 
-  /* Must select appropriate inferior.  Due to our pdebug protocol,
-     the following looks convoluted.  But in reality all we are doing is
-     making sure pdebug selects an existing thread in the inferior_ptid.
-     We need to switch pdebug internal current prp pointer.   */
-  if (!nto_set_thread ( nto_get_thread_alive ( inferior_ptid ).lwp() ) )
+  /* Must select appropriate inferior. */
+  if (!nto_set_thread_alive (inferior_ptid))
     {
-      nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n",
-         inferior_ptid.pid(), inferior_ptid.lwp());
       return 1;
     }
 
@@ -3238,13 +3242,9 @@ nto_remove_breakpoint (CORE_ADDR addr, gdb_byte *contents_cache)
   nto_trace (0)  ("nto_remove_breakpoint(addr %s, contents_cache %p) (pid %d)\n",
                  paddress (target_gdbarch (), addr), contents_cache, inferior_ptid.pid());
 
-  /* Must select appropriate inferior.  Due to our pdebug protocol,
-     the following looks convoluted.  But in reality all we are doing is
-     making sure pdebug selects an existing thread in the inferior_ptid.
-     We need to switch pdebug internal current prp pointer.   */
-  if (!nto_set_thread ( nto_get_thread_alive (inferior_ptid).lwp() ) )
+  /* Must select appropriate inferior. */
+  if (!nto_set_thread_alive (inferior_ptid))
     {
-      nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
       return 1;
     }
 
@@ -4227,15 +4227,11 @@ pdebug_target::insert_hw_breakpoint (struct gdbarch *gdbarch,
     internal_error(__FILE__, __LINE__, _("Target info invalid."));
   }
 
-  /* Must select appropriate inferior.  Due to our pdebug protocol,
-     the following looks convoluted.  But in reality all we are doing is
-     making sure pdebug selects an existing thread in the inferior_ptid.
-     We need to switch pdebug internal current prp pointer.   */
-  if (!nto_set_thread (
-      nto_get_thread_alive (inferior_ptid).lwp() ) ) {
-    nto_trace (0) ("  could not set (pid,tid):(%d,%ld)\n", inferior_ptid.pid(), inferior_ptid.lwp());
-    return 1;
-  }
+  /* Must select appropriate inferior. */
+  if (!nto_set_thread_alive (inferior_ptid))
+    {
+      return 1;
+    }
 
   /* expect that all will succeed */
   bp_tg_inf->placed_address = bp_tg_inf->reqstd_address;
