@@ -347,11 +347,15 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
   const char *arch;
   int plen, ret;
 
+  nto_trace(0)("nto_find_and_open_solib(%s)\n", solib);
   /* list of shared library locations
    * todo: check for graphics/screen extensions to this list
    */
+#if defined(__WIN32__)
+#define PATH_FMT "%s/lib;%s/usr/lib;%s/lib/dll;%s/lib/dll/pci"
+#else
 #define PATH_FMT "%s/lib:%s/usr/lib:%s/lib/dll:%s/lib/dll/pci"
-
+#endif
   arch_path = nto_build_arch_path ();
   plen = strlen (PATH_FMT) + (4 * strlen (arch_path)) + 1;
 
@@ -367,6 +371,7 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
   free (arch_path);
 
   base = lbasename (solib);
+  nto_trace(1)("  trying %s at %s\n", base, buf);
   ret = openp (buf, OPF_TRY_CWD_FIRST | OPF_RETURN_REALPATH, base, o_flags,
          temp_pathname);
 
@@ -377,12 +382,15 @@ nto_find_and_open_solib (const char *solib, unsigned o_flags,
       if (ret >= 0)
 	  temp_pathname->reset (gdb_realpath (buf).get ());
       else
+	{
 	  temp_pathname->reset (NULL);
+	  nto_trace(1)("  unable to open %s\n", buf );
+	}
     }
 
   if ( ret >= 0 )
     {
-      nto_trace(0)("Located %s at %s\n", solib, temp_pathname->get () );
+      nto_trace(0)("  located %s at %s\n", solib, temp_pathname->get () );
     }
 
   return ret;
