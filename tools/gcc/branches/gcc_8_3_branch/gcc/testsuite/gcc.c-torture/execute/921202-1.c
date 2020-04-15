@@ -1,5 +1,6 @@
 /* { dg-require-effective-target untyped_assembly } */
 /* { dg-add-options stack_size } */
+/* { dg-xfail-if "blow the stack on QNX" { *-*-nto* } } */
 
 #ifndef STACK_SIZE
 #define	VLEN	2055

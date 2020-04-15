@@ -3,6 +3,7 @@
 /* { dg-options "-O2 -floop-interchange" } */
 /* { dg-require-effective-target alloca }  */
 /* { dg-skip-if "too big stack" { visium-*-* } } */
+/* { dg-skip-if "too big stack" { *-*-nto* } } */
 
 /* Copied from graphite/interchange-5.c */
 
