@@ -1,5 +1,6 @@
 /* { dg-do run } */
 /* { dg-skip-if "PR68356 no math-errno on darwin" { "*-*-darwin*" } } */
+/* { dg-skip-if "PR68356 no math-errno on nto" { "*-*-nto*" } } */
 /* { dg-add-options ieee } */
 /* { dg-require-effective-target fenv_exceptions } */
 
