@@ -27,7 +27,7 @@ if { ![istarget aarch64*-*-*] } then {
 
 torture-init
 set-torture-options $C_TORTURE_OPTIONS
-set additional_flags "-W -Wall -Wno-abi"
+set additional_flags "-W -Wall -Wno-abi -no-pie"
 
 # Test parameter passing.
 foreach src [lsort [glob -nocomplain $srcdir/$subdir/test_*.c]] {
