@@ -47,20 +47,28 @@ Driver JoinedOrMissing
 rpath=
 Driver JoinedOrMissing
 
-stdlib=libcpp
-C++
-Use Dinkumware C++ library
+; Choose your C++ standard library implementation.
+;
+; Due to a twist in the way GCC handles adding the C++ standard library, the
+; name of library needs to be known before the command-line arguments are fully
+; parsed, so it doesn't matter what the enum values are here. The actual argument
+; to -stdlib is what gets used, not the internal token for the enumeration value.
+;
+; The use of an enum here is only to give a useful error message when an invalid
+; choice of C++ standard libraries is supplied on the command line.
+;
+Enum
+Name(cxxstdlib) Type(int)
+C++ standard library alternative:
 
-stdlib=libcpp-ne
-C++
-Use Dinkumware C++ library with no exceptions
+EnumValue
+Enum(cxxstdlib) String(libc++) Value(1)
 
-stdlib=libstdc++
-C++
-Use GNU libstdc++ library
+EnumValue
+Enum(cxxstdlib) String(libstdc++) Value(2)
 
-stdlib=libc++
-C++
-Use LLVM libc++ library
+stdlib=
+C++ Joined Enum(cxxstdlib) Var(cxxstdlib)
+Specify the C++ Standard Library
 
 ; This comment is to ensure we retain the blank line above.
