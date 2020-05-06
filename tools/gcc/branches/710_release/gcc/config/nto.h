@@ -169,15 +169,13 @@ do {                                            \
 #undef GPLUSPLUS_TOOL_INCLUDE_DIR
 #undef GPLUSPLUS_BACKWARD_INCLUDE_DIR
 
-/* Define LIBSTDCXX so we can select the implementation baded on -stdlib */
-extern const char *nto_select_libstdcxx(void);
-#define LIBSTDCXX nto_select_libstdcxx()
+/* Define LIBSTDCXX so we can select the implementation based on -stdlib */
+struct cl_decoded_option;
+extern const char *nto_select_libstdcxx(struct cl_decoded_option* options, unsigned int options_count);
+#define LIBSTDCXX nto_select_libstdcxx(new_decoded_options, j)
 #define LIBSTDCXX_PROFILE LIBSTDCXX
 extern const char *nto_select_libstdcxx_static(void);
 #define LIBSTDCXX_STATIC nto_select_libstdcxx_static()
-
-extern void nto_handle_cxx_option (size_t code, const char *arg);
-#define TARGET_HANDLE_CXX_OPTION nto_handle_cxx_option
 
 #undef LIB_SPEC
 #define LIB_SPEC \
