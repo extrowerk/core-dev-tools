@@ -2,59 +2,53 @@
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "gcc.h"
 #include "opts.h"
 
-#if DEFAULT_STDLIB_LIBSTDCXX
-#define DEFAULT_STDLIB_OPT OPT_stdlib_libstdc__
-#elif DEFAULT_STDLIB_LIBCXX
-#define DEFAULT_STDLIB_OPT OPT_stdlib_libc__
+/**
+ * The library names.  These will be passed to the linker using the '-l' option.
+ */
+static const char * const gnu_cxx_stdlib = "stdc++";
+static const char * const llvm_cxx_stdlib = "c++";
+
+/**
+ * Determines the C++ standard library to use, given the combination of
+ * configured defaults and command-line options.  The default is determined at
+ * compiler configuration time and the actual library depends on the last
+ * instance of the -stdlib= command-line option given.
+ *
+ * Because this function is called before duplicate options are removed and the
+ * canonical option setting determined, it's mandatory to scan the entire list
+ * of known options to look for the lastmost occurrence of the -stdlib option,
+ * which may be given more than once.
+ */
+const char *
+nto_select_libstdcxx (struct cl_decoded_option* options, unsigned int options_count)
+{
+#if defined(DEFAULT_STDLIB_LIBSTDCXX)
+    const char * stdlib = gnu_cxx_stdlib;
+#elif defined(DEFAULT_STDLIB_LIBCXX)
+    const char * stdlib = llvm_cxx_stdlib;
+#else
+# error No default C++ standard library configured.
 #endif
 
-static size_t stdlib_opt = DEFAULT_STDLIB_OPT;
+	for(unsigned int i = 0; i < options_count; ++i)
+	{
+		if(options[i].opt_index == OPT_stdlib_)
+		{
+			if(0 == strcmp (options[i].arg, "libstdc++"))
+			    stdlib = gnu_cxx_stdlib;
+			else if(0 == strcmp (options[i].arg, "libc++"))
+			    stdlib = llvm_cxx_stdlib;
+		}
+	}
 
-const char *
-nto_select_libstdcxx (void)
-{
-  switch (stdlib_opt)
-  {
-    case OPT_stdlib_libcpp:
-      return "cpp";
-    case OPT_stdlib_libcpp_ne:
-      return "cpp-ne";
-    case OPT_stdlib_libc__:
-      return "c++";
-    case OPT_stdlib_libstdc__:
-      return "stdc++";
-    default:
-      return NULL;
-  }
+	return stdlib;
 }
 
 const char *
 nto_select_libstdcxx_static (void)
 {
-  switch (stdlib_opt)
-  {
-    case OPT_stdlib_libcpp:
-    case OPT_stdlib_libcpp_ne:
-      return "cxa";
-    default:
-      return NULL;
-  }
+  return NULL;
 }
 
-void
-nto_handle_cxx_option (size_t code,
-		       const char *arg ATTRIBUTE_UNUSED)
-{
-  switch (code)
-    {
-    case OPT_stdlib_libc__:
-    case OPT_stdlib_libstdc__:
-    case OPT_stdlib_libcpp:
-    case OPT_stdlib_libcpp_ne:
-      stdlib_opt = code;
-      break;
-    }
-}
