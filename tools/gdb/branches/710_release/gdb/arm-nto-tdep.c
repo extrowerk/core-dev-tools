@@ -660,6 +660,9 @@ nto_arm_get_next_pcs_syscall_next_pc (struct arm_get_next_pcs *self)
 }
 
 #if 1
+// countdown for if-then-else constructs, needs to be global
+static int itsteps=0;
+
 /* todo the logic has changed a lot here
  * The only real difference we make is that we take special care of SVCs
  * alas, this may also confuse breakpoints with SVCs
@@ -669,8 +672,27 @@ nto_arm_get_next_pcs_syscall_next_pc (struct arm_get_next_pcs *self)
 std::vector<CORE_ADDR>
 nto_arm_software_single_step (struct regcache *regcache)
 {
+#define THUMB_MASK_ITOP 0xff00
+#define THUMB_ITOP 0xbf00
   struct gdbarch *gdbarch = regcache->arch ();
   struct arm_get_next_pcs next_pcs_ctx;
+  CORE_ADDR pc=0;
+  LONGEST insn=0;
+  int mc=0;
+
+  /* take care of IT opcodes */
+  if (arm_is_thumb (regcache)) {
+      pc = regcache_read_pc (regcache);
+      if (safe_read_memory_integer (pc, 4, gdbarch_byte_order_for_code (gdbarch), &insn) )
+	{
+	  if ( ( insn & THUMB_MASK_ITOP ) == THUMB_ITOP )
+	    {
+	      nto_trace(0)("Found an If-Then (0x%8lx) at 0x%08lx\n", insn, pc );
+	      itsteps=4;
+	    }
+	}
+      pc += 2;
+   }
 
   arm_get_next_pcs_ctor (&next_pcs_ctx,
        &nto_arm_get_next_pcs_ops,
@@ -681,9 +703,22 @@ nto_arm_software_single_step (struct regcache *regcache)
 
   std::vector<CORE_ADDR> next_pcs = arm_get_next_pcs (&next_pcs_ctx);
 
-  for (CORE_ADDR &pc_ref : next_pcs) {
-    pc_ref = gdbarch_addr_bits_remove (gdbarch, pc_ref);
-  }
+  if ( itsteps )
+    {
+      nto_trace(0)("  setting %i explicit breakpoints\n", itsteps );
+      // if pc is 0 then we found an ARM instruction inside an IT block!
+      gdb_assert(pc != 0);
+      for( mc=0; mc<itsteps; mc++ )
+	{
+	  next_pcs.push_back(std::move(pc+(2*mc)));
+	}
+      itsteps--;
+    }
+
+  for (CORE_ADDR &pc_ref : next_pcs)
+    {
+      pc_ref = gdbarch_addr_bits_remove (gdbarch, pc_ref);
+    }
 
   return next_pcs;
 }
