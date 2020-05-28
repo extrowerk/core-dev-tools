@@ -116,6 +116,7 @@ function hook_preconfigure {
 		configure_opts="${configure_opts} --enable-cheaders=c_global"
 		configure_opts="${configure_opts} --enable-initfini-array"
 		configure_opts="${configure_opts} --enable-default-pie"
+		configure_opts="${configure_opts} --enable-vtable-verify"
 		configure_opts="${configure_opts} --with-as=${target}-as"
 		configure_opts="${configure_opts} --with-ld=${target}-ld"
 		;;
