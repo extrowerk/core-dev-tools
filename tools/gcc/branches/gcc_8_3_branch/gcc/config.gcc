@@ -1027,6 +1027,7 @@ aarch64*-*-linux*)
 aarch64*-*-qnx*)
     tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h nto.h nto-stdint.h"
     tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-nto.h"
+    tm_defines="${tm_defines}  TARGET_DEFAULT_ASYNC_UNWIND_TABLES=1"
     tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-nto"
     ;;
 alpha*-*-linux*)
